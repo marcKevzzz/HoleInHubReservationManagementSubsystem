@@ -1,0 +1,15 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <NoWarn>$(NoWarn);NU1902;NU1903</NoWarn>
+    <Deterministic>true</Deterministic>
+
+    <Company>Hole In Hub Golf &amp; Lounge</Company>
+    <Product>Hole In Hub Reservation Management Subsystem</Product>
+    <Copyright>Copyright © 2026 Hole In Hub</Copyright>
+  </PropertyGroup>
+</Project>

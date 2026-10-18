@@ -1,0 +1,18 @@
+@model string
+
+@{
+    var status = Model?.Trim() ?? "Unknown";
+    var (badgeClasses, dotColor, textLabel) = status.ToLowerInvariant() switch
+    {
+        "pending" => ("bg-amber-950/40 text-amber-300 border-amber-500/30", "bg-amber-400", "PENDING HOLD"),
+        "confirmed" => ("bg-fairway-900/40 text-fairway-100 border-fairway-500/40", "bg-fairway-400", "CONFIRMED"),
+        "cancelled" => ("bg-rose-950/40 text-rose-300 border-rose-500/30", "bg-rose-400", "CANCELLED"),
+        "completed" => ("bg-obsidian-800 text-titanium-300 border-obsidian-700", "bg-titanium-400", "ARCHIVED"),
+        _ => ("bg-obsidian-850 text-champagne-300 border-champagne-500/30", "bg-champagne-400", status.ToUpperInvariant())
+    };
+}
+
+<span class="inline-flex items-center gap-2 px-2.5 py-1 text-[11px] font-mono font-medium tracking-[0.1em] rounded-[2px] border @badgeClasses uppercase backdrop-blur-sm" role="status">
+    <span class="w-1.5 h-1.5 rounded-full @dotColor shadow-[0_0_8px_currentColor]"></span>
+    @textLabel
+</span>

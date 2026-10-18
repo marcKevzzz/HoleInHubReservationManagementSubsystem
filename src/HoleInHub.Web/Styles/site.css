@@ -1,0 +1,77 @@
+@import "tailwindcss" source(none);
+@source "../Views";
+@source "../wwwroot/js";
+
+@theme {
+  /* Obsidian & Carbon Dark Tones (Spyker Inspired) */
+  --color-obsidian-950: #050505;
+  --color-obsidian-900: #0a0a0a;
+  --color-obsidian-850: #121212;
+  --color-obsidian-800: #18181b;
+  --color-obsidian-700: #27272a;
+
+  /* Titanium & Brushed Steel Accents */
+  --color-titanium-100: #f4f4f5;
+  --color-titanium-200: #e4e4e7;
+  --color-titanium-300: #d4d4d8;
+  --color-titanium-400: #a1a1aa;
+  --color-titanium-500: #71717a;
+
+  /* Champagne Gold & Warm Sand Hazard (High Luxury) */
+  --color-champagne-100: #faf6eb;
+  --color-champagne-200: #f3ebd0;
+  --color-champagne-300: #e5d5a3;
+  --color-champagne-400: #d4af37;
+  --color-champagne-500: #c5a059;
+  --color-champagne-600: #a37f37;
+  --color-champagne-700: #7a5e27;
+
+  /* Deep Fairway Racing Green */
+  --color-fairway-50: #f0fdf4;
+  --color-fairway-100: #dcfce7;
+  --color-fairway-500: #22c55e;
+  --color-fairway-600: #16a34a;
+  --color-fairway-700: #15803d;
+  --color-fairway-800: #14532d;
+  --color-fairway-900: #052e16;
+  --color-fairway-950: #021a0c;
+
+  /* Modern Lounge Slate Tones */
+  --color-lounge-50: #f8fafc;
+  --color-lounge-100: #f1f5f9;
+  --color-lounge-800: #1e293b;
+  --color-lounge-900: #0f172a;
+  --color-lounge-950: #020617;
+}
+
+@layer base {
+  html {
+    @apply antialiased scroll-smooth;
+    color-scheme: dark light;
+  }
+
+  body {
+    @apply bg-obsidian-950 text-titanium-100 min-h-screen flex flex-col font-sans selection:bg-champagne-500 selection:text-obsidian-950;
+  }
+
+  a {
+    @apply text-champagne-400 hover:text-champagne-300 transition-colors;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-1 ring-champagne-400 ring-offset-2 ring-offset-obsidian-950;
+  }
+}
+
+
+/* Accessible Reduced Motion Compliance */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

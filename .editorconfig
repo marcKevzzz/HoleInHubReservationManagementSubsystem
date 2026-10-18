@@ -1,0 +1,38 @@
+# Top-most EditorConfig file
+root = true
+
+# Default rules for all files
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+end_of_line = lf
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = false
+indent_size = 2
+
+# Web / JSON / YAML files
+[*.{json,yml,yaml,html,css,js,ts}]
+indent_size = 2
+
+# C# files
+[*.cs]
+indent_size = 4
+csharp_using_directive_placement = outside_namespace:error
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = true:suggestion
+csharp_prefer_braces = true:error
+csharp_style_namespace_declarations = file_scoped:error
+dotnet_style_qualification_for_field = false:suggestion
+dotnet_style_qualification_for_property = false:suggestion
+dotnet_style_qualification_for_method = false:suggestion
+dotnet_style_qualification_for_event = false:suggestion
+
+# Organize usings
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false

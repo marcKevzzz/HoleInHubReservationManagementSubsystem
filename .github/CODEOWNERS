@@ -1,0 +1,21 @@
+# Hole In Hub Code Ownership Template
+# Customize with actual GitHub teams or usernames upon repository hosting setup.
+# Example: @holeinhub/core-team @holeinhub/frontend-team
+
+# Default global owners for the repository
+* @holeinhub/core-team
+
+# Core Architecture & Database Migration
+/HoleInHub.Data/ @holeinhub/backend-team
+/HoleInHub.Migrator/ @holeinhub/backend-team
+/HoleInHub.Business/ @holeinhub/backend-team
+
+# Frontend, Razor Views, Design System & Motion
+/HoleInHub.Web/Styles/ @holeinhub/frontend-team
+/HoleInHub.Web/Views/ @holeinhub/frontend-team
+/HoleInHub.Web/wwwroot/js/ @holeinhub/frontend-team
+/HoleInHub.Web/package.json @holeinhub/frontend-team
+
+# CI / CD & Developer Operations
+/.github/ @holeinhub/devops-team
+/docker-compose.mongo.yml @holeinhub/devops-team

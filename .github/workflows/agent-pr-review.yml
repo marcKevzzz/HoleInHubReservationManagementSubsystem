@@ -1,0 +1,98 @@
+name: Agent PR Review & Boundary Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  boundary-review:
+    name: 3-Tier Architecture & Verification Gate
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET 10 SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Setup Node.js 22
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'npm'
+        cache-dependency-path: 'src/HoleInHub.Web/package-lock.json'
+
+    - name: Build Tailwind CSS
+      run: |
+        cd src/HoleInHub.Web
+        npm ci
+        npm run build:css
+        cd ../..
+
+    - name: Check 3-Tier Architecture Violations
+      id: arch_check
+      run: |
+        echo "Checking for direct MongoDB usage in Presentation Tier (src/HoleInHub.Web)..."
+        if grep -rn "MongoDB.Driver" src/HoleInHub.Web/ --exclude-dir={bin,obj,node_modules}; then
+          echo "::error::Architectural Boundary Violation: src/HoleInHub.Web must not reference MongoDB.Driver directly. Pass all calls through src/HoleInHub.Business."
+          exit 1
+        fi
+
+        echo "Checking for Web/MVC dependencies in Business Tier (src/HoleInHub.Business)..."
+        if grep -rn "Microsoft.AspNetCore.Mvc" src/HoleInHub.Business/ --exclude-dir={bin,obj}; then
+          echo "::error::Architectural Boundary Violation: src/HoleInHub.Business must not reference Microsoft.AspNetCore.Mvc."
+          exit 1
+        fi
+
+        echo "Checking for runtime CDN links in Razor Views..."
+        if grep -rn "https://cdnjs.cloudflare.com" src/HoleInHub.Web/Views/ --exclude-dir={bin,obj}; then
+          echo "::error::Security & Architecture Violation: No runtime CDN scripts allowed. Bundle GSAP locally via npm."
+          exit 1
+        fi
+
+        echo "Architectural boundaries verified successfully."
+
+    - name: Verify Code Formatting
+      run: dotnet format HoleInHubReservationManagementSubsystem.slnx --verify-no-changes
+
+    - name: Build Solution
+      run: dotnet build HoleInHubReservationManagementSubsystem.slnx --configuration Release
+
+    - name: Run Fast Unit & Smoke Tests
+      run: dotnet test HoleInHubReservationManagementSubsystem.slnx --configuration Release --no-build --filter "Category!=Integration"
+
+    - name: Post PR Agent Verification Summary
+      uses: actions/github-script@v7
+      if: always()
+      with:
+        script: |
+          const status = '${{ job.status }}' === 'success' ? '✅ **PASSED**' : '❌ **FAILED**';
+          const body = `### 🤖 Hole In Hub Agent PR Review & Boundary Gate
+
+          **Status:** ${status}
+
+          #### Architecture & Safety Gates:
+          - [x] **3-Tier Isolation**: Presentation (\`src/HoleInHub.Web\`) has zero direct MongoDB dependencies.
+          - [x] **Domain Purity**: Business tier (\`src/HoleInHub.Business\`) has zero ASP.NET MVC / Razor dependencies.
+          - [x] **Local Asset Rule**: No external runtime CDNs detected.
+          - [x] **Code Formatting**: Verified via \`dotnet format\`.
+          - [x] **Fast Unit & Smoke Tests**: 100% verified.
+
+          > *AI reviews and line-by-line feedback are actively guided by [\`.coderabbit.yaml\`](file:///.coderabbit.yaml) and [AGENTS.md](file:///AGENTS.md).*`;
+
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: body
+          });

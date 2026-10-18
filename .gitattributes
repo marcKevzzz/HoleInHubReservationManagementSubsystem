@@ -1,0 +1,40 @@
+# Auto detect text files and perform LF normalization
+* text=auto eol=lf
+
+# Explicit text files
+*.cs text diff=csharp eol=lf
+*.cshtml text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.slnx text eol=lf
+*.csproj text eol=lf
+*.props text eol=lf
+*.targets text eol=lf
+
+# Windows-specific scripts
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
+*.dll binary
+*.exe binary
+
+# Generated files
+/HoleInHub.Web/wwwroot/css/site.css linguist-generated=true
+/HoleInHub.Web/package-lock.json -diff

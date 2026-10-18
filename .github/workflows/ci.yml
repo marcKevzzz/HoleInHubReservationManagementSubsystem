@@ -1,0 +1,108 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build, Format Check & Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET 10 SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Setup Node.js 22
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'npm'
+        cache-dependency-path: 'src/HoleInHub.Web/package-lock.json'
+
+    - name: Install NPM Dependencies & Build Tailwind CSS
+      run: |
+        cd src/HoleInHub.Web
+        npm ci
+        npm run build:css
+        cd ../..
+
+    - name: Verify Code Formatting
+      run: dotnet format HoleInHubReservationManagementSubsystem.slnx --verify-no-changes
+
+    - name: Restore .NET Dependencies
+      run: dotnet restore HoleInHubReservationManagementSubsystem.slnx
+
+    - name: Build Solution (Release)
+      run: dotnet build HoleInHubReservationManagementSubsystem.slnx --configuration Release --no-restore
+
+    - name: Run Unit & Web Smoke Tests
+      run: dotnet test HoleInHubReservationManagementSubsystem.slnx --configuration Release --no-build --filter "Category!=Integration" --logger "trx;LogFileName=test-results.trx"
+
+    - name: Publish Web Application
+      run: dotnet publish src/HoleInHub.Web/HoleInHub.Web.csproj --configuration Release --no-build --output ./publish
+
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: holeinhub-web-drop
+        path: ./publish
+        retention-days: 7
+
+  integration-tests:
+    name: MongoDB Integration Tests
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET 10 SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Setup Node.js 22
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'npm'
+        cache-dependency-path: 'src/HoleInHub.Web/package-lock.json'
+
+    - name: Build CSS
+      run: |
+        cd src/HoleInHub.Web
+        npm ci
+        npm run build:css
+        cd ../..
+
+    - name: Restore Dependencies
+      run: dotnet restore HoleInHubReservationManagementSubsystem.slnx
+
+    - name: Run MongoDB Integration Tests
+      env:
+        MongoDb__ConnectionString: "mongodb://localhost:27017"
+        MongoDb__DatabaseName: "holeinhub_ci_test"
+      run: dotnet test HoleInHubReservationManagementSubsystem.slnx --filter "Category=Integration" --logger "trx;LogFileName=integration-results.trx"
