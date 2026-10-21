@@ -10,6 +10,7 @@ namespace HoleInHub.Tests.Integration.Fixtures;
 
 public sealed class MongoDbFixture : IAsyncLifetime
 {
+    private readonly List<string> _databases = [];
     public string ConnectionString { get; }
     public string DatabaseName { get; }
     public IMongoClient Client { get; private set; } = null!;
@@ -42,10 +43,12 @@ public sealed class MongoDbFixture : IAsyncLifetime
 
     public IMongoDbContext CreateDbContext()
     {
+        var databaseName = $"{DatabaseName}_{Guid.NewGuid():N}";
+        _databases.Add(databaseName);
         var options = Options.Create(new MongoDbOptions
         {
             ConnectionString = ConnectionString,
-            DatabaseName = DatabaseName,
+            DatabaseName = databaseName,
             ServerSelectionTimeoutMs = 2000,
             SocketTimeoutMs = 5000
         });
@@ -59,7 +62,10 @@ public sealed class MongoDbFixture : IAsyncLifetime
         {
             try
             {
-                await Client.DropDatabaseAsync(DatabaseName);
+                foreach (var databaseName in _databases)
+                {
+                    await Client.DropDatabaseAsync(databaseName);
+                }
             }
             catch
             {

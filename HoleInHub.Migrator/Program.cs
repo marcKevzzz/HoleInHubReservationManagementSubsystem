@@ -4,11 +4,18 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
+if (args is not ["migrate"])
+{
+    var isHelp = args.Length == 0 || args is ["--help"] or ["-h"];
+    var output = isHelp ? Console.Out : Console.Error;
+    output.WriteLine("Usage: dotnet run --project HoleInHub.Migrator -- migrate | --help | -h");
+    return isHelp ? 0 : 2;
+}
+
 var configuration = new ConfigurationBuilder()
     .SetBasePath(AppContext.BaseDirectory)
     .AddJsonFile("appsettings.json", optional: true)
     .AddEnvironmentVariables()
-    .AddCommandLine(args)
     .Build();
 
 var services = new ServiceCollection();
@@ -20,6 +27,7 @@ services.AddLogging(builder =>
 });
 
 services.AddHoleInHubData(configuration);
+services.AddHoleInHubMigrations();
 
 using var serviceProvider = services.BuildServiceProvider();
 var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("HoleInHub.Migrator");
@@ -31,7 +39,7 @@ logger.LogInformation("==================================================");
 try
 {
     var runner = serviceProvider.GetRequiredService<MongoMigrationRunner>();
-    var cts = new CancellationTokenSource();
+    using var cts = new CancellationTokenSource();
     Console.CancelKeyPress += (_, e) =>
     {
         e.Cancel = true;

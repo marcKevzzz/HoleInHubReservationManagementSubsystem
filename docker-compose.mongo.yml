@@ -12,12 +12,14 @@ services:
       test: >
         mongosh --eval '
           try {
-            rs.status().ok;
+            rs.status();
+            if (!db.hello().isWritablePrimary) { quit(1); }
           } catch (e) {
             rs.initiate({
               _id: "rs0",
               members: [{ _id: 0, host: "localhost:27017" }]
-            }).ok;
+            });
+            quit(1);
           }
         ' || exit 1
       interval: 5s

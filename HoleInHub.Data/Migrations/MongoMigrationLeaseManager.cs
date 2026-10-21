@@ -5,7 +5,7 @@ using MongoDB.Driver;
 namespace HoleInHub.Data.Migrations;
 
 public sealed class MigrationLeaseException(string message) : Exception(message);
-public sealed class MigrationLeaseLostException(string message) : Exception(message);
+public sealed class MigrationLeaseLostException(string message, Exception? innerException = null) : Exception(message, innerException);
 
 public sealed class MongoMigrationLeaseManager(IMongoDbContext dbContext)
 {

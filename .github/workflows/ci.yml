@@ -2,9 +2,10 @@ name: Continuous Integration
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "master", "main" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "master", "main" ]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -30,12 +31,11 @@ jobs:
         cache: 'npm'
         cache-dependency-path: 'HoleInHub.Web/package-lock.json'
 
-    - name: Install NPM Dependencies & Build Tailwind CSS
+    - name: Install NPM Dependencies & Build Assets
+      working-directory: HoleInHub.Web
       run: |
-        cd HoleInHub.Web
         npm ci
-        npm run build:css
-        cd ../..
+        npm run build
 
     - name: Verify Code Formatting
       run: dotnet format HoleInHubReservationManagementSubsystem.slnx --verify-no-changes
@@ -64,17 +64,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-test
     
-    services:
-      mongodb:
-        image: mongo:7.0
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -91,18 +80,29 @@ jobs:
         cache: 'npm'
         cache-dependency-path: 'HoleInHub.Web/package-lock.json'
 
-    - name: Build CSS
+    - name: Build Assets
+      working-directory: HoleInHub.Web
       run: |
-        cd HoleInHub.Web
         npm ci
-        npm run build:css
-        cd ../..
+        npm run build
+
+    - name: Start MongoDB Replica Set
+      run: |
+        docker compose -f docker-compose.mongo.yml up -d --wait --wait-timeout 120
+        docker compose -f docker-compose.mongo.yml exec -T mongodb mongosh --quiet --eval 'if (!db.hello().isWritablePrimary) { quit(1); }'
 
     - name: Restore Dependencies
       run: dotnet restore HoleInHubReservationManagementSubsystem.slnx
 
     - name: Run MongoDB Integration Tests
       env:
-        MongoDb__ConnectionString: "mongodb://localhost:27017"
-        MongoDb__DatabaseName: "holeinhub_ci_test"
+        MongoDb__ConnectionString: "mongodb://localhost:27017/?replicaSet=rs0"
       run: dotnet test HoleInHubReservationManagementSubsystem.slnx --filter "Category=Integration" --logger "trx;LogFileName=integration-results.trx"
+
+    - name: MongoDB Logs on Failure
+      if: failure()
+      run: docker compose -f docker-compose.mongo.yml logs
+
+    - name: Stop MongoDB
+      if: always()
+      run: docker compose -f docker-compose.mongo.yml down --volumes

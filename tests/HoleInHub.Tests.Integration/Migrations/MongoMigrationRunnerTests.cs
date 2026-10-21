@@ -101,6 +101,80 @@ public sealed class MongoMigrationRunnerTests : IClassFixture<MongoDbFixture>
     }
 
     [Fact]
+    public async Task RunAsync_LongMigration_KeepsLeaseBeyondOriginalExpiry()
+    {
+        SkipIfDatabaseUnavailable();
+        var context = _fixture.CreateDbContext();
+        var leases = new MongoMigrationLeaseManager(context);
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var finish = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var migration = new TestMigration(async ct =>
+        {
+            started.SetResult();
+            await finish.Task.WaitAsync(ct);
+        });
+        var runner = new MongoMigrationRunner(context, leases, [migration]);
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        var execution = runner.RunAsync("first", TimeSpan.FromSeconds(3), deadline.Token);
+        try
+        {
+            await started.Task.WaitAsync(deadline.Token);
+            await Task.Delay(TimeSpan.FromSeconds(5), deadline.Token);
+            var acquired = await leases.TryAcquireLeaseAsync("second", TimeSpan.FromSeconds(3), deadline.Token);
+            acquired.Should().BeFalse("the first migration is still running beyond its original lease");
+        }
+        finally
+        {
+            finish.TrySetResult();
+            await execution;
+        }
+        var released = await leases.TryAcquireLeaseAsync("second", TimeSpan.FromSeconds(3), deadline.Token);
+        released.Should().BeTrue("the heartbeat must stop and release its lease on completion");
+    }
+
+    [Fact]
+    public async Task RunAsync_LeaseLost_CancelsMigrationWithoutRecordingSuccess()
+    {
+        SkipIfDatabaseUnavailable();
+        var context = _fixture.CreateDbContext();
+        var leases = new MongoMigrationLeaseManager(context);
+        var cancelled = false;
+        var migration = new TestMigration(async ct =>
+        {
+            await context.MigrationLeases.UpdateOneAsync(
+                x => x.LeaseId == MigrationLease.DefaultLeaseId,
+                Builders<MigrationLease>.Update.Set(x => x.Owner, "replacement"), cancellationToken: ct);
+            try
+            {
+                await Task.Delay(Timeout.InfiniteTimeSpan, ct);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                cancelled = true;
+                throw;
+            }
+        });
+        var runner = new MongoMigrationRunner(context, leases, [migration]);
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        var act = () => runner.RunAsync("original", TimeSpan.FromSeconds(3), deadline.Token);
+
+        await act.Should().ThrowAsync<MigrationLeaseLostException>();
+        cancelled.Should().BeTrue();
+        (await context.Migrations.CountDocumentsAsync(x => x.MigrationId == migration.MigrationId)).Should().Be(0);
+        var lease = await context.MigrationLeases.Find(x => x.LeaseId == MigrationLease.DefaultLeaseId).SingleAsync();
+        lease.Owner.Should().Be("replacement");
+        lease.ExpiresAtUtc.Should().BeAfter(DateTime.UtcNow);
+    }
+
+    private sealed class TestMigration(Func<CancellationToken, Task> execute) : IMongoMigration
+    {
+        public string MigrationId => "test_heartbeat";
+        public string Description => "Exercise lease renewal";
+        public string CalculateChecksum() => "test_heartbeat_v1";
+        public Task UpAsync(IMongoDatabase database, CancellationToken ct) => execute(ct);
+    }
+
+    [Fact]
     public async Task TryAcquireLeaseAsync_WhenAlreadyHeldByActiveRunner_ReturnsFalse()
     {
         SkipIfDatabaseUnavailable();

@@ -38,6 +38,10 @@ public sealed class MongoMigrationRunner(
     {
         runnerId ??= $"runner-{Environment.MachineName}-{Guid.NewGuid():N}";
         var timeout = leaseTimeout ?? TimeSpan.FromSeconds(60);
+        if (timeout < TimeSpan.FromMilliseconds(3) || timeout.TotalMilliseconds / 3 > uint.MaxValue - 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(leaseTimeout), "Lease duration must support a positive heartbeat interval.");
+        }
 
         _logger?.LogInformation("Attempting to acquire migration lease for runner '{RunnerId}'...", runnerId);
 
@@ -51,6 +55,10 @@ public sealed class MongoMigrationRunner(
         var overallSw = Stopwatch.StartNew();
         var newlyApplied = 0;
         var alreadyAppliedCount = 0;
+        using var migrationCancellation = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        using var heartbeatStop = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        var heartbeat = MaintainLeaseAsync(runnerId, timeout, migrationCancellation, heartbeatStop.Token);
+        ct = migrationCancellation.Token;
 
         try
         {
@@ -97,6 +105,8 @@ public sealed class MongoMigrationRunner(
                 try
                 {
                     await migration.UpAsync(_dbContext.Database, ct);
+                    ct.ThrowIfCancellationRequested();
+                    await _leaseManager.RenewLeaseAsync(runnerId, timeout, ct);
                     stepSw.Stop();
 
                     var record = new MigrationRecord
@@ -116,7 +126,7 @@ public sealed class MongoMigrationRunner(
                         migration.MigrationId,
                         stepSw.ElapsedMilliseconds);
                 }
-                catch (Exception ex) when (ex is not MigrationLeaseLostException)
+                catch (Exception ex) when (ex is not MigrationLeaseLostException and not OperationCanceledException)
                 {
                     _logger?.LogError(ex, "Failed to apply migration: {MigrationId}", migration.MigrationId);
                     throw new MigrationExecutionException(migration.MigrationId, ex);
@@ -139,15 +149,51 @@ public sealed class MongoMigrationRunner(
         }
         finally
         {
+            await heartbeatStop.CancelAsync();
             try
             {
-                await _leaseManager.ReleaseLeaseAsync(runnerId, CancellationToken.None);
-                _logger?.LogInformation("Released migration lease for runner '{RunnerId}'.", runnerId);
+                await heartbeat;
             }
-            catch (Exception ex)
+            finally
             {
-                _logger?.LogWarning(ex, "Failed to cleanly release migration lease for runner '{RunnerId}'.", runnerId);
+                try
+                {
+                    await _leaseManager.ReleaseLeaseAsync(runnerId, CancellationToken.None);
+                    _logger?.LogInformation("Released migration lease for runner '{RunnerId}'.", runnerId);
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogWarning(ex, "Failed to cleanly release migration lease for runner '{RunnerId}'.", runnerId);
+                }
             }
+        }
+    }
+
+    private async Task MaintainLeaseAsync(
+        string runnerId,
+        TimeSpan timeout,
+        CancellationTokenSource migrationCancellation,
+        CancellationToken ct)
+    {
+        using var timer = new PeriodicTimer(timeout / 3);
+        try
+        {
+            while (await timer.WaitForNextTickAsync(ct))
+            {
+                // A stalled renewal must cancel work before the previous lease can expire.
+                using var renewalTimeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                renewalTimeout.CancelAfter(timeout / 3);
+                await _leaseManager.RenewLeaseAsync(runnerId, timeout, renewalTimeout.Token);
+            }
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            // The caller or the completed run stopped the heartbeat.
+        }
+        catch (Exception ex)
+        {
+            await migrationCancellation.CancelAsync();
+            throw new MigrationLeaseLostException("Migration heartbeat failed; execution was cancelled.", ex);
         }
     }
 }

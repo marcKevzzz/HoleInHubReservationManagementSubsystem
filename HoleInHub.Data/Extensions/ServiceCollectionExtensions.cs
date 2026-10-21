@@ -17,6 +17,12 @@ public static class ServiceCollectionExtensions
             configuration.GetSection(MongoDbOptions.SectionName));
 
         services.AddSingleton<IMongoDbContext, MongoDbContext>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddHoleInHubMigrations(this IServiceCollection services)
+    {
         services.AddSingleton<MongoMigrationLeaseManager>();
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_001_InitialFoundation>();
         services.AddSingleton<MongoMigrationRunner>();

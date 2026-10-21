@@ -21,6 +21,12 @@ dotnet run --project HoleInHub.Migrator -- migrate
 ```
 
 ### Command Flags and Configuration
+Only the exact `migrate` command changes the database. No arguments, `--help`, and `-h` print usage and exit successfully without loading database configuration. Unknown commands or extra arguments print usage and exit with code 2. Migration failures exit with code 1. Configure overrides through environment variables, not CLI flags.
+
+Migration services are registered by `AddHoleInHubMigrations()` in the CLI only; Web's data registration does not expose a migration runner.
+
+The runner renews its lease every third of the lease duration throughout execution and bounds each background renewal to that interval. Renewal failure cancels the migration token and fails the run. Ownership is rechecked before recording an applied migration. Migrations must pass the cancellation token to every database operation and stop promptly when cancelled. Cancellation cannot undo an already accepted server operation (such as an index build); migrations must remain idempotent, and an operator must investigate an interrupted run before retrying.
+
 Configuration is loaded from `HoleInHub.Migrator/appsettings.json` or overridden via environment variables:
 - `MongoDb__ConnectionString`: Connection URI (must include `?replicaSet=...`)
 - `MongoDb__DatabaseName`: Target database name
@@ -54,7 +60,7 @@ Configuration is loaded from `HoleInHub.Migrator/appsettings.json` or overridden
        }
    }
    ```
-2. Register the class in `HoleInHub.Data/Extensions/ServiceCollectionExtensions.cs`:
+2. Register the class inside `AddHoleInHubMigrations` in `HoleInHub.Data/Extensions/ServiceCollectionExtensions.cs`:
    ```csharp
    services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_002_AddCustomersCollection>();
    ```

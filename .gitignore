@@ -4,3 +4,8 @@
 **/.npm-cache/
 .vs/
 *.csproj.user
+**/[Tt]est[Rr]esults/
+**/publish/
+*.user
+*.suo
+.idea/

@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\HoleInHub.Data\HoleInHub.Data.csproj" />
     <ProjectReference Include="..\..\HoleInHub.Business\HoleInHub.Business.csproj" />
+    <ProjectReference Include="..\..\HoleInHub.Migrator\HoleInHub.Migrator.csproj" />
   </ItemGroup>
 
   <ItemGroup>
