@@ -1,10 +1,8 @@
 <Solution>
-  <Folder Name="/src/">
-    <Project Path="src/HoleInHub.Web/HoleInHub.Web.csproj" />
-    <Project Path="src/HoleInHub.Business/HoleInHub.Business.csproj" />
-    <Project Path="src/HoleInHub.Data/HoleInHub.Data.csproj" />
-    <Project Path="src/HoleInHub.Migrator/HoleInHub.Migrator.csproj" />
-  </Folder>
+  <Project Path="HoleInHub.Web/HoleInHub.Web.csproj" />
+  <Project Path="HoleInHub.Business/HoleInHub.Business.csproj" />
+  <Project Path="HoleInHub.Data/HoleInHub.Data.csproj" />
+  <Project Path="HoleInHub.Migrator/HoleInHub.Migrator.csproj" />
   <Folder Name="/tests/">
     <Project Path="tests/HoleInHub.Tests.Unit/HoleInHub.Tests.Unit.csproj" />
     <Project Path="tests/HoleInHub.Tests.Web/HoleInHub.Tests.Web.csproj" />

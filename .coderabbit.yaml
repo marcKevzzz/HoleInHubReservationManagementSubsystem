@@ -25,7 +25,7 @@ reviews:
     - "!**/wwwroot/css/site.css"
 
   path_instructions:
-    - path: "src/HoleInHub.Web/**"
+    - path: "HoleInHub.Web/**"
       instructions: |
         Verify strict 3-tier boundary compliance:
         - NEVER allow direct MongoDB calls or MongoDB.Driver references in Web. All interactions must invoke HoleInHub.Business services.
@@ -33,19 +33,19 @@ reviews:
         - Ensure UI components adhere to the Spyker Cars luxury theme (obsidian carbon, brushed titanium, champagne gold, racing fairway green).
         - Verify WCAG 2.2 AA accessibility: minimum 4.5:1 text contrast, visible focus rings (focus-visible:ring-2), and strict prefers-reduced-motion checks for GSAP animations.
 
-    - path: "src/HoleInHub.Business/**"
+    - path: "HoleInHub.Business/**"
       instructions: |
         Verify domain and business integrity:
         - Must NOT reference ASP.NET Core MVC UI types, Razor, or HttpContext.
         - Ensure all asynchronous methods accept `CancellationToken ct` and return Task/Task<T>.
         - Enforce reservation domain rules: Pending bookings immediately hold capacity without auto-expiration.
 
-    - path: "src/HoleInHub.Data/**"
+    - path: "HoleInHub.Data/**"
       instructions: |
         Verify persistence and migration safety:
         - MongoDB is the sole database engine. Reject generic repository antipatterns or relational patterns.
         - All I/O methods must accept `CancellationToken ct`.
-        - Migrations MUST NEVER be executed on Web startup. Migrations run solely through src/HoleInHub.Migrator under an exclusive distributed lease (__migration_leases).
+        - Migrations MUST NEVER be executed on Web startup. Migrations run solely through HoleInHub.Migrator under an exclusive distributed lease (__migration_leases).
         - Ensure SHA-256 migration checksum validation remains tamper-evident.
 
     - path: "tests/**"

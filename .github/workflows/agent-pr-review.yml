@@ -30,11 +30,11 @@ jobs:
       with:
         node-version: '22'
         cache: 'npm'
-        cache-dependency-path: 'src/HoleInHub.Web/package-lock.json'
+        cache-dependency-path: 'HoleInHub.Web/package-lock.json'
 
     - name: Build Tailwind CSS
       run: |
-        cd src/HoleInHub.Web
+        cd HoleInHub.Web
         npm ci
         npm run build:css
         cd ../..
@@ -42,20 +42,20 @@ jobs:
     - name: Check 3-Tier Architecture Violations
       id: arch_check
       run: |
-        echo "Checking for direct MongoDB usage in Presentation Tier (src/HoleInHub.Web)..."
-        if grep -rn "MongoDB.Driver" src/HoleInHub.Web/ --exclude-dir={bin,obj,node_modules}; then
-          echo "::error::Architectural Boundary Violation: src/HoleInHub.Web must not reference MongoDB.Driver directly. Pass all calls through src/HoleInHub.Business."
+        echo "Checking for direct MongoDB usage in Presentation Tier (HoleInHub.Web)..."
+        if grep -rn "MongoDB.Driver" HoleInHub.Web/ --exclude-dir={bin,obj,node_modules}; then
+          echo "::error::Architectural Boundary Violation: HoleInHub.Web must not reference MongoDB.Driver directly. Pass all calls through HoleInHub.Business."
           exit 1
         fi
 
-        echo "Checking for Web/MVC dependencies in Business Tier (src/HoleInHub.Business)..."
-        if grep -rn "Microsoft.AspNetCore.Mvc" src/HoleInHub.Business/ --exclude-dir={bin,obj}; then
-          echo "::error::Architectural Boundary Violation: src/HoleInHub.Business must not reference Microsoft.AspNetCore.Mvc."
+        echo "Checking for Web/MVC dependencies in Business Tier (HoleInHub.Business)..."
+        if grep -rn "Microsoft.AspNetCore.Mvc" HoleInHub.Business/ --exclude-dir={bin,obj}; then
+          echo "::error::Architectural Boundary Violation: HoleInHub.Business must not reference Microsoft.AspNetCore.Mvc."
           exit 1
         fi
 
         echo "Checking for runtime CDN links in Razor Views..."
-        if grep -rn "https://cdnjs.cloudflare.com" src/HoleInHub.Web/Views/ --exclude-dir={bin,obj}; then
+        if grep -rn "https://cdnjs.cloudflare.com" HoleInHub.Web/Views/ --exclude-dir={bin,obj}; then
           echo "::error::Security & Architecture Violation: No runtime CDN scripts allowed. Bundle GSAP locally via npm."
           exit 1
         fi
@@ -82,8 +82,8 @@ jobs:
           **Status:** ${status}
 
           #### Architecture & Safety Gates:
-          - [x] **3-Tier Isolation**: Presentation (\`src/HoleInHub.Web\`) has zero direct MongoDB dependencies.
-          - [x] **Domain Purity**: Business tier (\`src/HoleInHub.Business\`) has zero ASP.NET MVC / Razor dependencies.
+          - [x] **3-Tier Isolation**: Presentation (\`HoleInHub.Web\`) has zero direct MongoDB dependencies.
+          - [x] **Domain Purity**: Business tier (\`HoleInHub.Business\`) has zero ASP.NET MVC / Razor dependencies.
           - [x] **Local Asset Rule**: No external runtime CDNs detected.
           - [x] **Code Formatting**: Verified via \`dotnet format\`.
           - [x] **Fast Unit & Smoke Tests**: 100% verified.

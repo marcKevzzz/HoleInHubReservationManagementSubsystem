@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\HoleInHub.Data\HoleInHub.Data.csproj" />
-    <ProjectReference Include="..\..\src\HoleInHub.Business\HoleInHub.Business.csproj" />
+    <ProjectReference Include="..\..\HoleInHub.Data\HoleInHub.Data.csproj" />
+    <ProjectReference Include="..\..\HoleInHub.Business\HoleInHub.Business.csproj" />
   </ItemGroup>
 
   <ItemGroup>

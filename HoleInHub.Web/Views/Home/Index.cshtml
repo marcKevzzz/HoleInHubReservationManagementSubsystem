@@ -4,19 +4,19 @@
 
 <div class="space-y-16">
     <!-- Chapter 00: High-Impact Editorial Hero (Spyker Reference) -->
-    <section class="relative overflow-hidden rounded-[2px] border border-white/10 bg-gradient-to-b from-obsidian-900 via-obsidian-850 to-obsidian-950 p-8 sm:p-14 text-white">
+    <section class="relative overflow-hidden rounded-xs border border-white/10 bg-linear-to-b from-obsidian-900 via-obsidian-850 to-obsidian-950 p-8 sm:p-14 text-white">
         <!-- Subtle Background Grid Overlay -->
-        <div class="absolute inset-0 opacity-5 bg-[radial-gradient(#d4af37_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none"></div>
+        <div class="absolute inset-0 opacity-5 bg-[radial-gradient(#d4af37_1px,transparent_1px)] bg-size-[24px_24px] pointer-events-none"></div>
 
         <div class="relative z-10 max-w-4xl space-y-6">
-            <div class="inline-flex items-center gap-2.5 px-3 py-1 rounded-[2px] bg-white/5 border border-white/10 text-xs font-mono uppercase tracking-[0.2em] text-champagne-400">
+            <div class="inline-flex items-center gap-2.5 px-3 py-1 rounded-xs bg-white/5 border border-white/10 text-xs font-mono uppercase tracking-[0.2em] text-champagne-400">
                 <span class="w-1.5 h-1.5 rounded-full bg-champagne-400 shadow-[0_0_8px_#d4af37]"></span>
                 Chapter 01 // Executive Subsystem
             </div>
 
             <h1 class="text-3xl sm:text-5xl lg:text-6xl font-medium tracking-[0.06em] uppercase text-white leading-[0.95] font-sans">
                 Precision Golf &amp; <br />
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-champagne-300 via-champagne-400 to-champagne-600">
+                <span class="text-transparent bg-clip-text bg-linear-to-r from-champagne-300 via-champagne-400 to-champagne-600">
                     Private Lounge Reserve
                 </span>
             </h1>
@@ -26,10 +26,10 @@
             </p>
 
             <div class="flex flex-wrap items-center gap-4 pt-4">
-                <a href="#bay-inventory" class="inline-flex items-center justify-center h-10 px-6 rounded-[2px] bg-champagne-400 text-obsidian-950 text-xs font-mono uppercase tracking-[0.2em] font-bold hover:bg-champagne-300 transition-all shadow-sm">
+                <a href="#bay-inventory" class="inline-flex items-center justify-center h-10 px-6 rounded-xs bg-champagne-400 text-obsidian-950 text-xs font-mono uppercase tracking-[0.2em] font-bold hover:bg-champagne-300 transition-all shadow-sm">
                     Inspect Bay Inventory
                 </a>
-                <a href="/health/ready" target="_blank" class="inline-flex items-center justify-center h-10 px-6 rounded-[2px] bg-white/5 border border-white/15 text-titanium-200 text-xs font-mono uppercase tracking-[0.2em] hover:bg-white/10 hover:border-white/30 transition-all">
+                <a href="/health/ready" target="_blank" class="inline-flex items-center justify-center h-10 px-6 rounded-xs bg-white/5 border border-white/15 text-titanium-200 text-xs font-mono uppercase tracking-[0.2em] hover:bg-white/10 hover:border-white/30 transition-all">
                     System Telemetry &rarr;
                 </a>
             </div>
@@ -45,7 +45,7 @@
 
         <div data-motion="stagger" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <!-- Metric 1: Bookable Bays -->
-            <div data-motion-item data-motion="hover-card" class="bg-obsidian-900/90 rounded-[2px] p-6 border border-white/10 flex flex-col justify-between transition-all">
+            <div data-motion-item data-motion="hover-card" class="bg-obsidian-900/90 rounded-xs p-6 border border-white/10 flex flex-col justify-between transition-all">
                 <div class="flex items-center justify-between text-xs font-mono uppercase tracking-[0.15em] text-titanium-400">
                     <span>Active Bays</span>
                     <span class="w-1.5 h-1.5 rounded-full bg-fairway-500 shadow-[0_0_6px_#22c55e]"></span>
@@ -54,13 +54,13 @@
                     <span class="text-4xl font-light text-white font-mono">04</span>
                     <span class="text-xs text-titanium-400 ml-1 font-mono tracking-wider">/ 04 READY</span>
                 </div>
-                <div class="text-[11px] font-mono uppercase tracking-[0.1em] text-titanium-400">
+                <div class="text-[11px] font-mono uppercase tracking-widest text-titanium-400">
                     Dual Launch Monitors Online
                 </div>
             </div>
 
             <!-- Metric 2: Pending Capacity Holds -->
-            <div data-motion-item data-motion="hover-card" class="bg-obsidian-900/90 rounded-[2px] p-6 border border-white/10 flex flex-col justify-between transition-all">
+            <div data-motion-item data-motion="hover-card" class="bg-obsidian-900/90 rounded-xs p-6 border border-white/10 flex flex-col justify-between transition-all">
                 <div class="flex items-center justify-between text-xs font-mono uppercase tracking-[0.15em] text-titanium-400">
                     <span>Pending Holds</span>
                     <partial name="_StatusBadge" model="@("Pending")" />
@@ -69,13 +69,13 @@
                     <span class="text-4xl font-light text-amber-400 font-mono">00</span>
                     <span class="text-xs text-titanium-400 ml-1 font-mono tracking-wider">LOCKED</span>
                 </div>
-                <div class="text-[11px] font-mono uppercase tracking-[0.1em] text-amber-400/80">
+                <div class="text-[11px] font-mono uppercase tracking-widest text-amber-400/80">
                     Continuous Hold (No Auto-Expiry)
                 </div>
             </div>
 
             <!-- Metric 3: Whole-Shop Lock -->
-            <div data-motion-item data-motion="hover-card" class="bg-obsidian-900/90 rounded-[2px] p-6 border border-white/10 flex flex-col justify-between transition-all">
+            <div data-motion-item data-motion="hover-card" class="bg-obsidian-900/90 rounded-xs p-6 border border-white/10 flex flex-col justify-between transition-all">
                 <div class="flex items-center justify-between text-xs font-mono uppercase tracking-[0.15em] text-titanium-400">
                     <span>Whole-Shop Lock</span>
                     <span class="w-1.5 h-1.5 rounded-full bg-champagne-400 shadow-[0_0_6px_#d4af37]"></span>
@@ -83,13 +83,13 @@
                 <div class="my-4">
                     <span class="text-4xl font-light text-white font-mono">STANDBY</span>
                 </div>
-                <div class="text-[11px] font-mono uppercase tracking-[0.1em] text-titanium-400">
+                <div class="text-[11px] font-mono uppercase tracking-widest text-titanium-400">
                     Atomic Catalog Exclusivity
                 </div>
             </div>
 
             <!-- Metric 4: Database Health -->
-            <div data-motion-item data-motion="hover-card" class="bg-obsidian-900/90 rounded-[2px] p-6 border border-white/10 flex flex-col justify-between transition-all">
+            <div data-motion-item data-motion="hover-card" class="bg-obsidian-900/90 rounded-xs p-6 border border-white/10 flex flex-col justify-between transition-all">
                 <div class="flex items-center justify-between text-xs font-mono uppercase tracking-[0.15em] text-titanium-400">
                     <span>Data Engine</span>
                     <span class="w-1.5 h-1.5 rounded-full bg-fairway-500 shadow-[0_0_6px_#22c55e]"></span>
@@ -98,7 +98,7 @@
                     <span class="text-xl font-medium text-white font-mono">MongoDB</span>
                     <span class="text-[11px] text-titanium-400 font-mono block mt-1 tracking-wider">Replica Set [rs0]</span>
                 </div>
-                <div class="text-[11px] font-mono uppercase tracking-[0.1em] text-champagne-400">
+                <div class="text-[11px] font-mono uppercase tracking-widest text-champagne-400">
                     Lease Guard Enabled
                 </div>
             </div>
@@ -114,11 +114,11 @@
 
         <div data-motion="stagger" class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Bay 01 -->
-            <div data-motion-item data-motion="hover-card" class="group relative rounded-[2px] border border-white/10 bg-obsidian-900/60 p-6 space-y-4 hover:border-champagne-400/40 transition-all">
+            <div data-motion-item data-motion="hover-card" class="group relative rounded-xs border border-white/10 bg-obsidian-900/60 p-6 space-y-4 hover:border-champagne-400/40 transition-all">
                 <div class="flex items-center justify-between border-b border-white/5 pb-3">
                     <div>
                         <span class="text-xs font-mono text-champagne-400 uppercase tracking-[0.15em] block">Bay 01 // TrackMan 4 iO</span>
-                        <h2 class="text-lg font-medium tracking-[0.05em] uppercase text-white mt-1">Championship Simulator Bay</h2>
+                        <h2 class="text-lg font-medium tracking-wider uppercase text-white mt-1">Championship Simulator Bay</h2>
                     </div>
                     <partial name="_StatusBadge" model="@("Confirmed")" />
                 </div>
@@ -126,18 +126,18 @@
                     Overhead high-speed camera optical tracking, dual radar club analysis, ultra-low latency impact screen, calibrated for 1 to 4 golfers.
                 </p>
                 <div class="grid grid-cols-3 gap-2 pt-2 text-[11px] font-mono text-titanium-400 uppercase">
-                    <div class="p-2 bg-white/5 rounded-[2px]">Max: 4 Players</div>
-                    <div class="p-2 bg-white/5 rounded-[2px]">Rate: Standard</div>
-                    <div class="p-2 bg-white/5 rounded-[2px] text-fairway-400">Status: Ready</div>
+                    <div class="p-2 bg-white/5 rounded-xs">Max: 4 Players</div>
+                    <div class="p-2 bg-white/5 rounded-xs">Rate: Standard</div>
+                    <div class="p-2 bg-white/5 rounded-xs text-fairway-400">Status: Ready</div>
                 </div>
             </div>
 
             <!-- Bay 02 -->
-            <div data-motion-item data-motion="hover-card" class="group relative rounded-[2px] border border-white/10 bg-obsidian-900/60 p-6 space-y-4 hover:border-champagne-400/40 transition-all">
+            <div data-motion-item data-motion="hover-card" class="group relative rounded-xs border border-white/10 bg-obsidian-900/60 p-6 space-y-4 hover:border-champagne-400/40 transition-all">
                 <div class="flex items-center justify-between border-b border-white/5 pb-3">
                     <div>
                         <span class="text-xs font-mono text-champagne-400 uppercase tracking-[0.15em] block">Bay 02 // TrackMan 4 iO</span>
-                        <h2 class="text-lg font-medium tracking-[0.05em] uppercase text-white mt-1">Precision Flight Studio</h2>
+                        <h2 class="text-lg font-medium tracking-wider uppercase text-white mt-1">Precision Flight Studio</h2>
                     </div>
                     <partial name="_StatusBadge" model="@("Confirmed")" />
                 </div>
@@ -145,18 +145,18 @@
                     High-speed multi-angle video playback, pressure mat integration, real-time ball spin and curvature metrics.
                 </p>
                 <div class="grid grid-cols-3 gap-2 pt-2 text-[11px] font-mono text-titanium-400 uppercase">
-                    <div class="p-2 bg-white/5 rounded-[2px]">Max: 4 Players</div>
-                    <div class="p-2 bg-white/5 rounded-[2px]">Rate: Standard</div>
-                    <div class="p-2 bg-white/5 rounded-[2px] text-fairway-400">Status: Ready</div>
+                    <div class="p-2 bg-white/5 rounded-xs">Max: 4 Players</div>
+                    <div class="p-2 bg-white/5 rounded-xs">Rate: Standard</div>
+                    <div class="p-2 bg-white/5 rounded-xs text-fairway-400">Status: Ready</div>
                 </div>
             </div>
 
             <!-- Bay 03 -->
-            <div data-motion-item data-motion="hover-card" class="group relative rounded-[2px] border border-white/10 bg-obsidian-900/60 p-6 space-y-4 hover:border-champagne-400/40 transition-all">
+            <div data-motion-item data-motion="hover-card" class="group relative rounded-xs border border-white/10 bg-obsidian-900/60 p-6 space-y-4 hover:border-champagne-400/40 transition-all">
                 <div class="flex items-center justify-between border-b border-white/5 pb-3">
                     <div>
                         <span class="text-xs font-mono text-champagne-400 uppercase tracking-[0.15em] block">Bay 03 // Precision Doppler</span>
-                        <h2 class="text-lg font-medium tracking-[0.05em] uppercase text-white mt-1">Multi-Bay Tournament Bay</h2>
+                        <h2 class="text-lg font-medium tracking-wider uppercase text-white mt-1">Multi-Bay Tournament Bay</h2>
                     </div>
                     <partial name="_StatusBadge" model="@("Confirmed")" />
                 </div>
@@ -164,20 +164,20 @@
                     Designed for tandem tournaments, linked scoring with adjacent bays, and competitive stroke play.
                 </p>
                 <div class="grid grid-cols-3 gap-2 pt-2 text-[11px] font-mono text-titanium-400 uppercase">
-                    <div class="p-2 bg-white/5 rounded-[2px]">Max: 6 Players</div>
-                    <div class="p-2 bg-white/5 rounded-[2px]">Rate: Tournament</div>
-                    <div class="p-2 bg-white/5 rounded-[2px] text-fairway-400">Status: Ready</div>
+                    <div class="p-2 bg-white/5 rounded-xs">Max: 6 Players</div>
+                    <div class="p-2 bg-white/5 rounded-xs">Rate: Tournament</div>
+                    <div class="p-2 bg-white/5 rounded-xs text-fairway-400">Status: Ready</div>
                 </div>
             </div>
 
             <!-- Bay 04: VIP Suite -->
-            <div data-motion-item data-motion="hover-card" class="group relative rounded-[2px] border border-champagne-500/30 bg-obsidian-900/80 p-6 space-y-4 hover:border-champagne-400 transition-all">
+            <div data-motion-item data-motion="hover-card" class="group relative rounded-xs border border-champagne-500/30 bg-obsidian-900/80 p-6 space-y-4 hover:border-champagne-400 transition-all">
                 <div class="flex items-center justify-between border-b border-white/5 pb-3">
                     <div>
                         <span class="text-xs font-mono text-champagne-400 uppercase tracking-[0.15em] block">Bay 04 // VIP Curved Cinema</span>
-                        <h2 class="text-lg font-medium tracking-[0.05em] uppercase text-white mt-1">Private Lounge Suite</h2>
+                        <h2 class="text-lg font-medium tracking-wider uppercase text-white mt-1">Private Lounge Suite</h2>
                     </div>
-                    <span class="inline-flex items-center px-2 py-0.5 text-[10px] font-mono uppercase tracking-[0.15em] bg-champagne-500/20 text-champagne-300 border border-champagne-500/40 rounded-[2px]">
+                    <span class="inline-flex items-center px-2 py-0.5 text-[10px] font-mono uppercase tracking-[0.15em] bg-champagne-500/20 text-champagne-300 border border-champagne-500/40 rounded-xs">
                         VIP RESERVE
                     </span>
                 </div>
@@ -185,16 +185,16 @@
                     Wraparound panoramic projection, private acoustic sound dampening, dedicated lounge seating, and integrated beverage service.
                 </p>
                 <div class="grid grid-cols-3 gap-2 pt-2 text-[11px] font-mono text-titanium-400 uppercase">
-                    <div class="p-2 bg-white/5 rounded-[2px]">Max: 10 Guests</div>
-                    <div class="p-2 bg-white/5 rounded-[2px]">Rate: Premium VIP</div>
-                    <div class="p-2 bg-white/5 rounded-[2px] text-champagne-400">Status: Ready</div>
+                    <div class="p-2 bg-white/5 rounded-xs">Max: 10 Guests</div>
+                    <div class="p-2 bg-white/5 rounded-xs">Rate: Premium VIP</div>
+                    <div class="p-2 bg-white/5 rounded-xs text-champagne-400">Status: Ready</div>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Chapter 03: Distributed Concurrency & Production Reliability -->
-    <section aria-label="System Guarantees" class="rounded-[2px] border border-white/10 bg-obsidian-900/40 p-8 space-y-6">
+    <section aria-label="System Guarantees" class="rounded-xs border border-white/10 bg-obsidian-900/40 p-8 space-y-6">
         <div class="flex items-center justify-between border-b border-white/10 pb-4">
             <span class="text-xs font-mono uppercase tracking-[0.2em] text-champagne-400">03 // Engineering Guarantees &amp; Concurrency</span>
             <span class="text-[11px] font-mono uppercase tracking-[0.15em] text-titanium-400">Anti-Collision Specification</span>

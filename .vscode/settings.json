@@ -1,0 +1,5 @@
+{
+  "files.associations": {
+    "HoleInHub.Web/Styles/site.css": "tailwindcss"
+  }
+}

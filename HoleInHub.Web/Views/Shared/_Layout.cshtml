@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body class="bg-obsidian-950 text-titanium-100 min-h-screen flex flex-col font-sans antialiased selection:bg-champagne-500 selection:text-obsidian-950">
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-champagne-500 focus:text-obsidian-950 focus:font-semibold focus:rounded-[2px]">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-champagne-500 focus:text-obsidian-950 focus:font-semibold focus:rounded-xs">
         Skip to main content
     </a>
 
@@ -16,7 +16,7 @@
         <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
             <!-- Brand Mark -->
             <a asp-controller="Home" asp-action="Index" class="flex items-center gap-3 group">
-                <div class="w-8 h-8 rounded-[2px] bg-gradient-to-br from-champagne-400 to-champagne-600 flex items-center justify-center font-bold text-obsidian-950 text-xs tracking-wider shadow-sm group-hover:brightness-110 transition-all">
+                <div class="w-8 h-8 rounded-xs bg-linear-to-br from-champagne-400 to-champagne-600 flex items-center justify-center font-bold text-obsidian-950 text-xs tracking-wider shadow-sm group-hover:brightness-110 transition-all">
                     HIH
                 </div>
                 <div>
@@ -70,7 +70,6 @@
     <script src="~/js/vendor/gsap.min.js" asp-append-version="true"></script>
     <!-- Motion Controller -->
     <script src="~/js/motion.js" asp-append-version="true"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

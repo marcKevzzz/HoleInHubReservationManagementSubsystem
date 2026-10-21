@@ -32,10 +32,10 @@ The solution enforces a strict unidirectional dependency structure (`Web → Bus
 
 | Project                                 | Responsibility                                                                      | Key Technologies                                      |
 | :-------------------------------------- | :---------------------------------------------------------------------------------- | :---------------------------------------------------- |
-| **`src/HoleInHub.Web`**                 | Razor views, ViewModels, Controllers, Tailwind v4, local GSAP motion, health probes | .NET 10 ASP.NET Core MVC, Tailwind CSS 4.3, GSAP 3.12 |
-| **`src/HoleInHub.Business`**            | Domain policies, reservation services, health services, DTOs                        | .NET 10 Class Library                                 |
-| **`src/HoleInHub.Data`**                | MongoDB persistence, migration runner, distributed leasing, indexes, entities       | `MongoDB.Driver 3.2.1`                                |
-| **`src/HoleInHub.Migrator`**            | Standalone CLI runner for schema evolution and index deployment                     | .NET 10 Console, `Microsoft.Extensions.Hosting`       |
+| **`HoleInHub.Web`**                 | Razor views, ViewModels, Controllers, Tailwind v4, local GSAP motion, health probes | .NET 10 ASP.NET Core MVC, Tailwind CSS 4.3, GSAP 3.12 |
+| **`HoleInHub.Business`**            | Domain policies, reservation services, health services, DTOs                        | .NET 10 Class Library                                 |
+| **`HoleInHub.Data`**                | MongoDB persistence, migration runner, distributed leasing, indexes, entities       | `MongoDB.Driver 3.2.1`                                |
+| **`HoleInHub.Migrator`**            | Standalone CLI runner for schema evolution and index deployment                     | .NET 10 Console, `Microsoft.Extensions.Hosting`       |
 | **`tests/HoleInHub.Tests.Unit`**        | Pure logic tests (ordering, checksums, options validation)                          | xUnit, FluentAssertions                               |
 | **`tests/HoleInHub.Tests.Web`**         | WebApplicationFactory smoke tests (`/health/live`, layout rendering)                | `Microsoft.AspNetCore.Mvc.Testing`                    |
 | **`tests/HoleInHub.Tests.Integration`** | MongoDB replica set integration tests (lease contention, reruns)                    | MongoDB 7.0+ Replica Set (`rs0`), xUnit               |
@@ -67,7 +67,7 @@ docker compose -f docker-compose.mongo.yml up -d
 ### 4. Run Database Migrations
 
 ```powershell
-dotnet run --project src/HoleInHub.Migrator -- migrate
+dotnet run --project HoleInHub.Migrator -- migrate
 ```
 
 ### 5. Run the Automated Tests
@@ -83,7 +83,7 @@ dotnet test HoleInHubReservationManagementSubsystem.slnx --filter "Category=Inte
 ### 6. Run the Web Application
 
 ```powershell
-dotnet run --project src/HoleInHub.Web/HoleInHub.Web.csproj --launch-profile https
+dotnet run --project HoleInHub.Web/HoleInHub.Web.csproj --launch-profile https
 ```
 
 Access the application at `https://localhost:7189`.
@@ -92,10 +92,10 @@ Access the application at `https://localhost:7189`.
 
 ## 🎨 Design System & Motion
 
-- **Tailwind CSS v4**: Tokens defined in `src/HoleInHub.Web/Styles/site.css` under `@theme`.
-- **GSAP Motion**: Bundled locally in `src/HoleInHub.Web/wwwroot/js/vendor/gsap.min.js`. Progressive enhancement with automatic OS `prefers-reduced-motion` compliance.
+- **Tailwind CSS v4**: Tokens defined in `HoleInHub.Web/Styles/site.css` under `@theme`.
+- **GSAP Motion**: Bundled locally in `HoleInHub.Web/wwwroot/js/vendor/gsap.min.js`. Progressive enhancement with automatic OS `prefers-reduced-motion` compliance.
 - Continuous CSS watch command:
   ```powershell
-  cd src/HoleInHub.Web
+  cd HoleInHub.Web
   npm run watch:css
   ```

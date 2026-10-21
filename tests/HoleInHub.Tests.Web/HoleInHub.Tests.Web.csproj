@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\HoleInHub.Web\HoleInHub.Web.csproj" />
+    <ProjectReference Include="..\..\HoleInHub.Web\HoleInHub.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup>

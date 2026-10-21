@@ -21,21 +21,21 @@ When requirements or specifications appear to conflict, resolve them in this ord
 
 The solution enforces a strict three-tier unidirectional dependency structure:
 ```
-src/HoleInHub.Web  ───►  src/HoleInHub.Business  ───►  src/HoleInHub.Data
+HoleInHub.Web  ───►  HoleInHub.Business  ───►  HoleInHub.Data
 ```
 
 | Project | Responsibility | Allowed Dependencies | Prohibited |
 | :--- | :--- | :--- | :--- |
-| **`src/HoleInHub.Web`** | Razor views, Controllers, ViewModels, assets (Tailwind/GSAP), HTTP validation, routing, anti-forgery | `HoleInHub.Business`, Microsoft.AspNetCore.* | Direct MongoDB calls, bypassing Business tier |
-| **`src/HoleInHub.Business`** | Reservation rules, booking orchestration, domain interfaces, business DTOs, health checks | `HoleInHub.Data`, Microsoft.Extensions.* | ASP.NET Core MVC UI types, Razor, HttpContext |
-| **`src/HoleInHub.Data`** | MongoDB documents, BSON mappings, indexes, migrations, lease mechanics, data contexts | `MongoDB.Driver`, Microsoft.Extensions.Options | Web/UI dependencies, business domain decisions |
-| **`src/HoleInHub.Migrator`** | Dedicated CLI command runner for schema evolution and index deployment | `HoleInHub.Data`, Microsoft.Extensions.Hosting | Web/UI dependencies |
+| **`HoleInHub.Web`** | Razor views, Controllers, ViewModels, assets (Tailwind/GSAP), HTTP validation, routing, anti-forgery | `HoleInHub.Business`, Microsoft.AspNetCore.* | Direct MongoDB calls, bypassing Business tier |
+| **`HoleInHub.Business`** | Reservation rules, booking orchestration, domain interfaces, business DTOs, health checks | `HoleInHub.Data`, Microsoft.Extensions.* | ASP.NET Core MVC UI types, Razor, HttpContext |
+| **`HoleInHub.Data`** | MongoDB documents, BSON mappings, indexes, migrations, lease mechanics, data contexts | `MongoDB.Driver`, Microsoft.Extensions.Options | Web/UI dependencies, business domain decisions |
+| **`HoleInHub.Migrator`** | Dedicated CLI command runner for schema evolution and index deployment | `HoleInHub.Data`, Microsoft.Extensions.Hosting | Web/UI dependencies |
 
 ### Non-Negotiable Architectural Rules:
 - **NoSQL Only**: MongoDB is the sole database engine. Do not introduce relational databases, secondary engines, or in-memory database mocks for production code.
 - **No Generic Repository Pattern**: Write narrow, intent-revealing queries and operations where needed.
 - **Asynchronous Everywhere**: All database and I/O methods must return `Task` or `Task<T>` and accept a `CancellationToken ct`.
-- **Never Run Migrations on Web Startup**: Migrations run solely through an explicit CLI execution (`dotnet run --project src/HoleInHub.Migrator -- migrate`) under an exclusive distributed lease.
+- **Never Run Migrations on Web Startup**: Migrations run solely through an explicit CLI execution (`dotnet run --project HoleInHub.Migrator -- migrate`) under an exclusive distributed lease.
 - **No Secrets in Code**: Connection strings, API keys, and credentials must come from environment variables or `dotnet user-secrets`.
 - **Local Bundling Only**: GSAP and Tailwind CSS must be bundled/copied locally via npm. No runtime CDN links `<script src="https://cdnjs...">`.
 
@@ -53,7 +53,7 @@ For future reservation and scheduling features:
 
 ## 4. UI, Styling & Motion Standards
 
-- **Tailwind CSS v4**: Define design tokens in `src/HoleInHub.Web/Styles/site.css` using `@theme`. Never write hardcoded ad-hoc utility colors when semantic tokens exist.
+- **Tailwind CSS v4**: Define design tokens in `HoleInHub.Web/Styles/site.css` using `@theme`. Never write hardcoded ad-hoc utility colors when semantic tokens exist.
 - **GSAP Animations**: Progressive enhancement only.
 - **Accessibility (`prefers-reduced-motion`)**: Every animation must check for reduced motion preferences (`window.matchMedia('(prefers-reduced-motion: reduce)')`). If enabled, snap immediately to the final state without animation.
 - **WCAG 2.2 AA**: Maintain minimum 4.5:1 contrast for normal text and 3:1 for large text/icons. Ensure visible keyboard focus rings (`focus-visible:ring-2`) on all interactive controls.
@@ -79,8 +79,8 @@ Before completing any task or opening a pull request:
    ```
 4. **Tailwind Build**:
    ```powershell
-   cd src/HoleInHub.Web
+   cd HoleInHub.Web
    npm run build:css
-   cd ../..
+   cd ..
    ```
 5. **Report Actual Evidence**: Never claim tests passed without running them and viewing the real command output.

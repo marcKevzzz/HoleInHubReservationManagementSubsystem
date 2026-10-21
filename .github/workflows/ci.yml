@@ -28,11 +28,11 @@ jobs:
       with:
         node-version: '22'
         cache: 'npm'
-        cache-dependency-path: 'src/HoleInHub.Web/package-lock.json'
+        cache-dependency-path: 'HoleInHub.Web/package-lock.json'
 
     - name: Install NPM Dependencies & Build Tailwind CSS
       run: |
-        cd src/HoleInHub.Web
+        cd HoleInHub.Web
         npm ci
         npm run build:css
         cd ../..
@@ -50,7 +50,7 @@ jobs:
       run: dotnet test HoleInHubReservationManagementSubsystem.slnx --configuration Release --no-build --filter "Category!=Integration" --logger "trx;LogFileName=test-results.trx"
 
     - name: Publish Web Application
-      run: dotnet publish src/HoleInHub.Web/HoleInHub.Web.csproj --configuration Release --no-build --output ./publish
+      run: dotnet publish HoleInHub.Web/HoleInHub.Web.csproj --configuration Release --no-build --output ./publish
 
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v4
@@ -89,11 +89,11 @@ jobs:
       with:
         node-version: '22'
         cache: 'npm'
-        cache-dependency-path: 'src/HoleInHub.Web/package-lock.json'
+        cache-dependency-path: 'HoleInHub.Web/package-lock.json'
 
     - name: Build CSS
       run: |
-        cd src/HoleInHub.Web
+        cd HoleInHub.Web
         npm ci
         npm run build:css
         cd ../..

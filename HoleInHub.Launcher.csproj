@@ -3,7 +3,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <EnableDefaultItems>false</EnableDefaultItems>
     <RunCommand>dotnet</RunCommand>
-    <RunArguments>run --project &quot;$(MSBuildProjectDirectory)/src/HoleInHub.Web/HoleInHub.Web.csproj&quot;</RunArguments>
+    <RunArguments>run --project &quot;$(MSBuildProjectDirectory)/HoleInHub.Web/HoleInHub.Web.csproj&quot;</RunArguments>
     <RunWorkingDirectory>$(MSBuildProjectDirectory)</RunWorkingDirectory>
   </PropertyGroup>
 </Project>
