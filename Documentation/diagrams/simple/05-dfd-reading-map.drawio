@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net"><diagram id="05-dfd-reading-map" name="DFD Reading Map | Six Areas of the System">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1600" pageHeight="1250">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="DFD Reading Map | Six Areas of the System" style="text;html=0;fontSize=30;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="35" y="12" width="1530" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Overview only. Open the numbered Level 2 pages to see the actual data flows." style="text;html=0;fontSize=17;align=center;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="35" y="64" width="1530" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="area0" value="1.0 Accounts and Access&#10;Sign up, verify email and sign in" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="70" y="180" width="690" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="area1" value="2.0 Reservations&#10;Check bays, save bookings and manage changes" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="840" y="180" width="690" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="area2" value="3.0 Notifications&#10;Send confirmations, reminders and staff alerts" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="70" y="490" width="690" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="area3" value="4.0 Reports&#10;Search records and show booking reports" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="840" y="490" width="690" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="area4" value="5.0 POS and Deposits&#10;Exchange POS status and verify deposits" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="70" y="800" width="690" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="area5" value="6.0 Basic Inquiries&#10;Answer common questions from approved FAQs" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="840" y="800" width="690" height="180" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  </mxfile>

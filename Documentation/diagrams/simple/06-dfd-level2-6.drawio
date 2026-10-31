@@ -1,0 +1,64 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="06-dfd-level2-6" name="Level 2 DFD | 6.0 Basic Inquiries">
+    <mxGraphModel dx="2384" dy="1242" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1080" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="6.1" parent="1" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="6.1&#xa;Find a predefined answer" vertex="1">
+          <mxGeometry height="100" width="380" x="610" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="6.2" parent="1" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="6.2&#xa;Show answer or refer to staff" vertex="1">
+          <mxGeometry height="100" width="380" x="610" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="in-0" parent="1" style="whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="Customer / Visitor" vertex="1">
+          <mxGeometry height="80" width="335" x="45" y="205" as="geometry" />
+        </mxCell>
+        <mxCell id="in-1" parent="1" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="D6&#xa;Approved FAQ content" vertex="1">
+          <mxGeometry height="80" width="335" x="45" y="315" as="geometry" />
+        </mxCell>
+        <mxCell id="out-0-C" parent="1" style="whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="Customer / Visitor" vertex="1">
+          <mxGeometry height="80" width="335" x="1220" y="600" as="geometry" />
+        </mxCell>
+        <mxCell id="e0" edge="1" parent="1" source="6.1" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;" target="6.2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el0" parent="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=16;" value="Answer / no match" vertex="1">
+          <mxGeometry height="54" width="270" x="665" y="443" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="in-0" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;" target="6.1" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="245" />
+              <mxPoint x="420" y="300" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el1" parent="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=16;" value="Question" vertex="1">
+          <mxGeometry height="54" width="270" x="360" y="218" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="in-1" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;" target="6.1" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="355" />
+              <mxPoint x="450" y="300" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el2" parent="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=16;" value="Predefined answers" vertex="1">
+          <mxGeometry height="54" width="270" x="360" y="328" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="6.2" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;" target="out-0-C" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1030" y="640" />
+              <mxPoint x="1030" y="640" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el3" parent="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=16;" value="Answer / staff referral" vertex="1">
+          <mxGeometry height="54" width="270" x="975" y="613" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

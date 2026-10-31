@@ -2,13 +2,13 @@
   "name": "hole-in-hub-web",
   "private": true,
   "scripts": {
-    "copy:vendor": "node -e \"const fs=require('fs'); fs.mkdirSync('./wwwroot/js/vendor', {recursive:true}); fs.copyFileSync('./node_modules/gsap/dist/gsap.min.js', './wwwroot/js/vendor/gsap.min.js'); console.log('Copied GSAP to wwwroot/js/vendor');\"",
+    "copy:vendor": "node -e \"const fs=require('fs');fs.mkdirSync('./wwwroot/js/vendor',{recursive:true});for(const name of ['gsap','ScrollTrigger','ScrollSmoother'])fs.copyFileSync('./node_modules/gsap/dist/'+name+'.min.js','./wwwroot/js/vendor/'+name+'.min.js');\"",
     "build:css": "tailwindcss -i ./Styles/site.css -o ./wwwroot/css/site.css --minify",
     "build": "npm run copy:vendor && npm run build:css",
     "watch:css": "tailwindcss -i ./Styles/site.css -o ./wwwroot/css/site.css --watch"
   },
   "dependencies": {
-    "gsap": "^3.12.5"
+    "gsap": "3.13.0"
   },
   "devDependencies": {
     "@tailwindcss/cli": "4.3.0",

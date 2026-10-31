@@ -1,0 +1,92 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1270" viewBox="0 0 1800 1270">
+  <title>System Architecture Diagram</title>
+  <desc>Target architecture | solid arrows: calls/data exchange; dashed arrow: explicit operational command</desc>
+  <rect width="1800" height="1270" fill="white" />
+  <text x="900.0" y="43.0" fill="#172b35" font-family="Arial, sans-serif" font-size="30" text-anchor="middle" dominant-baseline="middle" font-weight="bold">System Architecture Diagram</text>
+  <text x="900.0" y="87.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Target architecture | solid arrows: calls/data exchange; dashed arrow: explicit operational command</text>
+  <rect x="40" y="140" width="1720" height="160" rx="12" fill="#fbfcfd" stroke="#ced9dd" stroke-width="2" />
+  <text x="900.0" y="165.0" fill="#172b35" font-family="Arial, sans-serif" font-size="21" text-anchor="middle" dominant-baseline="middle" font-weight="bold">Customer and authorized staff devices</text>
+  <polyline points="345.0,275 345,335 760,335 760.0,380" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="760.0,380 754.5806795684202,368.1834452542265 765.4193204315798,368.1834452542265 760.0,380" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="925.0,275 925,345 760,345 760.0,380" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="760.0,380 754.5806795684202,368.1834452542265 765.4193204315798,368.1834452542265 760.0,380" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="760.0,490 760.0,580" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="760.0,580 754.5806795684202,568.1834452542265 765.4193204315798,568.1834452542265 760.0,580" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="760.0,700 760.0,800" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="760.0,800 754.5806795684202,788.1834452542265 765.4193204315798,788.1834452542265 760.0,800" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="760.0,910 760.0,1000" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="760.0,1000 754.5806795684202,988.1834452542265 765.4193204315798,988.1834452542265 760.0,1000" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1130,640.0 1300,640.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1300,640.0 1288.1834452542264,645.4193204315798 1288.1834452542264,634.5806795684202 1300,640.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1500.0,580 1500,530 1190,530 1190,720 760,720 760.0,700" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="760.0,700 765.4193204315798,711.8165547457735 754.5806795684202,711.8165547457735 760.0,700" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1130,640.0 1210,640 1210,950 1500,950 1500.0,910" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1500.0,910 1505.4193204315798,921.8165547457735 1494.5806795684202,921.8165547457735 1500.0,910" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1500.0,800 1500,750 1245,750 1245,560 350,560 350,640 390,640.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="390,640.0 378.1834452542265,645.4193204315798 378.1834452542265,634.5806795684202 390,640.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="330,1055.0 390,1055.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="8 5" />
+  <polyline points="390,1055.0 378.1834452542265,1060.4193204315798 378.1834452542265,1049.5806795684202 390,1055.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <rect x="110" y="195" width="470" height="80" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="345.0" y="223.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Customer browser</text>
+  <text x="345.0" y="246.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Browse; verified-email submission; own records</text>
+  <rect x="690" y="195" width="470" height="80" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="925.0" y="223.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Staff browser</text>
+  <text x="925.0" y="246.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Front desk; supervisor; administrator</text>
+  <rect x="390" y="380" width="740" height="110" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="760.0" y="411.25" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">HoleInHub.Web | Presentation</text>
+  <text x="760.0" y="435.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">MVC controllers, Razor views, HTTP validation,</text>
+  <text x="760.0" y="458.75" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">authentication/authorization, local Tailwind and GSAP</text>
+  <rect x="390" y="580" width="740" height="120" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="760.0" y="616.25" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">HoleInHub.Business | Application policy</text>
+  <text x="760.0" y="640.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Booking/allocation; review/expiry; staff attendance;</text>
+  <text x="760.0" y="663.75" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">changes; reports; notification/POS coordination</text>
+  <rect x="390" y="800" width="740" height="110" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="760.0" y="831.25" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">HoleInHub.Data | Persistence</text>
+  <text x="760.0" y="855.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">MongoDB context, validated documents, indexes,</text>
+  <text x="760.0" y="878.75" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">transactions, resource/date guards and history</text>
+  <rect x="390" y="1000" width="740" height="110" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="760.0" y="1031.25" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">MongoDB Atlas</text>
+  <text x="760.0" y="1055.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Customers, accounts, resources, reservations,</text>
+  <text x="760.0" y="1078.75" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">allocations, history, delivery and POS references</text>
+  <rect x="1300" y="580" width="400" height="120" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="1500.0" y="616.25" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">External POS Subsystem</text>
+  <text x="1500.0" y="640.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Billing, deposits, vouchers,</text>
+  <text x="1500.0" y="663.75" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">payments and settlement</text>
+  <rect x="1300" y="800" width="400" height="110" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="1500.0" y="831.25" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Messaging Provider</text>
+  <text x="1500.0" y="855.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Verification/confirmation email;</text>
+  <text x="1500.0" y="878.75" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">reminders and delivery results</text>
+  <rect x="70" y="1000" width="260" height="110" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="200.0" y="1031.25" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">HoleInHub.Migrator</text>
+  <text x="200.0" y="1055.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Explicit CLI; exclusive lease</text>
+  <text x="200.0" y="1078.75" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Never on Web startup</text>
+  <rect x="1290" y="1000" width="430" height="145" rx="0" fill="#fff8e9" stroke="#172b35" stroke-width="2" />
+  <text x="1505.0" y="1038.75" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">POLICY TO AGREE</text>
+  <text x="1505.0" y="1061.25" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Review coverage/outside-hours handling;</text>
+  <text x="1505.0" y="1083.75" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">whole-shop deposit terms/deadline; POS contract.</text>
+  <text x="1505.0" y="1106.25" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">No simulator occupancy sensing.</text>
+  <rect x="515.776" y="322.0" width="68.44800000000001" height="26.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="550" y="335.0" fill="#172b35" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" dominant-baseline="middle" font-weight="normal">HTTPS</text>
+  <rect x="960.776" y="329.0" width="68.44800000000001" height="26.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="995" y="342.0" fill="#172b35" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" dominant-baseline="middle" font-weight="normal">HTTPS</text>
+  <rect x="681.312" y="522.0" width="157.376" height="26.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="760" y="535.0" fill="#172b35" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Application services</text>
+  <rect x="643.52" y="742.0" width="232.96" height="26.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="760" y="755.0" fill="#172b35" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Narrow persistence operations</text>
+  <rect x="644.408" y="942.0" width="231.184" height="26.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="760" y="955.0" fill="#172b35" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" dominant-baseline="middle" font-weight="normal">MongoDB driver / transactions</text>
+  <rect x="1127.864" y="577.0" width="174.272" height="46.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="1215" y="590.0" fill="#172b35" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Reservation / service /</text>
+  <text x="1215" y="610.0" fill="#172b35" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" dominant-baseline="middle" font-weight="normal">allocation details</text>
+  <rect x="1207.968" y="507.0" width="184.064" height="46.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="1300" y="520.0" fill="#172b35" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Transaction references;</text>
+  <text x="1300" y="540.0" fill="#172b35" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" dominant-baseline="middle" font-weight="normal">payment/deposit status</text>
+  <rect x="1128.184" y="847.0" width="163.632" height="26.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="1210" y="860.0" fill="#172b35" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Outbound messages</text>
+  <rect x="1162.328" y="737.0" width="125.34400000000001" height="26.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="1225" y="750.0" fill="#172b35" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Delivery results</text>
+  <rect x="150.43200000000002" y="952.0" width="119.136" height="26.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="210" y="965.0" fill="#172b35" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" dominant-baseline="middle" font-weight="normal">CLI migrations</text>
+  <text x="900.0" y="1246.0" fill="#172b35" font-family="Arial, sans-serif" font-size="15" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Hole In Hub | Revised Chapter I alignment | 27 October 2026 | Proposed design; client policy items remain open</text>
+</svg>

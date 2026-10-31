@@ -1,0 +1,72 @@
+@using HoleInHub.Business.Reservations
+@using System.Globalization
+@model IReadOnlyList<AvailabilityDto>
+@{
+    ViewData["Title"] = "Availability";
+    var date = (DateOnly)ViewData["Date"]!;
+    var start = (TimeOnly)ViewData["StartTime"]!;
+    var duration = (int)ViewData["Duration"]!;
+    var service = (string)ViewData["Service"]!;
+    var valid = ViewData.ModelState.IsValid;
+    var available = Model.Count(item => item.Available);
+    var end = start.AddMinutes(duration);
+    var serviceName = service == "VIP" ? "VIP bays" : "Regular bays";
+    var selectionUrl = Url.Action("Create", "Reservations", new { date = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), startTime = start.ToString("HH:mm", CultureInfo.InvariantCulture), durationMinutes = duration, service });
+}
+<div class="availability-page">
+    <header class="availability-intro">
+        <div class="availability-intro-copy">
+            <h1>MAKE ROOM<br />FOR YOUR NEXT ROUND.</h1>
+            <p>Choose your time. Find your bay. From a solo session to a round with your people, it starts here.</p>
+            <a class="availability-text-link" href="#find-a-bay">Explore availability <span aria-hidden="true">↓</span></a>
+        </div>
+        <figure class="availability-venue"><img src="~/media/facebook/venue-overview.webp" alt="Indoor golf simulator bays and lounge seating at Hole In Hub" width="1200" height="900" /><figcaption>Six regular bays. Two VIP bays. One place to play.</figcaption></figure>
+    </header>
+
+    <section class="availability-search" id="find-a-bay" aria-labelledby="availability-search-title">
+        <div class="availability-section-heading"><h2 id="availability-search-title">FIND YOUR TIME</h2><p>All times are in Asia/Manila.</p></div>
+        <form method="get" class="availability-filters">
+            <div class="field"><label for="date">Your date</label><input id="date" name="date" type="date" value="@date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" required /></div>
+            <div class="field"><label for="startTime">Start time</label><input id="startTime" name="startTime" type="time" value="@start.ToString("HH:mm", CultureInfo.InvariantCulture)" step="1800" required /></div>
+            <div class="field"><label for="durationMinutes">Time to play</label><select id="durationMinutes" name="durationMinutes">@for (var minutes = 30; minutes <= 600; minutes += 30){<option value="@minutes" selected="@(minutes == duration)">@(minutes < 60 ? "30 minutes" : minutes % 60 == 0 ? $"{minutes / 60} {(minutes == 60 ? "hour" : "hours")}" : $"{minutes / 60} hours 30 minutes")</option>}</select></div>
+            <div class="field"><label for="service">Your experience</label><select id="service" name="service"><option value="Regular" selected="@(service == "Regular")">Regular bay</option><option value="VIP" selected="@(service == "VIP")">VIP bay</option></select></div>
+            <button type="submit" class="button">FIND A BAY <span aria-hidden="true">→</span></button>
+        </form>
+        <div class="availability-errors" asp-validation-summary="All" role="alert"></div>
+        <div class="availability-hours"><span>Monday · 11 AM–midnight</span><span>Tuesday–Sunday · 10 AM–midnight</span></div>
+    </section>
+
+    <section class="availability-results" aria-labelledby="availability-results-title">
+        <div class="availability-results-heading">
+            <div><p class="availability-date">@date.ToString("dddd, dd MMMM yyyy", CultureInfo.InvariantCulture)</p><h2 id="availability-results-title">YOUR SPACE TO PLAY</h2></div>
+            @if (valid){<div class="availability-interval"><strong>@start.ToString("h:mm tt", CultureInfo.InvariantCulture) <span aria-hidden="true">—</span> @end.ToString("h:mm tt", CultureInfo.InvariantCulture)</strong><span>@serviceName · @duration minutes</span></div>}
+        </div>
+        @if (!valid)
+        {
+            <div class="availability-empty"><h3>LET’S FIND ANOTHER TIME.</h3><p>Check the selection above. Your complete session must fit within opening hours.</p><a href="#find-a-bay" class="availability-text-link">Adjust your selection <span aria-hidden="true">↑</span></a></div>
+        }
+        else if (Model.Count == 0)
+        {
+            <div class="availability-empty"><h3>NO BAYS TO SHOW.</h3><p>Try another experience, or contact the venue for help arranging your visit.</p><a href="/Home/Contacts" class="availability-text-link">Contact the clubhouse <span aria-hidden="true">→</span></a></div>
+        }
+        else
+        {
+            <p class="availability-count">@available of @Model.Count @serviceName.ToLowerInvariant() available for your full session.</p>
+            <ul class="availability-bays" aria-label="Bay availability for the selected interval">
+            @foreach (var item in Model)
+            {
+                var bayUrl = Url.Action("Create", "Reservations", new { date = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), startTime = start.ToString("HH:mm", CultureInfo.InvariantCulture), durationMinutes = duration, service, resourceId = item.Resource.Id });
+                <li class="availability-bay @(item.Available ? "is-available" : "is-unavailable")">
+                    <span class="availability-bay-kind">@(service == "VIP" ? "VIP EXPERIENCE" : "SIMULATOR BAY")</span>
+                    <h3>@item.Resource.Name</h3>
+                    <p class="availability-bay-state"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">@if(item.Available){<path d="m4 10 4 4 8-8"/>}else{<path d="m5 5 10 10M15 5 5 15"/>}</svg>@(item.Available ? "Available for your session" : "Unavailable for this time")</p>
+                    @if(item.Available){<a href="@bayUrl" class="availability-bay-link">Choose this bay <span aria-hidden="true">↗</span></a>}else{<span class="availability-bay-unavailable">Try another time</span>}
+                </li>
+            }
+            </ul>
+            @if(available > 0){<div class="availability-next"><p>Bringing your people? Select several bays together in one request.</p><a class="button" href="@selectionUrl">PLAN YOUR ROUND <span aria-hidden="true">→</span></a></div>}
+            else{<div class="availability-empty"><h3>A DIFFERENT TIME. THE SAME GREAT ROUND.</h3><p>No @serviceName.ToLowerInvariant() are available for the full interval. Try another start time, duration, or date.</p><a class="availability-text-link" href="#find-a-bay">Explore another time <span aria-hidden="true">↑</span></a></div>}
+        }
+        <p class="availability-disclaimer">Availability reflects recorded reservations and venue blocks, not physical occupancy. Browsing does not hold a bay. Availability is checked again when you submit; online requests require a verified-email account and staff review.</p>
+    </section>
+</div>

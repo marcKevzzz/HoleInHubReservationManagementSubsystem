@@ -1,0 +1,129 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="06-dfd-level2-4" name="Level 2 DFD | 4.0 Reports">
+    <mxGraphModel dx="2031" dy="1058" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1420" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="4.1" parent="1" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="4.1&#xa;Check staff report request" vertex="1">
+          <mxGeometry height="100" width="380" x="610" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="4.2" parent="1" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="4.2&#xa;Calculate report results" vertex="1">
+          <mxGeometry height="100" width="380" x="610" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="4.3" parent="1" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="4.3&#xa;Show records and reports" vertex="1">
+          <mxGeometry height="100" width="380" x="610" y="930" as="geometry" />
+        </mxCell>
+        <mxCell id="in-0" parent="1" style="whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="Authorized Staff" vertex="1">
+          <mxGeometry height="80" width="335" x="45" y="205" as="geometry" />
+        </mxCell>
+        <mxCell id="in-1" parent="1" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="1.4 Access check" vertex="1">
+          <mxGeometry height="80" width="335" x="45" y="315" as="geometry" />
+        </mxCell>
+        <mxCell id="in-2" parent="1" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="D2&#xa;Customers" vertex="1">
+          <mxGeometry height="80" width="335" x="45" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="in-3" parent="1" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="D3&#xa;Bookings" vertex="1">
+          <mxGeometry height="80" width="335" x="45" y="600" as="geometry" />
+        </mxCell>
+        <mxCell id="in-4" parent="1" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="D4&#xa;Resource schedules" vertex="1">
+          <mxGeometry height="80" width="335" x="45" y="710" as="geometry" />
+        </mxCell>
+        <mxCell id="out-0-S" parent="1" style="whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="Authorized Staff" vertex="1">
+          <mxGeometry height="80" width="335" x="1220" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="out-1-S" parent="1" style="whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="Authorized Staff" vertex="1">
+          <mxGeometry height="80" width="335" x="1220" y="940" as="geometry" />
+        </mxCell>
+        <mxCell id="e0" edge="1" parent="1" source="4.1" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;" target="4.2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el0" parent="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=16;" value="Approved filters" vertex="1">
+          <mxGeometry height="54" width="270" x="665" y="443" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="4.2" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;" target="4.3" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el1" parent="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=16;" value="Report results" vertex="1">
+          <mxGeometry height="54" width="270" x="665" y="783" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="in-0" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;" target="4.1" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="245" />
+              <mxPoint x="420" y="300" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el2" parent="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=16;" value="Search / report filters" vertex="1">
+          <mxGeometry height="54" width="270" x="360" y="218" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="in-1" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;" target="4.1" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="355" />
+              <mxPoint x="450" y="300" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el3" parent="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=16;" value="Staff permission" vertex="1">
+          <mxGeometry height="54" width="270" x="360" y="328" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="in-2" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;" target="4.2" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="530" />
+              <mxPoint x="420" y="640" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el4" parent="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=16;" value="Customer booking links" vertex="1">
+          <mxGeometry height="54" width="270" x="360" y="503" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="in-3" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;" target="4.2" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="640" />
+              <mxPoint x="450" y="640" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el5" parent="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=16;" value="Booking data" vertex="1">
+          <mxGeometry height="54" width="270" x="360" y="613" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="in-4" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;" target="4.2" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="480" y="750" />
+              <mxPoint x="480" y="640" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el6" parent="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=16;" value="Available-time data" vertex="1">
+          <mxGeometry height="54" width="270" x="360" y="723" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="4.1" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;" target="out-0-S" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1030" y="300" />
+              <mxPoint x="1030" y="300" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el7" parent="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=16;" value="Access result" vertex="1">
+          <mxGeometry height="54" width="270" x="975" y="273" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="4.3" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;" target="out-1-S" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1030" y="980" />
+              <mxPoint x="1030" y="980" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el8" parent="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=16;" value="Records / booking reports" vertex="1">
+          <mxGeometry height="54" width="270" x="975" y="953" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

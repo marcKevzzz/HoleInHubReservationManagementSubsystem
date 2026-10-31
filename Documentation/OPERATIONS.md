@@ -54,3 +54,17 @@ mongorestore --uri="mongodb://username:password@cluster-host:27017/?replicaSet=r
 4. [ ] Deploy application container / artifact.
 5. [ ] Verify `/health/ready` returns `200 OK`.
 6. [ ] Verify home page and static assets render without console errors.
+
+## 5. Failed Notification Recovery
+
+Notifications stop automatic delivery after five attempts. Monitor the `outbox` collection for `{ Failed: true, SentUtc: null }`; the worker also marks an exhausted claim failed after its two-minute lease expires. Restore SMTP delivery before replaying a failed event. Operator tooling can call `OutboxPersistence.ReplayFailedAsync(eventId, DateTime.UtcNow, ct)` to reset only that failed, unsent event for another bounded delivery batch. Until operator tooling is deployed, use an authenticated MongoDB maintenance session against the intended database:
+
+```javascript
+db.outbox.find({ Failed: true, SentUtc: null }, { _id: 1, Recipient: 1, Attempts: 1 });
+db.outbox.updateOne(
+  { _id: "<reviewed-event-id>", Failed: true, SentUtc: null },
+  { $set: { Failed: false, Attempts: 0, DueUtc: new Date(), LeaseUntilUtc: null, LeaseToken: null } }
+);
+```
+
+Replay individual reviewed events: SMTP delivery is at least once, so a process failure after sending may produce a duplicate. Expired account links require a fresh verification/reset request; reservation alerts are checked against current reservation status before delivery.

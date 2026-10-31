@@ -13,6 +13,8 @@ public static class ServiceCollectionExtensions
     {
         services.AddHoleInHubData(configuration);
         services.AddScoped<IHealthService, HealthService>();
+        services.Configure<HoleInHub.Business.Reservations.ReservationPolicy>(configuration.GetSection("ReservationPolicy"));
+        services.AddScoped<HoleInHub.Business.Reservations.ReservationService>();
 
         return services;
     }

@@ -9,3 +9,9 @@
 *.user
 *.suo
 .idea/
+
+# Local deployment settings and credentials
+**/Properties/PublishProfiles/
+*.publishSettings
+.env
+.env.*

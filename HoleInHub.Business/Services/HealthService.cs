@@ -23,20 +23,18 @@ public sealed class HealthService(IMongoDbContext dbContext) : IHealthService
 
         try
         {
-            var count = await _dbContext.Migrations.CountDocumentsAsync(
-                FilterDefinition<MigrationRecord>.Empty,
-                cancellationToken: ct);
-
-            if (count > 0)
+            string[] required = ["001_InitialFoundation", "002_Reservations", "003_Accounts"];
+            var applied = await _dbContext.Migrations.Find(Builders<MigrationRecord>.Filter.In(x => x.MigrationId, required)).Project(x => x.MigrationId).ToListAsync(ct);
+            if (required.All(applied.Contains))
             {
-                return (true, $"MongoDB online and {count} migrations applied.");
+                return (true, "MongoDB online and all required migrations applied.");
             }
-
             return (false, "MongoDB online but required baseline migrations have not been applied.");
         }
-        catch (Exception ex)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
+        catch (Exception)
         {
-            return (false, $"Error verifying migrations readiness: {ex.Message}");
+            return (false, "Error verifying database readiness.");
         }
     }
 }

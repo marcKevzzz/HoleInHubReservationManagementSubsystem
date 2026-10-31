@@ -1,0 +1,3 @@
+@using HoleInHub.Business.Reservations
+@model IReadOnlyList<ReservationDto>
+@{ViewData["Title"]="My reservations";}<div class="page-content"><h1>MY RESERVATIONS</h1>@if(Model.Count==0){<p>You have no reservations yet.</p><a class="button" href="/Reservations/Create">PLAN YOUR NEXT ROUND</a>}else{<div class="availability-table"><table><thead><tr><th>Reference</th><th>Start - Asia/Manila</th><th>Status</th></tr></thead><tbody>@foreach(var booking in Model){<tr><td><a asp-action="Details" asp-route-id="@booking.Id">@booking.Reference</a></td><td>@TimeZoneInfo.ConvertTimeFromUtc(booking.StartUtc,ReservationRules.Manila).ToString("dd MMM yyyy h:mm tt")</td><td>@booking.Status</td></tr>}</tbody></table></div>}</div>

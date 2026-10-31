@@ -17,6 +17,9 @@ public static class ServiceCollectionExtensions
             configuration.GetSection(MongoDbOptions.SectionName));
 
         services.AddSingleton<IMongoDbContext, MongoDbContext>();
+        services.AddScoped<HoleInHub.Data.Accounts.AccountPersistence>();
+        services.AddScoped<HoleInHub.Data.Reservations.ReservationPersistence>();
+        services.AddScoped<HoleInHub.Data.Reservations.OutboxPersistence>();
 
         return services;
     }
@@ -25,9 +28,10 @@ public static class ServiceCollectionExtensions
     {
         services.AddSingleton<MongoMigrationLeaseManager>();
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_001_InitialFoundation>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_002_Reservations>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.AccountsMigration>();
         services.AddSingleton<MongoMigrationRunner>();
 
         return services;
     }
 }
-

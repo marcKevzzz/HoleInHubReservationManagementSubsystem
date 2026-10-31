@@ -1,0 +1,80 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1420" viewBox="0 0 1600 1420">
+  <title>Level 2 DFD | 3.0 Notifications</title>
+  <desc>Read the arrow labels as information being passed. Repeated store IDs mean the same records.</desc>
+  <rect width="1600" height="1420" fill="white" />
+  <text x="800.0" y="43.0" fill="#172b35" font-family="Arial, sans-serif" font-size="30" text-anchor="middle" dominant-baseline="middle" font-weight="bold">Level 2 DFD | 3.0 Notifications</text>
+  <text x="800.0" y="87.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Read the arrow labels as information being passed. Repeated store IDs mean the same records.</text>
+  <polyline points="800.0,350 800.0,590" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="800.0,590 794.5806795684202,578.1834452542265 805.4193204315798,578.1834452542265 800.0,590" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="380,190.0 420,190.0 420,300 610,300.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="610,300.0 598.1834452542265,305.41932043157976 598.1834452542265,294.58067956842024 610,300.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="380,300.0 450,300.0 450,300 610,300.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="610,300.0 598.1834452542265,305.41932043157976 598.1834452542265,294.58067956842024 610,300.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="380,410.0 480,410.0 480,300 610,300.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="610,300.0 598.1834452542265,305.41932043157976 598.1834452542265,294.58067956842024 610,300.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="380,640.0 420,640.0 420,640 610,640.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="610,640.0 598.1834452542265,645.4193204315798 598.1834452542265,634.5806795684202 610,640.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="380,980.0 420,980.0 420,980 610,980.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="610,980.0 598.1834452542265,985.4193204315798 598.1834452542265,974.5806795684202 610,980.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="990,300.0 1030,300 1030,300.0 1220,300.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1220,300.0 1208.1834452542264,305.41932043157976 1208.1834452542264,294.58067956842024 1220,300.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="990,640.0 1030,640 1030,640.0 1220,640.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1220,640.0 1208.1834452542264,645.4193204315798 1208.1834452542264,634.5806795684202 1220,640.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="990,980.0 1030,980 1030,980.0 1220,980.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1220,980.0 1208.1834452542264,985.4193204315798 1208.1834452542264,974.5806795684202 1220,980.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <rect x="610" y="250" width="380" height="100" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="800.0" y="288.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">3.1</text>
+  <text x="800.0" y="311.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Prepare due messages</text>
+  <rect x="610" y="590" width="380" height="100" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="800.0" y="628.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">3.2</text>
+  <text x="800.0" y="651.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Send messages</text>
+  <rect x="610" y="930" width="380" height="100" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="800.0" y="968.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">3.3</text>
+  <text x="800.0" y="991.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Save delivery result</text>
+  <rect x="45" y="150.0" width="335" height="80" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="93,150.0 93,230.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="69" y="190.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D2</text>
+  <text x="236.5" y="190.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Customer contacts</text>
+  <rect x="45" y="260.0" width="335" height="80" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="93,260.0 93,340.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="69" y="300.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D3</text>
+  <text x="236.5" y="300.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Bookings</text>
+  <rect x="45" y="370.0" width="335" height="80" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="212.5" y="410.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">2.0 Reservations</text>
+  <rect x="45" y="600.0" width="335" height="80" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="93,600.0 93,680.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="69" y="640.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D8</text>
+  <text x="236.5" y="640.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Message delivery</text>
+  <rect x="45" y="940.0" width="335" height="80" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="212.5" y="980.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Email / SMS Provider</text>
+  <rect x="1220" y="260.0" width="335" height="80" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="1268,260.0 1268,340.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="1244" y="300.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D8</text>
+  <text x="1411.5" y="300.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Message delivery records</text>
+  <rect x="1220" y="600.0" width="335" height="80" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="1387.5" y="640.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Email / SMS Provider</text>
+  <rect x="1220" y="940.0" width="335" height="80" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="1268,940.0 1268,1020.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="1244" y="980.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D8</text>
+  <text x="1411.5" y="980.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Message delivery records</text>
+  <rect x="721.58" y="458.25" width="156.84" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="470.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Message and recipient</text>
+  <rect x="435.648" y="178.25" width="118.70400000000001" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="495" y="190.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Recipient details</text>
+  <rect x="411.512" y="288.25" width="166.976" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="495" y="300.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Schedule and due alerts</text>
+  <rect x="393.235" y="398.25" width="203.53" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="495" y="410.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Confirmed / expired / changed</text>
+  <rect x="406.86400000000003" y="628.25" width="176.272" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="495" y="640.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Duplicate-message check</text>
+  <rect x="442.662" y="968.25" width="104.676" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="495" y="980.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Delivery result</text>
+  <rect x="1042.864" y="288.25" width="134.272" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="1110" y="300.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Prepared message</text>
+  <rect x="1009.418" y="628.25" width="201.16400000000002" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="1110" y="640.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Confirmation / reminder / alert</text>
+  <rect x="1045.972" y="968.25" width="128.05599999999998" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="1110" y="980.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Sent / failed result</text>
+  <text x="800.0" y="1396.0" fill="#172b35" font-family="Arial, sans-serif" font-size="15" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Hole In Hub | Revised Chapter I alignment | 27 October 2026 | Proposed design; client policy items remain open</text>
+</svg>

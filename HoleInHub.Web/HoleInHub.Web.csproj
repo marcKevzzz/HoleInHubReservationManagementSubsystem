@@ -14,6 +14,10 @@
     <None Remove="node_modules\**" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="MailKit" Version="4.12.1" />
+  </ItemGroup>
+
   <Target Name="BuildTailwindCss" BeforeTargets="PrepareForBuild" Condition="'$(DesignTimeBuild)' != 'true'">
     <Exec Command="npm ci" WorkingDirectory="$(MSBuildProjectDirectory)" Condition="!Exists('$(MSBuildProjectDirectory)/node_modules/@tailwindcss/cli/package.json')" />
     <Exec Command="npm run build" WorkingDirectory="$(MSBuildProjectDirectory)" />

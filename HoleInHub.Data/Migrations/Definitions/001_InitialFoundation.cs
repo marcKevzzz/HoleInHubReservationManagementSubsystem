@@ -25,14 +25,7 @@ public sealed class Migration_001_InitialFoundation : IMongoMigration
 
         await migrationsCollection.Indexes.CreateOneAsync(migrationIndexModel, cancellationToken: ct);
 
-        // 2. Ensure __migration_leases collection has unique index on leaseId
-        var leasesCollection = database.GetCollection<MigrationLease>("__migration_leases");
-        var leaseIndexKeys = Builders<MigrationLease>.IndexKeys.Ascending(x => x.LeaseId);
-        var leaseIndexModel = new CreateIndexModel<MigrationLease>(
-            leaseIndexKeys,
-            new CreateIndexOptions { Unique = true, Name = "ux_migration_leases_leaseId" });
-
-        await leasesCollection.Indexes.CreateOneAsync(leaseIndexModel, cancellationToken: ct);
+        // LeaseId maps to _id; MongoDB already enforces its uniqueness and rejects a second unique _id index.
 
         // 3. Ensure system_heartbeats collection exists and has baseline ping record
         var heartbeatsCollection = database.GetCollection<SystemHeartbeat>("system_heartbeats");

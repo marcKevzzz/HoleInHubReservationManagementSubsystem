@@ -1,0 +1,102 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net"><diagram id="04-changes" name="System Flowchart 3 | Change a Booking">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1500" pageHeight="1520">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="System Flowchart 3 | Change a Booking" style="text;html=0;fontSize=30;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="35" y="12" width="1430" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Customers request changes; authorized staff approve them." style="text;html=0;fontSize=17;align=center;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="35" y="64" width="1430" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="start" value="Existing reservation" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#dcece6;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="515" y="160" width="470" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="request" value="Customer requests a change&#10;or staff starts an authorized change" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="515" y="315" width="470" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="review" value="Staff reviews the request" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="515" y="490" width="470" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="approve" value="Staff approves?" style="rhombus;whiteSpace=wrap;html=0;fillColor=#fff5df;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="515" y="650" width="470" height="115" as="geometry" />
+        </mxCell>
+        <mxCell id="check" value="Check and save ALL replacement bay allocations" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="515" y="850" width="470" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="success" value="Change saved?" style="rhombus;whiteSpace=wrap;html=0;fillColor=#fff5df;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="515" y="1030" width="470" height="115" as="geometry" />
+        </mxCell>
+        <mxCell id="preserve" value="Keep the original booking and bays&#10;Record rejection or failed change" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="55" y="1240" width="500" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="updated" value="Save changed booking and history&#10;Update reminders and relevant POS details" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="945" y="1240" width="500" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="end" value="Notify customer of the outcome" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#dcece6;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="515" y="1400" width="470" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="e0" value="" edge="1" source="start" target="request" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" value="" edge="1" source="request" target="review" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="" edge="1" source="review" target="approve" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="" edge="1" source="check" target="success" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="" edge="1" source="approve" target="check" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el4" value="Yes" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="615" y="783" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="" edge="1" source="approve" target="preserve" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=0;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="35" y="707" />
+              <mxPoint x="35" y="1290" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el5" value="No" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="75" y="763" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="" edge="1" source="success" target="preserve" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="750" y="1190" />
+              <mxPoint x="25" y="1190" />
+              <mxPoint x="25" y="1290" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el6" value="No" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="170" y="1163" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="" edge="1" source="success" target="updated" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=1;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="750" y="1190" />
+              <mxPoint x="1470" y="1190" />
+              <mxPoint x="1470" y="1290" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el7" value="Yes" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="1163" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" value="" edge="1" source="preserve" target="end" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" value="" edge="1" source="updated" target="end" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  </mxfile>

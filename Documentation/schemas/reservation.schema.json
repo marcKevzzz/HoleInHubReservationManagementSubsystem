@@ -1,0 +1,117 @@
+{
+  "title": "Proposed reservation BSON schema — design only",
+  "description": "Target MongoDB $jsonSchema body. Not applied. Cross-field and cross-document rules are specified in the companion policy design.",
+  "bsonType": "object",
+  "required": ["_id", "reference", "customerId", "source", "serviceId", "serviceKind", "status", "startUtc", "endUtc", "attendees", "contactSnapshot", "allocations", "policyVersionId", "policySnapshot", "idempotencyScope", "idempotencyKey", "payloadHash", "version", "createdAtUtc", "updatedAtUtc"],
+  "properties": {
+    "_id": {"bsonType": "string", "minLength": 1},
+    "reference": {"bsonType": "string", "minLength": 1},
+    "customerId": {"bsonType": "string", "minLength": 1},
+    "accountId": {"bsonType": "string", "minLength": 1},
+    "createdByActorId": {"bsonType": "string", "minLength": 1},
+    "source": {"enum": ["Online", "WalkIn", "Phone", "Messaging", "Staff"]},
+    "serviceId": {"bsonType": "string", "minLength": 1},
+    "serviceKind": {"enum": ["Bay", "PrivateCoaching", "GroupCoaching", "WholeShop"]},
+    "status": {"enum": ["Pending", "Confirmed", "CheckedIn", "Completed", "Cancelled", "Expired", "NoShow"]},
+    "startUtc": {"bsonType": "date"},
+    "endUtc": {"bsonType": "date"},
+    "attendees": {"bsonType": "int", "minimum": 1},
+    "allocations": {
+      "bsonType": "array",
+      "items": {
+        "bsonType": "object",
+        "required": ["resourceId", "startUtc", "endUtc"],
+        "properties": {
+          "resourceId": {"bsonType": "string", "minLength": 1},
+          "startUtc": {"bsonType": "date"},
+          "endUtc": {"bsonType": "date"}
+        }
+      }
+    },
+    "coachingSessionId": {"bsonType": "string", "minLength": 1},
+    "seatCount": {"bsonType": "int", "minimum": 1},
+    "coachAcceptedAtUtc": {"bsonType": "date"},
+    "coachAcceptedByActorId": {"bsonType": "string", "minLength": 1},
+    "contactSnapshot": {
+      "bsonType": "object",
+      "required": ["displayName", "contactMethods"],
+      "properties": {
+        "displayName": {"bsonType": "string", "minLength": 1},
+        "contactMethods": {
+          "bsonType": "array", "minItems": 1,
+          "items": {
+            "bsonType": "object", "required": ["kind", "value"],
+            "properties": {
+              "kind": {"enum": ["Email", "Phone", "Messaging"]},
+              "value": {"bsonType": "string", "minLength": 1}
+            }
+          }
+        }
+      }
+    },
+    "expiryPolicy": {"enum": ["OnlineReview", "StaffAgreed", "WholeShopDeposit"]},
+    "reviewDeadlineUtc": {"bsonType": "date"},
+    "depositDeadlineUtc": {"bsonType": "date"},
+    "staffHoldDeadlineUtc": {"bsonType": "date"},
+    "policyVersionId": {"bsonType": "string", "minLength": 1},
+    "policySnapshot": {
+      "bsonType": "object", "required": ["termsText", "timezone"],
+      "properties": {
+        "termsText": {"bsonType": "string", "minLength": 1},
+        "timezone": {"enum": ["Asia/Manila"]},
+        "acceptedAtUtc": {"bsonType": "date"},
+        "acceptedByCustomerId": {"bsonType": "string", "minLength": 1},
+        "acceptanceRecordedByActorId": {"bsonType": "string", "minLength": 1}
+      }
+    },
+    "event": {
+      "bsonType": "object", "required": ["type", "organizerCustomerId", "setupMinutes", "cleanupMinutes"],
+      "properties": {
+        "type": {"bsonType": "string", "minLength": 1},
+        "organizerCustomerId": {"bsonType": "string", "minLength": 1},
+        "setupMinutes": {"bsonType": "int", "minimum": 0},
+        "cleanupMinutes": {"bsonType": "int", "minimum": 0}
+      }
+    },
+    "deposit": {
+      "bsonType": "object",
+      "required": ["status", "quoteReference", "quoteRevision", "currency", "requiredAmountMinor", "verifiedAmountMinor", "termsText", "acceptedAtUtc"],
+      "properties": {
+        "status": {"enum": ["NotRequired", "AwaitingVerification", "PartiallyVerified", "Verified", "Rejected", "Reversed"]},
+        "quoteReference": {"bsonType": "string", "minLength": 1},
+        "quoteRevision": {"bsonType": "string", "minLength": 1},
+        "currency": {"enum": ["PHP"]},
+        "requiredAmountMinor": {"bsonType": "long", "minimum": 1},
+        "verifiedAmountMinor": {"bsonType": "long", "minimum": 0},
+        "termsText": {"bsonType": "string", "minLength": 1},
+        "acceptedAtUtc": {"bsonType": "date"},
+        "balanceDueAtUtc": {"bsonType": "date"},
+        "verifiedAtUtc": {"bsonType": "date"},
+        "verifiedByActorId": {"bsonType": "string", "minLength": 1},
+        "posEvidenceIds": {"bsonType": "array", "uniqueItems": true, "items": {"bsonType": "string", "minLength": 1}},
+        "sourceRevision": {"bsonType": "string", "minLength": 1},
+        "refundFollowUp": {"enum": ["None", "Requested", "PendingPos", "Resolved"]}
+      }
+    },
+    "attendance": {
+      "bsonType": "object",
+      "properties": {
+        "checkedInAtUtc": {"bsonType": "date"},
+        "recordedByActorId": {"bsonType": "string", "minLength": 1},
+        "followedUpAtUtc": {"bsonType": "date"},
+        "followUpMethod": {"bsonType": "string", "minLength": 1},
+        "followUpOutcome": {"bsonType": "string", "minLength": 1},
+        "completedAtUtc": {"bsonType": "date"}
+      }
+    },
+    "posReservationReference": {"bsonType": "string", "minLength": 1},
+    "replacesReservationId": {"bsonType": "string", "minLength": 1},
+    "idempotencyScope": {"bsonType": "string", "minLength": 1},
+    "idempotencyKey": {"bsonType": "string", "minLength": 1},
+    "payloadHash": {"bsonType": "string", "minLength": 1},
+    "version": {"bsonType": "long", "minimum": 1},
+    "createdAtUtc": {"bsonType": "date"},
+    "updatedAtUtc": {"bsonType": "date"}
+  }
+}
+
