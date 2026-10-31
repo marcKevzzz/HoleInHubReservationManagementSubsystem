@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1080" viewBox="0 0 1600 1080">
+  <title>Level 2 DFD | 6.0 Basic Inquiries</title>
+  <desc>Read the arrow labels as information being passed. Repeated store IDs mean the same records.</desc>
+  <rect width="1600" height="1080" fill="white" />
+  <text x="800.0" y="43.0" fill="#172b35" font-family="Arial, sans-serif" font-size="30" text-anchor="middle" dominant-baseline="middle" font-weight="bold">Level 2 DFD | 6.0 Basic Inquiries</text>
+  <text x="800.0" y="87.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Read the arrow labels as information being passed. Repeated store IDs mean the same records.</text>
+  <polyline points="800.0,350 800.0,590" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="800.0,590 794.5806795684202,578.1834452542265 805.4193204315798,578.1834452542265 800.0,590" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="380,245.0 420,245.0 420,300 610,300.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="610,300.0 598.1834452542265,305.41932043157976 598.1834452542265,294.58067956842024 610,300.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="380,355.0 450,355.0 450,300 610,300.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="610,300.0 598.1834452542265,305.41932043157976 598.1834452542265,294.58067956842024 610,300.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="990,640.0 1030,640 1030,640.0 1220,640.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1220,640.0 1208.1834452542264,645.4193204315798 1208.1834452542264,634.5806795684202 1220,640.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <rect x="610" y="250" width="380" height="100" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="800.0" y="288.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">6.1</text>
+  <text x="800.0" y="311.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Find a predefined answer</text>
+  <rect x="610" y="590" width="380" height="100" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="800.0" y="628.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">6.2</text>
+  <text x="800.0" y="651.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Show answer or refer to staff</text>
+  <rect x="45" y="205.0" width="335" height="80" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="212.5" y="245.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Customer / Visitor</text>
+  <rect x="45" y="315.0" width="335" height="80" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="93,315.0 93,395.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="69" y="355.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D6</text>
+  <text x="236.5" y="355.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Approved FAQ content</text>
+  <rect x="1220" y="600.0" width="335" height="80" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="1387.5" y="640.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Customer / Visitor</text>
+  <rect x="734.033" y="458.25" width="131.93400000000003" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="470.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Answer / no match</text>
+  <rect x="458.986" y="233.25" width="72.02799999999999" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="495" y="245.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Question</text>
+  <rect x="425.141" y="343.25" width="139.718" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="495" y="355.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Predefined answers</text>
+  <rect x="1035.479" y="628.25" width="149.042" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="1110" y="640.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Answer / staff referral</text>
+  <text x="800.0" y="1056.0" fill="#172b35" font-family="Arial, sans-serif" font-size="15" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Hole In Hub | Revised Chapter I alignment | 27 October 2026 | Proposed design; client policy items remain open</text>
+</svg>

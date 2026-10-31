@@ -1,0 +1,379 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="3100" height="8150" viewBox="0 0 3100 8150">
+  <title>Level 1 DFD | Parent Process Boundary Reference</title>
+  <desc>Six parent processes | repeated IDs identify the same entity, store or process | each panel shows one parent boundary</desc>
+  <rect width="3100" height="8150" fill="white" />
+  <text x="1550.0" y="43.0" fill="#172b35" font-family="Arial, sans-serif" font-size="30" text-anchor="middle" dominant-baseline="middle" font-weight="bold">Level 1 DFD | Parent Process Boundary Reference</text>
+  <text x="1550.0" y="87.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Six parent processes | repeated IDs identify the same entity, store or process | each panel shows one parent boundary</text>
+  <rect x="35" y="150" width="3030" height="1220" rx="12" fill="#fbfcfd" stroke="#ced9dd" stroke-width="2" />
+  <text x="1550.0" y="175.0" fill="#172b35" font-family="Arial, sans-serif" font-size="21" text-anchor="middle" dominant-baseline="middle" font-weight="bold">1.0 | Manage Accounts and Access</text>
+  <rect x="35" y="1450" width="3030" height="1220" rx="12" fill="#fbfcfd" stroke="#ced9dd" stroke-width="2" />
+  <text x="1550.0" y="1475.0" fill="#172b35" font-family="Arial, sans-serif" font-size="21" text-anchor="middle" dominant-baseline="middle" font-weight="bold">2.0 | Manage Reservations</text>
+  <rect x="35" y="2750" width="3030" height="1220" rx="12" fill="#fbfcfd" stroke="#ced9dd" stroke-width="2" />
+  <text x="1550.0" y="2775.0" fill="#172b35" font-family="Arial, sans-serif" font-size="21" text-anchor="middle" dominant-baseline="middle" font-weight="bold">3.0 | Send Notifications</text>
+  <rect x="35" y="4050" width="3030" height="1220" rx="12" fill="#fbfcfd" stroke="#ced9dd" stroke-width="2" />
+  <text x="1550.0" y="4075.0" fill="#172b35" font-family="Arial, sans-serif" font-size="21" text-anchor="middle" dominant-baseline="middle" font-weight="bold">4.0 | Generate Reports and Analytics</text>
+  <rect x="35" y="5350" width="3030" height="1220" rx="12" fill="#fbfcfd" stroke="#ced9dd" stroke-width="2" />
+  <text x="1550.0" y="5375.0" fill="#172b35" font-family="Arial, sans-serif" font-size="21" text-anchor="middle" dominant-baseline="middle" font-weight="bold">5.0 | Exchange POS Status and Verify Whole-Shop Deposit</text>
+  <rect x="35" y="6650" width="3030" height="1220" rx="12" fill="#fbfcfd" stroke="#ced9dd" stroke-width="2" />
+  <text x="1550.0" y="6675.0" fill="#172b35" font-family="Arial, sans-serif" font-size="21" text-anchor="middle" dominant-baseline="middle" font-weight="bold">6.0 | Answer Basic Inquiries</text>
+  <polyline points="540,295.0 1080,295 1080,735 1260,735.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1260,735.0 1248.1834452542264,740.4193204315798 1248.1834452542264,729.5806795684202 1260,735.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="540,445.0 1100,445 1100,735 1260,735.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1260,735.0 1248.1834452542264,740.4193204315798 1248.1834452542264,729.5806795684202 1260,735.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="540,595.0 1120,595 1120,735 1260,735.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1260,735.0 1248.1834452542264,740.4193204315798 1248.1834452542264,729.5806795684202 1260,735.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1740,735.0 1920,735 1920,295 2530,295.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="2530,295.0 2518.1834452542266,300.41932043157976 2518.1834452542266,289.58067956842024 2530,295.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1740,735.0 1940,735 1940,445 2530,445.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="2530,445.0 2518.1834452542266,450.41932043157976 2518.1834452542266,439.58067956842024 2530,445.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1740,735.0 1960,735 1960,595 2530,595.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="2530,595.0 2518.1834452542266,600.4193204315798 2518.1834452542266,589.5806795684202 2530,595.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1740,735.0 1980,735 1980,745 2530,745.0" fill="none" stroke="#245f9a" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="2530,745.0 2518.1834452542266,750.4193204315798 2518.1834452542266,739.5806795684202 2530,745.0" fill="#245f9a" stroke="#245f9a" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1740,735.0 2000,735 2000,895 2530,895.0" fill="none" stroke="#245f9a" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="2530,895.0 2518.1834452542266,900.4193204315798 2518.1834452542266,889.5806795684202 2530,895.0" fill="#245f9a" stroke="#245f9a" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="540,1595.0 1080,1595 1080,2035 1260,2035.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1260,2035.0 1248.1834452542264,2040.4193204315798 1248.1834452542264,2029.5806795684202 1260,2035.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="540,1745.0 1100,1745 1100,2035 1260,2035.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1260,2035.0 1248.1834452542264,2040.4193204315798 1248.1834452542264,2029.5806795684202 1260,2035.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="540,1895.0 1120,1895 1120,2035 1260,2035.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1260,2035.0 1248.1834452542264,2040.4193204315798 1248.1834452542264,2029.5806795684202 1260,2035.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="540,2045.0 1140,2045 1140,2035 1260,2035.0" fill="none" stroke="#245f9a" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1260,2035.0 1248.1834452542264,2040.4193204315798 1248.1834452542264,2029.5806795684202 1260,2035.0" fill="#245f9a" stroke="#245f9a" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="540,2195.0 1160,2195 1160,2035 1260,2035.0" fill="none" stroke="#245f9a" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1260,2035.0 1248.1834452542264,2040.4193204315798 1248.1834452542264,2029.5806795684202 1260,2035.0" fill="#245f9a" stroke="#245f9a" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1740,2035.0 1920,2035 1920,1595 2530,1595.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="2530,1595.0 2518.1834452542266,1600.4193204315798 2518.1834452542266,1589.5806795684202 2530,1595.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1740,2035.0 1940,2035 1940,1745 2530,1745.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="2530,1745.0 2518.1834452542266,1750.4193204315798 2518.1834452542266,1739.5806795684202 2530,1745.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1740,2035.0 1960,2035 1960,1895 2530,1895.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="2530,1895.0 2518.1834452542266,1900.4193204315798 2518.1834452542266,1889.5806795684202 2530,1895.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1740,2035.0 1980,2035 1980,2045 2530,2045.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="2530,2045.0 2518.1834452542266,2050.4193204315798 2518.1834452542266,2039.5806795684202 2530,2045.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1740,2035.0 2000,2035 2000,2195 2530,2195.0" fill="none" stroke="#245f9a" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="2530,2195.0 2518.1834452542266,2200.4193204315798 2518.1834452542266,2189.5806795684202 2530,2195.0" fill="#245f9a" stroke="#245f9a" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1740,2035.0 2020,2035 2020,2345 2530,2345.0" fill="none" stroke="#245f9a" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="2530,2345.0 2518.1834452542266,2350.4193204315798 2518.1834452542266,2339.5806795684202 2530,2345.0" fill="#245f9a" stroke="#245f9a" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="540,2895.0 1080,2895 1080,3335 1260,3335.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1260,3335.0 1248.1834452542264,3340.4193204315798 1248.1834452542264,3329.5806795684202 1260,3335.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="540,3045.0 1100,3045 1100,3335 1260,3335.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1260,3335.0 1248.1834452542264,3340.4193204315798 1248.1834452542264,3329.5806795684202 1260,3335.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="540,3195.0 1120,3195 1120,3335 1260,3335.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1260,3335.0 1248.1834452542264,3340.4193204315798 1248.1834452542264,3329.5806795684202 1260,3335.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="540,3345.0 1140,3345 1140,3335 1260,3335.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1260,3335.0 1248.1834452542264,3340.4193204315798 1248.1834452542264,3329.5806795684202 1260,3335.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="540,3495.0 1160,3495 1160,3335 1260,3335.0" fill="none" stroke="#245f9a" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1260,3335.0 1248.1834452542264,3340.4193204315798 1248.1834452542264,3329.5806795684202 1260,3335.0" fill="#245f9a" stroke="#245f9a" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1740,3335.0 1920,3335 1920,2895 2530,2895.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="2530,2895.0 2518.1834452542266,2900.4193204315798 2518.1834452542266,2889.5806795684202 2530,2895.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1740,3335.0 1940,3335 1940,3045 2530,3045.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="2530,3045.0 2518.1834452542266,3050.4193204315798 2518.1834452542266,3039.5806795684202 2530,3045.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1740,3335.0 1960,3335 1960,3195 2530,3195.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="2530,3195.0 2518.1834452542266,3200.4193204315798 2518.1834452542266,3189.5806795684202 2530,3195.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="540,4195.0 1080,4195 1080,4635 1260,4635.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1260,4635.0 1248.1834452542264,4640.41932043158 1248.1834452542264,4629.58067956842 1260,4635.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="540,4345.0 1100,4345 1100,4635 1260,4635.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1260,4635.0 1248.1834452542264,4640.41932043158 1248.1834452542264,4629.58067956842 1260,4635.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="540,4495.0 1120,4495 1120,4635 1260,4635.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1260,4635.0 1248.1834452542264,4640.41932043158 1248.1834452542264,4629.58067956842 1260,4635.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="540,4645.0 1140,4645 1140,4635 1260,4635.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1260,4635.0 1248.1834452542264,4640.41932043158 1248.1834452542264,4629.58067956842 1260,4635.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="540,4795.0 1160,4795 1160,4635 1260,4635.0" fill="none" stroke="#245f9a" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1260,4635.0 1248.1834452542264,4640.41932043158 1248.1834452542264,4629.58067956842 1260,4635.0" fill="#245f9a" stroke="#245f9a" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1740,4635.0 1920,4635 1920,4195 2530,4195.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="2530,4195.0 2518.1834452542266,4200.41932043158 2518.1834452542266,4189.58067956842 2530,4195.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="540,5495.0 1080,5495 1080,5935 1260,5935.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1260,5935.0 1248.1834452542264,5940.41932043158 1248.1834452542264,5929.58067956842 1260,5935.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="540,5645.0 1100,5645 1100,5935 1260,5935.0" fill="none" stroke="#245f9a" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1260,5935.0 1248.1834452542264,5940.41932043158 1248.1834452542264,5929.58067956842 1260,5935.0" fill="#245f9a" stroke="#245f9a" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="540,5795.0 1120,5795 1120,5935 1260,5935.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1260,5935.0 1248.1834452542264,5940.41932043158 1248.1834452542264,5929.58067956842 1260,5935.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="540,5945.0 1140,5945 1140,5935 1260,5935.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1260,5935.0 1248.1834452542264,5940.41932043158 1248.1834452542264,5929.58067956842 1260,5935.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="540,6095.0 1160,6095 1160,5935 1260,5935.0" fill="none" stroke="#245f9a" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1260,5935.0 1248.1834452542264,5940.41932043158 1248.1834452542264,5929.58067956842 1260,5935.0" fill="#245f9a" stroke="#245f9a" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1740,5935.0 1920,5935 1920,5495 2530,5495.0" fill="none" stroke="#245f9a" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="2530,5495.0 2518.1834452542266,5500.41932043158 2518.1834452542266,5489.58067956842 2530,5495.0" fill="#245f9a" stroke="#245f9a" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1740,5935.0 1940,5935 1940,5645 2530,5645.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="2530,5645.0 2518.1834452542266,5650.41932043158 2518.1834452542266,5639.58067956842 2530,5645.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1740,5935.0 1960,5935 1960,5795 2530,5795.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="2530,5795.0 2518.1834452542266,5800.41932043158 2518.1834452542266,5789.58067956842 2530,5795.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1740,5935.0 1980,5935 1980,5945 2530,5945.0" fill="none" stroke="#245f9a" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="2530,5945.0 2518.1834452542266,5950.41932043158 2518.1834452542266,5939.58067956842 2530,5945.0" fill="#245f9a" stroke="#245f9a" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="540,6795.0 1080,6795 1080,7235 1260,7235.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1260,7235.0 1248.1834452542264,7240.41932043158 1248.1834452542264,7229.58067956842 1260,7235.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="540,6945.0 1100,6945 1100,7235 1260,7235.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1260,7235.0 1248.1834452542264,7240.41932043158 1248.1834452542264,7229.58067956842 1260,7235.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1740,7235.0 1920,7235 1920,6795 2530,6795.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="2530,6795.0 2518.1834452542266,6800.41932043158 2518.1834452542266,6789.58067956842 2530,6795.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <rect x="1260" y="670" width="480" height="130" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="1500.0" y="723.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">1.0</text>
+  <text x="1500.0" y="746.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Manage Accounts and Access</text>
+  <rect x="100" y="250" width="440" height="90" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="320.0" y="295.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Customer / Staff</text>
+  <rect x="100" y="400" width="440" height="90" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="320.0" y="445.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Messaging Provider</text>
+  <rect x="100" y="550" width="440" height="90" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="148,550 148,640" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="124" y="595.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D1</text>
+  <text x="344.0" y="595.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Accounts and Roles</text>
+  <rect x="2530" y="250" width="440" height="90" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="2578,250 2578,340" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="2554" y="295.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D1</text>
+  <text x="2774.0" y="295.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Accounts and Roles</text>
+  <rect x="2530" y="400" width="440" height="90" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="2750.0" y="445.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Messaging Provider</text>
+  <rect x="2530" y="550" width="440" height="90" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="2750.0" y="595.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Customer / Staff</text>
+  <rect x="2530" y="700" width="440" height="90" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="2750.0" y="745.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">2.0 Manage Reservations</text>
+  <rect x="2530" y="850" width="440" height="90" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="2750.0" y="895.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">4.0 Generate Reports and Analytics</text>
+  <rect x="1260" y="1970" width="480" height="130" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="1500.0" y="2023.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">2.0</text>
+  <text x="1500.0" y="2046.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Manage Reservations</text>
+  <rect x="100" y="1550" width="440" height="90" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="320.0" y="1595.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Customer / Staff</text>
+  <rect x="100" y="1700" width="440" height="90" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="148,1700 148,1790" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="124" y="1745.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D3</text>
+  <text x="344.0" y="1745.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Reservations / Allocations</text>
+  <rect x="100" y="1850" width="440" height="90" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="148,1850 148,1940" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="124" y="1895.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D4</text>
+  <text x="344.0" y="1895.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Services / Schedules / Blocks</text>
+  <rect x="100" y="2000" width="440" height="90" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="320.0" y="2045.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">1.0 Manage Accounts and Access</text>
+  <rect x="100" y="2150" width="440" height="90" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="320.0" y="2183.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">5.0 Exchange POS Status and Verify</text>
+  <text x="320.0" y="2206.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Whole-Shop Deposit</text>
+  <rect x="2530" y="1550" width="440" height="90" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="2750.0" y="1595.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Customer / Staff</text>
+  <rect x="2530" y="1700" width="440" height="90" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="2578,1700 2578,1790" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="2554" y="1745.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D2</text>
+  <text x="2774.0" y="1745.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Customer Records</text>
+  <rect x="2530" y="1850" width="440" height="90" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="2578,1850 2578,1940" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="2554" y="1895.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D3</text>
+  <text x="2774.0" y="1895.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Reservations / Allocations</text>
+  <rect x="2530" y="2000" width="440" height="90" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="2578,2000 2578,2090" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="2554" y="2045.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D7</text>
+  <text x="2774.0" y="2045.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">History / Change Requests</text>
+  <rect x="2530" y="2150" width="440" height="90" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="2750.0" y="2195.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">3.0 Send Notifications</text>
+  <rect x="2530" y="2300" width="440" height="90" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="2750.0" y="2333.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">5.0 Exchange POS Status and Verify</text>
+  <text x="2750.0" y="2356.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Whole-Shop Deposit</text>
+  <rect x="1260" y="3270" width="480" height="130" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="1500.0" y="3323.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">3.0</text>
+  <text x="1500.0" y="3346.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Send Notifications</text>
+  <rect x="100" y="2850" width="440" height="90" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="148,2850 148,2940" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="124" y="2895.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D3</text>
+  <text x="344.0" y="2895.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Reservations / Due Alerts</text>
+  <rect x="100" y="3000" width="440" height="90" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="148,3000 148,3090" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="124" y="3045.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D2</text>
+  <text x="344.0" y="3045.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Customer Contacts</text>
+  <rect x="100" y="3150" width="440" height="90" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="148,3150 148,3240" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="124" y="3195.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D8</text>
+  <text x="344.0" y="3195.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Notification Delivery</text>
+  <rect x="100" y="3300" width="440" height="90" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="320.0" y="3345.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Messaging Provider</text>
+  <rect x="100" y="3450" width="440" height="90" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="320.0" y="3495.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">2.0 Manage Reservations</text>
+  <rect x="2530" y="2850" width="440" height="90" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="2750.0" y="2895.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Messaging Provider</text>
+  <rect x="2530" y="3000" width="440" height="90" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="2750.0" y="3045.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Customer / Staff</text>
+  <rect x="2530" y="3150" width="440" height="90" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="2578,3150 2578,3240" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="2554" y="3195.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D8</text>
+  <text x="2774.0" y="3195.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Notification Delivery</text>
+  <rect x="1260" y="4570" width="480" height="130" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="1500.0" y="4623.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">4.0</text>
+  <text x="1500.0" y="4646.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Generate Reports and Analytics</text>
+  <rect x="100" y="4150" width="440" height="90" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="320.0" y="4195.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Authorized Staff</text>
+  <rect x="100" y="4300" width="440" height="90" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="148,4300 148,4390" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="124" y="4345.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D2</text>
+  <text x="344.0" y="4345.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Customer Records</text>
+  <rect x="100" y="4450" width="440" height="90" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="148,4450 148,4540" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="124" y="4495.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D3</text>
+  <text x="344.0" y="4495.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Reservations / Statuses</text>
+  <rect x="100" y="4600" width="440" height="90" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="148,4600 148,4690" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="124" y="4645.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D4</text>
+  <text x="344.0" y="4645.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Services / Bookable Schedules</text>
+  <rect x="100" y="4750" width="440" height="90" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="320.0" y="4795.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">1.0 Manage Accounts and Access</text>
+  <rect x="2530" y="4150" width="440" height="90" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="2750.0" y="4195.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Authorized Staff</text>
+  <rect x="1260" y="5870" width="480" height="130" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="1500.0" y="5911.25" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">5.0</text>
+  <text x="1500.0" y="5935.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Exchange POS Status and Verify Whole-Shop</text>
+  <text x="1500.0" y="5958.75" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Deposit</text>
+  <rect x="100" y="5450" width="440" height="90" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="148,5450 148,5540" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="124" y="5495.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D3</text>
+  <text x="344.0" y="5495.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Reservation References</text>
+  <rect x="100" y="5600" width="440" height="90" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="320.0" y="5645.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">POS Subsystem</text>
+  <rect x="100" y="5750" width="440" height="90" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="148,5750 148,5840" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="124" y="5795.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D5</text>
+  <text x="344.0" y="5795.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">POS References / Verification</text>
+  <rect x="100" y="5900" width="440" height="90" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="320.0" y="5945.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Authorized Staff</text>
+  <rect x="100" y="6050" width="440" height="90" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="320.0" y="6095.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">2.0 Manage Reservations</text>
+  <rect x="2530" y="5450" width="440" height="90" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="2750.0" y="5495.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">POS Subsystem</text>
+  <rect x="2530" y="5600" width="440" height="90" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="2750.0" y="5645.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Authorized Staff</text>
+  <rect x="2530" y="5750" width="440" height="90" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="2578,5750 2578,5840" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="2554" y="5795.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D5</text>
+  <text x="2774.0" y="5795.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">POS References / Verification</text>
+  <rect x="2530" y="5900" width="440" height="90" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="2750.0" y="5945.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">2.0 Manage Reservations</text>
+  <rect x="1260" y="7170" width="480" height="130" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="1500.0" y="7223.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">6.0</text>
+  <text x="1500.0" y="7246.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Answer Basic Inquiries</text>
+  <rect x="100" y="6750" width="440" height="90" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="320.0" y="6795.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Customer / Visitor</text>
+  <rect x="100" y="6900" width="440" height="90" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="148,6900 148,6990" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="124" y="6945.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D6</text>
+  <text x="344.0" y="6945.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Approved FAQ Content</text>
+  <rect x="2530" y="6750" width="440" height="90" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="2750.0" y="6795.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Customer / Visitor</text>
+  <rect x="676.843" y="274.5" width="246.31400000000002" height="41.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="286.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">registration details; verification token;</text>
+  <text x="800" y="303.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">sign-in credentials</text>
+  <rect x="748.824" y="433.25" width="102.352" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="445.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">delivery result</text>
+  <rect x="683.437" y="574.5" width="233.126" height="41.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="586.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">account authentication data; roles /</text>
+  <text x="800" y="603.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">ownership link</text>
+  <rect x="2144.904" y="274.5" width="250.192" height="41.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="2270" y="286.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">new unverified account; verified-email</text>
+  <text x="2270" y="303.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">state</text>
+  <rect x="2209.878" y="433.25" width="120.244" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="2270" y="445.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">verification email</text>
+  <rect x="2221.155" y="583.25" width="97.69" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="2270" y="595.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">access result</text>
+  <rect x="2149.951" y="733.25" width="240.098" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="2270" y="745.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">authorized identity / role / ownership</text>
+  <rect x="2206.749" y="883.25" width="126.502" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="2270" y="895.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">staff authorization</text>
+  <rect x="679.559" y="1557.0" width="240.88199999999998" height="76.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="1568.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">availability query; booking / contact /</text>
+  <text x="800" y="1586.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">attendee details; staff approval /</text>
+  <text x="800" y="1603.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">cancellation / attendance; customer</text>
+  <text x="800" y="1621.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">change request / staff decision</text>
+  <rect x="676.458" y="1707.0" width="247.084" height="76.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="1718.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">existing allocations; allocations / prior</text>
+  <text x="800" y="1736.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">submission result; Pending state /</text>
+  <text x="800" y="1753.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">deadlines / attendance; original</text>
+  <text x="800" y="1771.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">reservation / allocations</text>
+  <rect x="674.512" y="1874.5" width="250.976" height="41.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="1886.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">services / resource schedules; hours /</text>
+  <text x="800" y="1903.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">closures / resource eligibility</text>
+  <rect x="679.951" y="2033.25" width="240.098" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="2045.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">authorized identity / role / ownership</text>
+  <rect x="692.789" y="2174.5" width="214.422" height="41.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="2186.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">POS status / deposit verification</text>
+  <text x="800" y="2203.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">outcome</text>
+  <rect x="2149.181" y="1557.0" width="241.638" height="76.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="2270" y="1568.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">available slots / services; reference /</text>
+  <text x="2270" y="1586.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">prior result / conflict; review /</text>
+  <text x="2270" y="1603.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">attendance / reservation outcome;</text>
+  <text x="2270" y="1621.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">change outcome</text>
+  <rect x="2168.634" y="1733.25" width="202.73200000000003" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="2270" y="1745.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">customer record / account link</text>
+  <rect x="2161.627" y="1865.75" width="216.746" height="58.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="2270" y="1877.5" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">atomic Pending record + ALL</text>
+  <text x="2270" y="1895.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">allocations; confirmed / expired /</text>
+  <text x="2270" y="1912.5" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">attendance outcome; releases</text>
+  <rect x="2143.343" y="2015.75" width="253.31400000000002" height="58.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="2270" y="2027.5" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">actor / time / outcome history; creation</text>
+  <text x="2270" y="2045.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">/ allocation history; change request /</text>
+  <text x="2270" y="2062.5" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">decision history</text>
+  <rect x="2164.35" y="2174.5" width="211.3" height="41.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="2270" y="2186.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">committed reservation / change</text>
+  <text x="2270" y="2203.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">events</text>
+  <rect x="2161.235" y="2324.5" width="217.53" height="41.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="2270" y="2336.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">reservation / whole-shop deposit</text>
+  <text x="2270" y="2353.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">request</text>
+  <rect x="689.681" y="2874.5" width="220.638" height="41.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="2886.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">current status / schedule / review</text>
+  <text x="800" y="2903.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">deadlines</text>
+  <rect x="718.857" y="3033.25" width="162.286" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="3045.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">recipient contact details</text>
+  <rect x="701.749" y="3183.25" width="196.502" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="3195.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">prior delivery / duplicate keys</text>
+  <rect x="748.824" y="3333.25" width="102.352" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="3345.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">delivery result</text>
+  <rect x="694.35" y="3474.5" width="211.3" height="41.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="3486.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">committed reservation / change</text>
+  <text x="800" y="3503.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">events</text>
+  <rect x="2171.35" y="2883.25" width="197.3" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="2270" y="2895.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">message payload / recipients</text>
+  <rect x="2146.85" y="3024.5" width="246.29999999999998" height="41.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="2270" y="3036.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">confirmation / reminder / expiry / staff</text>
+  <text x="2270" y="3053.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">alert</text>
+  <rect x="2160.857" y="3183.25" width="218.286" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="2270" y="3195.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">delivery status / retry information</text>
+  <rect x="706.418" y="4183.25" width="187.16400000000002" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="4195.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">report filters / record search</text>
+  <rect x="720.81" y="4333.25" width="158.38" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="4345.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">customer booking links</text>
+  <rect x="683.458" y="4474.5" width="233.084" height="41.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="4486.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">reservation / status / allocated-time</text>
+  <text x="800" y="4503.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">data</text>
+  <rect x="704.465" y="4633.25" width="191.07000000000002" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="4645.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">service / bookable-time data</text>
+  <rect x="736.749" y="4783.25" width="126.502" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="4795.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">staff authorization</text>
+  <rect x="2174.857" y="4183.25" width="190.286" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="2270" y="4195.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">searchable records / reports</text>
+  <rect x="695.9110000000001" y="5474.5" width="208.178" height="41.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="5486.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">reference / customer / service /</text>
+  <text x="800" y="5503.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">allocations</text>
+  <rect x="685.3969999999999" y="5624.5" width="229.20600000000002" height="41.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="5636.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">transaction reference / payment or</text>
+  <text x="800" y="5653.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">deposit status</text>
+  <rect x="692.803" y="5783.25" width="214.394" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="5795.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">prior processed result identifiers</text>
+  <rect x="673.336" y="5933.25" width="253.32800000000003" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="5945.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">verification decision / agreed evidence</text>
+  <rect x="691.235" y="6074.5" width="217.53" height="41.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="6086.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">reservation / whole-shop deposit</text>
+  <text x="800" y="6103.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">request</text>
+  <rect x="2161.235" y="5483.25" width="217.53" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="2270" y="5495.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">reservation details / status query</text>
+  <rect x="2144.491" y="5624.5" width="251.01799999999997" height="41.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="2270" y="5636.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">deposit evidence / exchange outcome</text>
+  <text x="2270" y="5653.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">for review</text>
+  <rect x="2143.343" y="5774.5" width="253.31400000000002" height="41.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="2270" y="5786.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">correlated POS reference / verification</text>
+  <text x="2270" y="5803.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">history</text>
+  <rect x="2162.789" y="5924.5" width="214.422" height="41.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="2270" y="5936.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">POS status / deposit verification</text>
+  <text x="2270" y="5953.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">outcome</text>
+  <rect x="758.155" y="6783.25" width="83.69" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="6795.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">inquiry text</text>
+  <rect x="685.796" y="6924.5" width="228.40800000000002" height="41.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="6936.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">approved services / policies / FAQ</text>
+  <text x="800" y="6953.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">answers</text>
+  <rect x="2161.235" y="6783.25" width="217.53" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="2270" y="6795.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">predefined answer / staff referral</text>
+  <text x="1550.0" y="8126.0" fill="#172b35" font-family="Arial, sans-serif" font-size="15" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Hole In Hub | Revised Chapter I alignment | 27 October 2026 | Proposed design; client policy items remain open</text>
+</svg>

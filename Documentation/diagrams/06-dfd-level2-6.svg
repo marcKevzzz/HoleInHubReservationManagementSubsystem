@@ -1,0 +1,41 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="3300" height="1450" viewBox="0 0 3300 1450">
+  <title>Level 2 DFD | 6.0 Answer Basic Inquiries</title>
+  <desc>Same process IDs and boundary flows as the combined DFD | see README for process rules and policies</desc>
+  <rect width="3300" height="1450" fill="white" />
+  <text x="1650.0" y="43.0" fill="#172b35" font-family="Arial, sans-serif" font-size="30" text-anchor="middle" dominant-baseline="middle" font-weight="bold">Level 2 DFD | 6.0 Answer Basic Inquiries</text>
+  <text x="1650.0" y="87.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Same process IDs and boundary flows as the combined DFD | see README for process rules and policies</text>
+  <rect x="35" y="150" width="2790" height="1220" rx="12" fill="#fbfcfd" stroke="#ced9dd" stroke-width="2" />
+  <text x="1430.0" y="175.0" fill="#172b35" font-family="Arial, sans-serif" font-size="21" text-anchor="middle" dominant-baseline="middle" font-weight="bold">6.0 | Answer Basic Inquiries</text>
+  <polyline points="395.0,280 395.0,315 350.0,315 350.0,600" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="350.0,600 344.58067956842024,588.1834452542265 355.41932043157976,588.1834452542265 350.0,600" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="395.0,1250 395.0,815 350.0,815 350.0,705" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="350.0,705 355.41932043157976,716.8165547457735 344.58067956842024,716.8165547457735 350.0,705" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="515,652.5 705,652.5" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="705,652.5 693.1834452542265,657.9193204315798 693.1834452542265,647.0806795684202 705,652.5" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="870.0,600 870.0,342 395.0,342 395.0,280" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="395.0,280 400.41932043157976,291.8165547457735 389.58067956842024,291.8165547457735 395.0,280" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <rect x="185" y="600" width="330" height="105" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="350.0" y="640.625" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">6.1</text>
+  <text x="350.0" y="664.375" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Match Inquiry to Predefined Content</text>
+  <rect x="705" y="600" width="330" height="105" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="870.0" y="640.625" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">6.2</text>
+  <text x="870.0" y="664.375" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Return Answer or Staff Referral</text>
+  <rect x="180" y="1250" width="430" height="75" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="228,1250 228,1325" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="204" y="1287.5" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D6</text>
+  <text x="419.0" y="1287.5" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Approved FAQ Content</text>
+  <rect x="180" y="215" width="430" height="65" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="395.0" y="247.5" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Customer / Visitor</text>
+  <rect x="330.655" y="303.25" width="83.69" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="372.5" y="315.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">inquiry text</text>
+  <rect x="258.296" y="794.5" width="228.40800000000002" height="41.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="372.5" y="806.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">approved services / policies / FAQ</text>
+  <text x="372.5" y="823.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">answers</text>
+  <rect x="546.756" y="631.5" width="126.488" height="41.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="610.0" y="643.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">matched answer /</text>
+  <text x="610.0" y="660.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">no-match result</text>
+  <rect x="523.735" y="330.25" width="217.53" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="632.5" y="342.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">predefined answer / staff referral</text>
+  <text x="1650.0" y="1426.0" fill="#172b35" font-family="Arial, sans-serif" font-size="15" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Hole In Hub | Revised Chapter I alignment | 27 October 2026 | Proposed design; client policy items remain open</text>
+</svg>

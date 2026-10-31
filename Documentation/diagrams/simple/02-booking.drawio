@@ -1,0 +1,160 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="02-booking" name="System Flowchart 1 | Booking and Approval">
+    <mxGraphModel dx="982" dy="572" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="2230" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="browse" parent="1" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="Browse services and available times" vertex="1">
+          <mxGeometry height="75" width="470" x="565" y="255" as="geometry" />
+        </mxCell>
+        <mxCell id="access" parent="1" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="Customer: sign in and verify email&#xa;Staff: sign in with booking permission" vertex="1">
+          <mxGeometry height="90" width="470" x="565" y="395" as="geometry" />
+        </mxCell>
+        <mxCell id="details" parent="1" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="Enter customer details, service, time and bays" vertex="1">
+          <mxGeometry height="85" width="470" x="565" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="available" parent="1" style="rhombus;whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="All bays available?" vertex="1">
+          <mxGeometry height="120" width="470" x="565" y="710" as="geometry" />
+        </mxCell>
+        <mxCell id="retry" parent="1" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="Choose another time or bay" vertex="1">
+          <mxGeometry height="75" width="315" x="65" y="735" as="geometry" />
+        </mxCell>
+        <mxCell id="save" parent="1" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="Save ONE Pending booking&#xa;and hold ALL requested bays" vertex="1">
+          <mxGeometry height="90" width="470" x="565" y="925" as="geometry" />
+        </mxCell>
+        <mxCell id="shop" parent="1" style="rhombus;whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="Whole-shop booking?" vertex="1">
+          <mxGeometry height="120" width="470" x="565" y="1090" as="geometry" />
+        </mxCell>
+        <mxCell id="deposit" parent="1" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="Verify deposit with POS&#xa;If unverified: keep Pending for staff follow-up" vertex="1">
+          <mxGeometry height="125" width="370" x="1150" y="1100" as="geometry" />
+        </mxCell>
+        <mxCell id="review" parent="1" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="Staff reviews the Pending request&#xa;Whole shop: verified deposit required to approve" vertex="1">
+          <mxGeometry height="100" width="470" x="565" y="1350" as="geometry" />
+        </mxCell>
+        <mxCell id="outcome" parent="1" style="rhombus;whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="Review outcome?" vertex="1">
+          <mxGeometry height="120" width="470" x="565" y="1540" as="geometry" />
+        </mxCell>
+        <mxCell id="confirm" parent="1" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="Confirm booking&#xa;Send email confirmation" vertex="1">
+          <mxGeometry height="95" width="380" x="70" y="1760" as="geometry" />
+        </mxCell>
+        <mxCell id="release" parent="1" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="Cancelled or Expired&#xa;Release all bays and notify customer/staff" vertex="1">
+          <mxGeometry height="100" width="440" x="1090" y="1760" as="geometry" />
+        </mxCell>
+        <mxCell id="wait" parent="1" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="Keep Pending&#xa;Continue staff review" vertex="1">
+          <mxGeometry height="90" width="380" x="610" y="1760" as="geometry" />
+        </mxCell>
+        <mxCell id="continue" parent="1" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fontSize=19;spacing=10;" value="Continue to Flowchart 2" vertex="1">
+          <mxGeometry height="65" width="380" x="70" y="1930" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="browse" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;" target="access" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="access" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;" target="details" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="details" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;" target="available" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="save" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;" target="shop" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="review" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;" target="outcome" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="confirm" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;" target="continue" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="available" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=0;exitY=.5;entryX=0;entryY=.5;" target="retry" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="475" y="770" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el7" parent="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=16;" value="No" vertex="1">
+          <mxGeometry height="54" width="270" x="320" y="698" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="retry" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=.5;exitY=0;entryX=0;entryY=.5;" target="details" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="222" y="590" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="available" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;" target="save" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el9" parent="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=16;" value="Yes" vertex="1">
+          <mxGeometry height="54" width="270" x="665" y="848" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" edge="1" parent="1" source="shop" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;" target="deposit" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el10" parent="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=16;" value="Yes" vertex="1">
+          <mxGeometry height="54" width="270" x="955" y="1123" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" edge="1" parent="1" source="shop" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;" target="review" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el11" parent="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=16;" value="No" vertex="1">
+          <mxGeometry height="54" width="270" x="665" y="1253" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" edge="1" parent="1" source="deposit" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=0;entryY=.5;" target="review" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1335" y="1290" />
+              <mxPoint x="515" y="1290" />
+              <mxPoint x="515" y="1400" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el12" parent="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=16;" value="Verified" vertex="1">
+          <mxGeometry height="54" width="270" x="1055" y="1263" as="geometry" />
+        </mxCell>
+        <mxCell id="e13" edge="1" parent="1" source="outcome" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=0;entryY=.5;" target="confirm" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="800" y="1705" />
+              <mxPoint x="260" y="1705" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el13" parent="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=16;" value="Approved" vertex="1">
+          <mxGeometry height="54" width="270" x="125" y="1678" as="geometry" />
+        </mxCell>
+        <mxCell id="e14" edge="1" parent="1" source="outcome" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=1;entryY=.5;" target="release" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="800" y="1710" />
+              <mxPoint x="1555" y="1710" />
+              <mxPoint x="1555" y="1810" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el14" parent="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=16;" value="Cancelled / expired" vertex="1">
+          <mxGeometry height="54" width="270" x="1185" y="1683" as="geometry" />
+        </mxCell>
+        <mxCell id="e15" edge="1" parent="1" source="outcome" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;" target="wait" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el15" parent="1" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fontSize=16;" value="Awaiting decision" vertex="1">
+          <mxGeometry height="54" width="270" x="665" y="1683" as="geometry" />
+        </mxCell>
+        <mxCell id="e16" edge="1" parent="1" source="wait" style="endArrow=block;html=0;rounded=0;strokeWidth=2;dashed=0;exitX=0;exitY=.5;entryX=0;entryY=.5;" target="review" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="520" y="1805" />
+              <mxPoint x="520" y="1400" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="O3m8FWbGW7-5s6AzppKI-2" edge="1" parent="1" source="O3m8FWbGW7-5s6AzppKI-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;defaultLabelBackgroundColor=page;" target="browse">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="O3m8FWbGW7-5s6AzppKI-1" parent="1" style="strokeWidth=1;html=1;shape=mxgraph.flowchart.terminator;whiteSpace=wrap;fontSize=19;" value="Start" vertex="1">
+          <mxGeometry height="65" width="130" x="735" y="130" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

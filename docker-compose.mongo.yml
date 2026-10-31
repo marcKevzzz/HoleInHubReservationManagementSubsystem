@@ -4,7 +4,7 @@ services:
     container_name: holeinhub-mongodb
     restart: unless-stopped
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
     command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
     volumes:
       - mongo-data:/data/db
@@ -26,6 +26,13 @@ services:
       timeout: 5s
       retries: 10
       start_period: 5s
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
 
 volumes:
   mongo-data:

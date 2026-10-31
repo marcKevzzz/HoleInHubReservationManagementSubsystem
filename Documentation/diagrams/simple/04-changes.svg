@@ -1,0 +1,58 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1520" viewBox="0 0 1500 1520">
+  <title>System Flowchart 3 | Change a Booking</title>
+  <desc>Customers request changes; authorized staff approve them.</desc>
+  <rect width="1500" height="1520" fill="white" />
+  <text x="750.0" y="43.0" fill="#172b35" font-family="Arial, sans-serif" font-size="30" text-anchor="middle" dominant-baseline="middle" font-weight="bold">System Flowchart 3 | Change a Booking</text>
+  <text x="750.0" y="87.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Customers request changes; authorized staff approve them.</text>
+  <polyline points="750.0,225 750.0,315" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="750.0,315 744.5806795684202,303.1834452542265 755.4193204315798,303.1834452542265 750.0,315" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="750.0,405 750.0,490" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="750.0,490 744.5806795684202,478.1834452542265 755.4193204315798,478.1834452542265 750.0,490" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="750.0,565 750.0,650" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="750.0,650 744.5806795684202,638.1834452542265 755.4193204315798,638.1834452542265 750.0,650" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="750.0,940 750.0,1030" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="750.0,1030 744.5806795684202,1018.1834452542265 755.4193204315798,1018.1834452542265 750.0,1030" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="750.0,765 750.0,850" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="750.0,850 744.5806795684202,838.1834452542265 755.4193204315798,838.1834452542265 750.0,850" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="515,707.5 35,707 35,1290 55,1290.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="55,1290.0 43.1834452542265,1295.4193204315798 43.1834452542265,1284.5806795684202 55,1290.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="750.0,1145 750,1190 25,1190 25,1290 55,1290.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="55,1290.0 43.1834452542265,1295.4193204315798 43.1834452542265,1284.5806795684202 55,1290.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="750.0,1145 750,1190 1470,1190 1470,1290 1445,1290.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1445,1290.0 1456.8165547457736,1284.5806795684202 1456.8165547457736,1295.4193204315798 1445,1290.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="305.0,1340 750.0,1400" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="750.0,1400 737.5652700081506,1403.7917660832127 739.0135545204129,1393.0503226172677 750.0,1400" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1195.0,1340 750.0,1400" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="750.0,1400 760.9864454795871,1393.0503226172677 762.4347299918494,1403.7917660832127 750.0,1400" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <rect x="515" y="160" width="470" height="65" rx="22" fill="#dcece6" stroke="#172b35" stroke-width="2" />
+  <text x="750.0" y="192.5" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="bold">Existing reservation</text>
+  <rect x="515" y="315" width="470" height="90" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="750.0" y="348.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Customer requests a change</text>
+  <text x="750.0" y="371.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">or staff starts an authorized change</text>
+  <rect x="515" y="490" width="470" height="75" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="750.0" y="527.5" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Staff reviews the request</text>
+  <polyline points="750.0,650 985,707.5 750.0,765 515,707.5 750.0,650" fill="#fff5df" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="750.0" y="707.5" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Staff approves?</text>
+  <rect x="515" y="850" width="470" height="90" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="750.0" y="895.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Check and save ALL replacement bay allocations</text>
+  <polyline points="750.0,1030 985,1087.5 750.0,1145 515,1087.5 750.0,1030" fill="#fff5df" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="750.0" y="1087.5" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Change saved?</text>
+  <rect x="55" y="1240" width="500" height="100" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="305.0" y="1278.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Keep the original booking and bays</text>
+  <text x="305.0" y="1301.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Record rejection or failed change</text>
+  <rect x="945" y="1240" width="500" height="100" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="1195.0" y="1278.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Save changed booking and history</text>
+  <text x="1195.0" y="1301.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Update reminders and relevant POS details</text>
+  <rect x="515" y="1400" width="470" height="65" rx="22" fill="#dcece6" stroke="#172b35" stroke-width="2" />
+  <text x="750.0" y="1432.5" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="bold">Notify customer of the outcome</text>
+  <rect x="728.216" y="797.0" width="43.568" height="26.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="750" y="810.0" fill="#172b35" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Yes</text>
+  <rect x="191.776" y="777.0" width="36.448" height="26.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="210" y="790.0" fill="#172b35" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" dominant-baseline="middle" font-weight="normal">No</text>
+  <rect x="286.776" y="1177.0" width="36.448" height="26.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="305" y="1190.0" fill="#172b35" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" dominant-baseline="middle" font-weight="normal">No</text>
+  <rect x="1173.216" y="1177.0" width="43.568" height="26.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="1195" y="1190.0" fill="#172b35" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Yes</text>
+  <text x="750.0" y="1496.0" fill="#172b35" font-family="Arial, sans-serif" font-size="15" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Hole In Hub | Revised Chapter I alignment | 27 October 2026 | Proposed design; client policy items remain open</text>
+</svg>

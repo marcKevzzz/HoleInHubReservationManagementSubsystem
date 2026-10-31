@@ -1,0 +1,66 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1150" viewBox="0 0 1800 1150">
+  <title>DFD Context Diagram</title>
+  <desc>System boundary | arrows carry data, not decisions or execution order</desc>
+  <rect width="1800" height="1150" fill="white" />
+  <text x="900.0" y="43.0" fill="#172b35" font-family="Arial, sans-serif" font-size="30" text-anchor="middle" dominant-baseline="middle" font-weight="bold">DFD Context Diagram</text>
+  <text x="900.0" y="87.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="normal">System boundary | arrows carry data, not decisions or execution order</text>
+  <polyline points="420,225.0 500,225 500,680 900,680 900.0,630" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="900.0,630 905.4193204315798,641.8165547457735 894.5806795684202,641.8165547457735 900.0,630" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="900.0,450 900,140 40,140 40,225 70,225.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="70,225.0 58.1834452542265,230.41932043157973 58.1834452542265,219.58067956842027 70,225.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="420,845.0 510,845 510,400 900,400 900.0,450" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="900.0,450 894.5806795684202,438.1834452542265 905.4193204315798,438.1834452542265 900.0,450" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="900.0,630 900,970 40,970 40,845 70,845.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="70,845.0 58.1834452542265,850.4193204315798 58.1834452542265,839.5806795684202 70,845.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1150,540.0 1240,540 1240,150 1555,150 1555.0,180" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1555.0,180 1549.5806795684202,168.18344525422648 1560.4193204315798,168.18344525422648 1555.0,180" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1555.0,270 1555,350 600,350 600,540 650,540.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="650,540.0 638.1834452542265,545.4193204315798 638.1834452542265,534.5806795684202 650,540.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="900.0,630 900,720 1760,720 1760,845 1730,845.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1730,845.0 1741.8165547457736,839.5806795684202 1741.8165547457736,850.4193204315798 1730,845.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1380,845.0 1290,845 1290,380 900,380 900.0,450" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="900.0,450 894.5806795684202,438.1834452542265 905.4193204315798,438.1834452542265 900.0,450" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <rect x="650" y="450" width="500" height="180" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="900.0" y="528.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">0</text>
+  <text x="900.0" y="551.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Reservation Management Subsystem</text>
+  <rect x="70" y="180" width="350" height="90" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="245.0" y="225.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Customer / Visitor</text>
+  <rect x="70" y="800" width="350" height="90" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="245.0" y="845.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Authorized Staff</text>
+  <rect x="1380" y="180" width="350" height="90" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="1555.0" y="225.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">POS Subsystem</text>
+  <rect x="1380" y="800" width="350" height="90" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="1555.0" y="845.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Messaging Provider</text>
+  <rect x="388.911" y="352.0" width="222.178" height="76.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="500" y="363.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Registration / verification / sign-in</text>
+  <text x="500" y="381.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">details; availability and</text>
+  <text x="500" y="398.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">booking/change requests; FAQ</text>
+  <text x="500" y="416.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">questions</text>
+  <rect x="784.634" y="110.75" width="230.73200000000003" height="58.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="900" y="122.5" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Access results; slots; own records;</text>
+  <text x="900" y="140.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">booking/change outcomes;</text>
+  <text x="900" y="157.5" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">notifications; FAQ answers</text>
+  <rect x="387.221" y="720.75" width="245.55800000000002" height="58.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="510" y="732.5" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Credentials; assisted bookings;</text>
+  <text x="510" y="750.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">review/attendance/change decisions;</text>
+  <text x="510" y="767.5" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">report filters</text>
+  <rect x="776.843" y="940.75" width="246.31400000000002" height="58.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="900" y="952.5" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Access results; schedules; review</text>
+  <text x="900" y="970.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">alerts; verification/booking outcomes;</text>
+  <text x="900" y="987.5" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">reports</text>
+  <rect x="1132.418" y="300.75" width="215.16400000000002" height="58.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="1240" y="312.5" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Reservation reference; relevant</text>
+  <text x="1240" y="330.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">customer/service/time/allocation</text>
+  <text x="1240" y="347.5" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">details</text>
+  <rect x="968.383" y="320.75" width="243.23400000000004" height="58.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="1090" y="332.5" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Transaction references;</text>
+  <text x="1090" y="350.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">payment/deposit statuses; exchange</text>
+  <text x="1090" y="367.5" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">results</text>
+  <rect x="1187.188" y="699.5" width="185.624" height="41.0" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="1280" y="711.25" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Verification and reservation</text>
+  <text x="1280" y="728.75" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">messages; recipient details</text>
+  <rect x="1234.162" y="808.25" width="111.676" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="1290" y="820.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Delivery results</text>
+  <text x="900.0" y="1126.0" fill="#172b35" font-family="Arial, sans-serif" font-size="15" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Hole In Hub | Revised Chapter I alignment | 27 October 2026 | Proposed design; client policy items remain open</text>
+</svg>

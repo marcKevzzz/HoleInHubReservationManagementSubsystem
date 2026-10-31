@@ -1,148 +1,113 @@
 # Hole In Hub Golf & Lounge Reservation Management Subsystem
 
+> Source: revised “Hole In Hub Golf & Lounge Reservation Management Subsystem (4).pdf”, Chapter I, PDF pages 6–17. Aligned on 2026-10-27 at the owner’s request. Text is transcribed with normalized spacing; front matter and repeating page footers are omitted. Proposed policies retain the paper’s client-approval qualifications. This document describes requirements, not implemented behavior or evaluation results.
+
 # CHAPTER I
 
 ## PROJECT BACKGROUND
 
-> Aligned final-paper manuscript prepared from the supplied chapter, proposal, and owner clarifications. Academic approval, reference verification, and institutional formatting remain subject to review. Existing operational descriptions are supplied context, not new field observations.
-
 ## Introduction
 
-In a facility where customers may require the same space at different times, reservation management involves coordinating limited resources accurately and efficiently. Hole In Hub Golf & Lounge, located in Quezon City, Philippines, offers indoor golf and leisure services through simulator bays, private spaces, and group or event packages. Resource availability affects customer experience, front-desk workflow, and daily operations.
+Hole In Hub Golf & Lounge is a sports and recreational establishment in Quezon City, Philippines, offering indoor golf simulator sessions, private spaces, and group or event services. Customers may request an individual bay, several bays for a group, or the entire facility for a private event. These arrangements require the coordination of customer information, schedules, service durations, and available resources. Staff must also accommodate walk-in customers, schedule changes, late arrivals, and cancellations without disrupting existing reservations.
 
-The proposed Reservation Management Subsystem is the component of the broader Hole In Hub Integrated Management System responsible for customer bookings, schedules, resource allocation, and reservation records. It accommodates regular reservations, promotional services, packages, and group bookings involving multiple bays. Other operational components, including inventory, ordering, and point-of-sale processing, remain outside this subsystem's research implementation.
+The establishment currently receives reservation requests through channels such as Viber, SMS, and social media. Staff enter the booking details into an existing browser-based point-of-sale (POS) scheduling interface and manually coordinate requests with available bays. Client interviews and recorded walkthroughs describe checking suspected duplicate bookings, resolving scheduling conflicts through bay transfers, and contacting customers regarding their reservations. These activities provide the operational basis for improving how booking information is recorded, validated, and shared across the reservation workflow.
 
-Managing several resources requires a consistent process that maintains accurate availability while users submit requests or change schedules. Manual allocation, repeated customer information entry, and disconnected records can increase operational effort and the possibility of conflicting bookings. A centralized relational system connects customer information, services, schedules, resources, and statuses within one workflow.
+This study proposes a Reservation Management Subsystem as a component of the Hole In Hub Integrated Management System. The subsystem will support online reservation requests and authorized staff-assisted booking, linking customer information, schedules, and resource allocations within one reservation record. Group reservations will accommodate multiple bays under a single booking, while availability validation will protect the requested resources against conflicting allocations. Scheduling views and controlled reservation statuses will support staff review, confirmation, rescheduling, cancellation, and no-show handling.
 
-This study focuses on designing, developing, and evaluating a Reservation Management Subsystem with calendar and Gantt-style scheduling, unified multi-bay booking, overlap prevention, centralized customer records, staff approval, and status tracking. Reports, notifications, and a rule-based inquiry chatbot support reservation operations. A separately labelled POS and voucher demonstration illustrates the wider customer journey without extending research scope to payment or voucher processing.
+The proposed workflow will also address the management of temporarily held resources. Ordinary bay reservations generally do not require an initial deposit, making timely review and clear release procedures relevant to capacity management. Ordinary online bay reservation requests awaiting staff approval will follow a 30-minute review deadline during designated staff review hours, after which unresolved requests will expire and release their allocations. Confirmed reservations will follow a separate staff-managed late-arrival and no-show procedure based on the establishment’s one-hour grace period.
+
+The Reservation subsystem will communicate with the POS subsystem through an agreed interface. It will provide reservation and service details needed for billing and receive applicable transaction references and payment or deposit statuses. Resource allocation and reservation decisions will remain within the Reservation subsystem, while billing and payment processing will remain within the POS subsystem. This division will allow the subsystems to exchange information while maintaining clear operational responsibilities.
+
+The research will evaluate representative booking tasks, allocation correctness, response times, and communication between the Reservation and POS subsystems. Inventory management, food ordering, and production payment processing are outside the Reservation subsystem’s implementation.
 
 ## Project Background and Context
 
-The supplied context describes a local browser-based reservation interface supported by manual procedures. While sufficient for basic bookings, limitations become apparent when handling group allocations, customer records, simultaneous requests, and changes in availability.
+Hole In Hub Golf & Lounge offers indoor golf simulator sessions through eight reservable bays: six regular bays, identified as Bay 1 through Bay 6, and two VIP bays, identified as VIP 7 and VIP 8. Its services also include professional golf coaching and whole-shop rentals for events and private gatherings. The recorded service walkthrough shows reservation duration options ranging from 30 minutes to 10 hours in 30-minute increments, although the availability of these options does not establish their applicability to every service. Based on the latest company-provided schedule, the establishment operates from 11:00 a.m. to midnight on Mondays and from 10:00 a.m. to midnight from Tuesday through Sunday.
 
-### Fragmented multi-bay allocation
+The establishment uses an existing point-of-sale (POS) system with scheduling functions to record reservations and assign bays. Customers communicate booking requests through Viber, SMS, and social media, after which staff enter the requested date, time, customer name, contact number, and duration into the scheduling interface. Staff also record requests arranged directly with customers. The current workflow therefore requires staff to transfer information from customer conversations into booking records and coordinate the requested resources with existing reservations.
 
-The described workflow requires staff to reserve individual bays and merge records sequentially for group bookings. This adds work and can produce inconsistent allocations. The proposed subsystem creates one reservation with all selected resources. Bays need not be adjacent if they are available for the requested interval.
+Although the interface provides scheduling controls, staff identified booking conflicts as an operational concern. During the walkthrough, they described resolving conflicts by transferring customers to another available bay and informing them of the adjustment. They also demonstrated an existing conflict warning but noted that it can be overlooked. The second interview describes a separate process for investigating suspected duplicate bookings: staff compare customer names and reservation details against the scheduling chart and booking list, contact the customer, and cancel entries identified as duplicates. These accounts support improving conflict visibility and consistently validating resource availability when reservations are submitted or changed.
 
-### Disconnected customer records
+Customer contact information is not always fully available within the reservation record. Staff explained that bookings without a recorded contact number may originate through Instagram or Facebook, leaving the original conversation as another source of customer information. Staff may consequently need to consult both the booking interface and the relevant conversation when verifying or following up on a reservation. Linking customer details directly to reservation histories would support information retrieval without assuming that duplicate customer profiles are an established problem.
 
-Customer information is maintained separately from portions of the booking workflow, requiring staff to cross-reference records. Repeated entry can create duplicate profiles and delay reservation or check-in procedures. The proposed subsystem links centralized customer records directly to reservation histories. Customer records are distinct from authentication accounts.
+Walk-ins and late arrivals introduce further coordination requirements. Staff described checking upcoming bookings before assigning bays, recommending another available bay, or asking walk-in customers to wait for the next available period. They also contact reserved customers and adjust allocations when customers arrive late. The company observes a one-hour late-arrival grace period, making it necessary to distinguish protected reservations from allocations that staff may release after follow-up. The proposed subsystem will support these decisions through recorded attendance and reservation statuses. Subject to client approval, unattended confirmed bookings will be flagged for staff review when the grace period or scheduled reservation ends, whichever occurs first. Late arrival will not automatically extend the scheduled end time; extensions will require an availability check and staff approval.
 
-### Concurrent requests and overlap risks
+Ordinary bay reservations generally do not require an initial deposit, while whole-shop arrangements require a deposit whose terms are negotiated with the customer. This distinction makes clear confirmation and capacity-release procedures relevant to the proposed workflow. Subject to client approval, online bay reservation requests awaiting staff approval will temporarily hold their requested resources for a maximum of 30 minutes during designated staff review hours. Staff will receive a reminder after 15 minutes and an escalation alert after 25 minutes. Requests remaining unresolved at the deadline will receive Expired status, release all associated allocations, and notify the customer and staff. Confirmed reservations will follow a separate reminder, cancellation, and staff-managed no-show procedure. Pending expiration will therefore address unfinalized requests, while no-show handling will address confirmed customers who fail to arrive.
 
-Without consistent allocation protection, simultaneous submissions or rapid schedule changes can reserve the same resource for overlapping intervals. The proposed subsystem applies server-side validation and database-appropriate concurrency protection. Multi-resource reservations succeed only when all required allocations can be committed together.
+Group bookings create an additional requirement for coordinating several resources within one customer request. The second interview discusses reserving multiple bays under a single group appointment. Separately, the POS discussion describes sequential merging when customers occupying several bays wish to settle one consolidated bill. This merging concerns billing rather than reservation consolidation. The proposed Reservation subsystem will maintain all requested bay allocations within one reservation, accepting the booking only when the resources can be allocated together, while consolidated billing will remain under POS responsibility.
 
-### Interface responsiveness
+Within the proposed Integrated Management System, the Reservation subsystem will communicate with the project’s POS subsystem through an agreed interface for exchanging reservation identifiers, relevant customer and service details, resource allocations, and applicable transaction or deposit statuses. Whole-shop confirmation will require recorded deposit verification, and unsuccessful or missing POS responses will not establish that a deposit has been verified. The participating teams will document their responsibilities through an integration process diagram, data exchange specification, and failure-handling rules.
 
-The supplied context reports startup delays associated with local file initialization and external resource loading. The proposed system will be evaluated for startup and schedule responsiveness under documented test conditions. Those reported delays have not been independently measured or shown to be resolved in the current repository.
-
-### Approval and attendance workflow
-
-Successful submission creates a Pending reservation that holds its resources. Staff manually confirm or cancel requests; no automated Pending expiration is specified. Whole-shop reservations block every facility resource and require deposit verification before confirmation. Actual collection remains external to the research implementation.
-
-Operating hours begin at 11:00 AM on Monday and 10:00 AM Tuesday through Sunday, ending at midnight. Sessions normally last 60 minutes, with certain services or promotions allowing 30 minutes. No designated turnaround buffer or daily customer booking limit has been supplied.
-
-Staff contact customers 15 minutes before the scheduled start. The described grace period is 60 minutes. Late arrival does not automatically extend the original end time; reassignment, shifts, and extensions must respect resource availability. Staff record missed attendance as No-Show and intentional withdrawal as Cancelled. Handling grace periods that consume an entire session requires final policy clarification.
+Staff also reported connectivity-related disruption during the second interview. This account supports evaluating reliability but does not establish a confirmed technical cause or measured performance baseline. Evaluation will therefore document operating conditions, representative workloads, task steps, response times, allocation correctness, and integration outcomes. These results will provide a basis for assessing the proposed subsystem without assuming efficiency or reliability improvements before testing.
 
 ## Project Purpose and Description
 
-### General Objective
+### Main Objective
 
-To design, develop, and evaluate a Reservation Management Subsystem for Hole In Hub Golf & Lounge that organizes customer bookings, monitors resource availability, supports multi-bay allocation, prevents overlapping reservations, maintains customer and booking records, and provides an efficient staff-controlled reservation workflow.
+The main objective of the proponents is to design, develop, and evaluate an enhanced Reservation Management Subsystem for the Hole In Hub Golf & Lounge Integrated Management System that can organize customer reservations, monitor the availability of simulator bays and private spaces, support multi-bay reservations, manage customer and reservation records, prevent double bookings, and coordinate reservation information with the Point-of-Sale (POS) subsystem. The proposed subsystem is intended to provide a more structured and efficient reservation process for customers, front-desk staff, supervisors, and system administrators.
 
 ### Specific Objectives
 
-1. Develop interactive calendar and Gantt-style views showing available dates, time intervals, services, and resources.
-2. Implement single- and multi-bay allocation under one reservation, without requiring adjacent bays.
-3. Prevent overlapping allocations through server validation and database-appropriate transactional concurrency protection.
-4. Provide role-based access for customer accounts, front-desk staff, supervisors, and administrators, including customer ownership restrictions.
-5. Establish centralized customer records linked to reservation histories, organizer information, and attendee counts.
-6. Provide controlled Pending, Confirmed, Checked-In, Completed, Cancelled, and No-Show status management, including staff approval and whole-shop deposit verification.
-7. Design relational data connecting customers, accounts, services, reservations, resources, allocations, and history while reducing unnecessary duplication.
-8. Generate reservation references and demonstrate an external POS handoff without implementing production billing, payments, or voucher processing as research deliverables.
-9. Provide reports on volume, services, reserved-time utilization, peak booking periods, and customer trends.
-10. Provide confirmations and automated 24-hour reminders, subject to valid contact details, connectivity, provider availability, and an approved short-notice reminder policy.
-11. Provide predefined chatbot responses about hours, rates, policies, and packages without independent booking approval.
-12. Evaluate reservation correctness, concurrent allocation, access control, usability, and responsiveness under documented conditions.
+1. To develop an interactive reservation scheduling system that displays available time slots, services, and facility resources through calendar and Gantt-style views; supports single-bay, multi-bay, and whole-shop reservations under one reservation record; and restricts allocations to the establishment’s operating hours, configured closures, and resource availability.
+
+2. To implement reservation validation and concurrency control mechanisms that prevent overlapping and duplicate resource allocations during reservation creation, reassignment, extension, and rescheduling. The system shall reject conflicting reservations and preserve the original booking when a requested change fails.
+
+3. To implement secure customer and staff access controls that require verified-email customer accounts for online reservation submissions, enforce role-based permissions for front-desk staff, supervisors, and system administrators, and restrict customers to accessing and managing only their own reservation records.
+
+4. To develop centralized customer and reservation management that maintains contact details, attendee counts, reservation references, and booking histories. Ordinary online Pending requests shall hold resources for a maximum of 30 minutes during designated staff review hours, with staff alerts after 15 and 25 minutes and automatic release of unresolved allocations at expiry. Confirmed reservations shall follow the establishment’s one-hour late-arrival grace period and be flagged for staff review when that period or the scheduled reservation ends, whichever occurs first. Authorized staff shall record arrival, cancellation, completion, and no-show outcomes. Whole-shop reservations shall require deposit verification before confirmation.
+
+5. To implement a MongoDB document data model supporting consistent customer, reservation, resource, and history records, and integrate the Reservation subsystem with the designated POS subsystem through an agreed interface for exchanging reservation details, transaction references, and applicable payment or deposit statuses. The integration shall handle unsuccessful exchanges and repeated notifications without creating duplicate records or incorrectly verifying deposits.
+
+6. To develop administrative reports and analytics that generate reservation counts, bay utilization, service usage, peak booking periods, cancellation and no-show records, and customer booking trends. The accuracy of these reports shall be checked against known reservation records and test data.
+
+7. To implement reservation communication and customer assistance features that send email confirmations after staff approval, provide automated reservation reminders approximately 15 minutes before a reservation, support separate manual staff contact, and deliver predefined responses to common inquiries through a rule-based chatbot. The subsystem shall also allow authorized staff to review and process customer change requests while preserving existing reservations when changes are rejected or fail.
+
+8. To evaluate the developed subsystem through documented test scenarios covering functional correctness, overlapping and concurrent reservation attempts, access restrictions, data consistency, report accuracy, usability, and responsiveness. The evaluation shall record expected and actual results and identify whether each test passes or fails. Integration testing shall verify reservation retrieval, applicable transaction-status updates, deposit-verification outcomes, and repeated notifications.
 
 ## Scope and Delimitations of the Project
 
 ### Scope
 
-The research covers creation, scheduling, allocation, management, and monitoring of reservations. Functions include:
+The proposed Reservation Management Subsystem covers the creation, scheduling, allocation, management, and monitoring of reservations for Hole In Hub Golf & Lounge. Specifically, the system can perform the following functions:
 
-1. Interactive calendar and Gantt-style resource schedules.
-2. Service selection for regular bookings, packages, promotions, and whole-shop reservations.
-3. Availability for Bay 1 through Bay 6 and applicable premium/private spaces.
-4. Multi-resource allocation committed together under one record.
-5. Authorized creation, modification, rescheduling, reassignment, extension, and cancellation.
-6. Automatic overlap prevention for resources during all allocation changes.
-7. Central customer names/contact details, reservation organizer, and attendee information.
-8. Reservation references, summaries, histories, and staff search/filter views.
-9. Authorized status management and manual staff approval.
-10. Pending capacity holds until staff resolution, without automatic expiration.
-11. Whole-shop resource blocking and deposit verification before confirmation.
-12. Resource schedules and closure/maintenance blocks.
-13. Reserved-time reports with documented status inclusion rules.
-14. Confirmations, reminders, and predefined inquiry responses.
-15. Customer-facing and operational access for customers, front-desk staff, supervisors, and administrators.
+1. Customer Booking and Reservation Access. The subsystem will allow customers to browse services and availability without signing in. Online reservation submissions will require an account with a verified email address. Authorized staff may create reservations for walk-in, phone, or messaging customers without requiring those customers to create accounts. The subsystem will maintain customer contact information, reservation organizers, attendee counts, reservation references, and booking histories. Customers may access their own account-linked reservations and submit change requests for staff review.
 
-The target environment is a web application accessed on customer devices, front-desk workstations, administrative terminals, and authorized devices. Membership is not required. Guest booking with optional accounts is recommended, subject to final approval.
+2. Resource Scheduling and Allocation. The subsystem will provide calendar and Gantt-style views for simulator bays and applicable private spaces. Availability will follow the establishment’s operating hours: Monday from 11:00 a.m. to midnight and Tuesday through Sunday from 10:00 a.m. to midnight, interpreted in Philippine local time. Midnight represents the beginning of the following calendar day. Reservations must fit entirely within operating hours and account for existing allocations, closures, and maintenance blocks. The subsystem will reserve all requested resources together and preserve existing allocations when a requested change cannot be completed.
 
-### External process demonstration
+3. Reservation Administration and Accountability. Authorized staff will review Pending requests, confirm reservations, process changes, and record attendance and reservation outcomes. Ordinary online Pending requests will follow a 30-minute review deadline during designated staff review hours, with staff alerts after 15 and 25 minutes, with reminders, escalation alerts, and automatic release upon expiry. Confirmed reservations will retain their allocations during the one-hour late-arrival grace period, up to the scheduled reservation end. The system will flag unattended reservations for staff review at the earlier of these deadlines. Staff may mark a reservation as No-show after the required follow-up and release any remaining allocations. Late arrival will not automatically extend the reservation; extensions require staff approval and an availability check. Whole-shop bookings will follow a separately agreed deposit-verification deadline.
 
-A labelled simulation may show estimated charges, an illustrative voucher, whole-shop deposit verification, and final settlement using a reservation reference. These examples demonstrate the complete customer journey. They do not implement real payment acceptance, voucher eligibility checking, balance management, redemption, or live POS connectivity. Evaluation must distinguish actual reservation functions from simulated external events.
+4. Reservation Communication and Operational Reporting. The subsystem will provide approval confirmations, scheduled reminders, and predefined inquiry responses concerning services and booking policies. It will generate searchable reservation records and reports covering reservation counts, service usage, peak periods, cancellations, no-shows, and reserved-time resource utilization. Automated notifications will remain separate from the staff’s manual attendance-contact procedure.
+
+5. Data Management and POS Integration. The subsystem will use MongoDB Atlas to maintain customer, reservation, resource, and history records through validated document structures, indexes, and controlled database operations. It will communicate with the designated POS subsystem through an agreed interface documented in the integration process diagram and data exchange specification. Billing, payment collection, voucher processing, and settlement will remain under POS responsibility.
 
 ### Delimitations
 
-The research does not implement inventory, merchandise ordering, accounting, payroll, payment collection, sales transactions, receipts, voucher sales/redemption, or simulator hardware control such as launch monitors, cameras, and ball-tracking equipment.
-
-The external POS is the stated authority for pricing, packages, promotions, vouchers, and billing. Reservation interfaces may show estimated or demonstration prices, but do not maintain a payment ledger. Deposit and settlement states remain separate from reservation status. A deposit alone cannot complete a reservation. Production POS integration is outside this research implementation.
-
-Availability reflects recorded reservations and configured schedules, not physically detected occupancy. Utilization is based on reserved time rather than measured play time. The chatbot uses predefined responses and cannot approve reservations or resolve complex concerns. Notifications depend on valid contact details, connectivity, and a configured provider. Manual 15-minute attendance contact remains a staff task.
-
-Deposit amounts, cancellation/refund conditions, maximum duration, start-time increments, attendee capacities, and exceptional transitions require policy confirmation. Without automatic Pending expiration, timely staff review is an operational responsibility.
+The proposed Reservation Management Subsystem is limited to the creation, scheduling, allocation, management, and monitoring of reservations for Hole In Hub Golf & Lounge. It does not include inventory management, merchandise ordering, accounting, payroll, or direct control of simulator hardware such as launch monitors, cameras, and ball-tracking equipment. Operating hours do not automatically establish staff availability to review online requests. Staff review coverage, handling of outside-hours requests, and exceptions to late-arrival procedures require client approval. The system will not independently detect customer arrival or physical bay occupancy; attendance and no-show outcomes depend on authorized staff input. Payment processing, sales transactions, receipts, voucher sales, and whole-shop deposit processing are handled by the POS subsystem or its connected payment service. Deposit amounts and acceptable verification evidence, refund conditions, and criteria for approving change requests require final operational approval. The Reservation Management Subsystem only provides the necessary reservation reference information and transaction status for integration with the POS subsystem. The chatbot is limited to predefined responses for basic customer inquiries and does not handle complex customer concerns or independently approve reservations. The availability displayed by the system is based on recorded reservations and configured resource schedules and does not detect physical occupancy through simulator hardware. Automated email or SMS notifications are also dependent on valid customer contact information, internet connectivity, and the availability of the configured messaging provider.
 
 ## Operational Definition of Terms
 
-**Reservation Management Subsystem.** The component managing customer bookings, schedules, allocation, records, and statuses.
+This section presents the operational definition of terms that can help the reader further understand the study.
 
-**Reservation.** A record identifying customer/organizer, service, scheduled interval, attendees, resources, reference, and status.
+Analytics. The systematic process of examining data to identify patterns, trends, and useful information for decision-making. In this project, analytics refers to the presentation and analysis of reservation counts, service usage, simulator bay utilization, peak booking periods, and customer booking trends within the reservation Management Subsystem.
 
-**Pending.** A submitted request awaiting staff resolution that actively holds its allocated capacity without automatic expiration.
+Concurrency Protection. Persistence rules that prevent competing requests from committing incompatible allocations.
 
-**Confirmed.** A staff-approved reservation; whole-shop bookings require verified deposit first.
+Bay Utilization. The extent to which a facility resource is used during a particular period. Bay utilization refers to the monitoring of how frequently simulator bays are reserved and occupied across available time periods to determine resource usage and booking patterns.
 
-**Checked-In.** A reservation with customer arrival recorded by authorized staff.
+Double Booking. The situation in which the same resource is reserved for two or more overlapping reservations. Double booking specifically refers to assigning the same simulator bay or private space to conflicting reservations, which the reservation Management Subsystem is designed to prevent.
 
-**Completed.** A reservation recorded as finished under the approved completion rule; deposit verification alone does not produce this state.
+Gantt-Style View. A scheduling display that represents activities or reservations along a timeline according to their duration and scheduled period. The Gantt-style view is used to visually monitor reservation schedules and simulator bay utilization.
 
-**Cancelled.** An intentionally withdrawn or cancelled reservation that releases remaining capacity.
+Multi-Bay Reservation. A reservation involving two or more facility resources under a single booking. A multi-bay reservation allows multiple simulator bays to be selected and reserved under one reservation transaction, particularly for group reservations and events.
 
-**No-Show.** A reservation staff record as missed under the attendance/grace-period rule.
+Point-of-Sale (POS) Subsystem. A component of a business system used to process sales. In this project, the POS subsystem refers to the subsystem, or its connected payment service, that handles payment processing, sales transactions, receipts, voucher sales, and whole-shop deposit processing, and which receives reservation reference information from the Reservation Management Subsystem.
 
-**Resource Allocation.** Assignment of an available bay/private space to a reservation interval.
+Reservation. A booking record linking a customer or organizer to a service, interval, attendees, resources, reference, and status.
 
-**Simulator Bay.** A reservable indoor golf resource, including Bay 1 through Bay 6; applicable private spaces are separate resources.
+Resource Allocation. The process of assigning available resources to specific activities or users. Resource allocation refers to assigning available simulator bays or private spaces to customer reservations according to the requested schedule, service, and number of resources required.
 
-**Multi-Bay Reservation.** One booking allocating multiple bays together, without requiring adjacency.
+Reservation Management Subsystem. A component of an information system designed to manage and organize reservation-related activities. In this project, the Reservation Management Subsystem is the component of the Hole In Hub Golf & Lounge Integrated Management System that manages customer reservations, reservation schedules, simulator bay availability, reservation records, and reservation statuses.
 
-**Whole-Shop Reservation.** An exclusive booking blocking all facility resources and requiring deposit verification before confirmation.
+Reservation History. A record of the reservations associated with a particular customer. In this project, reservation history refers to the reservation history connected to a customer's information and booking records, which is available to customers and authorized staff.
 
-**Double Booking.** Allocation of one resource to different reservations with overlapping intervals.
-
-**Gantt-Style View.** A resource timeline displaying booking intervals and durations.
-
-**Reservation History.** Customer booking records and relevant authorized changes.
-
-**Reserved-Time Utilization.** Booked resource time relative to bookable time under documented status inclusion rules, without occupancy sensing.
-
-**POS Demonstration.** A labelled simulation of external billing/payment events linked by reservation reference, outside production payment implementation and evaluation.
-
-**Rule-Based Inquiry Chatbot.** A predefined-response interface for basic facility and booking inquiries.
-
-## Manuscript provenance and submission review
-
-This manuscript reconciles the supplied PDF and proposal with owner clarifications. Earlier voucher implementation objectives and live POS scope are replaced with an explicit demonstration boundary. Approval sheets, dedications, and acknowledgements are not reproduced because they are not Chapter I content.
-
-Source literature citations have not been independently verified and are not presented as confirmed references here. Before academic submission, add verified supporting literature, check institutional headings/reference style, approve remaining policies, and review with the adviser. No evaluation results or institutional approval are claimed.
+Simulator Bay. A designated area equipped or intended for indoor golf simulation activities. In this project, a simulator bay refers to Bay 1 through Bay 6 and applicable premium or private spaces that can be selected, reserved, and monitored through the Reservation Management Subsystem.

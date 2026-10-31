@@ -43,7 +43,7 @@ public sealed class MongoDbFixture : IAsyncLifetime
 
     public IMongoDbContext CreateDbContext()
     {
-        var databaseName = $"{DatabaseName}_{Guid.NewGuid():N}";
+        var databaseName = $"test_hih_{Guid.NewGuid():N}";
         _databases.Add(databaseName);
         var options = Options.Create(new MongoDbOptions
         {

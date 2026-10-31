@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1250" viewBox="0 0 1600 1250">
+  <title>DFD Reading Map | Six Areas of the System</title>
+  <desc>Overview only. Open the numbered Level 2 pages to see the actual data flows.</desc>
+  <rect width="1600" height="1250" fill="white" />
+  <text x="800.0" y="43.0" fill="#172b35" font-family="Arial, sans-serif" font-size="30" text-anchor="middle" dominant-baseline="middle" font-weight="bold">DFD Reading Map | Six Areas of the System</text>
+  <text x="800.0" y="87.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Overview only. Open the numbered Level 2 pages to see the actual data flows.</text>
+  <rect x="70" y="180" width="690" height="180" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="415.0" y="258.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">1.0 Accounts and Access</text>
+  <text x="415.0" y="281.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Sign up, verify email and sign in</text>
+  <rect x="840" y="180" width="690" height="180" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="1185.0" y="258.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">2.0 Reservations</text>
+  <text x="1185.0" y="281.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Check bays, save bookings and manage changes</text>
+  <rect x="70" y="490" width="690" height="180" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="415.0" y="568.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">3.0 Notifications</text>
+  <text x="415.0" y="591.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Send confirmations, reminders and staff alerts</text>
+  <rect x="840" y="490" width="690" height="180" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="1185.0" y="568.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">4.0 Reports</text>
+  <text x="1185.0" y="591.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Search records and show booking reports</text>
+  <rect x="70" y="800" width="690" height="180" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="415.0" y="878.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">5.0 POS and Deposits</text>
+  <text x="415.0" y="901.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Exchange POS status and verify deposits</text>
+  <rect x="840" y="800" width="690" height="180" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="1185.0" y="878.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">6.0 Basic Inquiries</text>
+  <text x="1185.0" y="901.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Answer common questions from approved FAQs</text>
+  <text x="800.0" y="1226.0" fill="#172b35" font-family="Arial, sans-serif" font-size="15" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Hole In Hub | Revised Chapter I alignment | 27 October 2026 | Proposed design; client policy items remain open</text>
+</svg>

@@ -1,173 +1,109 @@
 # Project Documentation
 
-## Overview and source alignment
+## Source and implementation boundary
 
-The Hole In Hub Golf & Lounge Reservation Management Subsystem manages customer bookings, resource schedules, allocation, and reservation records. Its central goal is reliable single- and multi-bay scheduling with staff approval.
+The Hole In Hub Golf & Lounge Reservation Management Subsystem manages customer reservations, schedules, allocations, and records within the Hole In Hub Integrated Management System.
 
-This document describes planned functionality, not a completed application. Sources are the supplied `GROUP2_CHAPTER_1.docx.pdf`, pasted project proposal, owner clarifications in the discussion, and inspection of the existing repository. Explicit owner clarifications take precedence over conflicting drafts. POS and voucher implementation are excluded from research scope and shown only through a labelled demonstration. See [Chapter I](CHAPTER_1.md) for the aligned manuscript; this does not constitute academic approval or independently verified field research.
+Aligned on 2026-10-27 with the owner's revised `Hole In Hub Golf & Lounge Reservation Management Subsystem (4).pdf`, Chapter I, PDF pages 6–17. [Chapter I](CHAPTER_1.md) transcribes the manuscript; this document translates it into engineering requirements. This revision supersedes earlier guest-submission, indefinite Pending-hold, relational-database, 24-hour-reminder, and demonstration-only POS requirements. Client-approval qualifications remain open decisions.
 
-The reported existing workflow uses a local browser interface with manual steps: individual bay bookings are merged for groups, customer records are cross-referenced, and simultaneous changes risk conflicting allocations. Startup delays are reported in the sources, not measured in this repository.
+These are planned requirements, not claims of completed functionality. The repository has MongoDB/migration, health-probe, and local asset foundations. This documentation alignment changes no application behavior.
 
-## Scope
+## Operational background
 
-Research implementation includes calendar/timeline scheduling, services and packages, availability for Bays 1–6 and applicable private spaces, multi-bay allocation, customer records/history, reservation creation and management, role-based access, reports, notifications, and a predefined inquiry chatbot. Whole-shop deposit verification gates staff confirmation; actual payment collection remains external.
+Customers currently request bookings through Viber, SMS, social media, or direct staff contact. Staff enter details into an existing browser-based POS scheduling interface. Interviews describe overlooked conflict warnings, bay transfers, suspected duplicate-booking investigations, and customer contact details retained in messaging conversations.
 
-Demonstration-only: estimated charges, voucher example, deposit verification, and final settlement through a simulated POS handoff using a reservation reference. No production POS connector, payment gateway, billing engine, voucher validation/redemption, or voucher ledger is required. Simulation must never be presented as real payment evidence.
+Multi-bay group appointments and consolidated POS billing are distinct: sequential bill merging is not evidence that reservation records must be merged individually. Duplicate customer profiles and the technical cause of reported connectivity disruption are not established findings. Performance improvements require measurement.
 
-Excluded: inventory, merchandise ordering, accounting, payroll, receipts, payment processing, voucher sales/redemption, and simulator hardware control. Availability reflects records and configured schedules, not detected physical occupancy.
+## Scope and business rules
 
-## Business rules
-
-| Topic | Current rule |
+| Topic | Revised requirement |
 | --- | --- |
-| Membership | No membership requirement |
-| Customer accounts | Guest booking with optional accounts is recommended; final access policy needs approval |
-| Selection | Choosing date/time alone does not hold resources |
-| Submission | Successful submission creates Pending and immediately blocks resources |
-| Approval | Staff manually confirm; no automatic confirmation |
-| Pending duration | No automated expiration; held until staff confirm or cancel |
-| Multi-bay | Adjacent bays not required; specific or automatically/staff-allocated bays must be available |
-| Operating hours | Monday 11 AM–midnight; Tuesday–Sunday 10 AM–midnight, Philippine venue time |
-| Session duration | Normally 60 minutes; certain services/promos allow 30 minutes |
-| Buffers | No designated turnaround buffer supplied |
-| Daily limits | No supplied limit on bays or reservations per customer per day |
-| Whole shop | Blocks all facility resources; upfront verified deposit before staff confirmation |
-| Attendance contact | Staff contact the customer 15 minutes before the slot by phone/messaging |
-| Grace period | 60 minutes; accommodate in reserved or another available bay |
-| End time | Original end remains unless staff validate a shift/extension; extra time is billed externally |
-| No-show | Staff record No-Show after missed attendance under the grace rule; intentional cancellation is Cancelled |
-| Rescheduling | Staff change date/time; system validates conflicts |
-| Pricing | External POS owns authoritative rates/packages/promos/vouchers; portal shows estimates |
-| Utilization | Reserved time, not actual play time |
+| Resources | Eight bays: Bay 1–6 and VIP 7–8; applicable private spaces, golf coaching, and whole-shop rentals |
+| Public access | Browse services and availability without signing in |
+| Online submission | Customer account with verified email required |
+| Staff-assisted booking | Authorized staff may book for walk-in, phone, or messaging customers without requiring customer accounts |
+| Ownership | Customers access their own account-linked reservations and submit change requests for staff review |
+| Submission | Successful submission creates Pending and immediately holds all requested allocations; browsing alone holds nothing |
+| Ordinary online Pending | Proposed maximum 30-minute review deadline during designated staff review hours; staff reminder at 15 minutes and escalation at 25 minutes |
+| Pending expiry | Unresolved ordinary online requests become Expired at the deadline, release all allocations, and notify customer and staff |
+| Review coverage | Staff review hours and outside-hours handling require client approval; venue opening hours do not establish review coverage |
+| Confirmation | Authorized staff approve; whole-shop confirmation requires recorded deposit verification |
+| Whole shop | Exclusive allocation of all facility resources; separately agreed deposit-verification deadline |
+| Operating hours | Monday 11 AM–midnight; Tuesday–Sunday 10 AM–midnight, Asia/Manila; midnight begins the following day |
+| Duration | Walkthrough shows 30 minutes to 10 hours in 30-minute increments; applicability to each service and selectable start-time grid require confirmation |
+| Availability | Entire interval must fit operating hours and respect existing allocations, closures, and maintenance |
+| Multi-bay | One reservation; all requested resources allocated together or the entire attempt rejected |
+| Changes | Staff review customer requests; reassignment, extension, and rescheduling recheck conflicts; rejected/failed changes preserve the original booking |
+| Attendance | Authorized staff record arrival, cancellation, completion, and no-show outcomes; no hardware occupancy detection |
+| Grace period | Confirmed allocations protected for one hour after start, capped at scheduled end; flag unattended bookings at the earlier deadline |
+| No-show | Staff follow up and may mark No-show, releasing remaining allocations; no automatic no-show decision |
+| Late arrival | No automatic end-time extension; extension requires availability check and staff approval |
+| Communication | Email confirmation after staff approval; automated reminder approximately 15 minutes before reservation; manual staff contact remains separate |
+| Chatbot | Predefined responses to basic inquiries; cannot independently approve bookings or resolve complex concerns |
+| Reporting | Reservation counts, service usage, peak periods, cancellations, no-shows, customer trends, and reserved-time resource utilization |
 
-Treat midnight as the beginning of the next day. Session duration does not establish the exact selectable start-time grid. Automated 24-hour reminders and manual 15-minute attendance contact are separate processes.
+The proposed expiry and late-arrival procedures retain the client-approval qualifications in Chapter I (pages 9 and 14–15). Do not apply ordinary online expiry to staff-assisted or whole-shop bookings without an agreed policy. Review-clock behavior across coverage boundaries is unresolved.
 
-## Reservation lifecycle
+## Reservation lifecycle and access
 
-```mermaid
-stateDiagram-v2
-    [*] --> Pending: Successful submission
-    Pending --> Confirmed: Staff approval and required deposit verified
-    Pending --> Cancelled: Staff cancellation
-    Confirmed --> CheckedIn: Staff check-in
-    Confirmed --> Cancelled: Authorized cancellation
-    Confirmed --> NoShow: Staff records missed attendance
-    CheckedIn --> Completed: Authorized completion
-```
+Submission, approval, arrival, completion, cancellation, expiry, and no-show are distinct events. Expired applies to unresolved ordinary online Pending requests at the agreed review deadline; No-show applies to confirmed unattended bookings after staff follow-up. Payment/deposit statuses remain separate from reservation status. A deposit or payment response alone does not establish attendance or completion.
 
-`CheckedIn` displays as **Checked-In**. This normal transition model is an engineering recommendation; exceptional corrections and rescheduling reconfirmation need policy approval. Record who performed each change.
+Record actor, timestamp, reason, and relevant changes in history. Exact status identifiers, exceptional transitions, and completion criteria must be specified during feature design; the paper does not establish a complete transition matrix.
 
-Deposit and final settlement states are separate from reservation status. A deposit never means Completed. The owner describes final POS payment updating the booking to Completed; demonstrate that external event rather than requiring live POS. Recommended safeguard: do not complete a future or active session solely because it was prepaid. Exact completion timing remains unresolved.
-
-Pending requests need an age indicator and staff review queue. Do not add automatic cancellation contrary to the current rule.
-
-## Roles and pages
-
-| Role | Proposed access |
+| Role | Responsibility |
 | --- | --- |
-| Guest | Services, availability, booking, verified access to own reservation |
-| Customer account | Own profile and reservation history; self-service changes only if policy permits |
-| Front desk | Customer lookup, walk-ins, Pending review, confirmation, rescheduling, check-in, cancellation, no-show and completion |
-| Supervisor | Oversight, reports, permitted policy exceptions without resource overlaps |
-| Administrator | Users/roles, resources, services, hours, and configuration |
+| Visitor | Browse services, availability, and predefined inquiry responses |
+| Verified-email customer | Submit reservations, access own linked records/history, request changes |
+| Front-desk staff | Staff-assisted booking, customer lookup, schedule/Pending review, confirmation, changes, attendance and outcomes |
+| Supervisor | Operational oversight, reporting, and permitted exceptions |
+| System administrator | Authorized account/role, resource, schedule, and configuration management |
 
-The workflow mentions staff PIN access. Use individual staff identities with protected credentials and attempt throttling; a shared PIN cannot support reliable attribution. Server-side permissions and ownership checks are required, including requests outside the normal UI.
+Enforce server-side authorization and ownership on protected operations. A reservation reference alone is not authorization. Contact records remain distinct from login accounts to support staff-assisted bookings. Detailed role permissions require agreement.
 
-| Area | Logical screens |
+## Architecture and data
+
+Retain one ASP.NET Core MVC application and `HoleInHub.Web → HoleInHub.Business → HoleInHub.Data`. Web owns HTTP/UI concerns; Business owns reservation policy and orchestration; Data owns MongoDB persistence and transaction mechanics. See [Architecture](ARCHITECTURE.md) and the [foundation specification](specs/2026-10-18-production-foundation.md).
+
+MongoDB is the sole database, with MongoDB Atlas specified in Chapter I and a local replica set for development/integration tests. Proposed logical records include customers, accounts/roles, services/resources, reservations and allocations, schedules/blocks, history, notification delivery, and applicable POS transaction references/statuses. Collection design is not finalized.
+
+- Store timestamps in UTC and derive venue-local calendar dates using Asia/Manila.
+- Use half-open intervals `[start, end)` and persisted resource/date guards within MongoDB transactions to prevent concurrent incompatible allocations.
+- Commit all resources together, including whole-shop exclusivity; failed changes preserve original allocations.
+- Use submission idempotency keys and stale-edit protection. Preserve history after capacity release.
+- Expiry and confirmation must compete safely against the same reservation state; release allocations only when the eligible Pending request actually expires.
+- Deliver notifications after commit; delivery failures do not undo reservations. Prevent duplicate/stale messages after changes.
+- Run migrations only through the dedicated CLI under its distributed lease, never on Web startup.
+
+## POS integration boundary
+
+Integration with the designated POS subsystem through an agreed interface is in scope. A simulated handoff alone does not satisfy the revised integration requirement.
+
+| Direction | Information exchanged |
 | --- | --- |
-| Public | Home/services; availability/booking; review/result |
-| Shared | Sign-in, recovery, optional customer registration |
-| Customer | Profile; active/history reservations; reservation details |
-| Staff | Schedule with calendar/timeline tabs; reservation list/Pending queue; create/edit/details; customers/history |
-| Supervisor | Reservation reports and utilization |
-| Admin | Resources/hours/closure blocks; services/packages; users/settings |
-| Demo | Clearly labelled simulated POS handoff |
+| Reservation → POS | Reservation identifier/reference, relevant customer/service details, scheduled interval, and resource allocations needed for billing |
+| POS → Reservation | Applicable transaction references and payment/deposit statuses, supporting agreed deposit verification |
 
-Reuse one booking form for create/edit. Embed the chatbot as a widget. Screens do not require separate applications or a controller for every row. The Pending queue shows hold age and deposit verification. Reservation details supports reassignment/extension and change history.
+Reservation owns allocation, staff approval, and lifecycle decisions. POS or its connected payment service owns billing, collection, sales transactions, receipts, vouchers, whole-shop deposit processing, and settlement. Reservation does not implement a billing engine or payment ledger.
 
-## Architecture and implementation status
-
-Use one deployable ASP.NET Core MVC application with the existing three layers.
-
-```mermaid
-flowchart LR
-    Users[Customers and staff] --> Web[Web: MVC and Razor]
-    Web --> Business[Business: reservation rules]
-    Business --> Data[Data: persistence and transactions]
-    Data --> DB[(Relational database)]
-    Business -. planned .-> Notifications[Background notification delivery]
-    Business -. demonstration only .-> Demo[Simulated POS events]
-```
-
-| Project | Existing state | Planned responsibility |
-| --- | --- | --- |
-| HoleInHub.Web | .NET 10 MVC starter; Home, Privacy, Error; Tailwind; configuration | Controllers, forms, view models, role-aware views, authentication wiring |
-| HoleInHub.Business | Class library referencing Data; no domain services | Availability, allocation, lifecycle, reports, notification coordination |
-| HoleInHub.Data | Class-library scaffolding | Entities, persistence, transactions, migrations |
-| Root launcher | Runs web project | Development convenience |
-
-`Program.cs` registers MVC, but does not configure authentication or a database. `UseAuthorization()` alone is not role-based security. No reservation services, production POS integration, notifications, or chatbot are implemented. The database engine and persistence library have not been selected. Keep business rules shared between staff and customer flows.
-
-## Proposed data model
-
-| Record | Purpose |
-| --- | --- |
-| Customer | Central contact record, independent of login |
-| User account/role | Authentication and permissions; optional customer link |
-| Resource | Bay/private space, active state, capacity when established |
-| Service | Offering, duration/resource eligibility, whole-shop/deposit requirement |
-| Reservation | Reference, customer/organizer, attendees, service, start/end, status |
-| ReservationResource | Multiple resource allocations for one booking |
-| Operating schedule/resource block | Hours, maintenance, closures |
-| Reservation history | Actor, timestamp, changes and reasons |
-| Notification delivery | Scheduled message, outcome, retry information |
-| Demonstration transaction reference | Explicitly simulated deposit/final settlement evidence |
-
-Recommended first-version assumption: resources in one reservation share a time interval. Separate visits can use separate records. Do not automatically merge customers by name or link histories without verified ownership. Preserve historical bookings when services/resources are deactivated. No voucher or billing ledger is needed for research scope.
-
-## Correctness and security
-
-- Include Pending allocations and closure blocks in availability checks.
-- Use half-open intervals `[start, end)` so adjacent sessions can meet without a buffer.
-- Protect allocation within the save transaction using concurrency protection appropriate to the selected database. A pre-save availability query alone cannot prevent simultaneous conflicts.
-- Commit all resources together or reject the entire booking. Whole-shop allocation conflicts with any resource booking.
-- Reschedule atomically; failure preserves the original allocation.
-- Detect duplicate submissions and stale staff edits rather than silently duplicating/overwriting records.
-- Release remaining capacity on Cancelled/No-Show while preserving history. Retain completed records for reports.
-- Reassignment and extension require conflict checks; the grace period must not displace another customer.
-- Protect customer information, management links, and server actions. A booking reference alone is not authorization.
-- Apply server validation, access checks, browser anti-forgery protection, accessible forms, and clear conflict feedback.
-- Deliver notifications after commit; delivery failure does not undo a reservation. Avoid duplicate/stale reminders after changes.
+The teams must document the integration flow, data exchange specification, and failure-handling rules. Agree field mapping, correlation identifiers, verification evidence, and repeated-notification handling. Missing/unsuccessful POS responses never verify a deposit. Repeated notifications must not duplicate records or incorrectly verify deposits. Protocol, endpoints, authentication, retry rules, and ordering behavior remain to be agreed; the paper does not select them.
 
 ## Reporting and evaluation
 
-Reports cover volume by date/status, service usage, peak times, customer booking trends, cancellations/no-shows, and resource reserved hours. Show Pending holds separately from fulfilled bookings.
+Utilization measures reserved resource time, not sensed occupancy or actual play time. Define denominator, closure/maintenance exclusions, and status inclusion before evaluation; distinguish Pending holds from fulfilled bookings. Check reports against known records and test data.
 
-Proposed utilization is reserved resource-hours divided by bookable resource-hours for the period. Exclude closure/maintenance time from the denominator. Status inclusion rules require approval; actual play-time usage is not measured.
+Document expected/actual results and pass/fail outcomes for representative booking tasks, overlapping/concurrent attempts, multi-bay allocation, whole-shop exclusion, safe changes, ownership/role restrictions, Pending alerts/expiry, attendance handling, notifications, report accuracy, usability, and response times. Integration tests cover reservation retrieval, transaction-status updates, deposit verification, unsuccessful exchanges, and repeated notifications. Record workloads and operating conditions; no measured baseline, improvement, or evaluation results are claimed.
 
-Evaluate concurrent conflicting submissions, multi-bay rollback, whole-shop exclusion, safe rescheduling, status permissions, customer ownership, deposit confirmation gating, notifications, and report accuracy. Measure startup and schedule responsiveness under documented workloads. Performance targets, participants, and results have not been established; do not invent evaluation outcomes.
+## Delimitations and open decisions
 
-## Implementation order
+Excluded from Reservation implementation: inventory, food/merchandise ordering, accounting, payroll, billing/payment processing, receipt generation, voucher processing, and direct simulator hardware control. Notifications depend on valid contacts, connectivity, and provider availability.
 
-1. Finalize policies and select authentication/persistence.
-2. Implement customers, services/resources, hours, transactional allocation, and concurrency protection.
-3. Add staff access, review queue, management, timeline, and history.
-4. Add customer booking/verified access and optional accounts if approved.
-5. Add reports, notifications, chatbot, and isolated POS demonstration.
-6. Evaluate research features separately from simulated external behavior.
+Still requiring agreement:
 
-## Open decisions and operational risks
+- Staff review coverage, outside-hours requests, and precise review-deadline calculation.
+- Whole-shop deposit amount, verification evidence/deadline, failure handling, and refunds.
+- Change-request approval criteria and late-arrival exceptions.
+- Service-specific durations, start-time grid, attendee capacities, and resource eligibility.
+- Detailed permissions, status transitions/completion criteria, reporting inclusion, notification provider/channel, and short-notice reminder behavior.
+- POS exchange contract and test arrangements with the participating team.
 
-- Final guest/account policy, PIN authentication design, permissions, and customer cancellation rights.
-- Deposit amount/evidence, unpaid-hold follow-up, cancellation/refund policy.
-- Maximum duration, start-time grid, attendee capacity, eligible resource combinations.
-- Grace-period behavior when 30/60-minute sessions have already ended; post-end resource holds.
-- Reconfirmation after rescheduling, exceptional transitions, and completion timing for prepayment.
-- Notification provider/channel and reminders for bookings made less than 24 hours ahead.
-- Database engine, preview pricing source, report status inclusion, evaluation targets, and legacy migration.
-
-Indefinite Pending holds can block availability without payment or attendance. Staff review is essential under the stated policy. No automatic expiry is currently authorized.
-
-## Development
-
-See the root [README](../README.md) for build/run and CSS instructions. Keep controllers thin, use shared services, and follow existing layers. Avoid production billing/voucher functionality or separate microservices for demonstration needs.
+The [aligned diagram package](diagrams/README.md) provides system architecture, system flowchart, context/Level 1 references, a combined Level 2 DFD with detail sheets, and POS integration flow. The final POS exchange contract remains to be agreed. Distinguish requirements awaiting operational approval from implemented foundation behavior.

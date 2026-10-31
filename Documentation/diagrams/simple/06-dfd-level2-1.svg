@@ -1,0 +1,103 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1760" viewBox="0 0 1600 1760">
+  <title>Level 2 DFD | 1.0 Accounts and Access</title>
+  <desc>Read the arrow labels as information being passed. Repeated store IDs mean the same records.</desc>
+  <rect width="1600" height="1760" fill="white" />
+  <text x="800.0" y="43.0" fill="#172b35" font-family="Arial, sans-serif" font-size="30" text-anchor="middle" dominant-baseline="middle" font-weight="bold">Level 2 DFD | 1.0 Accounts and Access</text>
+  <text x="800.0" y="87.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Read the arrow labels as information being passed. Repeated store IDs mean the same records.</text>
+  <polyline points="800.0,350 800.0,590" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="800.0,590 794.5806795684202,578.1834452542265 805.4193204315798,578.1834452542265 800.0,590" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="800.0,1030 800.0,1270" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="800.0,1270 794.5806795684202,1258.1834452542264 805.4193204315798,1258.1834452542264 800.0,1270" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="380,300.0 420,300.0 420,300 610,300.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="610,300.0 598.1834452542265,305.41932043157976 598.1834452542265,294.58067956842024 610,300.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="380,640.0 420,640.0 420,640 610,640.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="610,640.0 598.1834452542265,645.4193204315798 598.1834452542265,634.5806795684202 610,640.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="380,925.0 420,925.0 420,980 610,980.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="610,980.0 598.1834452542265,985.4193204315798 598.1834452542265,974.5806795684202 610,980.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="380,1320.0 420,1320.0 420,1320 610,1320.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="610,1320.0 598.1834452542265,1325.4193204315798 598.1834452542265,1314.5806795684202 610,1320.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="380,1035.0 450,1035.0 450,980 610,980.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="610,980.0 598.1834452542265,985.4193204315798 598.1834452542265,974.5806795684202 610,980.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="990,300.0 1030,300 1030,245.0 1220,245.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1220,245.0 1208.1834452542264,250.41932043157973 1208.1834452542264,239.58067956842027 1220,245.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="990,640.0 1030,640 1030,640.0 1220,640.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1220,640.0 1208.1834452542264,645.4193204315798 1208.1834452542264,634.5806795684202 1220,640.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="990,300.0 1060,300 1060,355.0 1220,355.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1220,355.0 1208.1834452542264,360.41932043157976 1208.1834452542264,349.58067956842024 1220,355.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="990,980.0 1030,980 1030,980.0 1220,980.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1220,980.0 1208.1834452542264,985.4193204315798 1208.1834452542264,974.5806795684202 1220,980.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="990,1320.0 1030,1320 1030,1265.0 1220,1265.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1220,1265.0 1208.1834452542264,1270.4193204315798 1208.1834452542264,1259.5806795684202 1220,1265.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="990,1320.0 1060,1320 1060,1375.0 1220,1375.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1220,1375.0 1208.1834452542264,1380.4193204315798 1208.1834452542264,1369.5806795684202 1220,1375.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <rect x="610" y="250" width="380" height="100" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="800.0" y="288.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">1.1</text>
+  <text x="800.0" y="311.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Register customer</text>
+  <rect x="610" y="590" width="380" height="100" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="800.0" y="628.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">1.2</text>
+  <text x="800.0" y="651.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Verify email</text>
+  <rect x="610" y="930" width="380" height="100" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="800.0" y="968.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">1.3</text>
+  <text x="800.0" y="991.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Check sign-in details</text>
+  <rect x="610" y="1270" width="380" height="100" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="800.0" y="1308.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">1.4</text>
+  <text x="800.0" y="1331.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Check role and record ownership</text>
+  <rect x="45" y="260.0" width="335" height="80" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="212.5" y="300.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Customer</text>
+  <rect x="45" y="600.0" width="335" height="80" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="212.5" y="640.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Customer</text>
+  <rect x="45" y="885.0" width="335" height="80" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="212.5" y="925.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Customer / Staff</text>
+  <rect x="45" y="1280.0" width="335" height="80" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="93,1280.0 93,1360.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="69" y="1320.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D1</text>
+  <text x="236.5" y="1320.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Accounts</text>
+  <rect x="45" y="995.0" width="335" height="80" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="93,995.0 93,1075.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="69" y="1035.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D1</text>
+  <text x="236.5" y="1035.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Accounts</text>
+  <rect x="1220" y="205.0" width="335" height="80" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="1268,205.0 1268,285.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="1244" y="245.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D1</text>
+  <text x="1411.5" y="245.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Accounts</text>
+  <rect x="1220" y="600.0" width="335" height="80" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="1268,600.0 1268,680.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="1244" y="640.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D1</text>
+  <text x="1411.5" y="640.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Accounts</text>
+  <rect x="1220" y="315.0" width="335" height="80" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="1387.5" y="355.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Email Provider</text>
+  <rect x="1220" y="940.0" width="335" height="80" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="1387.5" y="980.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Customer / Staff</text>
+  <rect x="1220" y="1225.0" width="335" height="80" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="1387.5" y="1265.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">2.2 Booking details</text>
+  <rect x="1220" y="1335.0" width="335" height="80" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="1387.5" y="1375.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">4.1 Report request</text>
+  <rect x="732.087" y="458.25" width="135.82600000000002" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="470.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Verification request</text>
+  <rect x="738.31" y="1138.25" width="123.38" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="1150.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Signed-in identity</text>
+  <rect x="439.533" y="288.25" width="110.93400000000001" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="495" y="300.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Account details</text>
+  <rect x="435.256" y="628.25" width="119.488" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="495" y="640.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Verification code</text>
+  <rect x="443.04" y="913.25" width="103.92" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="495" y="925.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Sign-in details</text>
+  <rect x="413.08" y="1308.25" width="163.84" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="495" y="1320.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Roles and account links</text>
+  <rect x="429.026" y="1023.25" width="131.948" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="495" y="1035.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Saved sign-in data</text>
+  <rect x="1061.54" y="233.25" width="96.92" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="1110" y="245.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">New account</text>
+  <rect x="1059.601" y="628.25" width="100.798" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="1110" y="640.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Verified email</text>
+  <rect x="1048.709" y="343.25" width="122.58200000000001" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="1110" y="355.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Verification email</text>
+  <rect x="1061.155" y="968.25" width="97.69" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="1110" y="980.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Sign-in result</text>
+  <rect x="1040.925" y="1253.25" width="138.14999999999998" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="1110" y="1265.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Booking permission</text>
+  <rect x="1051.817" y="1363.25" width="116.36600000000001" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="1110" y="1375.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Staff permission</text>
+  <text x="800.0" y="1736.0" fill="#172b35" font-family="Arial, sans-serif" font-size="15" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Hole In Hub | Revised Chapter I alignment | 27 October 2026 | Proposed design; client policy items remain open</text>
+</svg>

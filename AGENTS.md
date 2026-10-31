@@ -44,7 +44,7 @@ HoleInHub.Web  ───►  HoleInHub.Business  ───►  HoleInHub.Data
 ## 3. Concurrency & Reservation Correctness
 
 For future reservation and scheduling features:
-1. **Capacity Hold**: A submitted booking becomes `Pending` and holds capacity immediately. No automatic expiration without staff confirmation or explicit cancellation.
+1. **Capacity Hold**: A submitted booking becomes `Pending` and holds capacity immediately. Under the revised Chapter I policy, ordinary online Pending requests expire after a 30-minute review deadline during designated staff review hours, with staff alerts at 15 and 25 minutes, releasing allocations and notifying customer/staff. Review coverage and outside-hours handling require client approval. Whole-shop bookings use a separately agreed deposit-verification deadline; confirmed no-show decisions remain staff-managed. See `Documentation/PROJECT.md`.
 2. **Exclusivity Enforcement**: Contend on persisted guard documents per resource and date `[start, end)`. Never rely on a bare read-then-write sequence even inside a MongoDB multi-document transaction.
 3. **Timezones**: Store all timestamps in UTC (`DateTimeOffset` or BSON UTC date); derive local calendar dates using `Asia/Manila` (UTC+8).
 4. **Idempotency**: Submissions must carry an idempotency key to prevent double bookings from duplicate clicks or network retries.

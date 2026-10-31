@@ -1,0 +1,74 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1420" viewBox="0 0 1600 1420">
+  <title>Level 2 DFD | 4.0 Reports</title>
+  <desc>Read the arrow labels as information being passed. Repeated store IDs mean the same records.</desc>
+  <rect width="1600" height="1420" fill="white" />
+  <text x="800.0" y="43.0" fill="#172b35" font-family="Arial, sans-serif" font-size="30" text-anchor="middle" dominant-baseline="middle" font-weight="bold">Level 2 DFD | 4.0 Reports</text>
+  <text x="800.0" y="87.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Read the arrow labels as information being passed. Repeated store IDs mean the same records.</text>
+  <polyline points="800.0,350 800.0,590" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="800.0,590 794.5806795684202,578.1834452542265 805.4193204315798,578.1834452542265 800.0,590" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="800.0,690 800.0,930" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="800.0,930 794.5806795684202,918.1834452542265 805.4193204315798,918.1834452542265 800.0,930" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="380,245.0 420,245.0 420,300 610,300.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="610,300.0 598.1834452542265,305.41932043157976 598.1834452542265,294.58067956842024 610,300.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="380,355.0 450,355.0 450,300 610,300.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="610,300.0 598.1834452542265,305.41932043157976 598.1834452542265,294.58067956842024 610,300.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="380,530.0 420,530.0 420,640 610,640.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="610,640.0 598.1834452542265,645.4193204315798 598.1834452542265,634.5806795684202 610,640.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="380,640.0 450,640.0 450,640 610,640.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="610,640.0 598.1834452542265,645.4193204315798 598.1834452542265,634.5806795684202 610,640.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="380,750.0 480,750.0 480,640 610,640.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="610,640.0 598.1834452542265,645.4193204315798 598.1834452542265,634.5806795684202 610,640.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="990,300.0 1030,300 1030,300.0 1220,300.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1220,300.0 1208.1834452542264,305.41932043157976 1208.1834452542264,294.58067956842024 1220,300.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="990,980.0 1030,980 1030,980.0 1220,980.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <polyline points="1220,980.0 1208.1834452542264,985.4193204315798 1208.1834452542264,974.5806795684202 1220,980.0" fill="#172b35" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <rect x="610" y="250" width="380" height="100" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="800.0" y="288.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">4.1</text>
+  <text x="800.0" y="311.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Check staff report request</text>
+  <rect x="610" y="590" width="380" height="100" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="800.0" y="628.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">4.2</text>
+  <text x="800.0" y="651.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Calculate report results</text>
+  <rect x="610" y="930" width="380" height="100" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="800.0" y="968.125" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">4.3</text>
+  <text x="800.0" y="991.875" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Show records and reports</text>
+  <rect x="45" y="205.0" width="335" height="80" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="212.5" y="245.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Authorized Staff</text>
+  <rect x="45" y="315.0" width="335" height="80" rx="8" fill="#edf6f3" stroke="#172b35" stroke-width="2" />
+  <text x="212.5" y="355.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">1.4 Access check</text>
+  <rect x="45" y="490.0" width="335" height="80" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="93,490.0 93,570.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="69" y="530.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D2</text>
+  <text x="236.5" y="530.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Customers</text>
+  <rect x="45" y="600.0" width="335" height="80" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="93,600.0 93,680.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="69" y="640.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D3</text>
+  <text x="236.5" y="640.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Bookings</text>
+  <rect x="45" y="710.0" width="335" height="80" rx="0" fill="#ffffff" stroke="#172b35" stroke-width="2" />
+  <polyline points="93,710.0 93,790.0" fill="none" stroke="#172b35" stroke-width="2" stroke-dasharray="none" />
+  <text x="69" y="750.0" fill="#172b35" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle" font-weight="bold">D4</text>
+  <text x="236.5" y="750.0" fill="#172b35" font-family="Arial, sans-serif" font-size="18" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Resource schedules</text>
+  <rect x="1220" y="260.0" width="335" height="80" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="1387.5" y="300.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Authorized Staff</text>
+  <rect x="1220" y="940.0" width="335" height="80" rx="0" fill="#edf2fa" stroke="#172b35" stroke-width="2" />
+  <text x="1387.5" y="980.0" fill="#172b35" font-family="Arial, sans-serif" font-size="19" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Authorized Staff</text>
+  <rect x="743.371" y="458.25" width="113.258" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="470.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Approved filters</text>
+  <rect x="748.432" y="798.25" width="103.136" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="800" y="810.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Report results</text>
+  <rect x="422.033" y="233.25" width="145.934" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="495" y="245.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Search / report filters</text>
+  <rect x="436.817" y="343.25" width="116.36600000000001" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="495" y="355.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Staff permission</text>
+  <rect x="414.256" y="518.25" width="161.488" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="495" y="530.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Customer booking links</text>
+  <rect x="446.141" y="628.25" width="97.71799999999999" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="495" y="640.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Booking data</text>
+  <rect x="427.479" y="738.25" width="135.042" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="495" y="750.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Available-time data</text>
+  <rect x="1060.378" y="288.25" width="99.244" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="1110" y="300.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Access result</text>
+  <rect x="1021.857" y="968.25" width="176.286" height="23.5" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+  <text x="1110" y="980.0" fill="#172b35" font-family="Arial, sans-serif" font-size="14" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Records / booking reports</text>
+  <text x="800.0" y="1396.0" fill="#172b35" font-family="Arial, sans-serif" font-size="15" text-anchor="middle" dominant-baseline="middle" font-weight="normal">Hole In Hub | Revised Chapter I alignment | 27 October 2026 | Proposed design; client policy items remain open</text>
+</svg>

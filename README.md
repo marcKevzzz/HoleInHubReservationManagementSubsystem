@@ -22,7 +22,8 @@ A web-based reservation subsystem for simulator bays and private spaces at Hole 
 - [Design System & GSAP Motion](Documentation/DESIGN_SYSTEM.md) — Tailwind tokens, accessible motion, and WCAG 2.2 AA rules.
 - [Security Guidelines](Documentation/SECURITY.md) — Secret management, anti-forgery, and correlation logging.
 - [Operations & Runbook](Documentation/OPERATIONS.md) — Health probes, environment variables, backup/restore, and deployment checklist.
-- [Chapter I Manuscript](Documentation/CHAPTER_1.md) — Academic final-paper manuscript.
+- [Chapter I Manuscript](Documentation/CHAPTER_1.md) — Revised Chapter I transcription (aligned 2026-10-27).
+- [Aligned System Diagrams](Documentation/diagrams/README.md) — Editable draw.io workbook, vector PDF, system flowchart, combined Level 2 DFD, architecture, and POS integration.
 
 ---
 

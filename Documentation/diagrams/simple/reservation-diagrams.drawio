@@ -1,0 +1,1715 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" version="24.7.17">
+  <diagram id="01-architecture" name="How the System Works">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1600" pageHeight="1150">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="How the System Works" style="text;html=0;fontSize=30;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="35" y="12" width="1530" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Read from top to bottom. POS handles payments; staff make reservation decisions." style="text;html=0;fontSize=17;align=center;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="35" y="64" width="1530" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="people" value="Customers and Staff" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="550" y="155" width="500" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="website" value="Website&#10;View schedules and manage bookings" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="550" y="330" width="500" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="rules" value="Reservation Services&#10;Check bays, review requests and record attendance" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="550" y="540" width="500" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="records" value="Data Access&#10;Save and retrieve records" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="550" y="750" width="500" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="db" value="MongoDB Atlas&#10;Customer and reservation records" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="550" y="940" width="500" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="pos" value="POS System&#10;Billing and payments" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="80" y="540" width="300" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="email" value="Email / SMS Provider&#10;Messages and delivery results" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="540" width="300" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="e0" value="" edge="1" source="people" target="website" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" value="" edge="1" source="website" target="rules" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="" edge="1" source="rules" target="records" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="" edge="1" source="records" target="db" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="" edge="1" source="rules" target="pos" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=0;exitY=.5;entryX=1;entryY=.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el4" value="Booking details" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="330" y="523" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="" edge="1" source="pos" target="rules" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=1;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="230" y="690" />
+              <mxPoint x="800" y="690" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el5" value="Payment status" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="295" y="663" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="" edge="1" source="rules" target="email" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el6" value="Messages" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="523" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="" edge="1" source="email" target="rules" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=1;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1370" y="705" />
+              <mxPoint x="800" y="705" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el7" value="Delivery results" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="1025" y="678" width="270" height="54" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="02-booking" name="System Flowchart 1 | Booking and Approval">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1600" pageHeight="2230">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="System Flowchart 1 | Booking and Approval" style="text;html=0;fontSize=30;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="35" y="12" width="1530" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Start here. After confirmation, continue to Flowchart 2. Use Flowchart 3 for changes." style="text;html=0;fontSize=17;align=center;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="35" y="64" width="1530" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="start" value="Start" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#dcece6;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="565" y="145" width="470" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="browse" value="Browse services and available times" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="565" y="255" width="470" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="access" value="Customer: sign in and verify email&#10;Staff: sign in with booking permission" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="565" y="395" width="470" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="details" value="Enter customer details, service, time and bays" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="565" y="550" width="470" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="available" value="All bays available?" style="rhombus;whiteSpace=wrap;html=0;fillColor=#fff5df;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="565" y="710" width="470" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="retry" value="Choose another time or bay" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="65" y="735" width="315" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="save" value="Save ONE Pending booking&#10;and hold ALL requested bays" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="565" y="925" width="470" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="shop" value="Whole-shop booking?" style="rhombus;whiteSpace=wrap;html=0;fillColor=#fff5df;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="565" y="1090" width="470" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="deposit" value="Verify deposit with POS&#10;If unverified: keep Pending for staff follow-up" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1150" y="1100" width="370" height="125" as="geometry" />
+        </mxCell>
+        <mxCell id="review" value="Staff reviews the Pending request&#10;Whole shop: verified deposit required to approve" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="565" y="1350" width="470" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="outcome" value="Review outcome?" style="rhombus;whiteSpace=wrap;html=0;fillColor=#fff5df;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="565" y="1540" width="470" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="confirm" value="Confirm booking&#10;Send email confirmation" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="70" y="1760" width="380" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="release" value="Cancelled or Expired&#10;Release all bays and notify customer/staff" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1090" y="1760" width="440" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="wait" value="Keep Pending&#10;Continue staff review" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="1760" width="380" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="continue" value="Continue to Flowchart 2" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#dcece6;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="70" y="1930" width="380" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="timer" value="ORDINARY ONLINE REQUESTS&#10;Staff reminder: 15 minutes; escalation: 25 minutes.&#10;Still Pending at the approved 30-minute deadline: Expired.&#10;Review hours/outside-hours rules need client agreement." style="whiteSpace=wrap;html=0;fillColor=#fff8e9;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="545" y="1940" width="990" height="165" as="geometry" />
+        </mxCell>
+        <mxCell id="e0" value="" edge="1" source="start" target="browse" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" value="" edge="1" source="browse" target="access" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="" edge="1" source="access" target="details" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="" edge="1" source="details" target="available" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="" edge="1" source="save" target="shop" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="" edge="1" source="review" target="outcome" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="" edge="1" source="confirm" target="continue" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="" edge="1" source="available" target="retry" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=0;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="475" y="770" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el7" value="No" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="320" y="698" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" value="" edge="1" source="retry" target="details" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=0;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="222" y="590" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e9" value="" edge="1" source="available" target="save" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el9" value="Yes" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="665" y="848" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" value="" edge="1" source="shop" target="deposit" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el10" value="Yes" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="955" y="1123" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" value="" edge="1" source="shop" target="review" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el11" value="No" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="665" y="1253" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" value="" edge="1" source="deposit" target="review" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1335" y="1290" />
+              <mxPoint x="515" y="1290" />
+              <mxPoint x="515" y="1400" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el12" value="Verified" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="1055" y="1263" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e13" value="" edge="1" source="outcome" target="confirm" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="800" y="1705" />
+              <mxPoint x="260" y="1705" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el13" value="Approved" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="125" y="1678" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e14" value="" edge="1" source="outcome" target="release" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=1;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="800" y="1710" />
+              <mxPoint x="1555" y="1710" />
+              <mxPoint x="1555" y="1810" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el14" value="Cancelled / expired" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="1185" y="1683" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e15" value="" edge="1" source="outcome" target="wait" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el15" value="Awaiting decision" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="665" y="1683" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e16" value="" edge="1" source="wait" target="review" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=0;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="520" y="1805" />
+              <mxPoint x="520" y="1400" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="03-attendance" name="System Flowchart 2 | Arrival and No-show">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1600" pageHeight="1710">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="System Flowchart 2 | Arrival and No-show" style="text;html=0;fontSize=30;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="35" y="12" width="1530" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Attendance is entered by staff. The system does not sense whether a bay is occupied." style="text;html=0;fontSize=17;align=center;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="35" y="64" width="1530" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="start" value="Confirmed booking" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#dcece6;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="565" y="160" width="470" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="remind" value="Send reminder about 15 minutes before start" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="565" y="310" width="470" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="arrived" value="Arrival recorded?" style="rhombus;whiteSpace=wrap;html=0;fillColor=#fff5df;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="565" y="475" width="470" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="present" value="Staff records arrival" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="70" y="720" width="350" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="deadline" value="No arrival recorded:&#10;Flag at the earlier of start + 1 hour&#10;or the scheduled end" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="700" width="440" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="contact" value="Staff contacts the customer" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="930" width="440" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="missed" value="Staff marks No-show?" style="rhombus;whiteSpace=wrap;html=0;fillColor=#fff5df;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="1110" width="440" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="release" value="Record No-show&#10;Release remaining allocations" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="1370" width="440" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="decision" value="Staff records attendance decision&#10;No automatic extension or renewed hold" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="560" y="1110" width="430" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="complete" value="Staff records session completion" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="70" y="1370" width="390" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="end" value="Outcome saved in booking history" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#dcece6;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="70" y="1540" width="1450" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="e0" value="" edge="1" source="start" target="remind" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" value="" edge="1" source="remind" target="arrived" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="" edge="1" source="deadline" target="contact" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="" edge="1" source="contact" target="missed" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="" edge="1" source="present" target="complete" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="" edge="1" source="complete" target="end" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="" edge="1" source="release" target="end" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="" edge="1" source="arrived" target="present" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="800" y="650" />
+              <mxPoint x="245" y="650" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el7" value="Yes" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="110" y="623" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" value="" edge="1" source="arrived" target="deadline" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=1;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="800" y="650" />
+              <mxPoint x="1560" y="650" />
+              <mxPoint x="1560" y="760" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el8" value="No" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="1165" y="623" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" value="" edge="1" source="missed" target="release" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el9" value="Yes" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="1165" y="1273" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" value="" edge="1" source="missed" target="decision" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=0;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1040" y="1170" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el10" value="No" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="895" y="1093" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" value="" edge="1" source="decision" target="complete" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="775" y="1280" />
+              <mxPoint x="35" y="1280" />
+              <mxPoint x="35" y="1412" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el11" value="Arrival / session outcome" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="400" y="1253" width="270" height="54" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="04-changes" name="System Flowchart 3 | Change a Booking">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1500" pageHeight="1520">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="System Flowchart 3 | Change a Booking" style="text;html=0;fontSize=30;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="35" y="12" width="1430" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Customers request changes; authorized staff approve them." style="text;html=0;fontSize=17;align=center;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="35" y="64" width="1430" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="start" value="Existing reservation" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#dcece6;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="515" y="160" width="470" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="request" value="Customer requests a change&#10;or staff starts an authorized change" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="515" y="315" width="470" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="review" value="Staff reviews the request" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="515" y="490" width="470" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="approve" value="Staff approves?" style="rhombus;whiteSpace=wrap;html=0;fillColor=#fff5df;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="515" y="650" width="470" height="115" as="geometry" />
+        </mxCell>
+        <mxCell id="check" value="Check and save ALL replacement bay allocations" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="515" y="850" width="470" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="success" value="Change saved?" style="rhombus;whiteSpace=wrap;html=0;fillColor=#fff5df;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="515" y="1030" width="470" height="115" as="geometry" />
+        </mxCell>
+        <mxCell id="preserve" value="Keep the original booking and bays&#10;Record rejection or failed change" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="55" y="1240" width="500" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="updated" value="Save changed booking and history&#10;Update reminders and relevant POS details" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="945" y="1240" width="500" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="end" value="Notify customer of the outcome" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#dcece6;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="515" y="1400" width="470" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="e0" value="" edge="1" source="start" target="request" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" value="" edge="1" source="request" target="review" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="" edge="1" source="review" target="approve" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="" edge="1" source="check" target="success" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="" edge="1" source="approve" target="check" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el4" value="Yes" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="615" y="783" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="" edge="1" source="approve" target="preserve" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=0;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="35" y="707" />
+              <mxPoint x="35" y="1290" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el5" value="No" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="75" y="763" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="" edge="1" source="success" target="preserve" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="750" y="1190" />
+              <mxPoint x="25" y="1190" />
+              <mxPoint x="25" y="1290" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el6" value="No" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="170" y="1163" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="" edge="1" source="success" target="updated" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=1;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="750" y="1190" />
+              <mxPoint x="1470" y="1190" />
+              <mxPoint x="1470" y="1290" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el7" value="Yes" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="1163" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" value="" edge="1" source="preserve" target="end" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" value="" edge="1" source="updated" target="end" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="05-dfd-reading-map" name="DFD Reading Map | Six Areas of the System">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1600" pageHeight="1250">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="DFD Reading Map | Six Areas of the System" style="text;html=0;fontSize=30;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="35" y="12" width="1530" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Overview only. Open the numbered Level 2 pages to see the actual data flows." style="text;html=0;fontSize=17;align=center;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="35" y="64" width="1530" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="area0" value="1.0 Accounts and Access&#10;Sign up, verify email and sign in" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="70" y="180" width="690" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="area1" value="2.0 Reservations&#10;Check bays, save bookings and manage changes" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="840" y="180" width="690" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="area2" value="3.0 Notifications&#10;Send confirmations, reminders and staff alerts" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="70" y="490" width="690" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="area3" value="4.0 Reports&#10;Search records and show booking reports" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="840" y="490" width="690" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="area4" value="5.0 POS and Deposits&#10;Exchange POS status and verify deposits" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="70" y="800" width="690" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="area5" value="6.0 Basic Inquiries&#10;Answer common questions from approved FAQs" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="840" y="800" width="690" height="180" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="06-dfd-level2-1" name="Level 2 DFD | 1.0 Accounts and Access">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1600" pageHeight="1760">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Level 2 DFD | 1.0 Accounts and Access" style="text;html=0;fontSize=30;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="35" y="12" width="1530" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Read the arrow labels as information being passed. Repeated store IDs mean the same records." style="text;html=0;fontSize=17;align=center;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="35" y="64" width="1530" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="1.1" value="1.1&#10;Register customer" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="250" width="380" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="1.2" value="1.2&#10;Verify email" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="590" width="380" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="1.3" value="1.3&#10;Check sign-in details" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="930" width="380" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="1.4" value="1.4&#10;Check role and record ownership" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="1270" width="380" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="in-0" value="Customer" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="260.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-1" value="Customer" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="600.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-2" value="Customer / Staff" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="885.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-3" value="D1&#10;Accounts" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="1280.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-4" value="D1&#10;Accounts" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="995.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-0-D1" value="D1&#10;Accounts" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="205.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-1-D1" value="D1&#10;Accounts" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="600.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-2-M" value="Email Provider" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="315.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-3-C" value="Customer / Staff" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="940.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-4-P2" value="2.2 Booking details" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="1225.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-5-P4" value="4.1 Report request" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="1335.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="e0" value="" edge="1" source="1.1" target="1.2" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el0" value="Verification request" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="665" y="443.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" value="" edge="1" source="1.3" target="1.4" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el1" value="Signed-in identity" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="665" y="1123.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="" edge="1" source="in-0" target="1.1" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="300.0" />
+              <mxPoint x="420" y="300" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el2" value="Account details" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="273.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="" edge="1" source="in-1" target="1.2" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="640.0" />
+              <mxPoint x="420" y="640" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el3" value="Verification code" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="613.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="" edge="1" source="in-2" target="1.3" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="925.0" />
+              <mxPoint x="420" y="980" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el4" value="Sign-in details" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="898.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="" edge="1" source="in-3" target="1.4" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="1320.0" />
+              <mxPoint x="420" y="1320" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el5" value="Roles and account links" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="1293.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="" edge="1" source="in-4" target="1.3" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="1035.0" />
+              <mxPoint x="450" y="980" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el6" value="Saved sign-in data" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="1008.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="" edge="1" source="1.1" target="out-0-D1" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1030" y="300" />
+              <mxPoint x="1030" y="245.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el7" value="New account" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="218.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" value="" edge="1" source="1.2" target="out-1-D1" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1030" y="640" />
+              <mxPoint x="1030" y="640.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el8" value="Verified email" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="613.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" value="" edge="1" source="1.1" target="out-2-M" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1060" y="300" />
+              <mxPoint x="1060" y="355.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el9" value="Verification email" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="328.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" value="" edge="1" source="1.3" target="out-3-C" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1030" y="980" />
+              <mxPoint x="1030" y="980.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el10" value="Sign-in result" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="953.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" value="" edge="1" source="1.4" target="out-4-P2" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1030" y="1320" />
+              <mxPoint x="1030" y="1265.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el11" value="Booking permission" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="1238.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" value="" edge="1" source="1.4" target="out-5-P4" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1060" y="1320" />
+              <mxPoint x="1060" y="1375.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el12" value="Staff permission" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="1348.0" width="270" height="54" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="06-dfd-level2-2" name="Level 2 DFD | 2.0 Reservations">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1600" pageHeight="2100">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Level 2 DFD | 2.0 Reservations" style="text;html=0;fontSize=30;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="35" y="12" width="1530" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Read the arrow labels as information being passed. Repeated store IDs mean the same records." style="text;html=0;fontSize=17;align=center;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="35" y="64" width="1530" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="2.1" value="2.1&#10;Check available bays and times" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="250" width="380" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="2.2" value="2.2&#10;Collect booking details" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="590" width="380" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="2.3" value="2.3&#10;Check and save all bay allocations" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="930" width="380" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="2.4" value="2.4&#10;Review booking and record outcomes" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="1270" width="380" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="2.5" value="2.5&#10;Process booking changes" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="1610" width="380" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="in-0" value="Customer / Staff" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="150.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-1" value="D3&#10;Bookings" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="260.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-2" value="D4&#10;Resource schedules" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="370.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-3" value="Customer / Staff" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="545.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-4" value="1.4 Access check" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="655.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-5" value="D3&#10;Bookings" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="885.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-6" value="D4&#10;Resource schedules" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="995.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-7" value="Staff" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="1170.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-8" value="5.4 POS result" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="1280.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-9" value="D3&#10;Bookings" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="1390.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-10" value="Customer / Staff" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="1510.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-11" value="D3&#10;Bookings" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="1620.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-12" value="2.3 Allocation check" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="1730.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-0-C" value="Customer / Staff" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="260.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-1-D2" value="D2&#10;Customer records" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="600.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-2-D3" value="D3&#10;Bookings and bay allocations" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="885.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-3-C" value="Customer / Staff" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="995.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-4-D3" value="D3&#10;Bookings and outcomes" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="1170.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-5-P3" value="3.1 Prepare messages" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="1280.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-6-P5" value="5.1 POS exchange" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="1390.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-7-D7" value="D7&#10;Booking change history" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="1510.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-8-P2" value="2.3 Allocation check" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="1620.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-9-P3" value="3.1 Prepare messages" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="1730.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="e0" value="" edge="1" source="2.2" target="2.3" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el0" value="Booking request" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="665" y="783.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" value="" edge="1" source="2.3" target="2.4" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el1" value="Saved Pending booking" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="665" y="1123.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="" edge="1" source="in-0" target="2.1" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="190.0" />
+              <mxPoint x="420" y="300" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el2" value="Availability query" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="163.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="" edge="1" source="in-1" target="2.1" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="300.0" />
+              <mxPoint x="450" y="300" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el3" value="Existing bookings" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="273.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="" edge="1" source="in-2" target="2.1" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="480" y="410.0" />
+              <mxPoint x="480" y="300" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el4" value="Hours and blocks" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="383.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="" edge="1" source="in-3" target="2.2" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="585.0" />
+              <mxPoint x="420" y="640" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el5" value="Customer and booking details" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="558.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="" edge="1" source="in-4" target="2.2" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="695.0" />
+              <mxPoint x="450" y="640" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el6" value="Access permission" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="668.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="" edge="1" source="in-5" target="2.3" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="925.0" />
+              <mxPoint x="420" y="980" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el7" value="Existing allocations" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="898.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" value="" edge="1" source="in-6" target="2.3" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="1035.0" />
+              <mxPoint x="450" y="980" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el8" value="Hours and blocks" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="1008.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" value="" edge="1" source="in-7" target="2.4" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="1210.0" />
+              <mxPoint x="420" y="1320" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el9" value="Review / arrival decision" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="1183.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" value="" edge="1" source="in-8" target="2.4" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="1320.0" />
+              <mxPoint x="450" y="1320" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el10" value="Deposit result" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="1293.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" value="" edge="1" source="in-9" target="2.4" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="480" y="1430.0" />
+              <mxPoint x="480" y="1320" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el11" value="Booking state / deadline" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="1403.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" value="" edge="1" source="in-10" target="2.5" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="1550.0" />
+              <mxPoint x="420" y="1660" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el12" value="Change request / decision" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="1523.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e13" value="" edge="1" source="in-11" target="2.5" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="1660.0" />
+              <mxPoint x="450" y="1660" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el13" value="Original booking" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="1633.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e14" value="" edge="1" source="in-12" target="2.5" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="480" y="1770.0" />
+              <mxPoint x="480" y="1660" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el14" value="Saved / failed change" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="1743.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e15" value="" edge="1" source="2.1" target="out-0-C" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1030" y="300" />
+              <mxPoint x="1030" y="300.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el15" value="Available slots" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="273.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e16" value="" edge="1" source="2.2" target="out-1-D2" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1030" y="640" />
+              <mxPoint x="1030" y="640.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el16" value="Customer details" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="613.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e17" value="" edge="1" source="2.3" target="out-2-D3" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1030" y="980" />
+              <mxPoint x="1030" y="925.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el17" value="One saved booking; all bays" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="898.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e18" value="" edge="1" source="2.3" target="out-3-C" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1060" y="980" />
+              <mxPoint x="1060" y="1035.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el18" value="Reference / conflict result" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="1008.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e19" value="" edge="1" source="2.4" target="out-4-D3" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1030" y="1320" />
+              <mxPoint x="1030" y="1210.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el19" value="Status / released bays" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="1183.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e20" value="" edge="1" source="2.4" target="out-5-P3" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1060" y="1320" />
+              <mxPoint x="1060" y="1320.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el20" value="Booking / expiry event" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="1293.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e21" value="" edge="1" source="2.4" target="out-6-P5" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1090" y="1320" />
+              <mxPoint x="1090" y="1430.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el21" value="POS exchange request" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="1403.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e22" value="" edge="1" source="2.5" target="out-7-D7" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1030" y="1660" />
+              <mxPoint x="1030" y="1550.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el22" value="Change outcome" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="1523.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e23" value="" edge="1" source="2.5" target="out-8-P2" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1060" y="1660" />
+              <mxPoint x="1060" y="1660.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el23" value="Approved change details" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="1633.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e24" value="" edge="1" source="2.5" target="out-9-P3" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1090" y="1660" />
+              <mxPoint x="1090" y="1770.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el24" value="Change notice" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="1743.0" width="270" height="54" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="06-dfd-level2-3" name="Level 2 DFD | 3.0 Notifications">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1600" pageHeight="1420">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Level 2 DFD | 3.0 Notifications" style="text;html=0;fontSize=30;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="35" y="12" width="1530" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Read the arrow labels as information being passed. Repeated store IDs mean the same records." style="text;html=0;fontSize=17;align=center;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="35" y="64" width="1530" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="3.1" value="3.1&#10;Prepare due messages" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="250" width="380" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="3.2" value="3.2&#10;Send messages" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="590" width="380" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="3.3" value="3.3&#10;Save delivery result" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="930" width="380" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="in-0" value="D2&#10;Customer contacts" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="150.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-1" value="D3&#10;Bookings" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="260.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-2" value="2.0 Reservations" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="370.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-3" value="D8&#10;Message delivery" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="600.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-4" value="Email / SMS Provider" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="940.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-0-D8" value="D8&#10;Message delivery records" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="260.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-1-M" value="Email / SMS Provider" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="600.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-2-D8" value="D8&#10;Message delivery records" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="940.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="e0" value="" edge="1" source="3.1" target="3.2" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el0" value="Message and recipient" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="665" y="443.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" value="" edge="1" source="in-0" target="3.1" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="190.0" />
+              <mxPoint x="420" y="300" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el1" value="Recipient details" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="163.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="" edge="1" source="in-1" target="3.1" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="300.0" />
+              <mxPoint x="450" y="300" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el2" value="Schedule and due alerts" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="273.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="" edge="1" source="in-2" target="3.1" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="480" y="410.0" />
+              <mxPoint x="480" y="300" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el3" value="Confirmed / expired / changed" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="383.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="" edge="1" source="in-3" target="3.2" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="640.0" />
+              <mxPoint x="420" y="640" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el4" value="Duplicate-message check" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="613.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="" edge="1" source="in-4" target="3.3" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="980.0" />
+              <mxPoint x="420" y="980" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el5" value="Delivery result" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="953.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="" edge="1" source="3.1" target="out-0-D8" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1030" y="300" />
+              <mxPoint x="1030" y="300.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el6" value="Prepared message" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="273.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="" edge="1" source="3.2" target="out-1-M" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1030" y="640" />
+              <mxPoint x="1030" y="640.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el7" value="Confirmation / reminder / alert" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="613.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" value="" edge="1" source="3.3" target="out-2-D8" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1030" y="980" />
+              <mxPoint x="1030" y="980.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el8" value="Sent / failed result" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="953.0" width="270" height="54" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="06-dfd-level2-4" name="Level 2 DFD | 4.0 Reports">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1600" pageHeight="1420">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Level 2 DFD | 4.0 Reports" style="text;html=0;fontSize=30;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="35" y="12" width="1530" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Read the arrow labels as information being passed. Repeated store IDs mean the same records." style="text;html=0;fontSize=17;align=center;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="35" y="64" width="1530" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="4.1" value="4.1&#10;Check staff report request" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="250" width="380" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="4.2" value="4.2&#10;Calculate report results" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="590" width="380" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="4.3" value="4.3&#10;Show records and reports" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="930" width="380" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="in-0" value="Authorized Staff" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="205.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-1" value="1.4 Access check" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="315.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-2" value="D2&#10;Customers" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="490.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-3" value="D3&#10;Bookings" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="600.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-4" value="D4&#10;Resource schedules" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="710.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-0-S" value="Authorized Staff" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="260.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-1-S" value="Authorized Staff" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="940.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="e0" value="" edge="1" source="4.1" target="4.2" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el0" value="Approved filters" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="665" y="443.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" value="" edge="1" source="4.2" target="4.3" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el1" value="Report results" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="665" y="783.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="" edge="1" source="in-0" target="4.1" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="245.0" />
+              <mxPoint x="420" y="300" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el2" value="Search / report filters" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="218.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="" edge="1" source="in-1" target="4.1" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="355.0" />
+              <mxPoint x="450" y="300" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el3" value="Staff permission" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="328.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="" edge="1" source="in-2" target="4.2" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="530.0" />
+              <mxPoint x="420" y="640" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el4" value="Customer booking links" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="503.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="" edge="1" source="in-3" target="4.2" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="640.0" />
+              <mxPoint x="450" y="640" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el5" value="Booking data" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="613.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="" edge="1" source="in-4" target="4.2" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="480" y="750.0" />
+              <mxPoint x="480" y="640" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el6" value="Available-time data" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="723.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="" edge="1" source="4.1" target="out-0-S" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1030" y="300" />
+              <mxPoint x="1030" y="300.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el7" value="Access result" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="273.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" value="" edge="1" source="4.3" target="out-1-S" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1030" y="980" />
+              <mxPoint x="1030" y="980.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el8" value="Records / booking reports" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="953.0" width="270" height="54" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="06-dfd-level2-5" name="Level 2 DFD | 5.0 POS and Whole-Shop Deposits">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1600" pageHeight="1760">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Level 2 DFD | 5.0 POS and Whole-Shop Deposits" style="text;html=0;fontSize=30;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="35" y="12" width="1530" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Read the arrow labels as information being passed. Repeated store IDs mean the same records." style="text;html=0;fontSize=17;align=center;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="35" y="64" width="1530" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="5.1" value="5.1&#10;Send booking details to POS" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="250" width="380" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="5.2" value="5.2&#10;Check returned POS status" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="590" width="380" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="5.3" value="5.3&#10;Review deposit evidence" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="930" width="380" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="5.4" value="5.4&#10;Save transaction and verification result" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="1270" width="380" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="in-0" value="2.4 Reservation review" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="260.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-1" value="POS System" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="600.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-2" value="Authorized Staff" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="940.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-3" value="D5&#10;POS records" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="1280.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-0-P" value="POS System" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="260.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-1-D5" value="D5&#10;POS reference records" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="600.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-2-S" value="Authorized Staff" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="940.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-3-P2" value="2.4 Reservation review" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="1225.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-4-D5" value="D5&#10;POS reference records" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="1335.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="e0" value="" edge="1" source="5.2" target="5.3" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el0" value="Valid status / failed exchange" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="665" y="783.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" value="" edge="1" source="5.3" target="5.4" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el1" value="Verified / unverified result" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="665" y="1123.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="" edge="1" source="in-0" target="5.1" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="300.0" />
+              <mxPoint x="420" y="300" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el2" value="Booking reference / details" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="273.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="" edge="1" source="in-1" target="5.2" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="640.0" />
+              <mxPoint x="420" y="640" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el3" value="Transaction and payment status" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="613.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="" edge="1" source="in-2" target="5.3" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="980.0" />
+              <mxPoint x="420" y="980" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el4" value="Verification evidence / decision" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="953.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="" edge="1" source="in-3" target="5.4" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="1320.0" />
+              <mxPoint x="420" y="1320" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el5" value="Duplicate-result check" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="1293.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="" edge="1" source="5.1" target="out-0-P" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1030" y="300" />
+              <mxPoint x="1030" y="300.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el6" value="Reservation details" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="273.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="" edge="1" source="5.2" target="out-1-D5" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1030" y="640" />
+              <mxPoint x="1030" y="640.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el7" value="Valid / failed exchange" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="613.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" value="" edge="1" source="5.3" target="out-2-S" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1030" y="980" />
+              <mxPoint x="1030" y="980.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el8" value="Evidence for review" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="953.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" value="" edge="1" source="5.4" target="out-3-P2" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1030" y="1320" />
+              <mxPoint x="1030" y="1265.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el9" value="POS / deposit result" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="1238.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" value="" edge="1" source="5.4" target="out-4-D5" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1060" y="1320" />
+              <mxPoint x="1060" y="1375.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el10" value="Transaction / verification result" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="1348.0" width="270" height="54" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="06-dfd-level2-6" name="Level 2 DFD | 6.0 Basic Inquiries">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1600" pageHeight="1080">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Level 2 DFD | 6.0 Basic Inquiries" style="text;html=0;fontSize=30;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="35" y="12" width="1530" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Read the arrow labels as information being passed. Repeated store IDs mean the same records." style="text;html=0;fontSize=17;align=center;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="35" y="64" width="1530" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="6.1" value="6.1&#10;Find a predefined answer" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="250" width="380" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="6.2" value="6.2&#10;Show answer or refer to staff" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="610" y="590" width="380" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="in-0" value="Customer / Visitor" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="205.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="in-1" value="D6&#10;Approved FAQ content" style="shape=partialRectangle;right=0;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="315.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="out-0-C" value="Customer / Visitor" style="whiteSpace=wrap;html=0;fillColor=#edf2fa;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="600.0" width="335" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="e0" value="" edge="1" source="6.1" target="6.2" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el0" value="Answer / no match" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="665" y="443.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" value="" edge="1" source="in-0" target="6.1" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="245.0" />
+              <mxPoint x="420" y="300" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el1" value="Question" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="218.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="" edge="1" source="in-1" target="6.1" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="355.0" />
+              <mxPoint x="450" y="300" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el2" value="Predefined answers" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="360" y="328.0" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="" edge="1" source="6.2" target="out-0-C" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1030" y="640" />
+              <mxPoint x="1030" y="640.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el3" value="Answer / staff referral" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="975" y="613.0" width="270" height="54" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="07-pos-integration" name="Integration Flow | Booking and POS">
+    <mxGraphModel grid="1" gridSize="10" page="1" pageWidth="1600" pageHeight="1890">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Integration Flow | Booking and POS" style="text;html=0;fontSize=30;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="35" y="12" width="1530" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Reservation manages bookings. POS handles money. A deposit result does not confirm a booking by itself." style="text;html=0;fontSize=17;align=center;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="35" y="64" width="1530" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="start" value="Booking needs a POS exchange" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#dcece6;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="565" y="160" width="470" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="send" value="Send booking reference and service details to POS" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="565" y="315" width="470" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="pos" value="POS handles billing / deposit processing" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="565" y="480" width="470" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="result" value="Valid POS response?" style="rhombus;whiteSpace=wrap;html=0;fillColor=#fff5df;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="565" y="650" width="470" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="fail" value="No valid response&#10;Keep deposit unverified; record failure" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="60" y="855" width="370" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="duplicate" value="Result already recorded?" style="rhombus;whiteSpace=wrap;html=0;fillColor=#fff5df;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="565" y="880" width="470" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="existing" value="Keep the recorded result&#10;Do not apply it twice" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1150" y="1090" width="370" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="verified" value="Deposit evidence accepted?" style="rhombus;whiteSpace=wrap;html=0;fillColor=#fff5df;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="565" y="1100" width="470" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="unverified" value="Record status; deposit stays unverified&#10;Staff follows up under agreed policy" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="55" y="1320" width="430" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="save" value="Save verified deposit and transaction reference" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="565" y="1330" width="470" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="review" value="Return result to staff booking review" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#edf6f3;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="565" y="1510" width="470" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="end" value="Staff may confirm only when&#10;all approval requirements are met" style="rounded=1;arcSize=30;whiteSpace=wrap;html=0;fillColor=#dcece6;strokeColor=#172b35;fontColor=#172b35;fontSize=19;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="565" y="1685" width="470" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="e0" value="" edge="1" source="start" target="send" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" value="" edge="1" source="send" target="pos" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="" edge="1" source="pos" target="result" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="" edge="1" source="save" target="review" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="" edge="1" source="review" target="end" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="" edge="1" source="result" target="duplicate" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el5" value="Yes" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="665" y="793" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="" edge="1" source="result" target="fail" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=0;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="35" y="710" />
+              <mxPoint x="35" y="905" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el6" value="No" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="120" y="763" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="" edge="1" source="duplicate" target="existing" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=1;exitY=.5;entryX=1;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1550" y="940" />
+              <mxPoint x="1550" y="1135" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el7" value="Yes" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="1175" y="993" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" value="" edge="1" source="duplicate" target="verified" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el8" value="No" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="665" y="1023" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" value="" edge="1" source="verified" target="save" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="el9" value="Yes" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="665" y="1243" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" value="" edge="1" source="verified" target="unverified" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=0;exitY=.5;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="30" y="1160" />
+              <mxPoint x="30" y="1375" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el10" value="No" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="135" y="1233" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" value="" edge="1" source="unverified" target="review" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=1;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="270" y="1630" />
+              <mxPoint x="1080" y="1630" />
+              <mxPoint x="1080" y="1552" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el11" value="Unverified result" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="1115" y="1523" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" value="" edge="1" source="fail" target="review" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="245" y="1460" />
+              <mxPoint x="525" y="1460" />
+              <mxPoint x="525" y="1552" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el12" value="Failure result" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="115" y="1433" width="270" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="e13" value="" edge="1" source="existing" target="review" parent="1" style="endArrow=block;html=0;rounded=0;strokeColor=#172b35;strokeWidth=2;dashed=0;exitX=.5;exitY=1;entryX=0;entryY=.5;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1335" y="1460" />
+              <mxPoint x="530" y="1460" />
+              <mxPoint x="530" y="1552" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="el13" value="Existing result" style="text;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="1205" y="1433" width="270" height="54" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

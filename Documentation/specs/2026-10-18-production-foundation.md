@@ -2,6 +2,8 @@
 
 Status: proposed specification for review, not an implemented production system.
 
+> Business requirements aligned on 2026-10-27 with revised [Chapter I](../CHAPTER_1.md) and [PROJECT.md](../PROJECT.md). The original foundation scope remains distinct from subsequent reservation/POS feature implementation.
+
 ## Purpose and constraints
 
 Prepare Hole In Hub for concurrent work by multiple contributors and eventual production deployment. Success means a new contributor can reproduce the build, follow one set of rules, submit a small reviewed change, and verify database and UI changes without guessing. Automated checks must enforce the conventions that can be checked reliably.
@@ -63,7 +65,7 @@ Recommended scheme: guard each resource and venue-local calendar date touched by
 
 Whole-shop requests enumerate all bookable resources through the same guard mechanism. Changes to the bookable resource set require a common catalog guard also acquired by allocation operations, preventing a resource from being added outside a concurrent whole-shop allocation. Rescheduling locks both old and new resource/date sets and commits all changes atomically.
 
-Retry transient transaction conflicts with bounded attempts, rechecking availability on each retry. Business conflicts return a useful conflict response. Use a unique idempotency key to detect repeated submissions and version checks to reject stale staff edits. Preserve Pending capacity holds without automatic expiry. Notifications run after commit and must not roll back a successful booking.
+Retry transient transaction conflicts with bounded attempts, rechecking availability on each retry. Business conflicts return a useful conflict response. Use a unique idempotency key to detect repeated submissions and version checks to reject stale staff edits. Follow the revised Pending hold/expiry policy in [PROJECT.md](../PROJECT.md): ordinary online requests have a proposed 30-minute deadline during agreed staff review hours, alerts at 15 and 25 minutes, and atomic release on expiry. Whole-shop deposit deadlines and confirmed staff-managed no-show handling remain separate. Notifications run after commit and must not roll back a successful booking.
 
 These are future implementation acceptance criteria, not claims that the starter already prevents double booking. Re-evaluate guard granularity only against measured contention and verified correctness.
 
@@ -108,4 +110,4 @@ Each stage updates documentation and tests in the same change. Detailed file-lev
 
 Acceptance: a contributor can follow README.md from a clean checkout, reproduce assets/build/tests, run migrations twice safely against a local replica set, and understand rules for ownership, database changes, UI changes, and release. CI configuration provides equivalent gates once pushed to GitHub. Implementation reports evidence and remaining limitations accurately.
 
-Excluded from this foundation: full booking features, authentication product flows, invented business policies, production billing/POS/vouchers, chatbots, notifications, a comprehensive redesign, a second database, and an actual production deployment. Existing demonstration-only payment scope remains intact; operational preparation does not turn simulated payment evidence into real evidence.
+Excluded from this foundation: full booking features, authentication product flows, invented business policies, production billing/POS/vouchers, chatbots, notifications, a comprehensive redesign, a second database, and an actual production deployment. The revised Chapter I requires an agreed POS integration interface in a subsequent feature phase; billing/payment/voucher processing remains external. This foundation does not implement that interface, and simulated payment evidence must not be treated as verified evidence.

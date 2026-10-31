@@ -1,0 +1,13 @@
+@model HoleInHub.Web.ViewModels.SignInModel
+@{ ViewData["Title"] = "Welcome Back"; }
+<section class="account-page page-shell"><div class="account-inner"><h1>WELCOME BACK</h1>
+@if (TempData["AccountMessage"] is string message) { <p role="status">@message</p> }
+@if (ViewData["Message"] is string result) { <p role="status">@result</p> }
+<form method="post" action="/account/sign-in">
+@Html.AntiForgeryToken()
+<div asp-validation-summary="All" role="alert" class="validation-summary"></div>
+<input asp-for="ReturnUrl" type="hidden" />
+<div class="field"><label asp-for="Email"></label><input asp-for="Email" aria-describedby="Email-error" type="email" autocomplete="email" required  /><span asp-validation-for="Email" id="Email-error" class="field-error"></span></div>
+<div class="field"><label asp-for="Password"></label><input asp-for="Password" aria-describedby="Password-error" type="password" autocomplete="current-password" required  /><span asp-validation-for="Password" id="Password-error" class="field-error"></span></div>
+<button class="button" type="submit">Sign in</button></form>
+<nav aria-label="Account"><a href="/account/sign-in">Sign in</a> · <a href="/account/sign-up">Create account</a> · <a href="/account/forgot-password">Forgot password?</a> · <a href="/account/verify-email">Verify email</a></nav></div></section>

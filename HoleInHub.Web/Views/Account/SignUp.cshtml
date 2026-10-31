@@ -1,0 +1,14 @@
+@model HoleInHub.Web.ViewModels.SignUpModel
+@{ ViewData["Title"] = "Create Your Account"; }
+<section class="account-page page-shell"><div class="account-inner"><h1>CREATE YOUR ACCOUNT</h1>
+@if (TempData["AccountMessage"] is string message) { <p role="status">@message</p> }
+@if (ViewData["Message"] is string result) { <p role="status">@result</p> }
+<p>Use at least 12 characters, including uppercase and lowercase letters, a number, and a symbol.</p>
+<form method="post" action="/account/sign-up">
+@Html.AntiForgeryToken()
+<div asp-validation-summary="All" role="alert" class="validation-summary"></div>
+<div class="field"><label asp-for="Email"></label><input asp-for="Email" aria-describedby="Email-error" type="email" autocomplete="email" required  /><span asp-validation-for="Email" id="Email-error" class="field-error"></span></div>
+<div class="field"><label asp-for="Password"></label><input asp-for="Password" aria-describedby="Password-error" type="password" autocomplete="new-password" required minlength="12" maxlength="128" /><span asp-validation-for="Password" id="Password-error" class="field-error"></span></div>
+<div class="field"><label asp-for="ConfirmPassword"></label><input asp-for="ConfirmPassword" aria-describedby="ConfirmPassword-error" type="password" autocomplete="new-password" required minlength="12" maxlength="128" /><span asp-validation-for="ConfirmPassword" id="ConfirmPassword-error" class="field-error"></span></div>
+<button class="button" type="submit">Create account</button></form>
+<nav aria-label="Account"><a href="/account/sign-in">Sign in</a> · <a href="/account/sign-up">Create account</a> · <a href="/account/forgot-password">Forgot password?</a> · <a href="/account/verify-email">Verify email</a></nav></div></section>
