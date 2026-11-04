@@ -1,6 +1,6 @@
 # Operations and Production Runbook
 
-This runbook guides operators through configuring, monitoring, and maintaining the Hole In Hub Reservation Management Subsystem in staging and production.
+Synchronized 2026-11-04 for operating the current implementation. This runbook is not a production-readiness certification. Whole-shop checkout remains a Development/Demo simulation; live POS and operational policies remain incomplete. See [current feature status](CURRENT-SYSTEM.md).
 
 ---
 
@@ -9,9 +9,9 @@ This runbook guides operators through configuring, monitoring, and maintaining t
 | Variable | Required | Default | Purpose |
 | :--- | :--- | :--- | :--- |
 | `ASPNETCORE_ENVIRONMENT` | Yes | `Production` | Controls error display, security headers, HSTS |
-| `MongoDb__ConnectionString` | Yes | - | MongoDB URI (must specify replicaSet parameter) |
-| `MongoDb__DatabaseName` | Yes | `holeinhub_prod` | Target production database name |
-| `MongoDb__ReplicaSetName` | No | `rs0` | Replica set identifier |
+| `MongoDb__ConnectionString` | Yes | - | MongoDB URI; Atlas uses its SRV URI and discovers the replica set |
+| `MongoDb__DatabaseName` | Yes | Explicitly select | Target database; do not rely on development defaults |
+| `MongoDb__ReplicaSetName` | No | Unset | Optional explicit replica set; leave unset for Atlas |
 | `MongoDb__ServerSelectionTimeoutMs` | No | `5000` | Timeout for cluster node discovery |
 
 ---
@@ -26,7 +26,7 @@ The application provides two endpoints for load balancers and orchestrators (e.g
 - **Action on Failure**: Container restart.
 
 ### 2. Readiness Probe: `GET /health/ready`
-- **Purpose**: Verifies that MongoDB is reachable via ping command AND baseline migrations have been applied.
+- **Purpose**: Verifies that MongoDB is reachable via ping command AND all migration IDs 001–007 are recorded, including 005 with Google disabled. This does not verify index integrity, SMTP, OAuth or POS.
 - **Expected Status**: `200 OK`
 - **Action on Failure**: Remove pod from load balancer pool (do not restart immediately).
 
@@ -68,3 +68,23 @@ db.outbox.updateOne(
 ```
 
 Replay individual reviewed events: SMTP delivery is at least once, so a process failure after sending may produce a duplicate. Expired account links require a fresh verification/reset request; reservation alerts are checked against current reservation status before delivery.
+
+## Local Configuration and Readiness
+
+Follow [Developer Onboarding](ONBOARDING.md#configuration-scope-and-secrets) for terminal scope, persistent Windows settings, collaborators, and Mailpit. Both applications currently load environment variables; neither auto-loads `.env`, and Migrator does not load Web user secrets. Restart the launching terminal/IDE/agent after changing persistent user variables. Keep migration credentials separate from application credentials. Before diagnosing sign-in or availability, require `/health/ready` to return HTTP 200 and `Healthy`; preserve an existing configured process when starting a preview.
+
+
+## Account, SMTP and booking configuration
+
+Use [ONBOARDING.md](ONBOARDING.md) for the supported settings and launch environment. Configure SMTP host/port/from, TLS and credentials as appropriate, and a trusted AccountEmail public base URL for generated links. Production SMTP requires TLS. Configure ReservationPolicy approval, durations, review coverage and staff recipients before accepting requests. Google is optional and disabled by default; enable only after migration 005 and correct client/callback configuration.
+
+Persist and protect ASP.NET Data Protection keys; share them across replicas so cookies, drafts and encrypted queued emails remain readable. Preserve an existing preview's environment before restart. Never use shared/Atlas data for integration tests. Disable simulated payments outside explicit Development/Demo evaluation; no live money collection is implemented.
+
+A healthy database probe does not prove worker/email delivery. Monitor Failed/unsent outbox records and verify an actual delivery. The Web worker processes Pending deadlines and alerts as well as delivery; application downtime delays processing, so deadlines are not a hard real-time guarantee.
+
+
+## Schema 006 deployment and retention
+
+Follow [MIGRATIONS.md](MIGRATIONS.md#006_schemahardening-existing-feature-validation) for the coordinated upgrade: backup, stop old Web/worker instances, explicit migration, then matching new Web build. Preflight failures require deliberate data repair, not deletion of booking history. Do not run old binaries against additive-field writes.
+
+Schema 006 retains verification ExpiresUtc TTL; the separate migration 007 adds TTL for guest recovery quotas. No new booking, history or outbox purge is enabled. Obtain approved retention periods before deleting sent-email payloads or historical contacts; retain failed/unresolved messages for investigation. Monitor per-booking history growth. Never delete allocation guards or migration state as housekeeping without a separate correctness/recovery procedure.

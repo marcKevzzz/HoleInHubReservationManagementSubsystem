@@ -1,0 +1,60 @@
+{
+  "bsonType": "object",
+  "required": [
+    "_id",
+    "Email",
+    "CodeHash",
+    "SentUtc",
+    "ExpiresUtc"
+  ],
+  "properties": {
+    "_id": {
+      "bsonType": "string",
+      "minLength": 1
+    },
+    "Email": {
+      "bsonType": "string",
+      "minLength": 1,
+      "maxLength": 254
+    },
+    "CodeHash": {
+      "bsonType": "string",
+      "minLength": 1
+    },
+    "SentUtc": {
+      "bsonType": "date"
+    },
+    "ExpiresUtc": {
+      "bsonType": "date"
+    },
+    "Attempts": {
+      "bsonType": "int",
+      "minimum": 0
+    },
+    "VerifiedUtc": {
+      "bsonType": [
+        "date",
+        "null"
+      ]
+    },
+    "ConsumedKey": {
+      "bsonType": [
+        "string",
+        "null"
+      ]
+    },
+    "ProtectedDraft": {
+      "bsonType": [
+        "string",
+        "null"
+      ]
+    },
+    "Purpose": {
+      "enum": [
+        "GuestBooking",
+        "AccountEmail",
+        "GuestRecovery"
+      ]
+    }
+  }
+}

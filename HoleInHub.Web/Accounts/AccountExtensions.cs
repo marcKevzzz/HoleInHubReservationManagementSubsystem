@@ -1,5 +1,6 @@
 using System.Threading.RateLimiting;
 using HoleInHub.Business.Accounts;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 
@@ -20,7 +21,33 @@ public static class AccountExtensions
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
         }).AddUserStore<AccountStore>().AddSignInManager().AddDefaultTokenProviders();
         services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromHours(2));
-        services.AddAuthentication(IdentityConstants.ApplicationScheme).AddIdentityCookies();
+        var authentication = services.AddAuthentication(IdentityConstants.ApplicationScheme);
+        authentication.AddIdentityCookies();
+        if (configuration.GetValue<bool>("Authentication:Google:Enabled"))
+        {
+            var clientId = configuration["Authentication:Google:ClientId"];
+            var clientSecret = configuration["Authentication:Google:ClientSecret"];
+            if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
+            {
+                throw new InvalidOperationException("Google authentication requires both ClientId and ClientSecret when enabled.");
+            }
+            authentication.AddGoogle(options =>
+            {
+                options.ClientId = clientId; options.ClientSecret = clientSecret;
+                options.SignInScheme = IdentityConstants.ExternalScheme;
+                options.SaveTokens = false;
+                options.ClaimActions.MapJsonKey("google:email_verified", "email_verified");
+                options.ClaimActions.MapJsonKey("google:hosted_domain", "hd");
+                options.Events.OnRemoteFailure = context =>
+                {
+                    context.HandleResponse(); context.Response.Redirect("/account/google-failed"); return Task.CompletedTask;
+                };
+                options.Events.OnAccessDenied = context =>
+                {
+                    context.HandleResponse(); context.Response.Redirect("/account/google-failed"); return Task.CompletedTask;
+                };
+            });
+        }
         services.ConfigureApplicationCookie(options =>
         {
             options.LoginPath = "/account/sign-in";
@@ -35,7 +62,18 @@ public static class AccountExtensions
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            options.OnRejected = async (context, ct) =>
+            {
+                if (context.HttpContext.Request.Path.StartsWithSegments("/guest/reservations"))
+                {
+                    context.HttpContext.Response.ContentType = "text/plain; charset=utf-8";
+                    context.HttpContext.Response.Headers.CacheControl = "no-store";
+                    await context.HttpContext.Response.WriteAsync("Too many requests. Please wait a few minutes before requesting or verifying another code.", ct);
+                }
+            };
             options.AddPolicy("accounts", context => RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+            options.AddPolicy("guest-recovery-send", context => RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(10), QueueLimit = 0 }));
+            options.AddPolicy("guest-recovery-verify", context => RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(10), QueueLimit = 0 }));
         });
         var keys = configuration["DataProtection:KeyDirectory"];
         if (!environment.IsDevelopment() && !environment.IsEnvironment("Testing") && string.IsNullOrWhiteSpace(keys))

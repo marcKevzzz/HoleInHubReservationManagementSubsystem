@@ -12,7 +12,24 @@ public sealed class AllocationTests(MongoDbFixture fixture) : IClassFixture<Mong
     {
         Assert.True(fixture.IsServerAvailable, "Start the MongoDB replica set."); var context = fixture.CreateDbContext(); await new Migration_002_Reservations().UpAsync(context.Database, default); return (new ReservationPersistence(context), context);
     }
-    private static ReservationRecord Request(string[] ids, string service = "Regular") => new() { AccountId = Guid.NewGuid().ToString("N"), Email = "customer@example.test", IdempotencyKey = Guid.NewGuid().ToString("N"), PayloadHash = "test", StartUtc = new DateTime(2026, 11, 3, 4, 0, 0, DateTimeKind.Utc), EndUtc = new DateTime(2026, 11, 3, 5, 0, 0, DateTimeKind.Utc), CreatedUtc = DateTime.UtcNow, ReviewDeadlineUtc = DateTime.UtcNow.AddMinutes(30), ResourceIds = ids, Service = service };
+    private static ReservationRecord Request(string[] ids, string service = "Regular") => new() { AccountId = Guid.NewGuid().ToString("N"), Email = "customer@example.test", IdempotencyKey = Guid.NewGuid().ToString("N"), SubmissionHash = "test", StartUtc = new DateTime(2026, 11, 3, 4, 0, 0, DateTimeKind.Utc), EndUtc = new DateTime(2026, 11, 3, 5, 0, 0, DateTimeKind.Utc), CreatedUtc = DateTime.UtcNow, ReviewDeadlineUtc = DateTime.UtcNow.AddMinutes(30), ResourceIds = ids, Service = service };
+    [Fact]
+    public async Task SubmissionReceiptIsDeliverableBeforeAndAfterStaffChangesTheStatus()
+    {
+        var (store, context) = await Setup();
+        var request = Request(["bay-1"]);
+        await store.InsertAsync(request, default);
+        var receipt = await context.Database.GetCollection<OutboxRecord>("outbox").Find(x => x.Id == request.Id + ":submitted").SingleAsync();
+        var outbox = new OutboxPersistence(context);
+        Assert.Null(receipt.RequiredStatus);
+        Assert.True(await outbox.IsEligibleAsync(receipt, default));
+        Assert.True(await store.TransitionAsync(request.Id, "approve", "staff", DateTime.UtcNow, [], default));
+        Assert.True(await outbox.IsEligibleAsync(receipt, default));
+        var staleAlert = new OutboxRecord { ReservationId = request.Id, RequiredStatus = "Pending" };
+        Assert.False(await outbox.IsEligibleAsync(staleAlert, default));
+        Assert.False(await outbox.IsEligibleAsync(new OutboxRecord { ReservationId = "missing" }, default));
+    }
+
     [Fact]
     public async Task ConcurrentOverlapsHaveOneWinner()
     {
@@ -37,7 +54,7 @@ public sealed class AllocationTests(MongoDbFixture fixture) : IClassFixture<Mong
     [Fact]
     public async Task ExpiryReleasesCapacityAndWritesNotificationsOnce()
     {
-        var (store, context) = await Setup(); var request = Request(["bay-1"]); request.ReviewDeadlineUtc = DateTime.UtcNow.AddMinutes(-1); await store.InsertAsync(request, default); await store.ExpireAsync(DateTime.UtcNow, ["staff@example.test"], default); await store.ExpireAsync(DateTime.UtcNow, ["staff@example.test"], default); Assert.Equal("Expired", (await store.OwnedAsync(request.AccountId, request.Id, default))!.Status); Assert.Equal(2, await context.Database.GetCollection<OutboxRecord>("outbox").CountDocumentsAsync(FilterDefinition<OutboxRecord>.Empty)); await store.InsertAsync(Request(["bay-1"]), default);
+        var (store, context) = await Setup(); var request = Request(["bay-1"]); request.ReviewDeadlineUtc = DateTime.UtcNow.AddMinutes(-1); await store.InsertAsync(request, default); await store.ExpireAsync(DateTime.UtcNow, ["staff@example.test"], default); await store.ExpireAsync(DateTime.UtcNow, ["staff@example.test"], default); Assert.Equal("Expired", (await store.OwnedAsync(request.AccountId, request.Id, default))!.Status); Assert.Equal(3, await context.Database.GetCollection<OutboxRecord>("outbox").CountDocumentsAsync(FilterDefinition<OutboxRecord>.Empty)); await store.InsertAsync(Request(["bay-1"]), default);
     }
     [Fact]
     public async Task CatalogMutationContendsWithWholeShop()
@@ -59,7 +76,7 @@ public sealed class AllocationTests(MongoDbFixture fixture) : IClassFixture<Mong
     {
         var (store, context) = await Setup(); var outbox = new OutboxPersistence(context); var request = Request(["bay-1"]); request.CreatedUtc = DateTime.UtcNow.AddMinutes(-26); request.ReviewDeadlineUtc = DateTime.UtcNow.AddMinutes(4); await store.InsertAsync(request, default);
         var service = new HoleInHub.Business.Reservations.ReservationService(store, outbox, Microsoft.Extensions.Options.Options.Create(new HoleInHub.Business.Reservations.ReservationPolicy { StaffEmails = ["staff@example.test"] })); await service.ProcessPendingAsync(default); await service.ProcessPendingAsync(default);
-        var message = Assert.Single(await context.Database.GetCollection<OutboxRecord>("outbox").Find(FilterDefinition<OutboxRecord>.Empty).ToListAsync()); Assert.Contains("review25", message.Id); Assert.True(await outbox.IsEligibleAsync(message, default)); await store.ExpireAsync(DateTime.UtcNow.AddMinutes(5), ["staff@example.test"], default); Assert.False(await outbox.IsEligibleAsync(message, default));
+        var message = Assert.Single(await context.Database.GetCollection<OutboxRecord>("outbox").Find(x => x.RequiredStatus == "Pending").ToListAsync()); Assert.Contains("review25", message.Id); Assert.True(await outbox.IsEligibleAsync(message, default)); await store.ExpireAsync(DateTime.UtcNow.AddMinutes(5), ["staff@example.test"], default); Assert.False(await outbox.IsEligibleAsync(message, default));
     }
     [Fact]
     public async Task ClosureRejectsSubmission()

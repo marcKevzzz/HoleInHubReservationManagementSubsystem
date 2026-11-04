@@ -1,5 +1,8 @@
 # Reservation policies and MongoDB data design
 
+> Historical design/execution record. Retained for traceability; not a current feature inventory or current verification evidence. See [current implementation](../CURRENT-SYSTEM.md) and [database reference](../DATABASE.md), synchronized 2026-11-04. Later owner directives take precedence.
+
+
 Status: proposed design for owner review, 2026-10-31. This document does not change application behavior or override Chapter I. Rules marked **baseline** come from [Chapter I](../CHAPTER_1.md) and [PROJECT.md](../PROJECT.md); rules marked **proposal** are design recommendations, not approved venue policy. No deposit percentage, refund entitlement, or coaching capacity is inferred from the manuscript.
 
 ## 1. Terms and boundaries
@@ -92,7 +95,7 @@ Suggested deposit projection identifiers: `NotRequired`, `AwaitingVerification`,
 
 ## 5. Logical MongoDB schema and data dictionary
 
-This is a target schema, not an applied migration. The companion [reservation core JSON schema](../schemas/reservation.schema.json) defines the proposed reservation BSON structure. Below, `id` means a stable string; UTC dates are BSON dates; `version` is an integer incremented by conditional writes. Optional values are omitted rather than invented empty strings. Existing PascalCase BSON fields require explicit mapping/backfill before adopting these camelCase names.
+This is a target schema, not an applied migration. The companion [reservation core JSON schema](../schemas/reservation.proposed.schema.json) defines the proposed reservation BSON structure. Below, `id` means a stable string; UTC dates are BSON dates; `version` is an integer incremented by conditional writes. Optional values are omitted rather than invented empty strings. Existing PascalCase BSON fields require explicit mapping/backfill before adopting these camelCase names.
 
 | Collection | Required data and relationships | Optional / conditional data |
 | --- | --- | --- |

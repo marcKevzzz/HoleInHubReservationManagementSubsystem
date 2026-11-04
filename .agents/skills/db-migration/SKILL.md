@@ -47,6 +47,10 @@ public sealed class Migration_002_AddCustomerIndices : IMongoMigration
 }
 ```
 
+## Launch Configuration
+
+Before running the CLI against local MongoDB or Atlas, follow [Developer Onboarding](../../../Documentation/ONBOARDING.md#configuration-scope-and-secrets). Confirm the intended database and separate migration credential in the launching process; persistent Atlas environment variables override local JSON defaults. Migrator currently loads environment variables, not `.env` or Web user secrets. Keep integration tests on isolated local MongoDB databases, and inspect configuration presence without displaying credentials.
+
 ## 3. Creating a New Migration: Step-by-Step
 
 1. **Determine the next identifier**: Check existing migrations in `HoleInHub.Data/Migrations/Definitions/` and use the next sequential number.
@@ -54,7 +58,7 @@ public sealed class Migration_002_AddCustomerIndices : IMongoMigration
 3. **Register Migration**: Add to `HoleInHub.Data/Extensions/ServiceCollectionExtensions.cs`.
 4. **Test Migration**: Run integration tests to verify sequential execution and idempotency:
    ```powershell
-   dotnet test HoleInHub.Tests.Integration --filter "FullyQualifiedName~MongoMigrationRunnerTests"
+   dotnet test tests/HoleInHub.Tests.Integration --filter "FullyQualifiedName~MongoMigrationRunnerTests"
    ```
 5. **Execute**:
    ```powershell

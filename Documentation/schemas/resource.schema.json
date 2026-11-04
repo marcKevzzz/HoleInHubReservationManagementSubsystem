@@ -1,0 +1,20 @@
+{
+  "bsonType" : "object",
+  "required" : ["_id", "Name", "Service"],
+  "properties" : {
+    "_id" : {
+      "bsonType" : "string",
+      "minLength" : 1
+    },
+    "Name" : {
+      "bsonType" : "string",
+      "minLength" : 1
+    },
+    "Service" : {
+      "enum" : ["Regular", "VIP"]
+    },
+    "Active" : {
+      "bsonType" : "bool"
+    }
+  }
+}

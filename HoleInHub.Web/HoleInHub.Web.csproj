@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>HoleInHubReservationManagementSubsystem</AssemblyName>
     <RootNamespace>HoleInHubReservationManagementSubsystem</RootNamespace>
+    <UserSecretsId>b5bea878-e50b-4114-a043-e3d02b16a0ed</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,6 +17,7 @@
 
   <ItemGroup>
     <PackageReference Include="MailKit" Version="4.12.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.14" />
   </ItemGroup>
 
   <Target Name="BuildTailwindCss" BeforeTargets="PrepareForBuild" Condition="'$(DesignTimeBuild)' != 'true'">

@@ -1,0 +1,61 @@
+@using HoleInHub.Business.Reservations
+@model ReservationDto
+@{
+    ViewData["Title"]="Deposit checkout";
+    var token=ViewData["AccessToken"] as string;
+    var start=TimeZoneInfo.ConvertTimeFromUtc(Model.StartUtc,ReservationRules.Manila);
+    var end=TimeZoneInfo.ConvertTimeFromUtc(Model.EndUtc,ReservationRules.Manila);
+    var deadline=TimeZoneInfo.ConvertTimeFromUtc(Model.ReviewDeadlineUtc,ReservationRules.Manila);
+}
+<div class="page-content booking-status-page booking-checkout">
+    <header class="booking-status-heading">
+        <h1>DEPOSIT CHECKOUT</h1>
+        <p>Reservation <strong class="booking-reference">@Model.Reference</strong></p>
+    </header>
+    <div class="checkout-layout">
+        <section class="checkout-summary" aria-labelledby="checkout-experience">
+            <div class="booking-visit">
+                <div class="account-date"><time datetime="@Model.StartUtc.ToString("O")"><span>@start.ToString("dd")</span>@start.ToString("MMM yyyy")</time></div>
+                <div>
+                    <h2 id="checkout-experience">Whole-shop rental</h2>
+                    <p>@start.ToString("h:mm tt")–@end.ToString("h:mm tt")</p>
+                    <p class="booking-muted">Exclusive use · @Model.Attendees guests</p>
+                </div>
+            </div>
+            <dl class="checkout-pricing">
+                <div class="checkout-total"><dt>Rental total</dt><dd>₱@Model.RentalTotal?.ToString("N2")</dd></div>
+                <div class="checkout-deposit"><dt>50% deposit</dt><dd>₱@Model.DepositAmount?.ToString("N2")</dd></div>
+            </dl>
+            <div class="checkout-disclosure">
+                <p>Simulated checkout. No real money is collected.</p>
+                <p class="booking-muted">This is not a payment receipt.</p>
+            </div>
+        </section>
+        <aside class="checkout-action-panel" aria-labelledby="checkout-action-title">
+            <dl class="checkout-deadline">
+                <div><dt>Reservation status</dt><dd class="checkout-status">@Model.Status</dd></div>
+                <div><dt>Deposit deadline · Asia/Manila</dt><dd><time datetime="@Model.ReviewDeadlineUtc.ToString("O")">@deadline.ToString("dd MMM yyyy")<br /><strong>@deadline.ToString("h:mm tt")</strong></time></dd></div>
+            </dl>
+            @if(Model.Status=="Pending"&&Model.ReviewDeadlineUtc>DateTime.UtcNow)
+            {
+                <h2 id="checkout-action-title">Confirm your reservation</h2>
+                <p class="checkout-action-copy">A successful simulated deposit confirms your whole-shop reservation automatically.</p>
+                <form method="post" class="checkout-payment-form">
+                    <input type="hidden" name="token" value="@token" />
+                    <button class="button" name="outcome" value="success">Simulate successful deposit</button>
+                    <div class="checkout-alternate-actions">
+                        <button class="button button-secondary" name="outcome" value="failure" data-no-icon>Simulate failure</button>
+                        <button class="button button-tertiary" name="outcome" value="cancel" data-no-icon>Cancel checkout</button>
+                    </div>
+                </form>
+                <p class="checkout-retry-note">Failed or cancelled checkout can be retried before the deadline.</p>
+            }
+            else
+            {
+                <h2 id="checkout-action-title">Checkout closed</h2>
+                <p class="checkout-action-copy">View your booking status for the latest reservation and deposit updates.</p>
+            }
+            <a class="booking-text-link" asp-controller="Reservations" asp-action="Status" asp-route-id="@Model.Id" asp-route-token="@token" asp-route-guest="@(ViewData["GuestAccess"] is true?"true":null)">View booking status</a>
+        </aside>
+    </div>
+</div>

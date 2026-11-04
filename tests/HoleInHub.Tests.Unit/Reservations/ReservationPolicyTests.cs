@@ -4,6 +4,14 @@ namespace HoleInHub.Tests.Unit.Reservations;
 
 public class ReservationPolicyTests
 {
+    [Fact]
+    public async Task OversizedNotesAreRejectedBeforePersistence()
+    {
+        var service = new ReservationService(null!, null!, null!);
+        var request = new SubmitReservationRequest { FirstName = "Test", LastName = "Guest", Phone = "09123456789", ResourceIds = ["bay-1"], IdempotencyKey = "test", Notes = new string('x', 1001) };
+        await Assert.ThrowsAsync<ReservationValidationException>(() => service.SubmitAsync(request, "account", "guest@example.test", CancellationToken.None));
+    }
+
     [Fact] public void MissingApprovalRejectsSubmission() => Assert.Throws<ReservationValidationException>(() => new ReservationPolicy().ValidateCoverage(DateTimeOffset.UtcNow));
     [Fact]
     public void EntireReviewWindowMustFitCoverage()
@@ -15,7 +23,7 @@ public class ReservationPolicyTests
     [Fact] public void InvalidMaximumCalendarDateIsRejected() => Assert.Throws<ReservationValidationException>(() => ReservationRules.Interval(DateOnly.MaxValue, new TimeOnly(23, 30), 30));
     [Fact] public void FractionalStartIsRejected() => Assert.Throws<ReservationValidationException>(() => ReservationRules.Interval(new DateOnly(2026, 11, 3), new TimeOnly(10, 0, 0, 1), 30));
     [Fact] public void MondayCannotStartBeforeEleven() => Assert.Throws<ReservationValidationException>(() => ReservationRules.Interval(new DateOnly(2026, 11, 2), new TimeOnly(10, 30), 30));
-    [Fact] public void MidnightEndIsFollowingDay() { var (start, end) = ReservationRules.Interval(new DateOnly(2026, 11, 3), new TimeOnly(23, 30), 30); Assert.Equal(30, (end - start).TotalMinutes); Assert.Equal(16, end.Hour); }
+    [Fact] public void MidnightEndIsFollowingDay() { var (start, end) = ReservationRules.Interval(new DateOnly(2026, 11, 3), new TimeOnly(23, 0), 60); Assert.Equal(60, (end - start).TotalMinutes); Assert.Equal(16, end.Hour); }
     [Theory]
     [InlineData(2, 11, 780)]
     [InlineData(3, 10, 840)]
@@ -39,7 +47,7 @@ public class ReservationPolicyTests
     [InlineData("KpgaPro")]
     [InlineData("KpgaGroup")]
     [InlineData("WholeShop")]
-    public async Task PreviewServicesCannotCreateUnapprovedHolds(string service)
+    public async Task ServicesCannotSubmitIncompleteRequests(string service)
     {
         var business = new ReservationService(null!, null!, Microsoft.Extensions.Options.Options.Create(new ReservationPolicy()));
         await Assert.ThrowsAsync<ReservationValidationException>(() => business.SubmitAsync(new SubmitReservationRequest { Service = service }, "customer", "customer@example.test", CancellationToken.None));

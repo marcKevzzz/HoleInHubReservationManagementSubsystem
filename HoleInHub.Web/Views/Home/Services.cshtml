@@ -1,1 +1,14 @@
-@{ViewData["Title"]="Services and packages";}<div class="page-content"><h1 class="page-title">MORE WAYS TO PLAY</h1><p>Rates and packages are informational and subject to venue confirmation. Online requests currently support regular and VIP bays when approved booking policies are configured.</p><section class="feature-grid">@foreach(var service in new[]{("Regular simulator bay","venue-overview","Six regular bays. Select one or several together."),("VIP bay","social-seating","VIP 7 and VIP 8 for your next round."),("Professional coaching","coaching-programs","Philippine and KPGA coaching. Contact the venue to confirm programs, rates, and schedules."),("Rent the whole shop","family-play","Private events and gatherings. Deposit and scheduling terms require venue agreement.")}){<article><img src="/media/facebook/@(service.Item2).webp" alt="@service.Item1" loading="lazy"/><h2>@service.Item1</h2><p>@service.Item3</p>@if(service.Item1.Contains("bay")){<a class="button" href="/Reservations/Create">REQUEST A BAY →</a>}else{<a href="/Home/Contacts">Contact the venue →</a>}</article>}</section></div>
+@model IReadOnlyList<HoleInHub.Business.Services.ServiceCatalogItem>
+@{ ViewData["Title"] = "Services and packages"; }
+<div class="page-content services-page" data-services-page data-refresh-url="@Url.Action("ServiceCatalog", "Home")">
+    <header class="services-heading">
+        <h1>MORE WAYS TO PLAY</h1>
+        <div><p>Find your next round, make time for a lesson, or bring the whole group.</p><p class="services-note">All rates are indicative and subject to venue confirmation. Bay bookings require venue approval; coaching also requires coach confirmation.</p></div>
+    </header>
+    <div class="services-update" role="status" aria-live="polite" data-services-status>@(ViewData["CatalogUnavailable"] is true ? "Services are temporarily unavailable. We’ll try again shortly, or contact the venue for current offerings." : "Current offerings from the venue.")</div>
+    <section class="services-catalog" aria-label="Services and packages" data-services-catalog>
+        <partial name="_ServiceCatalog" model="Model" />
+    </section>
+    <aside class="services-contact"><h2>LET’S PLAN YOUR VISIT</h2><p>Need help choosing a bay or arranging a private event? Speak with the venue about your group and preferred date.</p><a class="button" href="/Home/Contacts">CONTACT THE VENUE <span aria-hidden="true">→</span></a></aside>
+</div>
+@section Scripts { <script src="~/js/services.js" asp-append-version="true"></script> }

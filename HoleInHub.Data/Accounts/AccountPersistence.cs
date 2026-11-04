@@ -8,6 +8,7 @@ public sealed class AccountPersistence(IMongoDbContext context)
     private IMongoCollection<AccountRecord> Accounts => context.Database.GetCollection<AccountRecord>("accounts");
     public Task<AccountRecord?> FindByIdAsync(string id, CancellationToken ct) => Accounts.Find(x => x.Id == id).FirstOrDefaultAsync(ct)!;
     public Task<AccountRecord?> FindByEmailAsync(string email, CancellationToken ct) => Accounts.Find(x => x.NormalizedEmail == email).FirstOrDefaultAsync(ct)!;
+    public Task<AccountRecord?> FindByGoogleSubjectAsync(string subject, CancellationToken ct) => Accounts.Find(x => x.GoogleSubject == subject).FirstOrDefaultAsync(ct)!;
     public async Task<bool> CreateAsync(AccountRecord account, CancellationToken ct)
     {
         try { await Accounts.InsertOneAsync(account, cancellationToken: ct); return true; }

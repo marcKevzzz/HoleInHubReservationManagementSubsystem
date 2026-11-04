@@ -8,9 +8,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHoleInHubBusiness(builder.Configuration);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options => options.Filters.Add<HoleInHubReservationManagementSubsystem.Filters.ServiceUnavailableFilter>());
 builder.Services.AddHealthChecks();
 builder.Services.AddCustomerAccounts(builder.Configuration, builder.Environment);
+builder.Services.AddScoped<GuestReservationSession>();
 
 var app = builder.Build();
 

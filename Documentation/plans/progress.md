@@ -1,4 +1,7 @@
 # Plan Progress Ledger
+
+> Historical design/execution record. Retained for traceability; not a current feature inventory or current verification evidence. See [current implementation](../CURRENT-SYSTEM.md) and [database reference](../DATABASE.md), synchronized 2026-11-04. Later owner directives take precedence.
+
 Plan: Documentation/plans/2026-10-18-production-foundation.md
 
 ## Pre-flight Checklist
@@ -17,10 +20,3 @@ Plan: Documentation/plans/2026-10-18-production-foundation.md
 - [x] **Task 7: Automated Test Suite (Unit, Integration, and Smoke)** - Completed (HoleInHub.Tests.Unit with 13 tests, HoleInHub.Tests.Web with 4 smoke tests, HoleInHub.Tests.Integration with MongoDbFixture and runner/lease tests; all 17 tests passed cleanly in 642 ms).
 - [x] **Task 8: Production Documentation Suite and Onboarding** - Completed (ARCHITECTURE.md, ONBOARDING.md, TESTING.md, MIGRATIONS.md, DESIGN_SYSTEM.md, SECURITY.md, OPERATIONS.md, and comprehensive README.md created and verified).
 - [x] **Task 9: Final Clean Verification and Build Check** - Completed (dotnet clean, dotnet build --configuration Release: 0 warnings 0 errors; dotnet test --configuration Release: 17/17 tests passed; dotnet format --verify-no-changes: exit 0; dotnet publish verified generated static CSS and vendor GSAP assets).
-
-
-
-
-
-
-

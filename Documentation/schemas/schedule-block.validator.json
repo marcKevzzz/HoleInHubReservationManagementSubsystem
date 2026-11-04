@@ -1,0 +1,30 @@
+{
+  "$jsonSchema" : {
+    "bsonType" : "object",
+    "required" : ["_id", "ResourceIds", "StartUtc", "EndUtc"],
+    "properties" : {
+      "_id" : {
+        "bsonType" : "string",
+        "minLength" : 1
+      },
+      "ResourceIds" : {
+        "bsonType" : "array",
+        "minItems" : 0,
+        "uniqueItems" : true,
+        "items" : {
+          "bsonType" : "string",
+          "minLength" : 1
+        }
+      },
+      "StartUtc" : {
+        "bsonType" : "date"
+      },
+      "EndUtc" : {
+        "bsonType" : "date"
+      }
+    }
+  },
+  "$expr" : {
+    "$lt" : ["$StartUtc", "$EndUtc"]
+  }
+}

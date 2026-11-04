@@ -1,0 +1,15 @@
+@model HoleInHub.Web.ViewModels.FindGuestReservationsModel
+@{ViewData["Title"]="Find your booking";Layout="_VerificationLayout";}
+<section class="booking-verification-page" aria-labelledby="guest-find-title">
+    <a class="verification-back" href="/">Back to home</a>
+    <p class="eyebrow">WELCOME BACK</p>
+    <h1 id="guest-find-title">FIND YOUR BOOKING</h1>
+    <p class="verification-recipient">Use the email from your reservation.</p>
+    <form method="post" action="/guest/reservations/find" class="email-code-form guest-find-form">
+        @Html.AntiForgeryToken()
+        <input asp-for="ReturnUrl" type="hidden" />
+        <div asp-validation-summary="All" class="booking-errors" role="alert"></div>
+        <div class="field"><div class="auth-input-wrap"><input asp-for="Email" type="email" autocomplete="email" maxlength="254" required placeholder=" " aria-describedby="guest-email-error" /><label asp-for="Email">Email address</label></div><span asp-validation-for="Email" id="guest-email-error" class="field-error" aria-live="polite"></span></div>
+        <div class="verification-actions"><button class="button" type="submit">Send code</button></div>
+    </form>
+</section>

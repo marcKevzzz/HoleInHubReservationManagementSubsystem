@@ -2,6 +2,7 @@ using HoleInHub.Business.Accounts;
 using HoleInHub.Business.Reservations;
 using MailKit.Net.Smtp;
 using MailKit.Security;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Options;
 using MimeKit;
 
@@ -20,7 +21,7 @@ public sealed class AccountEmailOptions
 {
     public string PublicBaseUrl { get; set; } = "";
 }
-public sealed class SmtpEmailSender(IOptions<SmtpOptions> settings, IHostEnvironment environment)
+public sealed class SmtpEmailSender(IOptions<SmtpOptions> settings, IHostEnvironment environment, IDataProtectionProvider protection)
 {
     public async Task SendAsync(QueuedEmail email, CancellationToken ct)
     {
@@ -38,7 +39,7 @@ public sealed class SmtpEmailSender(IOptions<SmtpOptions> settings, IHostEnviron
         message.To.Add(MailboxAddress.Parse(email.Recipient));
         message.Subject = email.Subject;
         message.MessageId = $"{email.Id}@holeinhub.local";
-        message.Body = new TextPart("plain") { Text = email.Body };
+        message.Body = new TextPart("plain") { Text = email.Body.StartsWith("protected:", StringComparison.Ordinal) ? protection.CreateProtector("BookingEmail").Unprotect(email.Body[10..]) : email.Body };
         using var client = new SmtpClient();
         client.Timeout = 30000;
         await client.ConnectAsync(options.Host, options.Port, options.UseStartTls ? SecureSocketOptions.StartTls : SecureSocketOptions.None, ct);
@@ -74,17 +75,17 @@ public sealed class NotificationWorker(IServiceScopeFactory scopes, ILogger<Noti
                         await queue.CompleteAsync(email, stoppingToken);
                     }
                     catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { throw; }
-                    catch (Exception)
+                    catch (Exception error)
                     {
                         await queue.RetryAsync(email, stoppingToken);
-                        logger.LogWarning("Notification delivery failed for event {EventId}; retry scheduled.", email.Id);
+                        logger.LogWarning("Notification delivery failed ({FailureType}) for event {EventId}; retry scheduled.", error.GetType().Name, email.Id);
                     }
                 }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }
-            catch (Exception)
+            catch (Exception error)
             {
-                logger.LogWarning("Reservation notification processing is unavailable; retrying.");
+                logger.LogWarning("Reservation notification processing is unavailable ({FailureType}); retrying.", error.GetType().Name);
             }
             try { await Task.Delay(TimeSpan.FromSeconds(15), stoppingToken); }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }

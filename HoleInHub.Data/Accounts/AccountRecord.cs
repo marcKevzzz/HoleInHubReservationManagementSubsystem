@@ -4,6 +4,10 @@ namespace HoleInHub.Data.Accounts;
 
 public sealed class AccountRecord
 {
+    public string FirstName { get; set; } = "";
+    public string LastName { get; set; } = "";
+    public string Phone { get; set; } = "";
+    [BsonIgnoreIfNull] public string? GoogleSubject { get; set; }
     [BsonId] public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string Email { get; set; } = "";
     public string NormalizedEmail { get; set; } = "";

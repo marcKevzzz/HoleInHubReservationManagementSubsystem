@@ -1,5 +1,8 @@
 # Simple diagrams
 
+> Historical target-design exports (October 2026), not current implementation diagrams. In particular, account-required submission, review/deposit policies, attendance, reports and POS flows do not fully match current source. See [current feature inventory and booking flow](../../CURRENT-SYSTEM.md) and the current architecture reference. Existing PDF, SVG, PNG and draw.io exports are retained as historical artifacts, not regenerated or certified current.
+
+
 This version uses short labels, a clear top-to-bottom direction and separate pages for separate tasks. The earlier detailed package is retained as a technical reference.
 
 ## Open in draw.io

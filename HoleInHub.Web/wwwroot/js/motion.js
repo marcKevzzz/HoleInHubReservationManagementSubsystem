@@ -6,92 +6,47 @@ const reservation=root.querySelector('#reservation-form');if(reservation){const 
 const heritage=root.querySelector('.heritage-page');if(heritage){const container=document.createElement('div');container.className='heritage-horizontal-container';const track=heritage.querySelector('.heritage-track');track.before(container);container.append(track);track.querySelectorAll('.heritage-group > img').forEach(img=>{const frame=document.createElement('div');frame.className='heritage-image-frame';img.before(frame);frame.append(img);img.classList.add('heritage-parallax-img');});}
 root.querySelectorAll('.feature-grid article').forEach(article=>{const fig=document.createElement('figure');article.replaceWith(fig);fig.append(article);const img=article.querySelector('img'),frame=document.createElement('div');frame.className='photo-frame';img.before(frame);frame.append(img);});
 root.querySelectorAll('h1,h2').forEach(h=>{const walk=document.createTreeWalker(h,NodeFilter.SHOW_TEXT),texts=[];while(walk.nextNode())texts.push(walk.currentNode);texts.forEach(text=>{const fragment=document.createDocumentFragment();text.textContent.split(/(\s+)/).forEach(word=>{if(!word.trim()){fragment.append(document.createTextNode(word));return;}const wrap=document.createElement('span'),inner=document.createElement('span');wrap.className='split-word-wrap';inner.className='split-word';inner.textContent=word;wrap.append(inner);fragment.append(wrap);});text.replaceWith(fragment);});});
-document.querySelectorAll('.button, .booking-back').forEach(button=>{const text=button.textContent.replace(/[→←]/g,'').trim();button.setAttribute('aria-label',button.getAttribute('aria-label')||text);button.replaceChildren();const label=document.createElement('span');label.className='button-label';label.dataset.buttonLabel='true';for(const key of ['a','b']){const row=document.createElement('span');row.className='button-label-'+key;row.dataset[key==='a'?'buttonLabelA':'buttonLabelB']='true';if(key==='b')row.setAttribute('aria-hidden','true');for(const ch of text){const char=document.createElement('span');char.className='button-motion-char';char.textContent=ch===' '?'\u00a0':ch;row.append(char);}label.append(row);}button.append(label);const icon=document.createElement('span');const left=button.id==='step-back';icon.className=left?'button-icon button-icon-left':'button-icon';icon.setAttribute('aria-hidden','true');icon.innerHTML='<svg class="button-icon-a" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M4 12h15M13 6l6 6-6 6"/></svg><svg class="button-icon-b" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M4 12h15M13 6l6 6-6 6"/></svg>';if(left){icon.querySelectorAll('path').forEach(path=>path.setAttribute('d','M20 12H5M11 6l-6 6 6 6'));button.prepend(icon);}else button.append(icon);});
 
 gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
 
 function initVideoControl(video, preference) {
- video.tabIndex=0;video.setAttribute('role','button');video.title='Click or press Space to pause or play the background video';
- let manualPause=false;
- const sync=()=>video.setAttribute('aria-label',video.paused?'Play background video':'Pause background video');
- const toggle=()=>{manualPause=!video.paused;if(video.paused)video.play().catch(sync);else video.pause();};
- video.addEventListener('click',toggle);
- video.parentElement.addEventListener('click',event=>{if(event.target!==video&&!event.target.closest('a,button,input,select'))toggle();});
- video.addEventListener('keydown',event=>{if(event.key===' '||event.key==='Enter'){event.preventDefault();toggle();}});
- video.addEventListener('play',sync);video.addEventListener('pause',sync);sync();
- const observer=new IntersectionObserver(([entry])=>{if(!entry.isIntersecting)video.pause();else if(!preference.matches&&!manualPause)video.play().catch(sync);});observer.observe(video);
- preference.addEventListener('change',()=>{if(preference.matches)video.pause();});
-}
-
-function initButtonMotion(button) {
-  if (!button || matchMedia('(prefers-reduced-motion: reduce)').matches) return () => {};
-  const labelA = button.querySelector('[data-button-label-a], .button-label-a');
-  const labelB = button.querySelector('[data-button-label-b], .button-label-b');
-  const iconA = button.querySelector('[data-button-icon-a], .button-icon-a');
-  const iconB = button.querySelector('[data-button-icon-b], .button-icon-b');
-
-  if (!labelA || !labelB) return () => {};
-
-  const charsA = labelA.querySelectorAll('.button-motion-char');
-  const charsB = labelB.querySelectorAll('.button-motion-char');
-
-  const tl = gsap.timeline({ paused: true, defaults: { ease: 'power2.inOut' } });
-
-  if (charsA.length && charsB.length) {
-    gsap.set(charsA, { yPercent: 0 });
-    gsap.set(charsB, { yPercent: 125 });
-    gsap.set(labelB, { opacity: 0, visibility: 'hidden' });
-
-    tl.to(labelB, { opacity: 1, visibility: 'visible', duration: 0.02 }, 0);
-    tl.to(charsA, { yPercent: -125, duration: 0.32, stagger: 0.015 }, 0);
-    tl.to(charsB, { yPercent: 0, duration: 0.32, stagger: 0.015 }, 0.03);
-  } else {
-    gsap.set(labelA, { yPercent: 0 });
-    gsap.set(labelB, { yPercent: 125, opacity: 0, visibility: 'hidden' });
-
-    tl.to(labelB, { opacity: 1, visibility: 'visible', duration: 0.02 }, 0);
-    tl.to(labelA, { yPercent: -125, duration: 0.32 }, 0);
-    tl.to(labelB, { yPercent: 0, duration: 0.32 }, 0.03);
-  }
-
-  if (iconA && iconB) {
-    const isLeft = button.querySelector('.button-icon-left');
-    if (isLeft) {
-      gsap.set(iconA, { autoAlpha: 1, x: 0 });
-      gsap.set(iconB, { autoAlpha: 0, x: 28 });
-      tl.to(iconA, { autoAlpha: 0, x: -28, duration: 0.3 }, 0);
-      tl.to(iconB, { autoAlpha: 1, x: 0, duration: 0.3 }, 0.04);
-    } else {
-      gsap.set(iconA, { autoAlpha: 1, x: 0 });
-      gsap.set(iconB, { autoAlpha: 0, x: -28 });
-      tl.to(iconA, { autoAlpha: 0, x: 28, duration: 0.3 }, 0);
-      tl.to(iconB, { autoAlpha: 1, x: 0, duration: 0.3 }, 0.04);
-    }
-  }
-
-  const enter = () => tl.play();
-  const leave = () => tl.reverse();
-
-  button.addEventListener('pointerenter', enter);
-  button.addEventListener('pointerleave', leave);
-  button.addEventListener('focus', enter);
-  button.addEventListener('blur', leave);
-
+  video.tabIndex = 0;
+  video.setAttribute('role', 'button');
+  video.title = 'Click or press Space to pause or play the background video';
+  let manualPause = false;
+  const sync = () => video.setAttribute('aria-label', video.paused ? 'Play background video' : 'Pause background video');
+  const toggle = () => {
+    manualPause = !video.paused;
+    if (video.paused) video.play().catch(sync);
+    else video.pause();
+  };
+  const parentClick = event => {
+    if (event.target !== video && !event.target.closest('a,button,input,select,textarea')) toggle();
+  };
+  const keydown = event => {
+    if (event.key === ' ' || event.key === 'Enter') { event.preventDefault(); toggle(); }
+  };
+  const preferenceChange = () => { if (preference.matches) video.pause(); };
+  video.addEventListener('click', toggle);
+  video.parentElement.addEventListener('click', parentClick);
+  video.addEventListener('keydown', keydown);
+  video.addEventListener('play', sync);
+  video.addEventListener('pause', sync);
+  preference.addEventListener('change', preferenceChange);
+  sync();
+  const observer = new IntersectionObserver(([entry]) => {
+    if (!entry.isIntersecting) video.pause();
+    else if (!preference.matches && !manualPause) video.play().catch(sync);
+  });
+  observer.observe(video);
   return () => {
-    button.removeEventListener('pointerenter', enter);
-    button.removeEventListener('pointerleave', leave);
-    button.removeEventListener('focus', enter);
-    button.removeEventListener('blur', leave);
-    tl.kill();
-    if (charsA.length && charsB.length) {
-      gsap.set([...charsA, ...charsB], { clearProps: 'transform' });
-    } else {
-      gsap.set([labelA, labelB], { clearProps: 'transform' });
-    }
-    gsap.set(labelB, { clearProps: 'opacity,visibility' });
-    if (iconA && iconB) {
-      gsap.set([iconA, iconB], { clearProps: 'transform,opacity,visibility' });
-    }
+    observer.disconnect();
+    video.removeEventListener('click', toggle);
+    video.parentElement.removeEventListener('click', parentClick);
+    video.removeEventListener('keydown', keydown);
+    video.removeEventListener('play', sync);
+    video.removeEventListener('pause', sync);
+    preference.removeEventListener('change', preferenceChange);
   };
 }
 
@@ -232,37 +187,12 @@ function animatePage(root) {
       root.querySelectorAll('.editorial figure').forEach((fig, index) => {
         const frame = fig.querySelector('.photo-frame');
         const image = frame?.querySelector('img');
-        if (!frame || !image) return;
+        if (!frame || !image || frame.hasAttribute('data-parallax') || frame.hasAttribute('data-motion')) return;
 
-        // Animate in on scroll, and ONLY ONCE: scale 0.8 to 1 with zero border radius
-        gsap.fromTo(frame,
-          { scale: 0.82, opacity: 0 },
-          {
-            scale: 1, opacity: 1,
-            duration: 1.1,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: fig,
-              start: 'top 85%',
-              once: true,
-            }
-          }
-        );
+        window.HoleInHubMotion.reveal(frame, { trigger: fig, start: 'top 85%', scale: .82, y: 0, duration: 1.1 });
 
         // Keep parallax effect inside the image matching scrub speed - increased parallax depth
-        gsap.fromTo(image,
-          { yPercent: -18, },
-          {
-            yPercent: 18,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: fig,
-              start: 'top bottom',
-              end: 'bottom top',
-              scrub: 0.2,
-            }
-          }
-        );
+        window.HoleInHubMotion.parallax(image, { trigger: fig, depth: 18, scrub: 0.2 });
 
         // Desktop vertical staggered float - increased parallax travel
         if (desktop) {
@@ -377,19 +307,7 @@ function animatePage(root) {
           figures.forEach((fig) => {
             const img = fig.querySelector('img');
             if (img) {
-              gsap.fromTo(img,
-                { yPercent: -3, },
-                {
-                  yPercent: 3,
-                  ease: 'none',
-                  scrollTrigger: {
-                    trigger: fig,
-                    start: 'top bottom',
-                    end: 'bottom top',
-                    scrub: 0.25,
-                  }
-                }
-              );
+              window.HoleInHubMotion.parallax(img, { trigger: fig, depth: 3, scrub: 0.25 });
             }
           });
         }
@@ -445,18 +363,16 @@ function animatePage(root) {
           });
 
           // 3. Gentle cursor follow on inner images (throttled with rAF for 60fps performance)
-          let ticking = false;
+          let cursorFrame = 0;
           let mouseX = 0;
           let mouseY = 0;
           const onMouseMove = (e) => {
-            const rect = mosaic.getBoundingClientRect();
-            mouseX = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
-            mouseY = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
+            mouseX = Math.max(-1, Math.min(1, e.clientX / window.innerWidth * 2 - 1));
+            mouseY = Math.max(-1, Math.min(1, e.clientY / window.innerHeight * 2 - 1));
 
-            if (!ticking) {
-              ticking = true;
-              requestAnimationFrame(() => {
-                ticking = false;
+            if (!cursorFrame) {
+              cursorFrame = requestAnimationFrame(() => {
+                cursorFrame = 0;
                 items.forEach((item, idx) => {
                   const img = item.querySelector('img') || item;
                   const depth = ((idx % 3) + 1) * 9;
@@ -474,11 +390,12 @@ function animatePage(root) {
 
           if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
             const resetCursor = () => items.forEach(item => gsap.to(item.querySelector('img'), { x: 0, y: 0, duration: 1.2, ease: 'power2.out', overwrite: 'auto' }));
-            mosaic.addEventListener('mousemove', onMouseMove, { passive: true });
-            mosaic.addEventListener('mouseleave', resetCursor);
+            window.addEventListener('mousemove', onMouseMove, { passive: true });
+            document.addEventListener('mouseleave', resetCursor);
             cleanup.push(() => {
-              mosaic.removeEventListener('mousemove', onMouseMove);
-              mosaic.removeEventListener('mouseleave', resetCursor);
+              cancelAnimationFrame(cursorFrame);
+              window.removeEventListener('mousemove', onMouseMove);
+              document.removeEventListener('mouseleave', resetCursor);
               items.forEach(item => gsap.set(item.querySelector('img'), { clearProps: 'transform' }));
             });
           }
@@ -655,19 +572,7 @@ function animatePage(root) {
 
             const img = frame.querySelector('.heritage-parallax-img');
             if (img) {
-              gsap.fromTo(img,
-                { yPercent: -10, },
-                {
-                  yPercent: 10,
-                  ease: 'none',
-                  scrollTrigger: {
-                    trigger: frame,
-                    start: 'top bottom',
-                    end: 'bottom top',
-                    scrub: 1,
-                  }
-                }
-              );
+              window.HoleInHubMotion.parallax(img, { trigger: frame, depth: 10, scrub: 1 });
             }
           });
 
@@ -748,6 +653,7 @@ function animatePage(root) {
       // Other photo frames outside editorial and statement
       root.querySelectorAll('.photo-frame:not(.editorial .photo-frame):not(.scroll-scale-frame):not(.mosaic-item .photo-frame)').forEach((frame) => {
         const image = frame.querySelector('img');
+        if (frame.hasAttribute('data-parallax') || frame.hasAttribute('data-motion')) return;
         gsap.from(frame, {
           scale: 0.82,
           clipPath: 'inset(12% 0% 12% 0%)',
@@ -757,11 +663,7 @@ function animatePage(root) {
           scrollTrigger: { trigger: frame, start: 'top 92%', once: true },
         });
         if (image) {
-          gsap.fromTo(image, { yPercent: -7, }, {
-            yPercent: 7,
-            ease: 'none',
-            scrollTrigger: { trigger: frame, start: 'top bottom', end: 'bottom top', scrub: 0.8 },
-          });
+          window.HoleInHubMotion.parallax(image, { trigger: frame });
         }
       });
 
@@ -1056,33 +958,10 @@ function animatePage(root) {
 
           // Subtle parallax: reduced from -14/14% to -3/3% so images stay aligned to frames and each other
           if (img) {
-            gsap.fromTo(img,
-              { yPercent: -3, },
-              {
-                yPercent: 3,
-                ease: 'none',
-                scrollTrigger: {
-                  trigger: card,
-                  start: 'top bottom',
-                  end: 'bottom top',
-                  scrub: 0.3,
-                }
-              }
-            );
+            window.HoleInHubMotion.parallax(img, { trigger: card, depth: 3, scrub: 0.3 });
           }
         });
       }
-
-      // Initialize character roll & arrow slide motion for all buttons and header actions
-      const allButtons = [
-        ...root.querySelectorAll('.button, .header-action, .booking-back'),
-        ...document.querySelectorAll('.header .button, .header .header-action')
-      ];
-      const uniqueButtons = Array.from(new Set(allButtons));
-      uniqueButtons.forEach(button => {
-        const dispose = initButtonMotion(button);
-        cleanup.push(dispose);
-      });
 
       return () => {
         cleanup.splice(0).forEach(dispose => {
@@ -1107,4 +986,26 @@ function animatePage(root) {
     try { context.revert(); } catch {}
   };
 }
-document.querySelectorAll('.spyker-footer-nav a,.spyker-footer-right a').forEach(link=>link.classList.add('prototype-link'));let dispose;document.fonts.ready.then(()=>{dispose=animatePage(root);ScrollTrigger.refresh();document.dispatchEvent(new Event('holeinhub:motion-ready'));});root.querySelectorAll('video').forEach(video=>initVideoControl(video,reduced));document.fonts.ready.then(()=>ScrollTrigger.refresh());window.addEventListener('pageshow',()=>ScrollTrigger.refresh());})();
+document.querySelectorAll('.spyker-footer-nav a,.spyker-footer-right a')
+  .forEach(link => link.classList.add('prototype-link'));
+let dispose;
+let disposed = false;
+const disposeComponents = window.HoleInHubMotion.mount(root);
+const videoCleanup = [...root.querySelectorAll('video')].map(video => initVideoControl(video, reduced));
+const refresh = () => ScrollTrigger.refresh();
+document.fonts.ready.then(() => {
+  if (disposed) return;
+  dispose = animatePage(root);
+  refresh();
+  document.dispatchEvent(new Event('holeinhub:motion-ready'));
+});
+window.addEventListener('pageshow', refresh);
+window.addEventListener('pagehide', event => {
+  if (event.persisted) return;
+  disposed = true;
+  dispose?.();
+  disposeComponents();
+  videoCleanup.forEach(cleanup => cleanup());
+  window.removeEventListener('pageshow', refresh);
+});
+})();

@@ -1,0 +1,5 @@
+@model HoleInHubReservationManagementSubsystem.ViewModels.ServiceUnavailableViewModel
+@{ViewData["Title"]="Service temporarily unavailable";}
+<div class="page-content booking-confirmation"><h1>PLEASE TRY AGAIN SHORTLY</h1><p>@Model.Message</p>
+@if(Model.BookingSaved){<p>Your booking details are saved briefly so you can review and retry. If your request was already received, retrying will return its original receipt.</p>}
+<p>Reference for support: @Model.CorrelationId</p><a class="button" href="@Model.RetryUrl">Try again</a><p><a href="/">Back to home</a></p></div>

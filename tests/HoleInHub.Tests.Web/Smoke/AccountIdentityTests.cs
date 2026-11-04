@@ -35,7 +35,7 @@ public sealed class AccountIdentityTests
             await new AccountsMigration().UpAsync(context.Database, CancellationToken.None);
             await new Migration_002_Reservations().UpAsync(context.Database, CancellationToken.None);
             var users = scope.ServiceProvider.GetRequiredService<UserManager<AccountUser>>();
-            var user = new AccountUser { Email = "player@example.com", Roles = ["Administrator"] };
+            var user = new AccountUser { Email = "player@example.com", Roles = ["Administrator"], FirstName = "Account", LastName = "Player", Phone = "09123456789" };
             Assert.True((await users.CreateAsync(user, "GoodPassword123!")).Succeeded);
             Assert.Equal(["Customer"], await users.GetRolesAsync(user));
             Assert.False(await users.IsEmailConfirmedAsync(user));
@@ -55,6 +55,7 @@ public sealed class AccountIdentityTests
             }));
             Assert.Equal(HttpStatusCode.Redirect, signedIn.StatusCode);
             var booking = await client.GetStringAsync("/Reservations/Create");
+            Assert.Contains("value=\"Account\"", booking); Assert.Contains("value=\"Player\"", booking); Assert.Contains("value=\"09123456789\"", booking);
             Assert.Contains("id=\"booking-verify-required\"", booking);
             Assert.DoesNotContain("id=\"booking-auth-dialog\"", booking);
             Assert.DoesNotContain("id=\"booking-submit\"", booking);

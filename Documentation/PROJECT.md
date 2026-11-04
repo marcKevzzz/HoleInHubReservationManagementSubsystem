@@ -6,7 +6,7 @@ The Hole In Hub Golf & Lounge Reservation Management Subsystem manages customer 
 
 Aligned on 2026-10-27 with the owner's revised `Hole In Hub Golf & Lounge Reservation Management Subsystem (4).pdf`, Chapter I, PDF pages 6–17. [Chapter I](CHAPTER_1.md) transcribes the manuscript; this document translates it into engineering requirements. This revision supersedes earlier guest-submission, indefinite Pending-hold, relational-database, 24-hour-reminder, and demonstration-only POS requirements. Client-approval qualifications remain open decisions.
 
-These are planned requirements, not claims of completed functionality. The repository has MongoDB/migration, health-probe, and local asset foundations. This documentation alignment changes no application behavior.
+This document records requirements and owner-directed provisional policies, not a completed-feature checklist. The working tree now includes accounts, guest/account booking, atomic allocation, staff review and demo checkout. See [current implementation](CURRENT-SYSTEM.md) for feature boundaries and [database structure](DATABASE.md) for implemented collections. Documentation synchronized on 2026-11-04; no application behavior changes.
 
 ## Operational background
 
@@ -18,19 +18,19 @@ Multi-bay group appointments and consolidated POS billing are distinct: sequenti
 
 | Topic | Revised requirement |
 | --- | --- |
-| Resources | Eight bays: Bay 1–6 and VIP 7–8; applicable private spaces, golf coaching, and whole-shop rentals |
+| Resources | Five regular bays (Bay 1–5) and two VIP bays (VIP 1–2); coaching uses regular bays; whole-shop rentals allocate every active bay |
 | Public access | Browse services and availability without signing in |
-| Online submission | Customer account with verified email required |
+| Online submission | Guest submits details, verifies an email code, then receives a Pending request receipt; verified accounts skip codes. No account required; unverified drafts hold no capacity |
 | Staff-assisted booking | Authorized staff may book for walk-in, phone, or messaging customers without requiring customer accounts |
-| Ownership | Customers access their own account-linked reservations and submit change requests for staff review |
+| Ownership | Guests verify email before submission and use a secure status link. Find my booking verifies their email again for temporary access to their guest reservation history, including confirmed bookings; it never grants access to account-owned bookings with the same email. Verified account holders access their own account-linked reservations |
 | Submission | Successful submission creates Pending and immediately holds all requested allocations; browsing alone holds nothing |
-| Ordinary online Pending | Proposed maximum 30-minute review deadline during designated staff review hours; staff reminder at 15 minutes and escalation at 25 minutes |
+| Ordinary online Pending | Owner-approved provisional review deadlines: Regular 30 minutes (alerts 15/25); VIP/coaching 60 minutes (alerts 30/50) |
 | Pending expiry | Unresolved ordinary online requests become Expired at the deadline, release all allocations, and notify customer and staff |
-| Review coverage | Staff review hours and outside-hours handling require client approval; venue opening hours do not establish review coverage |
-| Confirmation | Authorized staff approve; whole-shop confirmation requires recorded deposit verification |
-| Whole shop | Exclusive allocation of all facility resources; separately agreed deposit-verification deadline |
+| Review coverage | Owner directs review during operating hours only; the entire review period must fit before closing and the booked start. Existing operating hours remain authoritative |
+| Confirmation | Staff approve Regular/VIP; coaching requires recorded coach confirmation plus venue approval. Whole-shop confirms automatically after a verified 50% deposit; currently demonstrated with simulated POS only |
+| Whole shop | Exclusive allocation of all active bays. Provisional 60-minute deposit deadline; simulated 50% deposit confirms automatically. Live collection remains POS-owned and disabled |
 | Operating hours | Monday 11 AM–midnight; Tuesday–Sunday 10 AM–midnight, Asia/Manila; midnight begins the following day |
-| Duration | Walkthrough shows 30 minutes to 10 hours in 30-minute increments; applicability to each service and selectable start-time grid require confirmation |
+| Duration | Ordinary sessions: minimum 30 minutes, 30-minute increments within opening hours (subsequent owner direction, reflected in current code). Whole-shop retains half day 3–9 PM or opening–midnight |
 | Availability | Entire interval must fit operating hours and respect existing allocations, closures, and maintenance |
 | Multi-bay | One reservation; all requested resources allocated together or the entire attempt rejected |
 | Changes | Staff review customer requests; reassignment, extension, and rescheduling recheck conflicts; rejected/failed changes preserve the original booking |
@@ -42,7 +42,7 @@ Multi-bay group appointments and consolidated POS billing are distinct: sequenti
 | Chatbot | Predefined responses to basic inquiries; cannot independently approve bookings or resolve complex concerns |
 | Reporting | Reservation counts, service usage, peak periods, cancellations, no-shows, customer trends, and reserved-time resource utilization |
 
-The proposed expiry and late-arrival procedures retain the client-approval qualifications in Chapter I (pages 9 and 14–15). Do not apply ordinary online expiry to staff-assisted or whole-shop bookings without an agreed policy. Review-clock behavior across coverage boundaries is unresolved.
+The owner approved these provisional online booking rules on 2026-11-03. Require 30-minute Regular lead time and 60-minute lead time for other online services; no maximum advance-booking limit. Outside-hours submission is unavailable. Existing records retain their saved deadlines; no policy is inferred for staff-assisted bookings. Expiry timings still need operational validation with the client.
 
 ## Reservation lifecycle and access
 
@@ -64,7 +64,7 @@ Enforce server-side authorization and ownership on protected operations. A reser
 
 Retain one ASP.NET Core MVC application and `HoleInHub.Web → HoleInHub.Business → HoleInHub.Data`. Web owns HTTP/UI concerns; Business owns reservation policy and orchestration; Data owns MongoDB persistence and transaction mechanics. See [Architecture](ARCHITECTURE.md) and the [foundation specification](specs/2026-10-18-production-foundation.md).
 
-MongoDB is the sole database, with MongoDB Atlas specified in Chapter I and a local replica set for development/integration tests. Proposed logical records include customers, accounts/roles, services/resources, reservations and allocations, schedules/blocks, history, notification delivery, and applicable POS transaction references/statuses. Collection design is not finalized.
+MongoDB is the sole database, with MongoDB Atlas specified in Chapter I and a local replica set for development/integration tests. Proposed logical records include customers, accounts/roles, services/resources, reservations and allocations, schedules/blocks, history, notification delivery, and applicable POS transaction references/statuses. The current collection layout is documented in [DATABASE.md](DATABASE.md); additional logical records remain target-design proposals.
 
 - Store timestamps in UTC and derive venue-local calendar dates using Asia/Manila.
 - Use half-open intervals `[start, end)` and persisted resource/date guards within MongoDB transactions to prevent concurrent incompatible allocations.
@@ -76,7 +76,7 @@ MongoDB is the sole database, with MongoDB Atlas specified in Chapter I and a lo
 
 ## POS integration boundary
 
-Integration with the designated POS subsystem through an agreed interface is in scope. A simulated handoff alone does not satisfy the revised integration requirement.
+Integration with the designated POS subsystem through an agreed interface remains a production requirement. The owner authorized a clearly labeled simulated checkout for development/evaluation; this validates booking behavior but does not satisfy live POS integration. No real money is collected.
 
 | Direction | Information exchanged |
 | --- | --- |
@@ -91,7 +91,7 @@ The teams must document the integration flow, data exchange specification, and f
 
 Utilization measures reserved resource time, not sensed occupancy or actual play time. Define denominator, closure/maintenance exclusions, and status inclusion before evaluation; distinguish Pending holds from fulfilled bookings. Check reports against known records and test data.
 
-Document expected/actual results and pass/fail outcomes for representative booking tasks, overlapping/concurrent attempts, multi-bay allocation, whole-shop exclusion, safe changes, ownership/role restrictions, Pending alerts/expiry, attendance handling, notifications, report accuracy, usability, and response times. Integration tests cover reservation retrieval, transaction-status updates, deposit verification, unsuccessful exchanges, and repeated notifications. Record workloads and operating conditions; no measured baseline, improvement, or evaluation results are claimed.
+Document expected/actual results and pass/fail outcomes for representative booking tasks, overlapping/concurrent attempts, multi-bay allocation, whole-shop exclusion, safe changes, ownership/role restrictions, Pending alerts/expiry, attendance handling, notifications, report accuracy, usability, and response times. Production acceptance must cover reservation retrieval, transaction-status updates, deposit verification, unsuccessful exchanges and repeated notifications. Current automated coverage is described in [TESTING.md](TESTING.md); live POS acceptance remains future work. Record workloads and operating conditions; no measured baseline, improvement, or evaluation results are claimed.
 
 ## Delimitations and open decisions
 
@@ -99,11 +99,13 @@ Excluded from Reservation implementation: inventory, food/merchandise ordering, 
 
 Still requiring agreement:
 
-- Staff review coverage, outside-hours requests, and precise review-deadline calculation.
-- Whole-shop deposit amount, verification evidence/deadline, failure handling, and refunds.
+- Client validation of the owner-approved provisional review/deposit deadlines; review coverage uses existing operating hours with a full-window submission cutoff.
+- Live POS payment evidence/contract, authoritative prices (including holidays), late-payment reconciliation and deposit refunds. The owner sets a 50% deposit and provisional 60-minute deadline for the demo.
 - Change-request approval criteria and late-arrival exceptions.
-- Service-specific durations, start-time grid, attendee capacities, and resource eligibility.
+- Client confirmation of remaining package sessions and rescheduling. Implemented ordinary sessions use a 30-minute minimum and half-hour increments; the customer enters one total guest count including non-players, with eight total people per Regular bay or ten per VIP. Staff checks the six-player-per-bay limit because a total count does not identify players. Cancellation requests require one hour of notice and staff approval, with no cancellation fee.
 - Detailed permissions, status transitions/completion criteria, reporting inclusion, notification provider/channel, and short-notice reminder behavior.
 - POS exchange contract and test arrangements with the participating team.
 
-The [aligned diagram package](diagrams/README.md) provides system architecture, system flowchart, context/Level 1 references, a combined Level 2 DFD with detail sheets, and POS integration flow. The final POS exchange contract remains to be agreed. Distinguish requirements awaiting operational approval from implemented foundation behavior.
+The [aligned diagram package](diagrams/README.md) provides system architecture, system flowchart, context/Level 1 references, a combined Level 2 DFD with detail sheets, and POS integration flow. The final POS exchange contract remains to be agreed. These October exports are historical target designs; use [CURRENT-SYSTEM.md](CURRENT-SYSTEM.md) for the current flow and remaining implementation gaps.
+
+Owner update (2026-11-03): ordinary sessions may be 30 minutes. Each time tile represents a half-hour; dragging consecutive tiles sets the complete duration (two tiles = one hour). Existing fixed coaching classes and whole-shop rental windows retain their defined durations. Review deadlines and minimum booking lead times are unchanged.
