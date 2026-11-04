@@ -1,5 +1,8 @@
 # Production Foundation Implementation Plan
 
+> Historical design/execution record. Retained for traceability; not a current feature inventory or current verification evidence. See [current implementation](../CURRENT-SYSTEM.md) and [database reference](../DATABASE.md), synchronized 2026-11-04. Later owner directives take precedence.
+
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Establish an efficient, consistent, conflict-resistant, production-grade foundation for the Hole In Hub Reservation Management Subsystem across team collaboration rules, agent/skill workflows, MongoDB configuration and lease-guarded migrations, automated tests (unit, integration, smoke), a Tailwind v4 + GSAP design system, and full operations/architecture documentation.

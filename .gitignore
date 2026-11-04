@@ -15,3 +15,6 @@
 *.publishSettings
 .env
 .env.*
+
+# Local development tools and captured test email
+/.local/

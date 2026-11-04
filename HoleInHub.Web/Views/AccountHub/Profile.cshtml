@@ -1,0 +1,22 @@
+@using HoleInHub.Web.ViewModels
+@model AccountContactModel
+@{ ViewData["Title"] = "My profile"; ViewData["AccountPage"] = "profile"; }
+<div class="page-content account-hub">
+    <partial name="_AccountNavigation" />
+    <header class="account-heading"><div><h1>MY PROFILE</h1></div><a class="button" href="/Reservations/Create">Book a bay</a></header>
+    <div class="account-profile-layout">
+        <div><h2>Contact details</h2></div>
+        <form class="account-profile-form" method="post" action="/my-profile">
+            @Html.AntiForgeryToken()
+            @if (TempData["ProfileSaved"] is string message) { <p class="account-feedback" role="status">@message</p> }
+            <div asp-validation-summary="ModelOnly" class="account-errors" role="alert"></div>
+            <div class="account-name-fields">
+                <div><label asp-for="FirstName"></label><input asp-for="FirstName" pattern="@HoleInHub.Business.Accounts.ContactRules.NamePattern" autocomplete="given-name" required maxlength="100" aria-describedby="FirstName-error" aria-invalid="@(ViewData.ModelState["FirstName"]?.Errors.Count>0?"true":"false")" /><span asp-validation-for="FirstName" id="FirstName-error" class="account-errors"></span></div>
+                <div><label asp-for="LastName"></label><input asp-for="LastName" pattern="@HoleInHub.Business.Accounts.ContactRules.NamePattern" autocomplete="family-name" required maxlength="100" aria-describedby="LastName-error" aria-invalid="@(ViewData.ModelState["LastName"]?.Errors.Count>0?"true":"false")" /><span asp-validation-for="LastName" id="LastName-error" class="account-errors"></span></div>
+            </div>
+            <label asp-for="Phone"></label><input asp-for="Phone" autocomplete="tel" type="tel" required maxlength="15" inputmode="numeric" pattern="[0-9]{7,15}" aria-describedby="Phone-error" aria-invalid="@(ViewData.ModelState["Phone"]?.Errors.Count>0?"true":"false")" /><span asp-validation-for="Phone" id="Phone-error" class="account-errors"></span>
+            <div class="account-email"><span>Email address</span><p>@ViewData["Email"]</p></div>
+            <button class="button" type="submit">Save changes</button>
+        </form>
+    </div>
+</div>

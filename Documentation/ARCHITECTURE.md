@@ -1,72 +1,32 @@
-# Architecture Reference
+# Architecture reference
 
-> Business requirements aligned on 2026-10-27 with revised [Chapter I](CHAPTER_1.md) and [PROJECT.md](PROJECT.md). Reservation, access-control, notification, and POS responsibilities below describe the target architecture, not completed features.
+Reviewed against the working tree on 2026-11-04. See [feature status](CURRENT-SYSTEM.md), [database structure](DATABASE.md) and [requirements](PROJECT.md). Source presence does not establish deployment or production readiness.
 
-## 1. System Overview
-
-The **Hole In Hub Golf & Lounge Reservation Management Subsystem** is an indoor simulator bay scheduling and private event reservation application built with .NET 10, ASP.NET Core MVC, MongoDB, Tailwind CSS v4, and GSAP.
-
-```
-┌────────────────────────────────────────────────────────┐
-│                   HoleInHub.Web                        │
-│   (Controllers, ViewModels, Razor Views, Assets)       │
-└───────────────────────────┬────────────────────────────┘
-                            │
-                            ▼
-┌────────────────────────────────────────────────────────┐
-│                  HoleInHub.Business                    │
-│   (Domain Policies, Reservation Services, DTOs)        │
-└───────────────────────────┬────────────────────────────┘
-                            │
-                            ▼
-┌────────────────────────────────────────────────────────┐
-│                   HoleInHub.Data                       │
-│   (MongoDB Context, Entities, Indexes, Migrations)     │
-└────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    Web[Web: MVC, Razor, Identity, HTTP and SMTP worker] --> Business[Business: account and booking services, rules, health]
+    Business --> Data[Data: MongoDB persistence and transactions]
+    Migrator[Explicit Migrator CLI] --> Data
+    Data --> Mongo[(MongoDB replica set)]
 ```
 
-## 2. Layering & Responsibility Boundaries
+## Layer responsibilities
 
-1. **`HoleInHub.Web`**:
-   - Presentation tier.
-   - Hosts Razor views, MVC controllers, ViewModels, Tailwind CSS v4 compilation, and local GSAP motion scripts.
-   - Enforces HTTP input validation, anti-forgery tokens, correlation ID propagation, and exposes health probes (`/health/live`, `/health/ready`).
-   - **Prohibition**: Never directly references `HoleInHub.Data` or MongoDB driver namespaces.
+Web owns controllers, ViewModels, Razor, authentication cookies, anti-forgery, rate limiting, Data Protection, SMTP delivery and local assets. It calls Business rather than MongoDB directly. Business owns application validation, account/verification services, reservation orchestration and health checks. Data owns typed records, narrow persistence operations, indexes, transaction guards, outbox storage and migration leases. Migrator registers the runner separately; Web never runs migrations on startup.
 
-2. **`HoleInHub.Business`**:
-   - Core domain logic and application services.
-   - Enforces booking validation rules, capacity holds, venue time calculations (UTC instant to `Asia/Manila` local calendar), and health diagnostics.
-   - **Prohibition**: Independent of UI concerns; never imports Razor or HTTP context types.
+## Booking consistency
 
-3. **`HoleInHub.Data`**:
-   - Persistence tier using official `MongoDB.Driver`.
-   - Manages singleton `IMongoDbContext`, typed collections, BSON serialization attributes, and distributed lease locking.
-   - Encapsulates database migration logic (`MongoMigrationRunner`).
-   - **Prohibition**: No speculative generic repository abstractions; operations are explicit and narrow.
+Guests save a protected draft and verify an email code before any hold. Verified account holders submit directly. Final submission rechecks rules and availability. A MongoDB transaction contends on catalog/resource/date guards, checks overlaps/idempotency, consumes guest proof when applicable, inserts the reservation and queues its receipt. Whole-shop covers every active bay. Intervals are half-open UTC ranges; guard dates use Asia/Manila.
 
-4. **`HoleInHub.Migrator`**:
-   - Dedicated console CLI for running database migrations under an exclusive distributed lease.
-   - Completely decoupled from web startup to prevent race conditions across multiple web replicas.
+Reservations embed resource IDs, contact snapshots and history. No separate customer, allocation or coaching-session collection exists. Staff/Admin review supports approval, rejection, coach confirmation and cancellation decisions. Saved-deadline expiry competes with approval/payment under persisted guards. The notification worker processes Pending expiry/alerts and durable outbox delivery; SMTP is at least once, so interrupted sends can duplicate.
 
----
+## Access and configuration
 
-## 3. Database Engine & Concurrency Design
+Accounts use normalized-email uniqueness, verification, password recovery and optional Google subjects. Account routes enforce ownership; guest access uses bearer-token hashes. Public signup creates Customer roles only. Account and guest verification share a service with separate purpose scopes. Preserve Data Protection keys across restarts and share them across deployment instances.
 
-- **Sole Database**: MongoDB 7.0+ (replica set `rs0` in local development and test; managed replica set in production).
-- **Reservation Exclusivity Contract (for future feature phases)**:
-  - Intervals are treated as half-open: `[startUtc, endUtc)`.
-  - Mutations contend on atomic guard documents per resource and venue-local calendar date (`Asia/Manila`).
-  - Whole-shop bookings acquire guards across all bookable bays and catalog versions in a single atomic transaction.
-  - Submissions enforce idempotency via client-supplied request tokens.
+`/health/live` checks the HTTP process. `/health/ready` checks MongoDB and migration IDs 001–007. Readiness does not verify SMTP, Google credentials, full index integrity or a live POS connection. The Web service-unavailable filter handles database availability failures.
 
-## 4. Revised Reservation and Integration Responsibilities
+Whole-shop checkout is an explicitly enabled Development/Demo simulation. Live POS, real collection, receipts, operational reports, chatbot, general rescheduling and attendance workflows remain unimplemented requirements. [October diagram exports](diagrams/README.md) retain target-design context; use the diagrams here and in CURRENT-SYSTEM for current source behavior.
 
-- Web supports anonymous browsing, verified-email customer submissions, ownership-restricted account access, and authorized staff-assisted bookings without customer accounts.
-- Business owns atomic single-/multi-bay and whole-shop allocation, staff review, change requests, and attendance outcomes. Rejected/failed changes preserve the existing reservation.
-- Ordinary online Pending requests follow the proposed 30-minute review deadline during designated staff review hours, alerts at 15/25 minutes, and release/notification on expiry. Review coverage and outside-hours handling require client agreement. Whole-shop deposit deadlines are separate.
-- Confirmed unattended reservations are flagged at the earlier of start plus one hour or scheduled end; staff follow-up determines No-show. Late arrival never automatically extends the booking.
-- MongoDB Atlas is the Chapter I target store; local development/testing retains a replica set. Store customer, reservation, resource, and history documents with validated structures and indexes.
-- The agreed POS interface exchanges reservation/customer/service/allocation details and applicable transaction references/payment/deposit statuses. Reservation retains scheduling decisions; POS retains billing, collection, voucher processing, and settlement. Failed/missing responses never verify deposits; repeated notifications must not duplicate effects.
-- Notification coordination supports approval emails, approximately 15-minute pre-reservation reminders, and Pending-review alerts. Manual attendance contact remains separate. Provider/protocol and background execution details are not selected by the paper.
 
-System architecture, system flowchart, data flow, and integration flow diagrams must use these boundaries and mark unresolved operating policies. The POS contract is still to be agreed; this reference does not claim a working integration.
+Migration 006 hardens the existing collection types and records actual CustomerAccountId separately from the legacy guest/account ownership scope. New history entries have EventType and ReservationStatus; existing display descriptions remain readable. EmailVerificationPersistence serves both verification purposes while retaining the historical physical collection. See DATABASE.md for exact BSON mappings and migration rollout limitations.

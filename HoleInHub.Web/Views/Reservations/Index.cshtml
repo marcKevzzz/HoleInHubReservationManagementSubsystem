@@ -1,3 +1,11 @@
 @using HoleInHub.Business.Reservations
-@model IReadOnlyList<ReservationDto>
-@{ViewData["Title"]="My reservations";}<div class="page-content"><h1>MY RESERVATIONS</h1>@if(Model.Count==0){<p>You have no reservations yet.</p><a class="button" href="/Reservations/Create">PLAN YOUR NEXT ROUND</a>}else{<div class="availability-table"><table><thead><tr><th>Reference</th><th>Start - Asia/Manila</th><th>Status</th></tr></thead><tbody>@foreach(var booking in Model){<tr><td><a asp-action="Details" asp-route-id="@booking.Id">@booking.Reference</a></td><td>@TimeZoneInfo.ConvertTimeFromUtc(booking.StartUtc,ReservationRules.Manila).ToString("dd MMM yyyy h:mm tt")</td><td>@booking.Status</td></tr>}</tbody></table></div>}</div>
+@using HoleInHubReservationManagementSubsystem.ViewModels
+@model MyReservationsViewModel
+@{ViewData["Title"]="My reservations";ViewData["AccountPage"]="reservations";var bookings=Model.ShowPast?Model.Past:Model.Upcoming;}
+<div class="page-content account-hub">
+<partial name="_AccountNavigation" />
+<header class="account-heading"><div><h1>MY RESERVATIONS</h1></div><a class="button" asp-action="Create">Book a bay</a></header>
+<nav class="account-reservation-tabs" aria-label="Reservation views"><a asp-action="Index" aria-current="@(!Model.ShowPast?"page":null)">Upcoming <span>@Model.Upcoming.Count</span></a><a asp-action="Index" asp-route-view="past" aria-current="@(Model.ShowPast?"page":null)">Past <span>@Model.Past.Count</span></a></nav>
+<p class="account-timezone">All times are Asia/Manila.</p>
+@if(bookings.Count==0){<div class="account-empty"><h2>@(Model.ShowPast?"No past reservations yet.":"Your next round is waiting.")</h2><p>@(Model.ShowPast?"Finished, cancelled and expired requests will appear here.":"Choose a time and plan your next visit.")</p><a asp-action="Create">Explore availability and book</a></div>}
+else{<div class="account-reservations">@foreach(var booking in bookings){<partial name="_ReservationRow" model="booking" />}</div>}</div>

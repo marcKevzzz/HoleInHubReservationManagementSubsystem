@@ -1,0 +1,48 @@
+{
+  "bsonType" : "object",
+  "required" : ["_id", "Recipient", "DueUtc"],
+  "properties" : {
+    "_id" : {
+      "bsonType" : "string",
+      "minLength" : 1
+    },
+    "Recipient" : {
+      "bsonType" : "string",
+      "minLength" : 1,
+      "maxLength" : 254
+    },
+    "Subject" : {
+      "bsonType" : "string",
+      "minLength" : 0
+    },
+    "Body" : {
+      "bsonType" : "string",
+      "minLength" : 0
+    },
+    "ReservationId" : {
+      "bsonType" : ["string", "null"]
+    },
+    "RequiredStatus" : {
+      "bsonType" : ["string", "null"]
+    },
+    "DueUtc" : {
+      "bsonType" : "date"
+    },
+    "LeaseUntilUtc" : {
+      "bsonType" : ["date", "null"]
+    },
+    "LeaseToken" : {
+      "bsonType" : ["string", "null"]
+    },
+    "SentUtc" : {
+      "bsonType" : ["date", "null"]
+    },
+    "Attempts" : {
+      "bsonType" : "int",
+      "minimum" : 0
+    },
+    "Failed" : {
+      "bsonType" : "bool"
+    }
+  }
+}

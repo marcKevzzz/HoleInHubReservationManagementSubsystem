@@ -18,7 +18,9 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IMongoDbContext, MongoDbContext>();
         services.AddScoped<HoleInHub.Data.Accounts.AccountPersistence>();
+        services.AddScoped<HoleInHub.Data.Services.ServiceCatalogPersistence>();
         services.AddScoped<HoleInHub.Data.Reservations.ReservationPersistence>();
+        services.AddScoped<HoleInHub.Data.Reservations.EmailVerificationPersistence>();
         services.AddScoped<HoleInHub.Data.Reservations.OutboxPersistence>();
 
         return services;
@@ -30,6 +32,12 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_001_InitialFoundation>();
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_002_Reservations>();
         services.AddSingleton<IMongoMigration, Migrations.Definitions.AccountsMigration>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_004_BookingProcess>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_005_GoogleAccounts>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_006_SchemaHardening>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_007_GuestReservationAccess>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_008_ServiceCatalog>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_009_RecoveryQuotaValidation>();
         services.AddSingleton<MongoMigrationRunner>();
 
         return services;

@@ -1,0 +1,180 @@
+{
+  "$jsonSchema" : {
+    "bsonType" : "object",
+    "required" : ["_id", "AccountId", "Email", "Reference", "Service", "Status", "StartUtc", "EndUtc", "CreatedUtc", "ReviewDeadlineUtc", "ResourceIds", "Attendees", "IdempotencyKey", "PayloadHash"],
+    "properties" : {
+      "_id" : {
+        "bsonType" : "string",
+        "minLength" : 1
+      },
+      "AccountId" : {
+        "bsonType" : "string",
+        "minLength" : 1
+      },
+      "CustomerAccountId" : {
+        "bsonType" : "string",
+        "minLength" : 1
+      },
+      "Email" : {
+        "bsonType" : "string",
+        "minLength" : 1,
+        "maxLength" : 254
+      },
+      "Reference" : {
+        "bsonType" : "string",
+        "minLength" : 1
+      },
+      "Service" : {
+        "enum" : ["Regular", "VIP", "PhilippineCoach", "KpgaPro", "KpgaGroup", "WholeShop"]
+      },
+      "Status" : {
+        "enum" : ["Pending", "Confirmed", "Checked-In", "Completed", "Cancelled", "Rejected", "Expired", "No-show"]
+      },
+      "StartUtc" : {
+        "bsonType" : "date"
+      },
+      "EndUtc" : {
+        "bsonType" : "date"
+      },
+      "CreatedUtc" : {
+        "bsonType" : "date"
+      },
+      "ReviewDeadlineUtc" : {
+        "bsonType" : "date"
+      },
+      "ResourceIds" : {
+        "bsonType" : "array",
+        "minItems" : 1,
+        "uniqueItems" : true,
+        "items" : {
+          "bsonType" : "string",
+          "minLength" : 1
+        }
+      },
+      "ResourceNames" : {
+        "bsonType" : "object"
+      },
+      "FirstName" : {
+        "bsonType" : "string",
+        "minLength" : 0,
+        "maxLength" : 100
+      },
+      "LastName" : {
+        "bsonType" : "string",
+        "minLength" : 0,
+        "maxLength" : 100
+      },
+      "Phone" : {
+        "bsonType" : "string",
+        "minLength" : 0,
+        "maxLength" : 30
+      },
+      "Attendees" : {
+        "bsonType" : "int",
+        "minimum" : 1
+      },
+      "Notes" : {
+        "bsonType" : "string",
+        "minLength" : 0,
+        "maxLength" : 1000
+      },
+      "PrivacyAccepted" : {
+        "bsonType" : "bool"
+      },
+      "PolicyVersion" : {
+        "bsonType" : "int",
+        "minimum" : 0
+      },
+      "GuestSessionHash" : {
+        "bsonType" : ["string", "null"]
+      },
+      "AccessTokenHash" : {
+        "bsonType" : ["string", "null"]
+      },
+      "IdempotencyKey" : {
+        "bsonType" : "string",
+        "minLength" : 1,
+        "maxLength" : 100
+      },
+      "PayloadHash" : {
+        "bsonType" : "string",
+        "minLength" : 1
+      },
+      "PaymentStatus" : {
+        "enum" : ["NotRequired", "AwaitingDeposit", "DepositReceived", "LatePayment", "Failed", "CheckoutCancelled"]
+      },
+      "PaymentReference" : {
+        "bsonType" : ["string", "null"]
+      },
+      "RentalTotal" : {
+        "bsonType" : ["decimal", "double", "int", "long", "null"],
+        "minimum" : 0
+      },
+      "DepositAmount" : {
+        "bsonType" : ["decimal", "double", "int", "long", "null"],
+        "minimum" : 0
+      },
+      "CoachConfirmed" : {
+        "bsonType" : "bool"
+      },
+      "CancellationRequested" : {
+        "bsonType" : "bool"
+      },
+      "Participants" : {
+        "bsonType" : "array",
+        "items" : {
+          "bsonType" : "object",
+          "required" : ["ResourceId", "Players", "NonPlayers"],
+          "properties" : {
+            "ResourceId" : {
+              "bsonType" : "string",
+              "minLength" : 1
+            },
+            "Players" : {
+              "bsonType" : "int",
+              "minimum" : 0
+            },
+            "NonPlayers" : {
+              "bsonType" : "int",
+              "minimum" : 0
+            }
+          }
+        }
+      },
+      "History" : {
+        "bsonType" : "array",
+        "items" : {
+          "bsonType" : "object",
+          "required" : ["Status", "AtUtc", "Actor"],
+          "properties" : {
+            "Status" : {
+              "bsonType" : "string",
+              "minLength" : 0
+            },
+            "AtUtc" : {
+              "bsonType" : "date"
+            },
+            "Actor" : {
+              "bsonType" : "string",
+              "minLength" : 0
+            },
+            "Reason" : {
+              "bsonType" : "string",
+              "minLength" : 0,
+              "maxLength" : 1000
+            },
+            "EventType" : {
+              "enum" : ["SubmissionCreated", "ReservationConfirmed", "ReservationRejected", "CoachConfirmed", "CancellationRequested", "ReservationCancelled", "CancellationDeclined", "ReservationExpired", "DemoPaymentRecorded"]
+            },
+            "ReservationStatus" : {
+              "enum" : ["Pending", "Confirmed", "Checked-In", "Completed", "Cancelled", "Rejected", "Expired", "No-show"]
+            }
+          }
+        }
+      }
+    }
+  },
+  "$expr" : {
+    "$lt" : ["$StartUtc", "$EndUtc"]
+  }
+}

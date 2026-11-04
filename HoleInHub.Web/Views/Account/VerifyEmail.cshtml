@@ -1,11 +1,11 @@
-@model HoleInHub.Web.ViewModels.EmailModel
-@{ ViewData["Title"] = "Verify Your Email"; }
-<section class="account-page page-shell"><div class="account-inner"><h1>VERIFY YOUR EMAIL</h1>
-@if (TempData["AccountMessage"] is string message) { <p role="status">@message</p> }
-@if (ViewData["Message"] is string result) { <p role="status">@result</p> }
-<form method="post" action="/account/verify-email">
-@Html.AntiForgeryToken()
+@model HoleInHub.Web.ViewModels.AccountVerificationViewModel
+@{ViewData["Title"]=Model.Complete?"Email verified":"Verify your email";}
+<section class="account-page"><div class="account-inner">
+<a class="auth-home" href="/">Back to home</a>
+<h1>@(Model.Complete?"Your email is verified.":"Verify your email")</h1>
 <div asp-validation-summary="All" role="alert" class="validation-summary"></div>
-<div class="field"><label asp-for="Email"></label><input asp-for="Email" aria-describedby="Email-error" type="email" autocomplete="email" required  /><span asp-validation-for="Email" id="Email-error" class="field-error"></span></div>
-<button class="button" type="submit">Send verification link</button></form>
-<nav aria-label="Account"><a href="/account/sign-in">Sign in</a> · <a href="/account/sign-up">Create account</a> · <a href="/account/forgot-password">Forgot password?</a> · <a href="/account/verify-email">Verify email</a></nav></div></section>
+@if(Model.Complete){<p class="verification-recipient">@Model.Email</p><a class="button" href="@(User.Identity?.IsAuthenticated==true?Model.ReturnUrl??"/Reservations/Create":"/account/sign-in?returnUrl="+Uri.EscapeDataString(Model.ReturnUrl??"/Reservations/Create"))">@(User.Identity?.IsAuthenticated==true?"Continue":"Sign in")</a>}
+else if(Model.HasContext){<partial name="_EmailCodeForm" model="Model" />}
+else{<p class="auth-intro">Sign in to verify your account.</p><input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" /><a class="button" asp-action="SignIn" asp-route-returnUrl="@Model.ReturnUrl">Sign in</a>}
+</div></section>
+@section Scripts{<script src="~/js/booking-verification.js" asp-append-version="true"></script>}

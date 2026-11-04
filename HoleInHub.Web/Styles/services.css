@@ -1,0 +1,15 @@
+.page-content.services-page{max-width:1280px;margin-inline:auto;padding-bottom:100px}
+.services-heading{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:end;margin-bottom:48px}
+.services-heading h1{font-size:clamp(48px,7vw,88px);line-height:1.05;letter-spacing:-.02em;margin:0;max-width:8ch}
+.services-heading>div{max-width:56ch}.services-heading>div>p:first-child{font-size:20px;line-height:1.6;margin-bottom:20px}
+.services-note,.services-update,.service-entry-details{color:var(--color-muted)}.services-note{font-size:12px;margin:0}
+.services-update{font-size:12px;border-block:1px solid var(--color-line);padding:14px 0;min-height:49px}
+.service-entry{display:grid;grid-template-columns:1fr 1fr;gap:64px;padding:48px 0;border-bottom:1px solid var(--color-line);align-items:center}
+.service-entry>img{width:100%;height:auto;aspect-ratio:3/2;object-fit:cover}.service-entry-copy{min-width:0}
+.service-entry h2{font-size:clamp(30px,3vw,42px);line-height:1.2;letter-spacing:0;margin:0 0 16px;text-transform:uppercase}
+.service-entry-summary{max-width:52ch;margin-bottom:24px}.service-entry-rate{font-size:23px;color:var(--color-green);font-variant-numeric:tabular-nums;line-height:1.4;margin-bottom:16px}
+.service-entry-rate span{display:block;color:var(--color-muted);font-size:11px;margin-top:4px}.service-entry-details{font-size:12px;max-width:60ch;margin-bottom:24px}
+.services-page .button{border-radius:0;gap:24px;min-height:48px;white-space:normal;justify-content:space-between;text-align:left}.services-page .button span{flex-shrink:0}
+.services-contact{margin-top:64px;display:grid;grid-template-columns:1fr 1fr;gap:24px 64px;align-items:start}.services-contact h2{font-size:36px;line-height:1.2;margin:0;grid-row:span 2}.services-contact p{max-width:56ch;margin:0}.services-contact .button{justify-self:start}
+.services-empty{padding:40px 0;margin:0}.services-page a:focus-visible{outline:2px solid var(--color-green);outline-offset:5px}.services-page ::selection{background:var(--color-green);color:var(--color-paper)}
+@media(max-width:760px){.services-heading{grid-template-columns:1fr;gap:28px;margin-bottom:32px}.services-heading h1{font-size:56px}.services-heading>div>p:first-child{font-size:18px}.service-entry{grid-template-columns:1fr;gap:24px;padding:32px 0}.service-entry h2{font-size:32px}.service-entry-summary{margin-bottom:20px}.services-contact{grid-template-columns:1fr;gap:20px;margin-top:40px}.services-contact h2{grid-row:auto;font-size:32px}.page-content.services-page{padding-bottom:64px}}

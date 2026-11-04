@@ -1,0 +1,11 @@
+@model HoleInHub.Web.ViewModels.EmailCodeFormModel
+@{ViewData["Title"]="Access your reservations";Layout="_VerificationLayout";}
+<section class="booking-verification-page" aria-labelledby="guest-verify-title">
+    <form method="post" action="/guest/reservations/change-email">@Html.AntiForgeryToken()<button type="submit" class="verification-back guest-text-button">Change email</button></form>
+    <p class="eyebrow">GUEST RESERVATIONS</p>
+    <h1 id="guest-verify-title">CHECK YOUR EMAIL</h1>
+    <div asp-validation-summary="All" class="booking-errors" role="alert"></div>
+    @if(ViewData["VerificationMessage"] is string message){<p role="status" class="verification-recipient">@message</p>}
+    <partial name="_EmailCodeForm" model="Model" />
+</section>
+@section Scripts{<script src="~/js/booking-verification.js" asp-append-version="true"></script>}

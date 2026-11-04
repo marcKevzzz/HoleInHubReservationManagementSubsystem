@@ -1,0 +1,7 @@
+@using HoleInHubReservationManagementSubsystem.ViewModels
+@using HoleInHub.Business.Reservations
+@model IReadOnlyList<ReservationDto>
+@{ViewData["Title"]="Booking review";}
+<div class="page-content"><h1>BOOKING REVIEW</h1><p>Pending requests and cancellation requests. All times are Asia/Manila.</p>
+@if(Model.Count==0){<p>No requests need review.</p>}
+<div class="booking-review-list">@foreach(var b in Model){<article><h2><a asp-action="Details" asp-route-id="@b.Id">@b.Reference · @ReservationLabels.Service(b.Service)</a></h2><p>@b.Status · @b.FirstName @b.LastName</p><p>Session: @TimeZoneInfo.ConvertTimeFromUtc(b.StartUtc,ReservationRules.Manila).ToString("dd MMM yyyy h:mm tt")</p><p>Deadline: @TimeZoneInfo.ConvertTimeFromUtc(b.ReviewDeadlineUtc,ReservationRules.Manila).ToString("dd MMM yyyy h:mm tt")</p>@if(b.PaymentStatus=="LatePayment"){<p>Late payment: reconciliation required</p>}@if(b.CancellationRequested){<p>Cancellation requested</p>}</article>}</div></div>

@@ -84,3 +84,8 @@ Before completing any task or opening a pull request:
    cd ..
    ```
 5. **Report Actual Evidence**: Never claim tests passed without running them and viewing the real command output.
+
+
+## 6. Local Configuration and Preview Processes
+
+For database setup, collaborator onboarding, or starting/restarting Web or Migrator, read [Developer Onboarding](Documentation/ONBOARDING.md#configuration-scope-and-secrets). It is the setup source of truth for environment-variable scope, current user-secrets support, Atlas, and Mailpit. Before replacing a configured app, preserve its launch environment and check `/health/ready`; record missing configuration without printing credentials. A preview that renders account pages but cannot reach MongoDB does not verify sign-in or availability. Integration tests always use isolated local MongoDB databases.

@@ -1,0 +1,18 @@
+@model IReadOnlyList<HoleInHub.Business.Services.ServiceCatalogItem>
+@if (Model.Count == 0)
+{
+    <p class="services-empty">There are no services to display right now. Contact the venue to plan your visit.</p>
+}
+@foreach (var item in Model)
+{
+    <article class="service-entry">
+        <img src="@item.ImagePath" alt="@item.Title at Hole In Hub" loading="lazy" width="960" height="640" />
+        <div class="service-entry-copy">
+            <h2>@item.Title</h2>
+            <p class="service-entry-summary">@item.Summary</p>
+            <p class="service-entry-rate">@item.RateText <span>Indicative rate</span></p>
+            <p class="service-entry-details">@item.Details</p>
+            <a class="button" href="@item.ActionUrl">@item.ActionLabel <span aria-hidden="true">→</span></a>
+        </div>
+    </article>
+}

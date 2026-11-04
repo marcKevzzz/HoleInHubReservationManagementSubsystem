@@ -23,5 +23,5 @@ public sealed class OutboxPersistence(IMongoDbContext context)
         var result = await Messages.UpdateOneAsync(x => x.Id == id && x.Failed && x.SentUtc == null, Builders<OutboxRecord>.Update.Set(x => x.Failed, false).Set(x => x.Attempts, 0).Set(x => x.DueUtc, now).Set(x => x.LeaseUntilUtc, null).Set(x => x.LeaseToken, null), cancellationToken: ct);
         return result.ModifiedCount == 1;
     }
-    public async Task<bool> IsEligibleAsync(OutboxRecord message, CancellationToken ct) { if (message.ReservationId == null) { return true; } var reservation = await context.Database.GetCollection<ReservationRecord>("reservations").Find(x => x.Id == message.ReservationId).FirstOrDefaultAsync(ct); return reservation != null && reservation.Status == message.RequiredStatus && (message.RequiredStatus != "Pending" || reservation.ReviewDeadlineUtc > DateTime.UtcNow); }
+    public async Task<bool> IsEligibleAsync(OutboxRecord message, CancellationToken ct) { if (message.ReservationId == null) { return true; } var reservation = await context.Database.GetCollection<ReservationRecord>("reservations").Find(x => x.Id == message.ReservationId).FirstOrDefaultAsync(ct); return reservation != null && (message.RequiredStatus == null || reservation.Status == message.RequiredStatus) && (message.RequiredStatus != "Pending" || reservation.ReviewDeadlineUtc > DateTime.UtcNow); }
 }

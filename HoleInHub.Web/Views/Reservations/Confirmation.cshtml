@@ -1,0 +1,48 @@
+@using HoleInHub.Business.Reservations
+@using HoleInHubReservationManagementSubsystem.ViewModels
+@model ReservationDto
+@{
+    ViewData["Title"] = "Reservation request received";
+    var token = ViewData["AccessToken"] as string;
+    var start = TimeZoneInfo.ConvertTimeFromUtc(Model.StartUtc, ReservationRules.Manila);
+    var end = TimeZoneInfo.ConvertTimeFromUtc(Model.EndUtc, ReservationRules.Manila);
+}
+<div class="page-content booking-status-page booking-confirmation">
+    <header class="booking-status-heading">
+        <h1>REQUEST RECEIVED</h1>
+        <p>Your reference <strong class="booking-reference">@Model.Reference</strong></p>
+    </header>
+    <div class="booking-status-layout">
+        <section aria-labelledby="receipt-selection" class="booking-status-main">
+            <div class="booking-visit">
+                <div class="account-date"><time datetime="@Model.StartUtc.ToString("O")"><span>@start.ToString("dd")</span>@start.ToString("MMM yyyy")</time></div>
+                <div>
+                    <h2 id="receipt-selection">@ReservationLabels.Service(Model.Service)</h2>
+                    <p>@start.ToString("h:mm tt")–@end.ToString("h:mm tt")</p>
+                    <p class="booking-muted">All times are Asia/Manila.</p>
+                </div>
+            </div>
+            <dl class="booking-facts">
+                <div><dt>Number of guests</dt><dd>@Model.Attendees</dd></div>
+                <div><dt>@(Model.Service == "WholeShop" ? "Deposit deadline" : "Review deadline") · Asia/Manila</dt><dd>@TimeZoneInfo.ConvertTimeFromUtc(Model.ReviewDeadlineUtc, ReservationRules.Manila).ToString("dd MMM yyyy h:mm tt")</dd></div>
+            </dl>
+        </section>
+        <aside class="booking-status-sidebar" aria-labelledby="receipt-status">
+            <h2 id="receipt-status">Reservation status</h2>
+            <p class="booking-current-status">@Model.Status</p>
+            @if (Model.Status == "Pending")
+            {
+                <p>@(Model.Service == "WholeShop" ? "Complete the 50% deposit to confirm. No real money is collected." : "Awaiting staff approval.")</p>
+                <p class="booking-muted">This request does not confirm your reservation.</p>
+            }
+            <div class="booking-status-actions">
+                @if (Model.Service == "WholeShop" && Model.Status == "Pending" && ViewData["DemoPayments"] is true)
+                {
+                    <a class="button" asp-action="Checkout" asp-route-id="@Model.Id" asp-route-token="@token">Continue to deposit</a>
+                }
+                <a class="button" asp-action="Status" asp-route-id="@Model.Id" asp-route-token="@token">View reservation status</a>
+                @if(User.Identity?.IsAuthenticated!=true){<a class="booking-text-link" href="/guest/reservations/find">Find my booking</a>}
+            </div>
+        </aside>
+    </div>
+</div>

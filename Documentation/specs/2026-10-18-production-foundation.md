@@ -1,5 +1,8 @@
 # Shared development and production foundation
 
+> Historical design/execution record. Retained for traceability; not a current feature inventory or current verification evidence. See [current implementation](../CURRENT-SYSTEM.md) and [database reference](../DATABASE.md), synchronized 2026-11-04. Later owner directives take precedence.
+
+
 Status: proposed specification for review, not an implemented production system.
 
 > Business requirements aligned on 2026-10-27 with revised [Chapter I](../CHAPTER_1.md) and [PROJECT.md](../PROJECT.md). The original foundation scope remains distinct from subsequent reservation/POS feature implementation.

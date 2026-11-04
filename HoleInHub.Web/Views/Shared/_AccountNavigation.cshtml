@@ -1,0 +1,6 @@
+@{var current = ViewData["AccountPage"] as string;}
+<nav class="account-navigation" aria-label="Your account">
+    <a href="/my-reservations" aria-current="@(current == "reservations" ? "page" : null)">My reservations</a>
+    <a href="/transactions" aria-current="@(current == "transactions" ? "page" : null)">Transactions</a>
+    <a href="/my-profile" aria-current="@(current == "profile" ? "page" : null)">My profile</a>
+</nav>

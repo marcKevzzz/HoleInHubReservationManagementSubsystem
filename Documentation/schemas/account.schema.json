@@ -1,0 +1,70 @@
+{
+  "bsonType" : "object",
+  "required" : ["_id", "Email", "NormalizedEmail"],
+  "properties" : {
+    "_id" : {
+      "bsonType" : "string",
+      "minLength" : 1
+    },
+    "Email" : {
+      "bsonType" : "string",
+      "minLength" : 1,
+      "maxLength" : 254
+    },
+    "NormalizedEmail" : {
+      "bsonType" : "string",
+      "minLength" : 1,
+      "maxLength" : 254
+    },
+    "FirstName" : {
+      "bsonType" : "string",
+      "minLength" : 0,
+      "maxLength" : 100
+    },
+    "LastName" : {
+      "bsonType" : "string",
+      "minLength" : 0,
+      "maxLength" : 100
+    },
+    "Phone" : {
+      "bsonType" : "string",
+      "minLength" : 0,
+      "maxLength" : 30
+    },
+    "GoogleSubject" : {
+      "bsonType" : "string",
+      "minLength" : 1
+    },
+    "PasswordHash" : {
+      "bsonType" : "string",
+      "minLength" : 0
+    },
+    "SecurityStamp" : {
+      "bsonType" : "string",
+      "minLength" : 1
+    },
+    "Version" : {
+      "bsonType" : "string",
+      "minLength" : 1
+    },
+    "EmailConfirmed" : {
+      "bsonType" : "bool"
+    },
+    "AccessFailedCount" : {
+      "bsonType" : "int",
+      "minimum" : 0
+    },
+    "LockoutEndUtc" : {
+      "bsonType" : ["date", "null"]
+    },
+    "Roles" : {
+      "bsonType" : "array",
+      "minItems" : 0,
+      "uniqueItems" : true,
+      "items" : {
+        "bsonType" : "string",
+        "minLength" : 1
+      }
+    }
+  }
+}

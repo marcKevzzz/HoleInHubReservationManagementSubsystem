@@ -1,0 +1,31 @@
+.verification-shell{min-height:100svh;display:flex;flex-direction:column;background:var(--color-paper);color:var(--color-ink)}
+.verification-brand{display:block;width:180px;margin:36px auto 0}
+.verification-brand img{display:block;width:100%;height:auto}
+.verification-shell main{flex:1;display:grid;place-items:center;padding:24px 24px 36px}
+.verification-shell .booking-verification-page{width:100%;max-width:480px;text-align:center}
+.verification-shell .booking-verification-page .verification-back{margin-bottom:24px;min-height:24px}
+.verification-shell .booking-verification-page .eyebrow{color:var(--color-green);margin:0 0 16px}
+.verification-shell .booking-verification-page h1{font-size:clamp(32px,6vw,48px);line-height:1.15;margin:0;text-wrap:balance}
+.verification-shell .booking-verification-page .verification-recipient{font-size:14px;margin:20px 0 28px}
+.verification-shell .booking-verification-page .email-code-form{max-width:none}
+.verification-shell .booking-verification-page .auth-input-wrap input{font-size:16px;line-height:1.5;letter-spacing:normal;caret-color:var(--color-green)}
+.verification-shell .booking-verification-page .auth-input-wrap label{text-align:left;inset:4px auto auto 0;transform:translateY(24px);font-size:14px;line-height:1.5;color:var(--color-account-placeholder);transform-origin:left top}
+.verification-shell .booking-verification-page .auth-input-wrap:focus-within label,.verification-shell .booking-verification-page .auth-input-wrap input:not(:placeholder-shown)+label{transform:translateY(0);font-size:12px}
+.verification-shell .booking-verification-page .auth-input-wrap input:focus-visible{outline:none}
+@media(prefers-reduced-motion:no-preference){.verification-shell .booking-verification-page .auth-input-wrap label{transition:transform .25s var(--ease),font-size .25s var(--ease)}}
+.verification-shell .booking-verification-page .verification-actions{justify-items:stretch;gap:4px}
+.verification-shell .booking-verification-page .verification-actions .button{width:100%;justify-content:center;min-height:52px}
+.verification-shell .booking-verification-page .verification-timing{margin:0 0 24px}
+.verification-shell .booking-verification-page .verification-note{border-top:1px solid var(--color-line);padding-top:24px;margin:0;font-size:12px;line-height:1.7}
+.verification-shell .booking-verification-page .booking-errors{text-align:left;margin:24px 0;color:var(--color-error);font-size:13px}
+.verification-shell .booking-verification-page .booking-errors.validation-summary-valid{display:none}
+.verification-shell :is(a,button,input):focus-visible{outline:2px solid var(--color-green);outline-offset:4px}
+@media(max-width:600px){.verification-brand{margin-top:24px;width:150px}.verification-shell main{padding:32px 24px 48px}.verification-shell .booking-verification-page .verification-back{margin-bottom:28px}}
+
+.guest-text-button{border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;text-decoration:underline;text-underline-offset:5px;padding:10px 0;min-height:44px}
+.guest-access-bar{display:flex;justify-content:space-between;align-items:center;gap:20px;border-bottom:1px solid var(--color-line);padding-bottom:20px;margin-bottom:40px;font-size:13px;color:var(--color-muted)}
+.guest-access-bar p{margin:0!important;overflow-wrap:anywhere;min-width:0}.guest-access-bar form{flex-shrink:0}
+.guest-history-paging{display:flex;gap:28px;align-items:center;margin-top:32px;font-size:13px}.guest-history-paging a{padding:10px 0;text-decoration:underline;text-underline-offset:5px}
+.guest-find-form .field-error{display:block;text-align:left;font-size:12px;color:var(--color-error);margin-top:8px}
+.account-menu-actions .guest-find-link{justify-self:center;font-size:12px}
+@media(max-width:600px){.guest-access-bar{align-items:flex-start;flex-direction:column;gap:8px;margin-bottom:28px}}

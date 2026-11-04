@@ -1,13 +1,16 @@
 @model HoleInHub.Web.ViewModels.SignInModel
 @{ ViewData["Title"] = "Welcome Back"; }
-<section class="account-page page-shell"><div class="account-inner"><h1>WELCOME BACK</h1>
+<section class="account-page"><div class="account-inner"><a class="auth-home" href="/"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m12 5-7 7 7 7M5 12h14" /></svg>Back to home</a><h1>Welcome back</h1>
 @if (TempData["AccountMessage"] is string message) { <p role="status">@message</p> }
 @if (ViewData["Message"] is string result) { <p role="status">@result</p> }
 <form method="post" action="/account/sign-in">
 @Html.AntiForgeryToken()
 <div asp-validation-summary="All" role="alert" class="validation-summary"></div>
 <input asp-for="ReturnUrl" type="hidden" />
-<div class="field"><label asp-for="Email"></label><input asp-for="Email" aria-describedby="Email-error" type="email" autocomplete="email" required  /><span asp-validation-for="Email" id="Email-error" class="field-error"></span></div>
-<div class="field"><label asp-for="Password"></label><input asp-for="Password" aria-describedby="Password-error" type="password" autocomplete="current-password" required  /><span asp-validation-for="Password" id="Password-error" class="field-error"></span></div>
-<button class="button" type="submit">Sign in</button></form>
-<nav aria-label="Account"><a href="/account/sign-in">Sign in</a> · <a href="/account/sign-up">Create account</a> · <a href="/account/forgot-password">Forgot password?</a> · <a href="/account/verify-email">Verify email</a></nav></div></section>
+<div class="field"><div class="auth-input-wrap"><input asp-for="Email" aria-describedby="Email-error" type="email" autocomplete="email" maxlength="254" autocapitalize="none" spellcheck="false" required  placeholder=" " /><label asp-for="Email"></label></div><span asp-validation-for="Email" id="Email-error" aria-live="polite" class="field-error"></span></div>
+<div class="field"><div class="auth-input-wrap"><input asp-for="Password" aria-describedby="Password-error" type="password" autocomplete="current-password" required  placeholder=" " /><label asp-for="Password"></label><partial name="_PasswordToggle" model='@("Password")' /></div><span asp-validation-for="Password" id="Password-error" aria-live="polite" class="field-error"></span></div>
+<a class="auth-recovery" asp-controller="Account" asp-action="ForgotPassword" asp-route-returnUrl="@Model.ReturnUrl">Forgot password?</a>
+<button class="button" type="submit" data-no-icon>Sign in</button></form>
+<partial name="_GoogleButton" model='@(Model.ReturnUrl ?? "")' />
+<p class="auth-switch"><a href="/guest/reservations/find">Find my booking</a></p>
+<p class="auth-switch">New to Hole In Hub? <a asp-controller="Account" asp-action="SignUp" asp-route-returnUrl="@Model.ReturnUrl">Create an account</a></p></div></section>

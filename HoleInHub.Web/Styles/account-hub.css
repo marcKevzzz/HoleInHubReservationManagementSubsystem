@@ -1,0 +1,25 @@
+.page-content.account-hub{max-width:1280px;margin-inline:auto;padding-bottom:100px}
+.account-navigation{display:flex;gap:32px;border-bottom:1px solid var(--color-line);margin-bottom:48px;overflow-x:auto}
+.account-navigation a{white-space:nowrap;padding:18px 0;border-bottom:2px solid transparent;color:var(--color-muted)}
+.account-navigation a[aria-current=page]{color:var(--color-green);border-color:var(--color-green)}
+.account-heading{display:flex;justify-content:space-between;align-items:center;gap:24px;margin-bottom:40px}
+.account-heading h1{margin:0;font-size:clamp(36px,5vw,64px);line-height:1.1}
+.account-hub h2{font-family:var(--body);font-size:20px;line-height:1.5;letter-spacing:0;margin:0 0 10px;text-transform:none}
+.account-hub p{margin-bottom:10px}.account-muted,.account-timezone{color:var(--color-muted)}
+.account-reservation-tabs{display:flex;gap:32px;border-bottom:1px solid var(--color-line)}
+.account-reservation-tabs a{padding:14px 0;border-bottom:2px solid transparent;color:var(--color-muted)}
+.account-reservation-tabs a[aria-current=page]{color:var(--color-green);border-color:var(--color-green)}
+.account-reservation-tabs span{font-size:11px;margin-left:8px}.account-timezone{font-size:12px;padding-top:16px}
+.account-reservation{display:grid;grid-template-columns:110px minmax(0,1fr) minmax(200px,.6fr);gap:32px;padding:32px 0;border-bottom:1px solid var(--color-line);font-variant-numeric:tabular-nums}
+.account-date{color:var(--color-green);font-size:12px;text-transform:uppercase}.account-date span{font-family:var(--display);display:block;font-size:48px;line-height:1.15;margin-bottom:8px}
+.account-reference{font-size:12px;letter-spacing:.6px}.account-reservation-status{font-size:12px}.account-reservation-status strong{font-size:14px;color:var(--color-green);display:block;margin-bottom:10px}
+.account-reservation-status a,.account-empty a,.account-text-link{text-decoration:underline;text-underline-offset:5px;display:inline-block;padding-block:10px}
+.account-empty{padding:56px 0}.account-empty h2{font-size:24px}.account-empty p{color:var(--color-muted)}
+.account-profile-layout{border-top:1px solid var(--color-line);padding-top:36px;display:grid;grid-template-columns:1fr 1.3fr;gap:64px}.account-profile-form{max-width:640px}
+.account-profile-form label{display:block;font-size:12px;margin:0 0 8px}.account-profile-form input{display:block;width:100%;padding:12px 0;border:0;border-bottom:1px solid var(--color-control-line);background:var(--color-paper);border-radius:0;margin-bottom:8px;color:var(--color-ink)}
+.account-name-fields{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px}.account-email{padding:28px 0 32px;overflow-wrap:anywhere}.account-email>span,.account-email small{font-size:12px;color:var(--color-muted)}.account-email p{margin-top:8px}
+.account-errors{color:var(--color-error);font-size:12px}.account-errors ul{padding-left:18px}.account-feedback{color:var(--color-green);margin-bottom:24px!important}
+.account-demo-note{border-block:1px solid var(--color-line);padding:16px 0;font-size:12px;color:var(--color-muted)}
+.account-transaction{padding:32px 0;border-bottom:1px solid var(--color-line);display:grid;grid-template-columns:1fr 1fr;gap:20px 48px;overflow-wrap:anywhere}.account-transaction p{font-size:12px}.account-transaction dl{margin:0;display:grid;grid-template-columns:1fr 1fr;gap:18px}.account-transaction dt{font-size:12px;color:var(--color-muted)}.account-transaction dd{margin:4px 0;font-variant-numeric:tabular-nums}.account-transaction details{font-size:12px}.account-transaction summary{cursor:pointer;padding:10px 0}.account-transaction li{padding:5px 0}.account-text-link{justify-self:end;align-self:start}
+.account-hub :is(a,button,input,summary):focus-visible{outline:2px solid var(--color-green);outline-offset:5px}
+@media(max-width:700px){.account-navigation{gap:24px;margin-bottom:32px;font-size:12px}.account-heading{align-items:flex-start;flex-direction:column;gap:24px}.account-reservation{grid-template-columns:64px 1fr;gap:20px}.account-reservation-status{grid-column:2}.account-date span{font-size:38px}.account-profile-layout,.account-transaction{grid-template-columns:1fr;gap:28px}.account-name-fields{grid-template-columns:1fr;gap:24px}.account-text-link{justify-self:start}.account-profile-layout{padding-top:28px}.page-content.account-hub{padding-bottom:64px}}

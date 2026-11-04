@@ -1,6 +1,13 @@
 # Aligned system diagrams
 
+> Historical target-design exports (October 2026), not current implementation diagrams. In particular, account-required submission, review/deposit policies, attendance, reports and POS flows do not fully match current source. See [current feature inventory and booking flow](../CURRENT-SYSTEM.md) and the current architecture reference. Existing PDF, SVG, PNG and draw.io exports are retained as historical artifacts, not regenerated or certified current.
+
+
 Prepared 27 October 2026 from the revised Chapter I, [business requirements](../PROJECT.md), supplied diagram drafts, and the owner's subsequent objective/scope wording in chat. These are proposed designs, not claims of implemented features or approved client operating policies. Existing source images in Downloads were not modified.
+
+## Current implemented data model
+
+Use [current-data-model.md](current-data-model.md) for the MongoDB collection relationships, embedded records and supporting collections through migration 007. The older exported packages below retain historical target-design context.
 
 ## Simple version
 
@@ -80,3 +87,8 @@ Parent boundary flows are derived from the same process definitions as the Level
 Run `generate_diagrams.py` with Python and ReportLab to regenerate the draw.io workbook, 12 SVG sheets and PDF. No runtime website dependency is added. The script checks node bounds/text fit, edge endpoints, the presence of all 21 Level 2 subprocesses, and an input/output for each. Render the PDF with Poppler and visually check labels/arrows after editing. These checks validate the artifacts, not application behavior or client approval.
 
 The existing Chapter I file remains a transcription of the supplied PDF; the refined objective/scope wording discussed afterward has not silently replaced the source manuscript. These diagrams use the clarified rules from that discussion.
+
+
+## Editable monochrome booking data model
+
+Open [current-data-model.drawio](current-data-model.drawio) in diagrams.net using File → Open From → Device. Recreates the six-collection reference image with individually editable property cells and relationship connectors. All boxes use white fill, black text and black outlines; no dark alternating rows. This file intentionally matches the supplied image rather than adding the separate internal-support collections.

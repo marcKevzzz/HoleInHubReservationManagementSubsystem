@@ -1,0 +1,20 @@
+@using HoleInHubReservationManagementSubsystem.ViewModels
+@using HoleInHub.Business.Reservations
+@model ReservationDto
+@{ViewData["Title"]="Review booking";}
+<div class="page-content booking-review-detail"><h1>REVIEW @Model.Reference</h1>
+@if(TempData["BookingMessage"] is string message){<p class="notice" role="status">@message</p>}
+<p>@ReservationLabels.Service(Model.Service) · @Model.Status</p><p>@Model.FirstName @Model.LastName · @Model.Phone</p><p>Start: @TimeZoneInfo.ConvertTimeFromUtc(Model.StartUtc,ReservationRules.Manila).ToString("dd MMM yyyy h:mm tt") (Asia/Manila)</p>
+<p>Deadline: @TimeZoneInfo.ConvertTimeFromUtc(Model.ReviewDeadlineUtc,ReservationRules.Manila).ToString("dd MMM yyyy h:mm tt")</p><p>Bays: @string.Join(", ",Model.ResourceIds.Select(id=>Model.ResourceNames.GetValueOrDefault(id,id)))</p>
+<p>Number of guests (including non-players): @Model.Attendees</p>@if(Model.PolicyVersion>=2){<p>Confirm the player distribution with the customer: at most six players per bay.</p>}
+@foreach(var p in Model.Participants){<p>@Model.ResourceNames.GetValueOrDefault(p.ResourceId,p.ResourceId): @p.Players players, @p.NonPlayers non-players</p>}
+<p class="booking-note">@Model.Notes</p>
+@if(BookingRules.IsCoaching(Model.Service)){<p>Coach confirmation: @(Model.CoachConfirmed?"Recorded":"Required before approval")</p>}
+@if(Model.Service=="WholeShop"){<p>deposit: @ReservationLabels.Payment(Model.PaymentStatus). Confirmation requires a successful deposit.</p>}
+<form asp-action="Decide" asp-route-id="@Model.Id" method="post"><div class="field"><label for="decision-reason">Reason (required when declining)</label><textarea id="decision-reason" name="reason" maxlength="1000" rows="3"></textarea></div><div class="actions">
+@if(Model.Status=="Pending"&&Model.ReviewDeadlineUtc>DateTime.UtcNow){
+@if(BookingRules.IsCoaching(Model.Service)&&!Model.CoachConfirmed){<button class="button" name="decision" value="coach">Record coach confirmation</button>}
+@if(Model.Service!="WholeShop"&&(!BookingRules.IsCoaching(Model.Service)||Model.CoachConfirmed)){<button class="button" name="decision" value="approve">Approve booking</button>}
+<button class="button button-tertiary" name="decision" value="reject">Reject booking</button>}
+@if(Model.CancellationRequested){<button class="button" name="decision" value="cancel">Approve cancellation</button><button class="button button-tertiary" name="decision" value="keep">Decline cancellation</button>}
+</div></form><h2>HISTORY</h2><ul>@foreach(var e in Model.History){<li>@ReservationLabels.History(e.Status) @e.Reason · @(e.Actor=="Demo POS"?"POS":e.Actor) · @e.AtUtc.ToString("u")</li>}</ul><a asp-action="Index">Back to booking review</a></div>

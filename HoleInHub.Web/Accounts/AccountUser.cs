@@ -4,6 +4,10 @@ namespace HoleInHub.Web.Accounts;
 
 public sealed class AccountUser
 {
+    public string FirstName { get; set; } = "";
+    public string LastName { get; set; } = "";
+    public string Phone { get; set; } = "";
+    public string? GoogleSubject { get; set; }
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string Email { get; set; } = "";
     public string NormalizedEmail { get; set; } = "";
@@ -14,6 +18,6 @@ public sealed class AccountUser
     public int AccessFailedCount { get; set; }
     public DateTimeOffset? LockoutEnd { get; set; }
     public string[] Roles { get; set; } = ["Customer"];
-    public AccountDetails ToDetails() => new(Id, Email, NormalizedEmail, PasswordHash, SecurityStamp, Version, EmailConfirmed, AccessFailedCount, LockoutEnd?.UtcDateTime, Roles);
-    public static AccountUser? From(AccountDetails? a) => a is null ? null : new() { Id = a.Id, Email = a.Email, NormalizedEmail = a.NormalizedEmail, PasswordHash = a.PasswordHash, SecurityStamp = a.SecurityStamp, Version = a.Version, EmailConfirmed = a.EmailConfirmed, AccessFailedCount = a.AccessFailedCount, LockoutEnd = a.LockoutEndUtc is { } d ? new DateTimeOffset(DateTime.SpecifyKind(d, DateTimeKind.Utc)) : null, Roles = a.Roles };
+    public AccountDetails ToDetails() => new(Id, Email, NormalizedEmail, PasswordHash, SecurityStamp, Version, EmailConfirmed, AccessFailedCount, LockoutEnd?.UtcDateTime, Roles) { FirstName = FirstName, LastName = LastName, Phone = Phone, GoogleSubject = GoogleSubject };
+    public static AccountUser? From(AccountDetails? a) => a is null ? null : new() { Id = a.Id, Email = a.Email, NormalizedEmail = a.NormalizedEmail, PasswordHash = a.PasswordHash, SecurityStamp = a.SecurityStamp, Version = a.Version, EmailConfirmed = a.EmailConfirmed, AccessFailedCount = a.AccessFailedCount, LockoutEnd = a.LockoutEndUtc is { } d ? new DateTimeOffset(DateTime.SpecifyKind(d, DateTimeKind.Utc)) : null, Roles = a.Roles, FirstName = a.FirstName, LastName = a.LastName, Phone = a.Phone, GoogleSubject = a.GoogleSubject };
 }

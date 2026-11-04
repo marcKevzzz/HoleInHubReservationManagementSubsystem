@@ -1,44 +1,32 @@
-# Luxury Design System & Motion Specification
+# Current design system and motion
 
-Hole In Hub combines **Tailwind CSS v4** tokens, **GSAP animations**, and principles inspired by **Spyker Cars** precision engineering and **Apple fluid motion design**.
+Reviewed against Styles/site.css and local assets on 2026-11-04. The old obsidian/champagne design is historical; current pages use white surfaces, charcoal text and muted green. [UI-COMPONENTS.md](UI-COMPONENTS.md) documents shared controls and motion conventions.
 
----
+## Tokens and fonts
 
-## 1. Aesthetic Vision: Precision Engineering & Private Lounge Luxury
+Tailwind CSS 4.3 reads tokens from `HoleInHub.Web/Styles/site.css` under `@theme`, with reservation, availability and account-hub styles imported locally.
 
-Referencing the high-impact editorial atmosphere of `spykercars.com`:
-- **Obsidian & Carbon Black Surfaces**: `#050505` to `#121212` with subtle hairline borders (`border-white/10`).
-- **Titanium & Brushed Steel Typography**: Crisp contrast with `#f4f4f5` and `#a1a1aa`.
-- **Champagne Gold Accents**: High luxury `#d4af37` and `#c5a059` highlights for primary actions and VIP indicators.
-- **Deep Fairway Green**: `#052e16` and `#15803d` for organic golf heritage.
-- **Editorial Micro-Typo**: Monospaced uppercase tracked metadata (`font-mono tracking-[0.15em] uppercase`).
+| Token | Current value | Purpose |
+| --- | --- | --- |
+| ink | `#10110f` | Main text |
+| paper | `#fff` | Main surface |
+| green | `#354f3b` | Brand/actions |
+| muted | `#60645d` | Secondary text |
+| line | `#d5d7d1` | Dividers |
+| control-line | `#83877f` | Control boundary |
+| error | `#9b3027` | Error feedback |
+| auth-shade | `rgb(16 17 15 / 78%)` | Authentication overlay |
 
----
+Use semantic tokens rather than inventing ad-hoc colors. Display typography uses locally hosted Oswald; body typography uses locally hosted Inter, with system fallbacks. CSS includes corresponding custom properties; keep them synchronized when changing theme values.
 
-## 2. Color Tokens (`Styles/site.css`)
+## Assets and motion
 
-| Palette | Prefix | Hex Codes | Usage |
-| :--- | :--- | :--- | :--- |
-| **Obsidian Carbon** | `obsidian-*` | `#050505`, `#0a0a0a`, `#18181b` | Main backgrounds, glass cards, deep contrast panels |
-| **Champagne Gold** | `champagne-*` | `#d4af37`, `#c5a059`, `#7a5e27` | Primary brand CTAs, VIP reserve badges, focus accents |
-| **Titanium Steel** | `titanium-*` | `#f4f4f5`, `#d4d4d8`, `#71717a` | High-legibility text, secondary labels, borders |
-| **Fairway Racing Green** | `fairway-*` | `#22c55e`, `#15803d`, `#052e16` | Active telemetry lights, confirmed statuses |
+GSAP 3.13 is installed through npm. `npm run copy:vendor` copies GSAP, ScrollTrigger and ScrollSmoother into local vendor assets; no runtime CDN is needed. `npm run build` copies vendor files and builds CSS; `npm run watch:css` watches stylesheet changes.
 
----
+Shared UI/button motion, page transitions, account navigation and booking scripts are separate files under wwwroot/js. Consult their source and UI-COMPONENTS rather than assuming all behavior lives in motion.js. Animation is progressive enhancement: initial content remains visible and forms remain usable if JavaScript fails. Respect prefers-reduced-motion, final states, interruption and cleanup.
 
-## 3. Motion Architecture (`motion.js`)
+## Accessibility requirements and verification
 
-Incorporating Apple Design WWDC principles:
-1. **Direct Tactile Feedback**: Buttons and cards respond on pointer-down with scale damping (`scale(0.985)`), not waiting for release.
-2. **Velocity-Aware Transitions**: Easing follows `power3.out` curves for natural inertia.
-3. **Interruptible Transitions**: Animations can be reversed without jarring stops.
-4. **Accessible Reduced-Motion**: If the client OS has `prefers-reduced-motion` enabled, animations instantly complete or are bypassed.
-5. **No FOIC (Flash of Invisible Content)**: Markup remains fully readable and rendered if JavaScript is disabled.
+Maintain visible keyboard focus, the contributor-required two-pixel focus-ring treatment, semantic labels/errors and WCAG 2.2 AA contrast: 4.5:1 normal text and 3:1 large text/icons. These are requirements, not a blanket certification of current pages. Verify focus order, disabled/loading controls, reduced motion and responsive overflow when changing UI.
 
----
-
-## 4. Accessibility Standards (WCAG 2.2 AA)
-
-- **Visible Focus Rings**: `focus-visible:ring-1 focus-visible:ring-champagne-400 focus-visible:ring-offset-2`.
-- **Contrast**: Minimum 4.5:1 for body copy; 3:1 for large headings.
-- **Skip Link**: Top-level `Skip to main content` keyboard shortcut.
+Run `npm --prefix HoleInHub.Web run test:ui` and `npm --prefix HoleInHub.Web run build:css`; perform browser checks for visual and accessibility behavior that source tests cannot prove.

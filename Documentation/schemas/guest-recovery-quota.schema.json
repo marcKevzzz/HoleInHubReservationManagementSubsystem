@@ -1,0 +1,29 @@
+{
+  "bsonType": "object",
+  "required": [
+    "_id",
+    "IssuedUtc",
+    "ExpiresUtc",
+    "Version"
+  ],
+  "properties": {
+    "_id": {
+      "bsonType": "string"
+    },
+    "IssuedUtc": {
+      "bsonType": "array",
+      "items": {
+        "bsonType": "date"
+      }
+    },
+    "ExpiresUtc": {
+      "bsonType": "date"
+    },
+    "Version": {
+      "bsonType": [
+        "int",
+        "long"
+      ]
+    }
+  }
+}

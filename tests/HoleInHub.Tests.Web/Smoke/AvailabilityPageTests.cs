@@ -33,26 +33,18 @@ public sealed class AvailabilityPageTests
             using var client = factory.CreateClient();
             var date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)).ToString("yyyy-MM-dd");
             var response = await client.GetAsync($"/availability?date={date}&startTime=14:30&durationMinutes=90&service=VIP");
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            var html = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
-            Assert.Contains("YOUR SPACE TO PLAY", html);
-            Assert.Contains("2 of 2 vip bays available", html);
-            Assert.Contains($"date={date}", html);
-            Assert.Contains("durationMinutes=90", html);
-            Assert.Contains("service=VIP", html);
-            Assert.Contains("resourceId=vip-7", html);
-            Assert.Contains("resourceId=vip-8", html);
-            Assert.DoesNotContain("resourceId=bay-1", html);
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/Reservations/Availability")).StatusCode);
+            Assert.DoesNotContain("href=\"/Reservations/Availability\"", await client.GetStringAsync("/Home/About"));
             var booking = WebUtility.HtmlDecode(await client.GetStringAsync($"/Reservations/Create?date={date}&service=VIP&resourceId=vip-7"));
             Assert.Contains("id=\"booking-auth-dialog\"", booking);
-            Assert.Contains("CONTINUE BROWSING", booking);
+            Assert.Contains("Continue as guest", booking);
+            Assert.Contains("Number of guests", booking);
+            Assert.DoesNotContain("name=\"verificationCode\"", booking);
+            Assert.Contains("id=\"booking-submit\"", booking);
             Assert.Contains("KPGA lesson program", booking);
             Assert.Contains("Rent the whole shop", booking);
             Assert.DoesNotContain("Sign in to use your verified email", booking);
-            var invalid = WebUtility.HtmlDecode(await client.GetStringAsync($"/availability?date={date}&startTime=23:30&durationMinutes=90&service=VIP"));
-            Assert.Contains("LET’S FIND ANOTHER TIME.", invalid);
-            Assert.DoesNotContain("Choose this bay", invalid);
-            Assert.DoesNotContain("PLAN YOUR ROUND", invalid);
         }
         finally
         {

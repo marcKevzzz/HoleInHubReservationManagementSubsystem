@@ -1,0 +1,9 @@
+@model HoleInHub.Web.ViewModels.EmailCodeFormModel
+<p class="verification-recipient">@Model.Email</p>
+<form action="@Model.ActionUrl" method="post" class="booking-verification email-code-form" data-email-code data-expires="@Model.ExpiresUtc?.ToString("O")" data-resend="@Model.ResendAfterUtc?.ToString("O")" data-now="@Model.ServerNowUtc.ToString("O")" data-resend-expired="@Model.ResendWhenExpired.ToString().ToLowerInvariant()">
+@Html.AntiForgeryToken()
+<input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+@if(!Model.Verified){<div class="field"><div class="auth-input-wrap"><input id="verification-code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder=" " required aria-describedby="verification-timing" /><label for="verification-code">Verification code</label></div></div>}
+<div class="verification-actions"><button class="button" type="submit" disabled="@(Model.Expired&&!Model.ResendWhenExpired)">@Model.SubmitLabel</button><button class="verification-resend" type="submit" name="intent" value="resend" formaction="@Model.ResendUrl" formnovalidate>Resend code</button></div>
+<p id="verification-timing" class="verification-timing" aria-live="off">@(Model.Expired?"Code expired. Resend a code.":"Code expires at "+TimeZoneInfo.ConvertTimeFromUtc(Model.ExpiresUtc!.Value,HoleInHub.Business.Reservations.ReservationRules.Manila).ToString("h:mm tt")+" (Manila).")</p>
+</form>
