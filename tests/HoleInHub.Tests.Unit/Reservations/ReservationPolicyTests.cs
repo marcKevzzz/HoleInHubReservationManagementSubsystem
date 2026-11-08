@@ -14,11 +14,11 @@ public class ReservationPolicyTests
 
     [Fact] public void MissingApprovalRejectsSubmission() => Assert.Throws<ReservationValidationException>(() => new ReservationPolicy().ValidateCoverage(DateTimeOffset.UtcNow));
     [Fact]
-    public void EntireReviewWindowMustFitCoverage()
+    public void RequestsOutsideCoverageAreAllowedWhenFutureCoverageIsConfigured()
     {
         var policy = new ReservationPolicy { Approved = true, DurationsApproved = true, ReviewStart = TimeSpan.FromHours(10), ReviewEnd = TimeSpan.FromHours(22), ReviewDays = [2], StaffEmails = ["staff@example.test"] };
         policy.ValidateCoverage(new DateTimeOffset(2026, 11, 3, 21, 30, 0, TimeSpan.FromHours(8)));
-        Assert.Throws<ReservationValidationException>(() => policy.ValidateCoverage(new DateTimeOffset(2026, 11, 3, 21, 31, 0, TimeSpan.FromHours(8))));
+        policy.ValidateCoverage(new DateTimeOffset(2026, 11, 3, 21, 31, 0, TimeSpan.FromHours(8)));
     }
     [Fact] public void InvalidMaximumCalendarDateIsRejected() => Assert.Throws<ReservationValidationException>(() => ReservationRules.Interval(DateOnly.MaxValue, new TimeOnly(23, 30), 30));
     [Fact] public void FractionalStartIsRejected() => Assert.Throws<ReservationValidationException>(() => ReservationRules.Interval(new DateOnly(2026, 11, 3), new TimeOnly(10, 0, 0, 1), 30));

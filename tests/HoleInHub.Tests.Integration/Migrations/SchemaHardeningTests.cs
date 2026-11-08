@@ -204,6 +204,11 @@ public sealed class SchemaHardeningTests(MongoDbFixture fixture) : IClassFixture
             Assert.Equal(baseline.ToJson(), published.ToJson());
         }
         await new Migration_007_GuestReservationAccess().UpAsync(context.Database, default);
+        await new Migration_011_AdminScheduleBlocks().UpAsync(context.Database, default);
+        await new Migration_012_ReleaseScheduleBlocks().UpAsync(context.Database, default);
+        await new Migration_013_ReservationAttendance().UpAsync(context.Database, default);
+        await new Migration_014_OperatingReviewClock().UpAsync(context.Database, default);
+        await new Migration_015_ScheduleChanges().UpAsync(context.Database, default);
         var names = new Dictionary<string, string>
         {
             ["reservations"] = "reservation",

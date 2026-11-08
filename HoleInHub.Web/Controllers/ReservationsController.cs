@@ -222,7 +222,7 @@ public sealed class ReservationsController(ReservationService reservations, Gues
         var localStart = TimeZoneInfo.ConvertTimeFromUtc(start, ReservationRules.Manila);
         var receipt = "protected:" + protection.CreateProtector("BookingEmail").Protect(
             $"Hi {request.FirstName.Trim()},\n\nYour reservation request has been received.\nReservation status: Pending\nExperience: {ReservationLabels.Service(request.Service)}\nSession: {localStart:dd MMM yyyy h:mm tt} (Asia/Manila)\nNumber of guests: {request.Attendees}\n\n" +
-            (request.Service == "WholeShop" ? "Complete the 50% deposit before the deadline shown in your booking. No real money is collected.\n\n" : "Your request is awaiting staff approval. This email does not confirm your reservation.\n\n") +
+            (request.Service == "WholeShop" ? "Complete the 50% deposit before the deadline shown in your booking. No real money is collected.\n\n" : "Your request is awaiting staff approval. Review runs during operating hours and resumes at the next opening. Your selected bays are held while Pending. Check your booking for the review deadline. This email does not confirm your reservation.\n\n") +
             $"View your reservation reference, details and updates: {publicBase.TrimEnd('/')}{statusPath}");
         var result = await reservations.SubmitAsync(request, owner, verifiedEmail, ct,
             account ? null : GuestBookingService.Hash(session), account ? null : GuestBookingService.Hash(access), DemoAllowed, receipt);
@@ -291,6 +291,11 @@ public sealed class ReservationsController(ReservationService reservations, Gues
         try
         {
             var accepted = await reservations.DemoPaymentAsync(id, outcome, DemoAllowed, ct);
+            if (accepted && outcome == "success")
+            {
+                return RedirectToAction(nameof(Confirmation), new { id, token });
+            }
+
             TempData["BookingMessage"] = accepted ? "Demo payment outcome recorded. No money was collected." : "This hold has ended. The late demo result requires reconciliation; it does not confirm a booking.";
         }
         catch (ReservationValidationException error) { TempData["BookingMessage"] = error.Message; }
@@ -308,5 +313,46 @@ public sealed class ReservationsController(ReservationService reservations, Gues
         var accepted = await reservations.ReviewAsync(booking.Id, "request-cancellation", "Customer", ct);
         TempData["BookingMessage"] = accepted ? "Cancellation requested. Your booking remains allocated until staff approves. Deposit refunds are arranged with the venue." : "Cancellation requests must be made at least one hour before the session for an active booking.";
         return ViewData["GuestAccess"] is true ? RedirectToAction("Details", "GuestReservations", new { id }) : RedirectToAction(nameof(Status), new { id, token });
+    }
+
+    [AllowAnonymous, HttpGet]
+    public async Task<IActionResult> Change(string? id, string? token, CancellationToken ct)
+    {
+        var booking = await AccessibleAsync(id, token, ct);
+        if (booking is null) { return MissingAccess(id, token); }
+        if (!ReservationService.CanRequestScheduleChange(booking, clock.GetUtcNow().UtcDateTime)) { return BadRequest("This booking is not eligible for a schedule change."); }
+        ViewData["AccessToken"] = token;
+        var start = TimeZoneInfo.ConvertTimeFromUtc(booking.StartUtc, ReservationRules.Manila);
+        return View(new ScheduleChangeForm
+        {
+            Booking = booking,
+            ExpectedRevision = booking.Revision,
+            CommandId = Guid.NewGuid().ToString("N"),
+            Date = DateOnly.FromDateTime(start),
+            StartTime = TimeOnly.FromDateTime(start),
+            DurationMinutes = (int)(booking.EndUtc - booking.StartUtc).TotalMinutes
+        });
+    }
+
+    [AllowAnonymous, HttpPost, ValidateAntiForgeryToken, EnableRateLimiting("accounts")]
+    public async Task<IActionResult> Change(string? id, string? token, ScheduleChangeForm form, CancellationToken ct)
+    {
+        var booking = await AccessibleAsync(id, token, ct);
+        if (booking is null) { return MissingAccess(id, token); }
+        ViewData["AccessToken"] = token;
+        if (ModelState.IsValid)
+        {
+            try
+            {
+                await reservations.RequestScheduleChangeAsync(new(booking.Id, form.ExpectedRevision!.Value, form.CommandId,
+                    form.Date!.Value, form.StartTime!.Value, form.DurationMinutes, form.Reason), "Customer", ct);
+                TempData["BookingMessage"] = "Change requested. Your original booking stays reserved until staff approves.";
+                return ViewData["GuestAccess"] is true ? RedirectToAction("Details", "GuestReservations", new { id })
+                    : RedirectToAction(nameof(Status), new { id, token });
+            }
+            catch (ReservationValidationException error) { ModelState.AddModelError("", error.Message); }
+        }
+        form.Booking = booking;
+        return View(form);
     }
 }

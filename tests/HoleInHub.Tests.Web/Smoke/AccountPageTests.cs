@@ -60,7 +60,7 @@ public sealed class AccountPageTests : IClassFixture<WebApplicationFactory<Progr
         var html = await response.Content.ReadAsStringAsync();
         if (path != "/account/verify-email") { Assert.Contains("__RequestVerificationToken", html); }
         else { Assert.DoesNotContain("name=\"Email\"", html); Assert.Contains("Sign in to verify", html); }
-        Assert.Contains("class=\"auth-shell\"", html);
+        Assert.Matches(@"class=""(?:[^""]*\s)?auth-shell(?:\s[^""]*)?""", html);
         Assert.DoesNotContain("site-header", html);
         Assert.DoesNotContain("site-footer", html);
         Assert.Contains(path == "/account/forgot-password" ? "Back to sign in" : "Back to home", html);

@@ -1,6 +1,8 @@
 (() => {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
     const html = document.documentElement;
+    if (html.dataset?.skipPageTransition === 'true') return;
+    const accountRoute = /^\/(?:my-reservations|transactions|my-profile|reservations(?:\/index)?|guest\/reservations)\/?$/i;
     let leaving = false, cover, tween, fallback;
     function reset() {
         leaving = false;
@@ -18,7 +20,7 @@
         const link = event.target.closest('a[href]');
         if (event.defaultPrevented || !link || event.button || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || reduced.matches || !window.gsap || link.hasAttribute('download') || link.hasAttribute('data-social-placeholder') || (link.target && link.target !== '_self')) return;
         const destination = new URL(link.href, location.href);
-        if (destination.origin !== location.origin || !/^https?:$/.test(destination.protocol) || destination.hash || (destination.pathname === location.pathname && destination.search === location.search)) return;
+        if (destination.origin !== location.origin || !/^https?:$/.test(destination.protocol) || destination.hash || accountRoute.test(destination.pathname) || (destination.pathname === location.pathname && destination.search === location.search)) return;
         event.preventDefault();
         if (leaving) return;
         leaving = true;

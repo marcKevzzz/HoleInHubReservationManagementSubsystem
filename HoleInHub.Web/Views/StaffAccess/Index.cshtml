@@ -1,0 +1,57 @@
+@model HoleInHub.Web.ViewModels.StaffPinForm
+@{
+    var presentation = ViewData["Presentation"] is true;
+    var heading = "Staff sign-in";
+    ViewData["Title"] = heading;
+    var pinInvalid = ViewData.ModelState[nameof(Model.Pin)]?.Errors.Count > 0 || ViewData.ModelState[""]?.Errors.Count > 0;
+}
+<section class="account-page">
+    <div class="account-inner">
+        <h1>@heading</h1>
+        <p class="staff-auth-intro">@(presentation ? "Enter your PIN to open the workspace." : "Use your work email and PIN to open the staff workspace.")</p>
+        @if (TempData["StaffPinMessage"] is string message)
+        {
+            <p role="status">@message</p>
+        }
+        <form asp-action="Index" method="post" data-staff-pin>
+            @if (!presentation)
+            {
+                <div class="field">
+                    <div class="auth-input-wrap">
+                        <input asp-for="Email" type="email" autocomplete="username" maxlength="254" placeholder=" " required />
+                        <label asp-for="Email"></label>
+                    </div>
+                </div>
+            }
+            <div class="field staff-pin-field">
+                <div id="staff-pin-error" data-pin-error asp-validation-summary="All" role="alert" class="validation-summary"></div>
+                <div class="staff-pin-entry" data-pin-entry>
+                    <input id="Pin" name="Pin" type="password" inputmode="numeric" autocomplete="off"
+                           pattern="[0-9]{6}" maxlength="6" required aria-invalid="@(pinInvalid ? "true" : "false")"
+                           aria-label="Staff PIN" aria-describedby="staff-pin-error" />
+                    <div class="staff-pin-slots" data-pin-slots hidden aria-hidden="true">
+                        @for (var digit = 0; digit < 6; digit++)
+                        {
+                            <span></span>
+                        }
+                    </div>
+                </div>
+            </div>
+            <button class="button" type="submit" data-no-icon>Sign in</button>
+        </form>
+        <p class="staff-auth-help">
+            @if (presentation)
+            {
+                <text>Need access? Contact your administrator.</text>
+            }
+            else
+            {
+                <a asp-action="Setup">Set up or reset your PIN</a>
+            }
+        </p>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="~/js/staff-pin.js" asp-append-version="true"></script>
+}

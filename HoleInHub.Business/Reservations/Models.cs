@@ -6,16 +6,22 @@ public sealed record AvailabilityDto(ResourceDto Resource, bool Available);
 public sealed record ReservationDto(string Id, string Reference, string Service, string Status, DateTime StartUtc, DateTime EndUtc, DateTime ReviewDeadlineUtc, string[] ResourceIds, string FirstName, string LastName, string Phone, int Attendees, IReadOnlyList<ReservationHistoryDto> History, string Notes = "")
 {
     public bool IsUpcoming(DateTime nowUtc) => EndUtc > nowUtc && Status is "Pending" or "Confirmed" or "Checked-In";
+    public long Revision { get; init; }
+    public DateTime? CheckedInUtc { get; init; }
+    public DateTime? CheckedOutUtc { get; init; }
     public int PolicyVersion { get; init; }
     public Dictionary<string, string> ResourceNames { get; init; } = [];
     public BayParticipants[] Participants { get; init; } = [];
     public string? PaymentReference { get; init; }
     public DateTime CreatedUtc { get; init; }
     public string PaymentStatus { get; init; } = "NotRequired";
+    public string? BookingSource { get; init; }
     public decimal? RentalTotal { get; init; }
     public decimal? DepositAmount { get; init; }
     public bool CoachConfirmed { get; init; }
     public bool CancellationRequested { get; init; }
+    public ScheduleChangeDto? ScheduleChange { get; init; }
+    public DateTime? ReviewStartsUtc { get; init; }
 }
 public sealed record ReservationHistoryDto(string Status, DateTime AtUtc, string Actor, string Reason = "");
 public sealed class ReservationValidationException(string message) : Exception(message);
@@ -29,7 +35,8 @@ public sealed class ReservationPolicy
     public bool DemoPaymentsEnabled { get; set; }
     public void ValidateCoverage(DateTimeOffset now, int minutes = 30)
     {
-        var local = TimeZoneInfo.ConvertTime(now, ReservationRules.Manila); if (!Approved || !DurationsApproved || ReviewStart < TimeSpan.Zero || ReviewEnd > TimeSpan.FromDays(1) || ReviewEnd <= ReviewStart || StaffEmails.Length == 0 || !ReviewDays.Contains((int)local.DayOfWeek) || local.TimeOfDay < ReviewStart || local.TimeOfDay + TimeSpan.FromMinutes(minutes) > ReviewEnd)
+        if (!Approved || !DurationsApproved || ReviewStart < TimeSpan.Zero || ReviewEnd > TimeSpan.FromDays(1) || ReviewEnd <= ReviewStart || StaffEmails.Length == 0 ||
+            !ReviewDays.Any(day => day is >= 0 and <= 6 && ReviewEnd > TimeSpan.FromHours(ReservationRules.OpeningHour((DayOfWeek)day))))
         {
             throw new ReservationValidationException("Online requests are unavailable until an approved staff review window and service policy apply. Please contact the venue.");
         }
@@ -37,6 +44,8 @@ public sealed class ReservationPolicy
 }
 public static class ReservationRules
 {
+    public static int OpeningHour(DayOfWeek day) => day == DayOfWeek.Monday ? 11 : 10;
+
     public static TimeZoneInfo Manila { get; } = TimeZoneInfo.FindSystemTimeZoneById("Asia/Manila");
     public static (DateTime Start, DateTime End) PreviewInterval(DateOnly date, TimeOnly time, int duration, string service)
     {
@@ -54,7 +63,7 @@ public static class ReservationRules
         }
         if (service == "WholeShop")
         {
-            var opening = new TimeOnly(date.DayOfWeek == DayOfWeek.Monday ? 11 : 10, 0);
+            var opening = new TimeOnly(OpeningHour(date.DayOfWeek), 0);
             if (date == DateOnly.MaxValue || !((time == new TimeOnly(15, 0) && duration == 360) || (time == opening && duration == 1440 - opening.Hour * 60)))
             {
                 throw new ReservationValidationException("Choose half day (3–9 PM) or whole day (opening–midnight).");
@@ -64,7 +73,7 @@ public static class ReservationRules
         }
         return Interval(date, time, duration);
     }
-    public static (DateTime Start, DateTime End) Interval(DateOnly date, TimeOnly time, int duration) { var local = date.ToDateTime(time, DateTimeKind.Unspecified); var opening = date.DayOfWeek == DayOfWeek.Monday ? 11 : 10; if (date == DateOnly.MaxValue || duration < 30 || duration > 840 || duration % 30 != 0 || time.Ticks % TimeSpan.FromMinutes(30).Ticks != 0 || time.Hour < opening || local.AddMinutes(duration) > date.AddDays(1).ToDateTime(TimeOnly.MinValue)) { throw new ReservationValidationException("Choose at least 30 minutes in 30-minute increments within venue opening hours."); } return (TimeZoneInfo.ConvertTimeToUtc(local, Manila), TimeZoneInfo.ConvertTimeToUtc(local.AddMinutes(duration), Manila)); }
+    public static (DateTime Start, DateTime End) Interval(DateOnly date, TimeOnly time, int duration) { var local = date.ToDateTime(time, DateTimeKind.Unspecified); var opening = OpeningHour(date.DayOfWeek); if (date == DateOnly.MaxValue || duration < 30 || duration > 840 || duration % 30 != 0 || time.Ticks % TimeSpan.FromMinutes(30).Ticks != 0 || time.Hour < opening || local.AddMinutes(duration) > date.AddDays(1).ToDateTime(TimeOnly.MinValue)) { throw new ReservationValidationException("Choose at least 30 minutes in 30-minute increments within venue opening hours."); } return (TimeZoneInfo.ConvertTimeToUtc(local, Manila), TimeZoneInfo.ConvertTimeToUtc(local.AddMinutes(duration), Manila)); }
 }
 
 
@@ -83,19 +92,13 @@ public static class BookingRules
     public static void ValidateWindow(string service, DateTime startUtc, DateTimeOffset now)
     {
         ValidateLeadTime(service, startUtc, now);
-        var minutes = ReviewMinutes(service);
-        var local = TimeZoneInfo.ConvertTime(now, ReservationRules.Manila);
-        var opening = local.DayOfWeek == DayOfWeek.Monday ? 11 : 10;
-        if (local.Hour < opening || local.TimeOfDay.Add(TimeSpan.FromMinutes(minutes)) > TimeSpan.FromDays(1) || startUtc < now.UtcDateTime.AddMinutes(minutes))
-        {
-            throw new ReservationValidationException($"Submit during operating hours, at least {minutes} minutes before closing and your session.");
-        }
     }
     public static void ValidateLeadTime(string service, DateTime startUtc, DateTimeOffset now)
     {
-        if (startUtc < now.UtcDateTime.AddMinutes(ReviewMinutes(service)))
+        var deadline = service == "WholeShop" ? now.UtcDateTime.AddMinutes(ReviewMinutes(service)) : ReviewClock.AddMinutes(now, ReviewMinutes(service));
+        if (startUtc < deadline)
         {
-            throw new ReservationValidationException($"Choose a start at least {ReviewMinutes(service)} minutes from now.");
+            throw new ReservationValidationException($"Choose a start after the full {ReviewMinutes(service)}-minute review window. Staff review runs during operating hours.");
         }
     }
     public static void ValidateGuests(string service, string[] resources, int guests)

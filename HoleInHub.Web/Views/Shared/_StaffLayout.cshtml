@@ -1,0 +1,132 @@
+@using HoleInHub.Business.Accounts
+@using HoleInHub.Web.Accounts
+@{
+    var date = Context.Request.Query["date"].ToString();
+    var pendingReviews = ViewData["PendingReviews"] as long? ?? 0;
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    var action = ViewData["LeadershipPage"] as string ?? ViewContext.RouteData.Values["action"]?.ToString();
+    var isCustomers = controller == "Customers";
+    var isQueue = action == "Queue"
+        || bool.TryParse(Context.Request.Query["fromQueue"], out var fromQueue) && fromQueue;
+    var managesVenue = User.ManagesVenue();
+    var isAdmin = User.IsInRole(StaffRoles.Admin);
+    var venuePages = new[]
+    {
+        ("Manager", "dashboard", "Manager overview"), ("Availability", "calendar", "Venue availability"),
+        ("Team", "customers", "Team"), ("Reports", "reports", "Daily report"),
+        ("Activity", "queue", "Booking activity"), ("Notifications", "notifications", "Notifications")
+    };
+    var adminPages = new[]
+    {
+        ("Admin", "dashboard", "Admin overview"), ("Users", "roles", "Users & roles"),
+        ("Resources", "resources", "Resources"), ("Services", "queue", "Services"), ("Settings", "sidebar", "Settings")
+    };
+    var planned = new[]
+    {
+        ("dashboard", "Dashboard"), ("resources", "Resources"),
+        ("reports", "Reports"), ("notifications", "Notifications")
+    };
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] | Hole In Hub</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="staff-shell">
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <aside class="staff-rail">
+        <div class="staff-rail-header">
+            <a class="staff-brand" asp-controller="@(managesVenue ? "Leadership" : "BookingReview")"
+               asp-action="@(isAdmin ? "Admin" : managesVenue ? "Manager" : "Index")" aria-label="Hole In Hub staff workspace">
+                <img src="~/media/brand/wordmark-hq.webp" alt="" />
+            </a>
+            <button type="button" class="staff-rail-toggle" aria-controls="staff-rail-content" aria-expanded="true" aria-label="Collapse sidebar" title="Collapse sidebar" hidden>
+                <partial name="_StaffIcon" model=' "sidebar" ' />
+            </button>
+        </div>
+        <div class="staff-rail-drawer" id="staff-rail-content">
+            <div class="staff-rail-content">
+                <nav class="staff-nav" aria-label="Staff operations">
+                    <a asp-controller="BookingReview" asp-action="Index" asp-route-date="@date" aria-label="Reservations" title="Reservations"
+                       aria-current="@(controller == "BookingReview" && !isQueue ? "page" : null)">
+                        <partial name="_StaffIcon" model=' "calendar" ' /><span class="staff-nav-label">Reservations</span>
+                    </a>
+                    <a asp-controller="BookingReview" asp-action="Queue" asp-route-date="@date"
+                       aria-label="@(pendingReviews > 0 ? $"Review queue, {pendingReviews} pending" : "Review queue")" title="Review queue"
+                       aria-current="@(isQueue ? "page" : null)">
+                        <partial name="_StaffIcon" model=' "queue" ' /><span class="staff-nav-label">Review queue</span>
+                        @if (pendingReviews > 0)
+                        {
+                            <span class="staff-nav-count" aria-hidden="true">@(pendingReviews > 99 ? "99+" : pendingReviews.ToString())</span>
+                        }
+                    </a>
+                    <a asp-controller="Customers" asp-action="Index" title="Customers" aria-current="@(isCustomers ? "page" : null)">
+                        <partial name="_StaffIcon" model=' "customers" ' /><span class="staff-nav-label">Customers</span>
+                    </a>
+                </nav>
+                @if (managesVenue)
+                {
+                    <nav class="staff-nav staff-nav-planned" aria-label="Venue management">
+                        <p class="staff-nav-label">Venue management</p>
+                        @foreach (var (destination, icon, label) in venuePages)
+                        {
+                            <a asp-controller="Leadership" asp-action="@destination" aria-label="@label" title="@label"
+                               aria-current="@(controller == "Leadership" && action == destination ? "page" : null)">
+                                <partial name="_StaffIcon" model="@icon" /><span class="staff-nav-label">@label</span>
+                            </a>
+                        }
+                    </nav>
+                }
+                @if (isAdmin)
+                {
+                    <nav class="staff-nav staff-nav-planned" aria-label="Administration">
+                        <p class="staff-nav-label">Administration</p>
+                        @foreach (var (destination, icon, label) in adminPages)
+                        {
+                            <a asp-controller="Leadership" asp-action="@destination" aria-label="@label" title="@label"
+                               aria-current="@(controller == "Leadership" && action == destination ? "page" : null)">
+                                <partial name="_StaffIcon" model="@icon" /><span class="staff-nav-label">@label</span>
+                            </a>
+                        }
+                    </nav>
+                }
+                @if (!managesVenue)
+                {
+                    <div class="staff-nav staff-nav-planned">
+                        <p class="staff-nav-label">Planned</p>
+                        @foreach (var (icon, label) in planned)
+                        {
+                            <span class="staff-nav-item" aria-disabled="true" title="@($"{label} · Unavailable")">
+                                <partial name="_StaffIcon" model="@icon" /><span class="staff-nav-label">@label</span>
+                            </span>
+                        }
+                    </div>
+                }
+                <div class="staff-rail-footer">
+                    <a href="/" aria-label="Public website" title="Public website">
+                        <partial name="_StaffIcon" model=' "website" ' /><span class="staff-nav-label">Public website</span>
+                    </a>
+                    <form id="account-logout-form" asp-controller="StaffAccess" asp-action="SignOutStaff" method="post">
+                        <button type="submit" aria-label="Log out" title="Log out">
+                            <partial name="_StaffIcon" model=' "logout" ' /><span class="staff-nav-label">Log out</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </aside>
+    <main id="main-content" tabindex="-1">
+        @RenderBody()
+    </main>
+    <partial name="_LogoutConfirmation" model='"You’ll need to enter your PIN again to open your workspace."' />
+    <script src="~/js/vendor/gsap.min.js" asp-append-version="true"></script>
+    <script src="~/js/ui-motion.js" asp-append-version="true"></script>
+    <script src="~/js/button-motion.js" asp-append-version="true"></script>
+    <script src="~/js/staff-sidebar.js" asp-append-version="true"></script>
+    <script src="~/js/account-menu.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

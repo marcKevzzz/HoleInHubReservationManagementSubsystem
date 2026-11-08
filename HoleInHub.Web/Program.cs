@@ -22,6 +22,26 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+if (app.Environment.IsDevelopment()
+    && Uri.TryCreate(builder.Configuration["Development:StaffWorkspaceUrl"], UriKind.Absolute, out var staffWorkspace)
+    && staffWorkspace.Scheme == Uri.UriSchemeHttps && staffWorkspace.IsLoopback)
+{
+    app.Use(async (context, next) =>
+    {
+        var request = context.Request;
+        if ((HttpMethods.IsGet(request.Method) || HttpMethods.IsHead(request.Method))
+            && request.Host.Host is ("localhost" or "127.0.0.1" or "[::1]")
+            && request.Path.StartsWithSegments("/staff")
+            && (!request.IsHttps || !context.RequestServices.GetRequiredService<StaffPinAccess>().Enabled)
+            && (!request.IsHttps || request.Host != new HostString(staffWorkspace.Host, staffWorkspace.Port)))
+        {
+            context.Response.Redirect(new Uri(staffWorkspace, request.Path + request.QueryString).AbsoluteUri);
+            return;
+        }
+        await next(context);
+    });
+}
+
 app.UseHttpsRedirection();
 
 // Correlation identifier middleware
@@ -80,6 +100,9 @@ app.MapControllerRoute("services", "services", new { controller = "Home", action
 app.MapControllerRoute("availability", "availability", new { controller = "Reservations", action = "Availability" });
 app.MapControllerRoute("reservation", "appointment", new { controller = "Reservations", action = "Create" });
 app.MapControllerRoute("my-reservations", "my-reservations", new { controller = "Reservations", action = "Index" });
+app.MapControllerRoute("staff", "staff", new { controller = "BookingReview", action = "Index" });
+app.MapControllerRoute("staff-review-queue", "staff/review-queue", new { controller = "BookingReview", action = "Queue" });
+app.MapControllerRoute("staff-review-actions", "staff/review/{action}/{id?}", new { controller = "BookingReview" });
 
 app.MapControllerRoute(
     name: "default",

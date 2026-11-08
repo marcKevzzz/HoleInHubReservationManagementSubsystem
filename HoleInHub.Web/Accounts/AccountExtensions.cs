@@ -23,6 +23,7 @@ public static class AccountExtensions
         services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromHours(2));
         var authentication = services.AddAuthentication(IdentityConstants.ApplicationScheme);
         authentication.AddIdentityCookies();
+        StaffPinAccess.Register(services, authentication, environment);
         if (configuration.GetValue<bool>("Authentication:Google:Enabled"))
         {
             var clientId = configuration["Authentication:Google:ClientId"];
@@ -57,7 +58,15 @@ public static class AccountExtensions
             options.Cookie.SecurePolicy = environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
             options.ExpireTimeSpan = TimeSpan.FromHours(8);
         });
-        services.AddAuthorization(options => options.AddPolicy("VerifiedCustomer", policy => policy.RequireAuthenticatedUser().RequireClaim("email_verified", "true")));
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy("VerifiedCustomer",
+                policy => policy.RequireAuthenticatedUser().RequireClaim("email_verified", "true"));
+            options.AddPolicy(StaffAuthorization.Workspace, policy => policy
+                .AddAuthenticationSchemes(StaffPinAccess.Scheme)
+                .RequireAuthenticatedUser()
+                .RequireRole(StaffRoles.Workspace));
+        });
         services.AddScoped<IUserClaimsPrincipalFactory<AccountUser>, AccountClaimsFactory>();
         services.AddRateLimiter(options =>
         {

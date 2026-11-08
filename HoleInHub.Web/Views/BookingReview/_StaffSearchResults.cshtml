@@ -1,0 +1,15 @@
+@model StaffBookingLookup
+@if (Model.Error is not null)
+{
+    <p class="staff-empty">@Model.Error</p>
+}
+else if (Model.Matches.Count > 0)
+{
+    <p>@(Model.Matches.Count == 10 ? "Showing up to 10 matches" : $"{Model.Matches.Count} found")</p>
+    <ul>
+        @foreach (var entry in Model.Matches)
+        {
+            <li><partial name="_StaffBookingLink" model='new StaffBookingLinkModel(entry, Model.Day, "Search result", "staff-booking-list-link", Wide: true)' /></li>
+        }
+    </ul>
+}

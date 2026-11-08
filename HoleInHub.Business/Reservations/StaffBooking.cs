@@ -1,0 +1,94 @@
+using System.Security.Cryptography;
+using System.Text.Json;
+using HoleInHub.Business.Accounts;
+using HoleInHub.Data.Reservations;
+
+namespace HoleInHub.Business.Reservations;
+
+public sealed record StaffBookingRequest(string ResourceId, DateOnly Date, TimeOnly StartTime,
+    int DurationMinutes, string FirstName, string LastName, string Phone, int Attendees,
+    string Source, string IdempotencyKey);
+
+public sealed partial class ReservationService
+{
+    public async Task<ReservationDto> CreateStaffBookingAsync(StaffBookingRequest request, string actor, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(actor) || string.IsNullOrWhiteSpace(request.IdempotencyKey)
+            || request.IdempotencyKey.Length > 100 || string.IsNullOrWhiteSpace(request.ResourceId)
+            || request.Source is not ("Walk-in" or "Phone" or "Messaging"))
+        {
+            throw new ReservationValidationException("Choose a bay and booking source before confirming.");
+        }
+
+        if (!ContactRules.IsName(request.FirstName) || !ContactRules.IsName(request.LastName))
+        {
+            throw new ReservationValidationException(ContactRules.NameError);
+        }
+        if (!ContactRules.IsPhone(request.Phone?.Trim()))
+        {
+            throw new ReservationValidationException(ContactRules.PhoneError);
+        }
+
+        request = request with { FirstName = request.FirstName.Trim(), LastName = request.LastName.Trim(), Phone = request.Phone!.Trim() };
+        var scope = "staff:" + actor;
+        var hash = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(request)));
+        ReservationDto Result(ReservationRecord saved)
+        {
+            if (saved.SubmissionHash != hash)
+            {
+                throw new ReservationValidationException("This form already confirmed a different booking. Open New booking to start another.");
+            }
+            return Map(saved);
+        }
+
+        var prior = await persistence.ByKeyAsync(scope, request.IdempotencyKey, ct);
+        if (prior is not null)
+        {
+            return Result(prior);
+        }
+
+        var resource = (await GetCatalogAsync(ct)).FirstOrDefault(bay => bay.Id == request.ResourceId);
+        if (resource is null || resource.Service is not ("Regular" or "VIP"))
+        {
+            throw new ReservationValidationException("Choose an active Regular or VIP bay.");
+        }
+        var resources = new[] { resource.Id };
+        BookingRules.ValidateGuests(resource.Service, resources, request.Attendees);
+        var (start, end) = ReservationRules.Interval(request.Date, request.StartTime, request.DurationMinutes);
+        var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime;
+        // The current half-hour is available for immediate arrivals.
+        if (start <= now.AddMinutes(-30))
+        {
+            throw new ReservationValidationException("Choose the current half-hour or a future time.");
+        }
+
+        await ProcessPendingAsync(ct);
+        var record = new ReservationRecord
+        {
+            AccountId = scope,
+            Reference = $"HIH-{Guid.NewGuid().ToString("N")[..10].ToUpperInvariant()}",
+            BookingSource = request.Source,
+            Status = "Confirmed",
+            PolicyVersion = 2,
+            Service = resource.Service,
+            StartUtc = start,
+            EndUtc = end,
+            CreatedUtc = now,
+            ReviewDeadlineUtc = now,
+            ResourceIds = resources,
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            Phone = request.Phone,
+            Attendees = request.Attendees,
+            IdempotencyKey = request.IdempotencyKey,
+            SubmissionHash = hash,
+            History = [new HistoryRecord
+            {
+                EventType = "ReservationConfirmed", ReservationStatus = "Confirmed", Status = "Confirmed",
+                AtUtc = now, Actor = actor, Reason = "Staff-assisted booking."
+            }]
+        };
+        try { return Result(await persistence.InsertAsync(record, ct)); }
+        catch (AllocationConflictException error) { throw new ReservationValidationException(error.Message); }
+    }
+}

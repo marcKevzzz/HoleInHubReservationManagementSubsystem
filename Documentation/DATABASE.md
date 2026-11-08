@@ -105,7 +105,7 @@ Fields: `_id`, Email, NormalizedEmail, PasswordHash, SecurityStamp, Version, Ema
 
 `resources`: `_id`, Name, Service (Regular/VIP), Active. See [resource.schema.json](schemas/resource.schema.json). Five active regular bays and two VIP bays follow migration 004. Stored bay IDs remain unchanged even where display names were revised.
 
-`schedule_blocks`: `_id`, ResourceIds, StartUtc, EndUtc. The list has unique resource IDs and can be empty to mean all active bays. The interval must have start before end. See [schedule-block.schema.json](schemas/schedule-block.schema.json) and [schedule-block.validator.json](schemas/schedule-block.validator.json). This release adds no admin editor.
+`schedule_blocks`: `_id`, ResourceIds, StartUtc, EndUtc. The list has unique resource IDs and can be empty to mean all active bays. The interval must have start before end. See [schedule-block.schema.json](schemas/schedule-block.schema.json) and [schedule-block.validator.json](schemas/schedule-block.validator.json). Admins can create single-bay blocks from Staff → Reservations → Block time. Creation requires a reason, uses the reservation allocation guards, and rejects overlaps with active reservations or existing blocks. Optional fields `Reason` (1–500 characters), `CreatedBy`, `CreatedUtc` (UTC), and `SubmissionHash` record audit and retry information. Legacy closures remain valid without these fields. New block IDs derive from the authenticated actor and submission key; retries return the original block, while changed payloads are rejected. Apply migration `011_AdminScheduleBlocks` explicitly through Migrator before rollout. Editing, recurring blocks, and venue-wide creation remain outside this release.
 
 ## Email verification challenges
 
@@ -167,3 +167,27 @@ The schema-reference integration test checks the 006 baseline before 007, then t
 `service_catalog` stores `_id`, `Title`, `ImagePath`, `Summary`, `RateText`, `Details`, `BookingService`, `Action`, `ActionLabel`, `Order` and `Active`. The index `ix_service_catalog_active_order_id` supports current visible offerings in stable display order. All fields are typed and required by the new collection validator; BookingService uses the existing six identifiers and Action is Book or Contact. Images are restricted to local media at the Business boundary and actions are constructed as local application links.
 
 RateText is indicative presentation copy, not a payment price source. Editing catalog content does not alter booking durations, coach eligibility, operating hours, allocations, deposit calculations or resource IDs. Active controls the public catalog display; it is not a service scheduling switch. Migration 008 seeds missing rows only and leaves all previous validators/migrations unchanged.
+
+
+### Releasing schedule blocks
+
+Admins open an active block from the reservation timeline or list, enter a release reason (1–500 characters), and explicitly confirm unblocking. The guarded transition preserves the original block and writes `ReleasedUtc` (UTC), `ReleasedBy`, and `ReleaseReason` together. Repeated or concurrent submissions preserve the first release audit. Released blocks no longer hold capacity in availability, transactional allocation checks, or the active schedule; existing reservations and other blocks remain unaffected. The detail URL continues to show creation and release history. Original creation-form retries cannot reactivate a released block. Legacy closures, including all-bay closures, can be released without inventing missing creation audit.
+
+Apply `012_ReleaseScheduleBlocks` explicitly through Migrator before using this workflow. Its validator permits legacy documents without release fields and requires all three release fields together when present. No block documents are deleted. Partial-interval release, editing and recurring blocks are outside this change.
+
+
+### Staff attendance and reservation revisions
+
+Migration `013_ReservationAttendance` adds revision 0 to legacy reservations and optional UTC `CheckedInUtc`/`CheckedOutUtc` fields. Existing scheduled `StartUtc`/`EndUtc` remain unchanged. Staff/Admin can check Confirmed bookings in during `[StartUtc, EndUtc)` and check Checked-In bookings out. Early check-out requires a reason and releases remaining capacity by changing status to Completed. Legacy arrivals without a timestamp remain unrecorded; no attendance times are invented.
+
+Attendance events carry command ID/hash and previous/current reservation status. A guarded transaction checks replay before revision, then validates current eligibility and writes status, actual time, revision and one history event atomically. Original-command retries never reopen Completed bookings. All existing reservation writers increment revision for committed changes; staff review forms also require the loaded revision. Confirmed arrivals require resolved cancellation, coaching/deposit prerequisites and a free active allocation excluding their own hold. Follow-up at the earlier of start plus one hour and scheduled end never changes state automatically.
+
+Completed sessions remain visible in the staff day view but do not count as held capacity, block drag ranges or shade whole-shop coverage. Apply migration 013 explicitly through Migrator and restart updated writers together; do not mix old writers that do not maintain revisions. No attendance emails, automatic no-show/checkout, schedule extensions or partial-bay departures are introduced.
+
+### Operating-hours review timestamps
+
+Migration 014 adds optional `ReviewStartsUtc` (UTC date) and `ReviewAlertsUtc` (two UTC dates) to new ordinary online reservations. They freeze the approved review schedule at submission. `ReviewDeadlineUtc` remains the expiry authority. Legacy records and whole-shop deposit timing retain their saved deadlines and legacy alert rules.
+
+### Schedule change proposals
+
+Migration 015 adds an optional `ScheduleChange` object to a reservation and its relevant history events. It stores one current proposal, base revision, command identity/hash, original and proposed intervals/resources, reason and decision state. Completed proposals remain in append-only history when a new proposal replaces the current object. Proposal submission allocates nothing. Schedule approval commits updated allocation, revision, history and notification together.

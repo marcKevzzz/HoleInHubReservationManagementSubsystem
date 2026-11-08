@@ -11,15 +11,13 @@ namespace HoleInHub.Tests.Integration.Fixtures;
 public sealed class MongoDbFixture : IAsyncLifetime
 {
     private readonly List<string> _databases = [];
-    public string ConnectionString { get; }
+    public string ConnectionString { get; } = "mongodb://localhost:27017/?replicaSet=rs0";
     public string DatabaseName { get; }
     public IMongoClient Client { get; private set; } = null!;
     public bool IsServerAvailable { get; private set; }
 
     public MongoDbFixture()
     {
-        ConnectionString = Environment.GetEnvironmentVariable("MongoDb__ConnectionString")
-                           ?? "mongodb://localhost:27017/?replicaSet=rs0";
         DatabaseName = $"test_holeinhub_{Guid.NewGuid():N}";
     }
 

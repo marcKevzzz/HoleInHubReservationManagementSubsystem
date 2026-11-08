@@ -1,7 +1,7 @@
 @model HoleInHub.Web.ViewModels.AccountVerificationViewModel
 @{ViewData["Title"]=Model.Complete?"Email verified":"Verify your email";}
 <section class="account-page"><div class="account-inner">
-<a class="auth-home" href="/">Back to home</a>
+<a class="flow-back" href="/"><partial name="_BackArrow" /> Back to home</a>
 <h1>@(Model.Complete?"Your email is verified.":"Verify your email")</h1>
 <div asp-validation-summary="All" role="alert" class="validation-summary"></div>
 @if(Model.Complete){<p class="verification-recipient">@Model.Email</p><a class="button" href="@(User.Identity?.IsAuthenticated==true?Model.ReturnUrl??"/Reservations/Create":"/account/sign-in?returnUrl="+Uri.EscapeDataString(Model.ReturnUrl??"/Reservations/Create"))">@(User.Identity?.IsAuthenticated==true?"Continue":"Sign in")</a>}

@@ -2,47 +2,79 @@
 @using HoleInHubReservationManagementSubsystem.ViewModels
 @model ReservationDto
 @{
+    Layout = "_VerificationLayout";
     ViewData["Title"] = "Reservation request received";
     var token = ViewData["AccessToken"] as string;
     var start = TimeZoneInfo.ConvertTimeFromUtc(Model.StartUtc, ReservationRules.Manila);
     var end = TimeZoneInfo.ConvertTimeFromUtc(Model.EndUtc, ReservationRules.Manila);
+    var pending = Model.Status == "Pending";
+    var wholeShop = Model.Service == "WholeShop";
+    var canDeposit = pending && wholeShop && Model.DepositAmount.HasValue &&
+        Model.ReviewDeadlineUtc > DateTime.UtcNow && ViewData["DemoPayments"] is true;
 }
-<div class="page-content booking-status-page booking-confirmation">
+<div class="booking-status-page booking-confirmation">
     <header class="booking-status-heading">
-        <h1>REQUEST RECEIVED</h1>
-        <p>Your reference <strong class="booking-reference">@Model.Reference</strong></p>
+        <h1>@(Model.Status == "Confirmed" ? "RESERVATION CONFIRMED" : "REQUEST RECEIVED")</h1>
+        <p>Reference <strong class="booking-reference">@Model.Reference</strong></p>
     </header>
-    <div class="booking-status-layout">
-        <section aria-labelledby="receipt-selection" class="booking-status-main">
-            <div class="booking-visit">
-                <div class="account-date"><time datetime="@Model.StartUtc.ToString("O")"><span>@start.ToString("dd")</span>@start.ToString("MMM yyyy")</time></div>
-                <div>
-                    <h2 id="receipt-selection">@ReservationLabels.Service(Model.Service)</h2>
-                    <p>@start.ToString("h:mm tt")–@end.ToString("h:mm tt")</p>
-                    <p class="booking-muted">All times are Asia/Manila.</p>
-                </div>
+    <section class="booking-receipt" aria-labelledby="receipt-selection">
+        <div class="booking-visit">
+            <div class="account-date"><time datetime="@Model.StartUtc.ToString("O")"><span>@start.ToString("dd")</span>@start.ToString("MMM yyyy")</time></div>
+            <div>
+                <h2 id="receipt-selection">@ReservationLabels.Service(Model.Service)</h2>
+                <p>@start.ToString("h:mm tt")–@end.ToString("h:mm tt") · Manila time</p>
             </div>
-            <dl class="booking-facts">
-                <div><dt>Number of guests</dt><dd>@Model.Attendees</dd></div>
-                <div><dt>@(Model.Service == "WholeShop" ? "Deposit deadline" : "Review deadline") · Asia/Manila</dt><dd>@TimeZoneInfo.ConvertTimeFromUtc(Model.ReviewDeadlineUtc, ReservationRules.Manila).ToString("dd MMM yyyy h:mm tt")</dd></div>
-            </dl>
-        </section>
-        <aside class="booking-status-sidebar" aria-labelledby="receipt-status">
+        </div>
+        <dl class="booking-facts">
+            <div><dt>Guests</dt><dd>@Model.Attendees</dd></div>
+            @if (pending)
+            {
+                <div><dt>@(wholeShop ? "Deposit deadline" : "Review deadline") · Manila time</dt><dd>@TimeZoneInfo.ConvertTimeFromUtc(Model.ReviewDeadlineUtc, ReservationRules.Manila).ToString("dd MMM yyyy h:mm tt")</dd></div>
+            }
+            @if (Model.RentalTotal is decimal total)
+            {
+                <div><dt>Rental total</dt><dd>₱@total.ToString("N2")</dd></div>
+            }
+            @if (Model.DepositAmount is decimal deposit)
+            {
+                <div><dt>50% deposit</dt><dd>₱@deposit.ToString("N2")</dd></div>
+            }
+            @if (!wholeShop && ReservationLabels.IndicativeRate(Model.Service) is string rate)
+            {
+                <div><dt>Indicative rate</dt><dd>@rate</dd></div>
+            }
+        </dl>
+        <div class="booking-receipt-next">
             <h2 id="receipt-status">Reservation status</h2>
             <p class="booking-current-status">@Model.Status</p>
-            @if (Model.Status == "Pending")
+            @if (canDeposit)
             {
-                <p>@(Model.Service == "WholeShop" ? "Complete the 50% deposit to confirm. No real money is collected." : "Awaiting staff approval.")</p>
-                <p class="booking-muted">This request does not confirm your reservation.</p>
+                <p>Submit the simulated deposit to confirm your reservation. No real money is collected.</p>
+                <form asp-action="Checkout" asp-route-id="@Model.Id" method="post" class="checkout-payment-form">
+                    <input type="hidden" name="token" value="@token" />
+                    <button class="button" name="outcome" value="success">Simulate deposit · ₱@Model.DepositAmount?.ToString("N2")</button>
+                </form>
             }
-            <div class="booking-status-actions">
-                @if (Model.Service == "WholeShop" && Model.Status == "Pending" && ViewData["DemoPayments"] is true)
+            else if (pending)
+            {
+                <p>@(wholeShop ? "Check the reservation for the latest deposit status." : "Your request is awaiting staff approval.")</p>
+                @if (!wholeShop && Model.ReviewStartsUtc is { } begins && begins > DateTime.UtcNow)
                 {
-                    <a class="button" asp-action="Checkout" asp-route-id="@Model.Id" asp-route-token="@token">Continue to deposit</a>
+                    <p>Staff review begins @TimeZoneInfo.ConvertTimeFromUtc(begins, ReservationRules.Manila).ToString("ddd, d MMM, h:mm tt") Manila time. Your selected bays are held while Pending.</p>
                 }
-                <a class="button" asp-action="Status" asp-route-id="@Model.Id" asp-route-token="@token">View reservation status</a>
-                @if(User.Identity?.IsAuthenticated!=true){<a class="booking-text-link" href="/guest/reservations/find">Find my booking</a>}
-            </div>
-        </aside>
-    </div>
+                else if (!wholeShop && Model.ReviewStartsUtc.HasValue)
+                {
+                    <p>The review clock pauses outside operating hours and resumes at the next opening.</p>
+                }
+            }
+            else if (wholeShop && Model.Status == "Confirmed" && Model.PaymentStatus == "DepositReceived")
+            {
+                <p>Simulated deposit recorded. No real money was collected.</p>
+            }
+            <a class="button receipt-status-link @(canDeposit ? "button-tertiary" : null)" asp-action="Status" asp-route-id="@Model.Id" asp-route-token="@token" asp-route-guest="@(ViewData["GuestAccess"] is true ? "true" : null)">
+                View reservation status
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6" /></svg>
+            </a>
+        </div>
+    </section>
 </div>

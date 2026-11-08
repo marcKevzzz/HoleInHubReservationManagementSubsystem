@@ -1,7 +1,7 @@
 @model HoleInHubReservationManagementSubsystem.ViewModels.BookingVerificationViewModel
 @{ViewData["Title"]="Verify your booking";Layout="_VerificationLayout";}
 <section class="booking-verification-page" aria-labelledby="verification-title">
-<a class="verification-back" asp-action="Create" asp-route-editDraft="true">Back to booking</a>
+<a class="flow-back" asp-action="Create" asp-route-editDraft="true"><partial name="_BackArrow" /> Back to booking</a>
 <p class="eyebrow">ONE LAST STEP</p>
 <h1 id="verification-title">VERIFY YOUR BOOKING</h1>
 <div asp-validation-summary="All" class="booking-errors" role="alert"></div>

@@ -31,12 +31,12 @@ public sealed class BookingRulesTests
         Assert.Throws<ReservationValidationException>(() => BookingRules.ValidateWindow(service, now.UtcDateTime.AddMinutes(minutes).AddSeconds(-1), now));
     }
     [Fact]
-    public void ReviewMustFitBeforeClosing()
+    public void ReviewCarriesAcrossClosingAndAcceptsOutsideHoursSubmission()
     {
         var now = new DateTimeOffset(2026, 11, 3, 23, 1, 0, TimeSpan.FromHours(8));
-        Assert.Throws<ReservationValidationException>(() => BookingRules.ValidateWindow("VIP", now.UtcDateTime.AddDays(1), now));
+        BookingRules.ValidateWindow("VIP", now.UtcDateTime.AddDays(1), now);
         BookingRules.ValidateWindow("Regular", now.UtcDateTime.AddDays(1), now);
-        Assert.Throws<ReservationValidationException>(() => BookingRules.ValidateWindow("Regular", now.UtcDateTime.AddDays(1), now.AddHours(-14)));
+        BookingRules.ValidateWindow("Regular", now.UtcDateTime.AddDays(1), now.AddHours(-14));
     }
     [Theory]
     [InlineData("bay-2", 6, 2, true)]

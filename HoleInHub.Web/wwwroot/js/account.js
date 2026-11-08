@@ -1,7 +1,7 @@
 (() => {
     const content = document.querySelector('.account-inner');
     const form = content?.querySelector('form');
-    if (!form || form.hasAttribute?.('data-email-code')) return;
+    if (!form || form.hasAttribute?.('data-email-code') || form.hasAttribute?.('data-staff-pin')) return;
 
     // Only the form moves; the shared photo stays still between account pages.
     function enter() {

@@ -1,0 +1,31 @@
+@model HoleInHub.Business.Accounts.AccountDirectory
+@{
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+    var team = action == "Team";
+}
+<section class="staff-workspace staff-customers leadership-page">
+    <header class="staff-workspace-heading">
+        <h1>@ViewData["Title"]</h1>
+        <p>@(team ? "See the accounts that can access the staff workspace." : "Browse registered accounts and their current roles. Provisioning and role changes are managed separately.")</p>
+    </header>
+    <div class="leadership-table" tabindex="0" role="region" aria-label="Account directory">
+        <table>
+            <thead><tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Roles</th><th scope="col">Email status</th></tr></thead>
+            <tbody>
+                @foreach (var entry in Model.Entries)
+                {
+                    <tr>
+                        <th scope="row">@(string.IsNullOrWhiteSpace(entry.Name) ? "Name unavailable" : entry.Name)</th>
+                        <td>@entry.Email</td><td>@string.Join(", ", entry.Roles)</td>
+                        <td>@(entry.EmailConfirmed ? "Verified" : "Unverified")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (Model.Entries.Count == 0) { <p class="staff-empty">No accounts on this page.</p> }
+    <nav class="customer-pagination" aria-label="Account pages">
+        @if (Model.Page > 1) { <a class="button button-secondary" asp-action="@action" asp-route-page="@(Model.Page - 1)">Previous</a> }
+        @if (Model.HasMore) { <a class="button button-secondary" asp-action="@action" asp-route-page="@(Model.Page + 1)">Next page</a> }
+    </nav>
+</section>

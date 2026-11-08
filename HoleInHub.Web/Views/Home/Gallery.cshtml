@@ -1,1 +1,71 @@
-@{ViewData["Title"]="Gallery";}<div class="page-content spyker-news-page"><h1 class="page-title">INSIDE HOLE IN HUB</h1><section class="news-editorial-section"><div class="news-editorial-grid"><div class="news-sticky-col"><p class="eyebrow">THE HOLE IN HUB EXPERIENCE</p><h2>GOLF.<br/>GOOD COMPANY.</h2><p>A closer look at the simulator bays, shared spaces, and coaching at Hole In Hub.</p></div><div class="gallery-grid">@foreach(var item in new[]{("venue-overview","Inside Hole In Hub","SIMULATOR BAYS"),("family-play","A Round for the Family","FAMILY PLAY"),("coaching","Learning the Swing","COACHING"),("social-seating","Between Swings","SOCIAL SPACES"),("coaching-programs","Get Coached by the Pros","PROGRAMS"),("kpga-lessons","KPGA Lesson Program","COACHING")}){<article class="news-card"><div class="news-frame"><div class="news-inner"><img src="/media/facebook/@(item.Item1).webp" alt="@item.Item2" loading="lazy"/></div></div><div class="news-card-info"><p class="eyebrow">@item.Item3</p><h2>@item.Item2</h2></div></article>}</div></div></section></div>
+@{
+    ViewData["Title"] = "Gallery";
+    var stories = new (string Category, string Title, string Image, string Summary, string Aspect, string Video)[]
+    {
+        ("SIMULATOR BAYS", "Inside Hole In Hub", "venue-overview.webp", "Open simulator bays, green hitting areas, and seating for time between swings.", "portrait", ""),
+        ("FAMILY PLAY", "A Round for the Family", "family-play.webp", "Families sharing an indoor golf session at Hole In Hub.", "landscape", ""),
+        ("COACHING", "Learning the Swing", "coaching.webp", "A hands-on moment helping a young player with their golf setup.", "portrait", ""),
+        ("GOLF EXPERIENCE", "Getting Ready to Play", "golf-experience-poster.webp", "A short look at preparation for an indoor golf session.", "portrait", "golf-experience-hq.mp4"),
+        ("THE VENUE", "Golf and Good Company", "venue-tour-poster.webp", "Take a short look around the venue and its social spaces.", "featured", "statement-loop-hd.mp4"),
+        ("SOCIAL SPACES", "Between Swings", "social-seating.webp", "Tables and seating alongside the simulator bays.", "portrait", ""),
+        ("FOOD & DRINKS", "Golf and Snow Ice", "golf-and-desserts-poster.webp", "Indoor golf and a look at the venue’s snow ice desserts.", "landscape", "golf-and-desserts-hq.mp4"),
+        ("FOOD & DRINKS", "Something Sweet", "dessert-menu.webp", "The supplied menu features injeolmi, strawberry cheesecake, and Oreo snow ice. Menu details may change.", "portrait", ""),
+        ("PROMOTIONS & PROGRAMS", "October Daytime Promo", "october-daytime-promo.webp", "PHP 400 before 4 PM in October; excludes weekends and holidays.", "portrait", ""),
+        ("PROMOTIONS & PROGRAMS", "October Longest Drive Challenge", "october-longest-drive.webp", "Ask staff to record and verify your drive for the October challenge.", "portrait", ""),
+        ("PROMOTIONS & PROGRAMS", "Third Junior Golf Program", "junior-golf-third.webp", "Four lessons over one month. Recruitment deadline shown: October 2.", "portrait", ""),
+        ("PROMOTIONS & PROGRAMS", "KPGA Lesson Program", "kpga-lessons.webp", "Small-group coaching with up to eight participants. Registration deadline shown: September 18.", "portrait", ""),
+        ("PROMOTIONS & PROGRAMS", "Second Junior Golf Program", "junior-golf-second.webp", "A previous junior program announcement. Recruitment deadline shown: September 3.", "portrait", ""),
+        ("PROMOTIONS & PROGRAMS", "Get Coached by the Pros", "coaching-programs.webp", "Philippine and KPGA professional coaching options.", "portrait", ""),
+    };
+    var categories = new[] { "All", "SIMULATOR BAYS", "FAMILY PLAY", "COACHING", "GOLF EXPERIENCE", "THE VENUE", "SOCIAL SPACES", "FOOD & DRINKS", "PROMOTIONS & PROGRAMS" };
+    void Card(int index, bool feature = false)
+    {
+        var story = stories[index];
+        var image = "/media/facebook/" + story.Image;
+        <a class="gallery-card gallery-@story.Aspect @(feature ? "gallery-feature" : null)" href="@image"
+           data-gallery-story data-category="@story.Category" data-summary="@story.Summary" data-video="@story.Video">
+            <span class="gallery-frame" data-parallax="5"><img src="@image" alt="" loading="lazy" /></span>
+            <span class="gallery-caption" data-motion="reveal"><span class="gallery-category">@story.Category</span><strong>@story.Title</strong>
+            @if (feature) { <span>@story.Summary</span> }
+            </span>
+        </a>
+    }
+}
+<div class="page-content venue-page gallery-page" data-gallery>
+    <header class="gallery-heading">
+        <h1 data-venue-title>Gallery</h1>
+        <p data-motion="load">Simulator bays, family rounds, and time together at Hole In Hub.</p>
+    </header>
+    <nav class="gallery-filters" aria-label="Gallery categories" hidden>
+        @foreach (var category in categories)
+        {
+            <button type="button" class="prototype-link" data-gallery-filter="@category" aria-pressed="@(category == "All" ? "true" : "false")">@category</button>
+        }
+    </nav>
+    <div class="gallery-archive">
+        <div class="gallery-editorial">
+            <div class="gallery-sticky">@{ Card(0); }</div>
+            <div class="gallery-stack">@for (var i = 1; i < 4; i++) { Card(i); }</div>
+        </div>
+        @{ Card(4, true); }
+        <div class="gallery-editorial">
+            <div class="gallery-sticky">@{ Card(5); }</div>
+            <div class="gallery-stack">@for (var i = 6; i < stories.Length; i++) { Card(i); }</div>
+        </div>
+    </div>
+    <dialog class="gallery-story" aria-labelledby="gallery-story-title">
+        <div class="gallery-story-scroll">
+            <button class="gallery-story-close" type="button" autofocus aria-label="Close story"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg></button>
+            <div class="gallery-story-media"><img src="/media/facebook/@(stories[0].Image)" alt="" /><video controls muted playsinline preload="none" hidden></video></div>
+            <div class="gallery-story-copy">
+                <p class="gallery-category"></p>
+                <h2 id="gallery-story-title"></h2>
+                <p class="gallery-story-summary"></p>
+            </div>
+        </div>
+        <img class="gallery-story-morph" src="/media/facebook/@(stories[0].Image)" alt="" hidden />
+    </dialog>
+</div>
+@section Scripts {
+    <script src="~/js/gallery.js" asp-append-version="true"></script>
+}

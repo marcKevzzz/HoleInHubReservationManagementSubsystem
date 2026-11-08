@@ -1,0 +1,5 @@
+@model StaffDeadline
+<div class="staff-deadline" data-urgency="@Model.Urgency" data-deadline="@Model.Due.ToString("O")">
+    <strong data-countdown>@Model.Countdown</strong>
+    <time datetime="@Model.Due.ToString("O")">@(Model.Deposit ? "Deposit due" : "Review due") @StaffReviewQueue.Local(Model.Due).ToString("d MMM, h:mm tt")</time>
+</div>

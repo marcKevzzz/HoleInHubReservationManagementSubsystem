@@ -1,0 +1,13 @@
+@model HoleInHub.Business.Reservations.ReservationPolicy
+@{ ViewData["Title"] = "Notifications"; }
+<section class="staff-workspace staff-review leadership-page">
+    <header class="staff-workspace-heading"><h1>Notifications</h1><p>Review the configured staff alerts for pending reservations.</p></header>
+    <section class="review-section">
+        <h2>Review alerts</h2>
+        <dl class="review-facts">
+            <dt>Recipients</dt><dd>@Model.StaffEmails.Length configured</dd>
+            <dt>Review coverage</dt><dd>@(Model.Approved ? "Approved" : "Awaiting approval")</dd>
+        </dl>
+        <p class="leadership-note">Alert recipients are set in deployment configuration.</p>
+    </section>
+</section>

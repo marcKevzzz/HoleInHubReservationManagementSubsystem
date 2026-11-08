@@ -1,6 +1,6 @@
 @model HoleInHub.Web.ViewModels.SignUpModel
 @{ ViewData["Title"] = "Create Your Account"; }
-<section class="account-page account-registration"><div class="account-inner"><a class="auth-home" href="/"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m12 5-7 7 7 7M5 12h14" /></svg>Back to home</a><h1>Create your account</h1>
+<section class="account-page account-registration"><div class="account-inner"><a class="flow-back" href="/"><partial name="_BackArrow" /> Back to home</a><h1>Create your account</h1>
 @if (TempData["AccountMessage"] is string message) { <p role="status">@message</p> }
 @if (ViewData["Message"] is string result) { <p role="status">@result</p> }
 

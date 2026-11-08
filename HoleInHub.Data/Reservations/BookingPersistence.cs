@@ -1,4 +1,6 @@
+using System.Text.RegularExpressions;
 using HoleInHub.Data.Context;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace HoleInHub.Data.Reservations;
@@ -8,10 +10,98 @@ public sealed partial class ReservationPersistence
     public Task<ReservationRecord?> ByIdAsync(string id, CancellationToken ct) => Reservations.Find(x => x.Id == id).FirstOrDefaultAsync(ct)!;
     public Task<ReservationRecord?> ByAccessAsync(string id, string hash, CancellationToken ct) => Reservations.Find(x => (id == "" || x.Id == id) && x.AccessTokenHash == hash).FirstOrDefaultAsync(ct)!;
     public async Task<IReadOnlyList<ReservationRecord>> ReviewQueueAsync(CancellationToken ct) =>
-        await Reservations.Find(x => x.Status == "Pending" || x.CancellationRequested || x.PaymentStatus == "LatePayment").SortBy(x => x.ReviewDeadlineUtc).Limit(200).ToListAsync(ct);
+        await Reservations.Find(x => x.Status == "Pending" || x.CancellationRequested || x.PaymentStatus == "LatePayment" || x.ScheduleChange != null && x.ScheduleChange.Status == "Pending").SortBy(x => x.ReviewDeadlineUtc).ThenBy(x => x.Id).Limit(200).ToListAsync(ct);
+
+    public async Task<IReadOnlyList<ReservationRecord>> ExpiredRequestsAsync(DateTime? startUtc, DateTime? endUtc, CancellationToken ct)
+    {
+        var filters = Builders<ReservationRecord>.Filter;
+        var filter = filters.Eq(x => x.Status, "Expired");
+        if (startUtc is { } start)
+        {
+            var end = endUtc ?? throw new ArgumentException("A session date requires both interval endpoints.", nameof(endUtc));
+            filter &= filters.Gte(x => x.StartUtc, start) & filters.Lt(x => x.StartUtc, end);
+        }
+        return await Reservations.Find(filter).SortByDescending(x => x.ReviewDeadlineUtc).ThenByDescending(x => x.Id).Limit(200).ToListAsync(ct);
+    }
+
+    public Task<long> PendingReviewCountAsync(DateTime now, CancellationToken ct) =>
+        Reservations.CountDocumentsAsync(x => x.Status == "Pending" && !x.CancellationRequested && x.Service != "WholeShop" && x.ReviewDeadlineUtc > now, cancellationToken: ct);
+
+    public async Task<(long Past, long Cancellations)?> ReadCustomerContextAsync(ReservationRecord booking, DateTime now, CancellationToken ct)
+    {
+        var filter = Builders<ReservationRecord>.Filter;
+        var identity = booking.AccountId.StartsWith("guest:", StringComparison.Ordinal) && !string.IsNullOrEmpty(booking.EmailVerificationId)
+            ? GuestEmail(booking.Email)
+            : !string.IsNullOrEmpty(booking.CustomerAccountId)
+                ? filter.Eq(x => x.CustomerAccountId, booking.CustomerAccountId)
+                : null;
+        if (identity is null)
+        {
+            return null;
+        }
+        var other = identity & filter.Ne(x => x.Id, booking.Id);
+        var options = new CountOptions { Collation = GuestEmailCollation };
+        var past = await Reservations.CountDocumentsAsync(other & filter.Lte(x => x.EndUtc, now) &
+            filter.In(x => x.Status, new[] { "Confirmed", "Checked-In", "Completed", "No-show" }), options, ct);
+        var cancellations = await Reservations.CountDocumentsAsync(other & filter.Eq(x => x.Status, "Cancelled"), options, ct);
+        return (past, cancellations);
+    }
+
+    public async Task<bool> HasReviewConflictAsync(ReservationRecord record, CancellationToken ct, IClientSessionHandle? session = null)
+    {
+        var resources = Builders<ResourceRecord>.Filter.Where(x => x.Active) & Builders<ResourceRecord>.Filter.In(x => x.Id, record.ResourceIds);
+        var active = session is null ? Resources.Find(resources) : Resources.Find(session, resources);
+        return record.ResourceIds.Length == 0 || await active.CountDocumentsAsync(ct) != record.ResourceIds.Length ||
+            await HasAllocationConflictAsync(record, session, ct);
+    }
+
+    public Task<string?> FindIdByReferenceAsync(string reference, CancellationToken ct) =>
+        Reservations.Find(x => x.Reference == reference).Project(x => x.Id).FirstOrDefaultAsync(ct)!;
+
+    public Task<List<ReservationRecord>> SearchStaffBookingsAsync(string term, CancellationToken ct)
+    {
+        var exact = Builders<ReservationRecord>.Filter.Eq(x => x.Reference, term.ToUpperInvariant());
+        var names = new BsonDocument("$expr", new BsonDocument("$regexMatch", new BsonDocument
+        {
+            { "input", new BsonDocument("$concat", new BsonArray
+                {
+                    new BsonDocument("$ifNull", new BsonArray { "$FirstName", "" }),
+                    " ",
+                    new BsonDocument("$ifNull", new BsonArray { "$LastName", "" })
+                }) },
+            { "regex", Regex.Escape(term) },
+            { "options", "i" }
+        }));
+        return Reservations.Find(term.StartsWith("HIH-", StringComparison.OrdinalIgnoreCase) ? exact : exact | names)
+            .SortByDescending(x => x.StartUtc).Limit(10)
+            .Project(x => new ReservationRecord
+            {
+                Id = x.Id,
+                Reference = x.Reference,
+                FirstName = x.FirstName,
+                LastName = x.LastName,
+                StartUtc = x.StartUtc,
+                EndUtc = x.EndUtc,
+                Service = x.Service,
+                Status = x.Status,
+                Attendees = x.Attendees
+            }).ToListAsync(ct);
+    }
+
+    public async Task<(List<ResourceRecord> Resources, List<ReservationRecord> Bookings, List<ScheduleBlock> Blocks)>
+        ReadScheduleAsync(DateTime startUtc, DateTime endUtc, CancellationToken ct)
+    {
+        var resources = await Resources.Find(_ => true).SortBy(x => x.Id).ToListAsync(ct);
+        var bookings = await Reservations.Find(x => x.StartUtc < endUtc && x.EndUtc > startUtc &&
+            (x.Status == "Pending" || x.Status == "Confirmed" || x.Status == "Checked-In" || x.Status == "Completed"))
+            .SortBy(x => x.StartUtc).ToListAsync(ct);
+        var blocks = await context.Database.GetCollection<ScheduleBlock>("schedule_blocks")
+            .Find(x => x.ReleasedUtc == null && x.StartUtc < endUtc && x.EndUtc > startUtc).ToListAsync(ct);
+        return (resources, bookings, blocks);
+    }
 
     private Task NotifyAsync(IClientSessionHandle session, ReservationRecord record, string eventName, string subject, CancellationToken ct, string? encryptedBody = null) =>
-        context.Database.GetCollection<OutboxRecord>("outbox").InsertOneAsync(session, new OutboxRecord
+        string.IsNullOrEmpty(record.Email) ? Task.CompletedTask : context.Database.GetCollection<OutboxRecord>("outbox").InsertOneAsync(session, new OutboxRecord
         {
             Id = $"{record.Id}:{eventName}",
             Recipient = record.Email,
@@ -22,7 +112,7 @@ public sealed partial class ReservationPersistence
             DueUtc = DateTime.UtcNow
         }, cancellationToken: ct);
 
-    public async Task<bool> TransitionAsync(string id, string action, string actor, DateTime now, string[] staffEmails, CancellationToken ct, string reason = "")
+    public async Task<bool> TransitionAsync(string id, string action, string actor, DateTime now, string[] staffEmails, CancellationToken ct, string reason = "", long? expectedRevision = null)
     {
         using var session = await context.Client.StartSessionAsync(cancellationToken: ct);
         return await session.WithTransactionAsync(async (s, token) =>
@@ -34,6 +124,7 @@ public sealed partial class ReservationPersistence
             }
 
             await GuardAsync(s, record, token);
+            if (expectedRevision.HasValue && record.Revision != expectedRevision.Value) { return false; }
             // The guard makes expiry, payment, approval and cancellation compete on the same allocation.
             var update = Builders<ReservationRecord>.Update;
             var pending = record.Status == "Pending" && record.ReviewDeadlineUtc > now;
@@ -42,6 +133,10 @@ public sealed partial class ReservationPersistence
             switch (action)
             {
                 case "approve" when pending && record.Service != "WholeShop" && (!(record.Service is "PhilippineCoach" or "KpgaPro" or "KpgaGroup") || record.CoachConfirmed):
+                    if (await HasReviewConflictAsync(record, token, s))
+                    {
+                        throw new AllocationConflictException("The bay is no longer available for this session. Check the schedule before approving.");
+                    }
                     record.Status = "Confirmed"; history = "Confirmed"; change = update.Set(x => x.Status, record.Status); break;
                 case "reject" when pending:
                     record.Status = "Rejected"; history = "Rejected"; change = update.Set(x => x.Status, record.Status).Set(x => x.CancellationRequested, false); break;
@@ -76,7 +171,7 @@ public sealed partial class ReservationPersistence
                 _ => throw new InvalidOperationException("Unsupported reservation action.")
             };
             change = change.Push(x => x.History, new HistoryRecord { EventType = eventType, ReservationStatus = record.Status, Status = history, Actor = actor, AtUtc = now, Reason = reason });
-            await Reservations.UpdateOneAsync(s, x => x.Id == id, change, cancellationToken: token);
+            await Reservations.UpdateOneAsync(s, x => x.Id == id, change.Inc(x => x.Revision, 1), cancellationToken: token);
             await NotifyAsync(s, record, $"action:{record.History.Count}:{action}", history, token);
             if (action == "request-cancellation")
             {
@@ -127,7 +222,7 @@ public sealed partial class ReservationPersistence
                 else if (record.Status == "Pending") { record.Status = "Expired"; change = change.Set(x => x.Status, "Expired"); }
             }
             change = change.Push(x => x.History, new HistoryRecord { EventType = "DemoPaymentRecorded", ReservationStatus = record.Status, Status = "Demo payment: " + status, AtUtc = now, Actor = "Demo POS" });
-            await Reservations.UpdateOneAsync(s, x => x.Id == id, change, cancellationToken: token);
+            await Reservations.UpdateOneAsync(s, x => x.Id == id, change.Inc(x => x.Revision, 1), cancellationToken: token);
             if (paid)
             {
                 await NotifyAsync(s, record, status, eligible ? "Reservation confirmed — deposit recorded" : "Late payment requires reconciliation", token);

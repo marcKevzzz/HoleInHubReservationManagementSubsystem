@@ -1,0 +1,22 @@
+/* Shared editorial rhythm for the venue pages. */
+.page-content.venue-page{max-width:1440px}
+.venue-heading{margin-bottom:clamp(32px,5vw,72px)}
+.venue-heading h1{font-size:clamp(38px,6vw,88px);line-height:1.05;margin:0 0 20px;text-wrap:balance}
+.venue-heading p{max-width:59ch;color:var(--color-muted);font-size:clamp(15px,1.5vw,19px);line-height:1.7;margin:0}
+.venue-contact{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:clamp(24px,5vw,72px)}
+.venue-contact{border-top:1px solid var(--color-line);padding-top:24px;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.venue-contact :is(h2){font-size:clamp(24px,3vw,38px);margin:0 0 12px}
+.venue-contact-photo{display:block;width:100%;aspect-ratio:21/8;object-fit:cover;object-position:center 62%;margin-top:clamp(32px,5vw,64px)}
+.venue-contact-info p{color:var(--color-muted);margin:0;line-height:1.6}
+.venue-location address{font-style:normal;line-height:1.7;margin-bottom:20px}
+.venue-contact-info section+section{border-top:1px solid var(--color-line);margin-top:24px;padding-top:24px}
+.venue-contact-info dl,.venue-contact-info ul{margin:0 0 12px;padding:0}
+.venue-contact-info ul{list-style:none;display:grid;gap:12px;overflow-wrap:anywhere}
+.venue-contact-info dl div{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 16px;padding:10px 0}
+.venue-contact-info dd{margin:0}
+.venue-next{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;border-top:1px solid var(--color-line);margin-top:clamp(36px,6vw,80px);padding-top:24px}
+.venue-next h2{margin:0}
+.page-content.venue-about,.page-content.venue-about-end{min-height:0}
+.page-content.venue-about{padding-bottom:0}
+.page-content.venue-about-end{padding-top:0}
+@media(max-width:700px){.venue-contact{grid-template-columns:minmax(0,1fr)}.venue-contact-photo{aspect-ratio:16/10}}

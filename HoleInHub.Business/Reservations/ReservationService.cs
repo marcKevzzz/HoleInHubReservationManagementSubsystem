@@ -25,6 +25,9 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         }
 
         await ProcessPendingAsync(ct);
+        var reviewDeadline = GetReviewDeadline(request.Service, start, new DateTimeOffset(now));
+        var reviewStart = request.Service == "WholeShop" ? (DateTime?)null : ReviewClock.AddMinutes(new DateTimeOffset(now), 0, policy.Value);
+        var alertMinutes = request.Service == "Regular" ? new[] { 15, 25 } : new[] { 30, 50 };
         var record = new ReservationRecord
         {
             PolicyVersion = request.Participants.Length == 0 ? 2 : 1,
@@ -41,7 +44,9 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
             StartUtc = start,
             EndUtc = end,
             CreatedUtc = now,
-            ReviewDeadlineUtc = now.AddMinutes(BookingRules.ReviewMinutes(request.Service)),
+            ReviewDeadlineUtc = reviewDeadline,
+            ReviewStartsUtc = reviewStart,
+            ReviewAlertsUtc = reviewStart.HasValue ? alertMinutes.Select(minutes => ReviewClock.AddMinutes(new DateTimeOffset(now), minutes, policy.Value)).ToArray() : null,
             ResourceIds = request.ResourceIds,
             FirstName = request.FirstName.Trim(),
             LastName = request.LastName.Trim(),
@@ -109,6 +114,7 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         policy.Value.ValidateCoverage(now, BookingRules.ReviewMinutes(request.Service));
         var (start, _) = ReservationRules.PreviewInterval(request.Date, request.StartTime, request.DurationMinutes, request.Service);
         BookingRules.ValidateWindow(request.Service, start, now);
+        GetReviewDeadline(request.Service, start, now);
         var available = await GetAvailabilityAsync(request.Date, request.StartTime, request.DurationMinutes, request.Service, ct);
         if (request.ResourceIds.Any(id => !available.Any(x => x.Resource.Id == id && x.Available)) ||
             (request.Service == "WholeShop" && available.Count != request.ResourceIds.Length))
@@ -127,18 +133,30 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
     {
         var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime; await persistence.ExpireAsync(now, policy.Value.StaffEmails, ct); foreach (var record in await persistence.PendingAsync(ct))
         {
-            var alerts = (record.ReviewDeadlineUtc - record.CreatedUtc).TotalMinutes > 30 ? new[] { 30, 50 } : new[] { 15, 25 };
-            foreach (var minutes in alerts)
+            var alerts = record.ReviewAlertsUtc ?? ((record.ReviewDeadlineUtc - record.CreatedUtc).TotalMinutes > 30 ? new[] { 30, 50 } : new[] { 15, 25 }).Select(minutes => record.CreatedUtc.AddMinutes(minutes)).ToArray();
+            for (var index = 0; index < alerts.Length; index++)
             {
-                if (record.CreatedUtc.AddMinutes(minutes) <= now && record.ReviewDeadlineUtc > now && (minutes != alerts[0] || now < record.CreatedUtc.AddMinutes(alerts[1])))
+                var minutes = record.ReviewAlertsUtc is null ? (int)(alerts[index] - record.CreatedUtc).TotalMinutes
+                    : record.Service == "Regular" ? new[] { 15, 25 }[index] : new[] { 30, 50 }[index];
+                if (alerts[index] <= now && record.ReviewDeadlineUtc > now && (index == alerts.Length - 1 || now < alerts[index + 1]))
                 {
                     foreach (var recipient in policy.Value.StaffEmails)
                     {
-                        await outbox.EnqueueAsync(new OutboxRecord { Id = $"{record.Id}:review{minutes}:{recipient}", Recipient = recipient, Subject = $"Pending request: {record.Reference}", Body = $"Request {record.Reference} has awaited review for {minutes} minutes. Review deadline: {record.ReviewDeadlineUtc:O}.", DueUtc = now, ReservationId = record.Id, RequiredStatus = "Pending" }, ct);
+                        await outbox.EnqueueAsync(new OutboxRecord { Id = $"{record.Id}:review{minutes}:{recipient}", Recipient = recipient, Subject = $"Pending request: {record.Reference}", Body = $"Request {record.Reference} is awaiting review. Review deadline: {record.ReviewDeadlineUtc:O}.", DueUtc = now, ReservationId = record.Id, RequiredStatus = "Pending" }, ct);
                     }
                 }
             }
         }
+    }
+    private DateTime GetReviewDeadline(string service, DateTime start, DateTimeOffset now)
+    {
+        var deadline = service == "WholeShop" ? now.UtcDateTime.AddMinutes(BookingRules.ReviewMinutes(service))
+            : ReviewClock.AddMinutes(now, BookingRules.ReviewMinutes(service), policy.Value);
+        if (start < deadline)
+        {
+            throw new ReservationValidationException("Choose a session after the staff review window finishes.");
+        }
+        return deadline;
     }
     public RentalQuoteDto GetDemoQuote(DateOnly date, TimeOnly time, int duration, bool demoAllowed)
     {
@@ -158,19 +176,32 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         await ProcessPendingAsync(ct);
         return (await persistence.ReviewQueueAsync(ct)).Select(Map).ToArray();
     }
+
+    public async Task<IReadOnlyList<ReservationDto>> GetExpiredRequestsAsync(DateOnly? day, CancellationToken ct)
+    {
+        if (day == DateOnly.MinValue) { throw new ReservationValidationException("Choose a valid session date."); }
+        await ProcessPendingAsync(ct);
+        DateTime? start = day.HasValue
+            ? TimeZoneInfo.ConvertTimeToUtc(day.Value.ToDateTime(TimeOnly.MinValue), ReservationRules.Manila) : null;
+        return (await persistence.ExpiredRequestsAsync(start, start?.AddDays(1), ct)).Select(Map).ToArray();
+    }
     public async Task<ReservationDto?> GetStaffAsync(string id, CancellationToken ct)
     {
         await ProcessPendingAsync(ct);
         var record = await persistence.ByIdAsync(id, ct);
         return record == null ? null : Map(record);
     }
-    public Task<bool> ReviewAsync(string id, string action, string actor, CancellationToken ct, string? reason = null)
+    public async Task<bool> ReviewAsync(string id, string action, string actor, CancellationToken ct, string? reason = null, long? expectedRevision = null)
     {
         if (reason?.Length > 1000 || (action is "reject" or "keep" && string.IsNullOrWhiteSpace(reason)))
         {
             throw new ReservationValidationException("Enter a reason (up to 1,000 characters) for declining a booking or cancellation.");
         }
-        return persistence.TransitionAsync(id, action, actor, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime, policy.Value.StaffEmails, ct, reason?.Trim() ?? "");
+        try
+        {
+            return await persistence.TransitionAsync(id, action, actor, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime, policy.Value.StaffEmails, ct, reason?.Trim() ?? "", expectedRevision);
+        }
+        catch (AllocationConflictException error) { throw new ReservationValidationException(error.Message); }
     }
     public async Task<bool> DemoPaymentAsync(string id, string outcome, bool demoAllowed, CancellationToken ct)
     {
@@ -184,11 +215,18 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
     private static ReservationDto Map(ReservationRecord x) => new(x.Id, x.Reference, x.Service, x.Status, x.StartUtc, x.EndUtc, x.ReviewDeadlineUtc, x.ResourceIds, x.FirstName, x.LastName, x.Phone, x.Attendees, x.History.Select(h => new ReservationHistoryDto(h.Status, h.AtUtc, h.Actor, h.Reason)).ToArray(), x.Notes)
     {
         PolicyVersion = x.PolicyVersion,
+        Revision = x.Revision,
+        CheckedInUtc = x.CheckedInUtc,
+        CheckedOutUtc = x.CheckedOutUtc,
         ResourceNames = x.ResourceNames,
         Participants = x.Participants.Select(p => new BayParticipants { ResourceId = p.ResourceId, Players = p.Players, NonPlayers = p.NonPlayers }).ToArray(),
         PaymentReference = x.PaymentReference,
         CreatedUtc = x.CreatedUtc,
         PaymentStatus = x.PaymentStatus,
+        ScheduleChange = x.ScheduleChange is { } proposal ? new(proposal.Id, proposal.Status, proposal.RequestedUtc,
+            proposal.DecidedUtc, proposal.StartUtc, proposal.EndUtc, proposal.Reason, proposal.ResourceIds, proposal.ResourceNames) : null,
+        ReviewStartsUtc = x.ReviewStartsUtc,
+        BookingSource = x.BookingSource,
         RentalTotal = x.RentalTotal,
         DepositAmount = x.DepositAmount,
         CoachConfirmed = x.CoachConfirmed,

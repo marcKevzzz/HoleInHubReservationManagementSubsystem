@@ -8,6 +8,7 @@
     var deadline=TimeZoneInfo.ConvertTimeFromUtc(Model.ReviewDeadlineUtc,ReservationRules.Manila);
 }
 <div class="page-content booking-status-page booking-checkout">
+    <a class="flow-back" asp-action="Status" asp-route-id="@Model.Id" asp-route-token="@token" asp-route-guest="@(ViewData["GuestAccess"] is true ? "true" : null)"><partial name="_BackArrow" /> Back to reservation</a>
     <header class="booking-status-heading">
         <h1>DEPOSIT CHECKOUT</h1>
         <p>Reservation <strong class="booking-reference">@Model.Reference</strong></p>
@@ -43,10 +44,10 @@
                 <form method="post" class="checkout-payment-form">
                     <input type="hidden" name="token" value="@token" />
                     <button class="button" name="outcome" value="success">Simulate successful deposit</button>
-                    <div class="checkout-alternate-actions">
+                    <details class="checkout-options"><summary>Other demo outcomes</summary><div class="checkout-alternate-actions">
                         <button class="button button-secondary" name="outcome" value="failure" data-no-icon>Simulate failure</button>
                         <button class="button button-tertiary" name="outcome" value="cancel" data-no-icon>Cancel checkout</button>
-                    </div>
+                    </div></details>
                 </form>
                 <p class="checkout-retry-note">Failed or cancelled checkout can be retried before the deadline.</p>
             }
@@ -55,7 +56,6 @@
                 <h2 id="checkout-action-title">Checkout closed</h2>
                 <p class="checkout-action-copy">View your booking status for the latest reservation and deposit updates.</p>
             }
-            <a class="booking-text-link" asp-controller="Reservations" asp-action="Status" asp-route-id="@Model.Id" asp-route-token="@token" asp-route-guest="@(ViewData["GuestAccess"] is true?"true":null)">View booking status</a>
         </aside>
     </div>
 </div>

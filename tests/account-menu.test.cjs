@@ -4,14 +4,14 @@ const vm = require('node:vm');
 const fs = require('node:fs');
 const path = require('node:path');
 const source = fs.readFileSync(path.join(__dirname, '../HoleInHub.Web/wwwroot/js/account-menu.js'), 'utf8');
-function setup() {
+function setup(withPopup = true) {
     const triggerEvents={}, popupEvents={}, modalEvents={}, formEvents={}, windowEvents={};
     const trigger={setAttribute(key,value){this[key]=value;},addEventListener:(name,callback)=>triggerEvents[name]=callback};
     const popup={id:'account-menu',open:false,showPopover(){this.open=true;popupEvents.toggle?.({newState:'open'});},hidePopover(){this.open=false;popupEvents.toggle?.({newState:'closed'});},matches(){return this.open;},contains:()=>false,addEventListener:(name,callback)=>popupEvents[name]=callback};
-    const cancel={},logout={focus(){this.focused=true;}};
+    const cancel={},logout={hasAttribute:()=>false,focus(){this.focused=true;}};
     const confirmation={open:false,showModal(){this.open=true;},close(){this.open=false;modalEvents.close();},addEventListener:(name,callback)=>modalEvents[name]=callback,querySelectorAll:()=>[{addEventListener:(_,callback)=>cancel.click=callback}]};
     const form={addEventListener:(name,callback)=>formEvents[name]=callback,querySelector:()=>logout};
-    vm.runInNewContext(source,{document:{querySelector:selector=>({'.profile-link':trigger,'#account-menu':popup,'#logout-confirmation':confirmation,'#account-logout-form':form}[selector]||null)},window:{matchMedia:()=>({matches:true,addEventListener(){}}),addEventListener:(name,callback)=>windowEvents[name]=callback}});
+    vm.runInNewContext(source,{document:{querySelector:selector=>({'.profile-link':withPopup ? trigger : null,'#account-menu':withPopup ? popup : null,'#logout-confirmation':confirmation,'#account-logout-form':form}[selector]||null)},window:{matchMedia:()=>({matches:true,addEventListener(){}}),addEventListener:(name,callback)=>windowEvents[name]=callback}});
     const open=(options={})=>{const event={...options,preventDefault(){this.prevented=true;}};triggerEvents.click(event);return event;};
     return {trigger,popup,confirmation,formEvents,popupEvents,windowEvents,cancel,logout,open,pointerDown:()=>triggerEvents.pointerdown()};
 }
@@ -29,6 +29,17 @@ test('logout requires confirmation, cancel restores popup, confirmed submit is a
     assert.equal(prevented,true);assert.equal(ui.confirmation.open,true);assert.equal(ui.popup.open,false);
     ui.cancel.click();assert.equal(ui.confirmation.open,false);assert.equal(ui.popup.open,true);assert.equal(ui.logout.focused,true);
     prevented=false;ui.formEvents.submit({submitter:{hasAttribute:()=>true},preventDefault(){prevented=true;}});assert.equal(prevented,false);
+});
+test('staff logout uses the same confirmation without a profile popup',()=>{
+    const ui=setup(false);
+    let prevented=false;
+    ui.formEvents.submit({submitter:ui.logout,preventDefault(){prevented=true;}});
+    assert.equal(prevented,true);
+    assert.equal(ui.confirmation.open,true);
+    ui.cancel.click();
+    assert.equal(ui.confirmation.open,false);
+    assert.equal(ui.logout.focused,true);
+    assert.equal(ui.popup.open,false);
 });
 test('back-forward restoration closes overlays without reopening the account popup',()=>{
     const ui=setup();ui.open();ui.formEvents.submit({preventDefault(){}});ui.windowEvents.pageshow();

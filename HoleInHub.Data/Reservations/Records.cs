@@ -12,6 +12,9 @@ public sealed class ResourceRecord
 
 public sealed class ReservationRecord
 {
+    public long Revision { get; set; }
+    [BsonIgnoreIfNull] public DateTime? CheckedInUtc { get; set; }
+    [BsonIgnoreIfNull] public DateTime? CheckedOutUtc { get; set; }
     public int PolicyVersion { get; set; }
     [BsonElement("GuestSessionHash")] public string? EmailVerificationId { get; set; }
     [BsonIgnoreIfNull] public string? CustomerAccountId { get; set; }
@@ -24,10 +27,12 @@ public sealed class ReservationRecord
     public decimal? DepositAmount { get; set; }
     public bool CoachConfirmed { get; set; }
     public bool CancellationRequested { get; set; }
+    [BsonIgnoreIfNull] public ScheduleChangeRecord? ScheduleChange { get; set; }
 
     [BsonId] public string Id { get; set; } = Guid.NewGuid().ToString("N");
-    // AccountId is the legacy BSON ownership scope; guest values are not login-account IDs.
+    // AccountId is the legacy BSON ownership scope; guest and staff prefixes are not customer login IDs.
     public string AccountId { get; set; } = "";
+    [BsonIgnoreIfNull] public string? BookingSource { get; set; }
     public string Email { get; set; } = "";
     public string Reference { get; set; } = "";
     public string Service { get; set; } = "";
@@ -36,6 +41,8 @@ public sealed class ReservationRecord
     public DateTime EndUtc { get; set; }
     public DateTime CreatedUtc { get; set; }
     public DateTime ReviewDeadlineUtc { get; set; }
+    [BsonIgnoreIfNull] public DateTime? ReviewStartsUtc { get; set; }
+    [BsonIgnoreIfNull] public DateTime[]? ReviewAlertsUtc { get; set; }
     public string[] ResourceIds { get; set; } = [];
     public string FirstName { get; set; } = "";
     public string LastName { get; set; } = "";
@@ -50,6 +57,10 @@ public sealed class ReservationRecord
 
 public sealed class HistoryRecord
 {
+    [BsonIgnoreIfNull] public ScheduleChangeRecord? ScheduleChange { get; set; }
+    [BsonIgnoreIfNull] public string? CommandId { get; set; }
+    [BsonIgnoreIfNull] public string? CommandHash { get; set; }
+    [BsonIgnoreIfNull] public string? PreviousReservationStatus { get; set; }
     [BsonIgnoreIfNull] public string? EventType { get; set; }
     [BsonIgnoreIfNull] public string? ReservationStatus { get; set; }
     public string Reason { get; set; } = "";
@@ -58,8 +69,33 @@ public sealed class HistoryRecord
     public string Actor { get; set; } = "";
 }
 
+public sealed class ScheduleChangeRecord
+{
+    public string Id { get; set; } = "";
+    public string PayloadHash { get; set; } = "";
+    public long BaseRevision { get; set; }
+    public string Status { get; set; } = "Pending";
+    public DateTime RequestedUtc { get; set; }
+    public DateTime? DecidedUtc { get; set; }
+    public DateTime OriginalStartUtc { get; set; }
+    public DateTime OriginalEndUtc { get; set; }
+    public string[] OriginalResourceIds { get; set; } = [];
+    public DateTime StartUtc { get; set; }
+    public DateTime EndUtc { get; set; }
+    public string[] ResourceIds { get; set; } = [];
+    public Dictionary<string, string> ResourceNames { get; set; } = [];
+    public string Reason { get; set; } = "";
+}
+
 public sealed class ScheduleBlock
 {
+    [BsonIgnoreIfNull] public DateTime? ReleasedUtc { get; set; }
+    [BsonIgnoreIfNull] public string? ReleasedBy { get; set; }
+    [BsonIgnoreIfNull] public string? ReleaseReason { get; set; }
+    [BsonIgnoreIfNull] public string? Reason { get; set; }
+    [BsonIgnoreIfNull] public string? CreatedBy { get; set; }
+    [BsonIgnoreIfNull] public DateTime? CreatedUtc { get; set; }
+    [BsonIgnoreIfNull] public string? SubmissionHash { get; set; }
     [BsonId] public string Id { get; set; } = "";
     public string[] ResourceIds { get; set; } = [];
     public DateTime StartUtc { get; set; }

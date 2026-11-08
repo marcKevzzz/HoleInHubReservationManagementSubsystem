@@ -28,7 +28,7 @@ Multi-bay group appointments and consolidated POS billing are distinct: sequenti
 | Submission | Successful submission creates Pending and immediately holds all requested allocations; browsing alone holds nothing |
 | Ordinary online Pending | Owner-approved provisional review deadlines: Regular 30 minutes (alerts 15/25); VIP/coaching 60 minutes (alerts 30/50) |
 | Pending expiry | Unresolved ordinary online requests become Expired at the deadline, release all allocations, and notify customer and staff |
-| Review coverage | Owner directs review during operating hours only; the entire review period must fit before closing and the booked start. Existing operating hours remain authoritative |
+| Review coverage | Owner directs review during operating hours only; review minutes pause outside operating hours and resume at the next staffed opening. The full review window must finish by the booked start. Existing operating hours remain authoritative |
 | Confirmation | Staff approve Regular/VIP; coaching requires recorded coach confirmation plus venue approval. Whole-shop confirms automatically after a verified 50% deposit; currently demonstrated with simulated POS only |
 | Whole shop | Exclusive allocation of all active bays. Provisional 60-minute deposit deadline; simulated 50% deposit confirms automatically. Live collection remains POS-owned and disabled |
 | Operating hours | Monday 11 AM–midnight; Tuesday–Sunday 10 AM–midnight, Asia/Manila; midnight begins the following day |
@@ -36,6 +36,7 @@ Multi-bay group appointments and consolidated POS billing are distinct: sequenti
 | Availability | Entire interval must fit operating hours and respect existing allocations, closures, and maintenance |
 | Multi-bay | One reservation; all requested resources allocated together or the entire attempt rejected |
 | Changes | Staff review customer requests; reassignment, extension, and rescheduling recheck conflicts; rejected/failed changes preserve the original booking |
+| First change-request release | Owner-approved 7 November 2026. Confirmed Regular/VIP customers may propose a new schedule or duration at least one hour before the current start. The proposed start must allow the full 30/60-minute operating-hours review window. One open proposal, same service, bay count and guest count. Staff may select replacement bays during approval. Approval must precede both session starts and recheck revision and availability. Original allocations remain until successful approval. |
 | Attendance | Authorized staff record arrival, cancellation, completion, and no-show outcomes; no hardware occupancy detection |
 | Grace period | Confirmed allocations protected for one hour after start, capped at scheduled end; flag unattended bookings at the earlier deadline |
 | No-show | Staff follow up and may mark No-show, releasing remaining allocations; no automatic no-show decision |
@@ -44,7 +45,7 @@ Multi-bay group appointments and consolidated POS billing are distinct: sequenti
 | Chatbot | Predefined responses to basic inquiries; cannot independently approve bookings or resolve complex concerns |
 | Reporting | Reservation counts, service usage, peak periods, cancellations, no-shows, customer trends, and reserved-time resource utilization |
 
-The owner approved these provisional online booking rules on 2026-11-03. Require 30-minute Regular lead time and 60-minute lead time for other online services; no maximum advance-booking limit. Outside-hours submission is unavailable. Existing records retain their saved deadlines; no policy is inferred for staff-assisted bookings. Expiry timings still need operational validation with the client.
+The owner approved these provisional online booking rules on 2026-11-03. Require 30-minute Regular lead time and 60-minute lead time for other online services; no maximum advance-booking limit. Owner update on 2026-11-07 allows submission at any time. Ordinary online Pending holds begin immediately. Their 30/60-minute review clock counts only configured staff coverage within venue operating hours, carries across closing, and must finish by the session start. Whole-shop retains its separate elapsed-time deposit deadline. Existing records retain their saved deadlines; no policy is inferred for staff-assisted bookings. Expiry timings still need operational validation with the client.
 
 ## Reservation lifecycle and access
 
@@ -101,7 +102,7 @@ Excluded from Reservation implementation: inventory, food/merchandise ordering, 
 
 Still requiring agreement:
 
-- Client validation of the owner-approved provisional review/deposit deadlines; review coverage uses existing operating hours with a full-window submission cutoff.
+- Client validation of the owner-approved provisional review/deposit deadlines; review coverage uses operating minutes with carryover to the next staffed opening. Manual no-show actions and attendance corrections remain deferred.
 - Live POS payment evidence/contract, authoritative prices (including holidays), late-payment reconciliation and deposit refunds. The owner sets a 50% deposit and provisional 60-minute deadline for the demo.
 - Change-request approval criteria and late-arrival exceptions.
 - Client confirmation of remaining package sessions and rescheduling. Implemented ordinary sessions use a 30-minute minimum and half-hour increments; the customer enters one total guest count including non-players, with eight total people per Regular bay or ten per VIP. Staff checks the six-player-per-bay limit because a total count does not identify players. Cancellation requests require one hour of notice and staff approval, with no cancellation fee.
