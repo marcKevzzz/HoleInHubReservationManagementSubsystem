@@ -160,6 +160,8 @@ Public browsing is available before booking policy approval. Online submission m
 
 Sprint 1 covers customer access, verification/reset email, service browsing, availability, guest/account booking, secure My Reservations and atomic capacity allocation. Existing coaching, staff review and whole-shop demonstration screens were implemented early at the owner's request; this improvement batch does not expand later-sprint features. Staff dashboards, attendance and change workflows belong to Sprint 2; reports, reminders and POS integration belong to later milestones. The owner subsequently authorized the customer profile and read-only demo transaction pages.
 
+See the [IPT102 project timeline](PROJECT-TIMELINE.md) and [Sprint 2 implementation plan](plans/2026-11-06-sprint-2-staff-operations.md) for the Week 15 milestone, work packages, and acceptance checklist.
+
 The owner-directed provisional policy overrides the timeline's older indefinite Pending hold: Regular requests have 30 minutes; VIP, coaching and whole-shop have 60 minutes. Ordinary sessions can be 30 minutes, following the owner's revised time-selection direction. Guest submission queues a code without holding capacity; successful verification revalidates availability and creates Pending. Verified accounts submit directly. Whole-shop submission requires explicit Development/Demo configuration; a simulated 50% deposit can confirm it without collecting money. Production rejects simulated payment confirmation. Authoritative pricing, staff coverage and live POS terms still need client approval; Sprint 1 is not an operational production launch.
 
 ### Continuous Tailwind Compilation

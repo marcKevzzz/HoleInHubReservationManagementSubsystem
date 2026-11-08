@@ -10,6 +10,8 @@ This document records requirements and owner-directed provisional policies, not 
 
 ## Operational background
 
+The [IPT102 project timeline](PROJECT-TIMELINE.md) records the course milestones and links to the [Sprint 2 implementation plan](plans/2026-11-06-sprint-2-staff-operations.md). Apply the current requirements below where the timeline reflects an older policy.
+
 Customers currently request bookings through Viber, SMS, social media, or direct staff contact. Staff enter details into an existing browser-based POS scheduling interface. Interviews describe overlooked conflict warnings, bay transfers, suspected duplicate-booking investigations, and customer contact details retained in messaging conversations.
 
 Multi-bay group appointments and consolidated POS billing are distinct: sequential bill merging is not evidence that reservation records must be merged individually. Duplicate customer profiles and the technical cause of reported connectivity disruption are not established findings. Performance improvements require measurement.
