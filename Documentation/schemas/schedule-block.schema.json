@@ -1,25 +1,59 @@
 {
-  "bsonType" : "object",
-  "required" : ["_id", "ResourceIds", "StartUtc", "EndUtc"],
-  "properties" : {
-    "_id" : {
-      "bsonType" : "string",
-      "minLength" : 1
+  "bsonType": "object",
+  "required": [
+    "_id",
+    "ResourceIds",
+    "StartUtc",
+    "EndUtc"
+  ],
+  "properties": {
+    "_id": {
+      "bsonType": "string",
+      "minLength": 1
     },
-    "ResourceIds" : {
-      "bsonType" : "array",
-      "minItems" : 0,
-      "uniqueItems" : true,
-      "items" : {
-        "bsonType" : "string",
-        "minLength" : 1
+    "ResourceIds": {
+      "bsonType": "array",
+      "minItems": 0,
+      "uniqueItems": true,
+      "items": {
+        "bsonType": "string",
+        "minLength": 1
       }
     },
-    "StartUtc" : {
-      "bsonType" : "date"
+    "StartUtc": {
+      "bsonType": "date"
     },
-    "EndUtc" : {
-      "bsonType" : "date"
+    "EndUtc": {
+      "bsonType": "date"
+    },
+    "Reason": {
+      "bsonType": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "CreatedBy": {
+      "bsonType": "string",
+      "minLength": 1
+    },
+    "CreatedUtc": {
+      "bsonType": "date"
+    },
+    "SubmissionHash": {
+      "bsonType": "string",
+      "minLength": 64,
+      "maxLength": 64
+    },
+    "ReleasedUtc": {
+      "bsonType": "date"
+    },
+    "ReleasedBy": {
+      "bsonType": "string",
+      "minLength": 1
+    },
+    "ReleaseReason": {
+      "bsonType": "string",
+      "minLength": 1,
+      "maxLength": 500
     }
   }
 }

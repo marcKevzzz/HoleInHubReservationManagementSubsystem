@@ -1,0 +1,268 @@
+using System.Net;
+using System.Security.Claims;
+using System.Text.Encodings.Web;
+using System.Text.RegularExpressions;
+using HoleInHub.Data.Context;
+using HoleInHub.Data.Migrations.Definitions;
+using HoleInHub.Data.Reservations;
+using HoleInHub.Web.Accounts;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using MongoDB.Driver;
+using Xunit;
+
+namespace HoleInHub.Tests.Web.Smoke;
+
+public sealed class StaffBlockHttpTests
+{
+    private sealed class Clock : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => new(2026, 11, 10, 4, 15, 0, TimeSpan.Zero);
+    }
+    private sealed class TestAuth(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder)
+        : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
+    {
+        protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+        {
+            var role = Request.Headers["X-Test-Role"].ToString();
+            return Task.FromResult(role.Length == 0 ? AuthenticateResult.NoResult() : AuthenticateResult.Success(
+                new AuthenticationTicket(new ClaimsPrincipal(new ClaimsIdentity([
+                    new Claim(ClaimTypes.NameIdentifier, "test-admin"), new Claim(ClaimTypes.Role, role)
+                ], Scheme.Name)), Scheme.Name)));
+        }
+    }
+    private static WebApplicationFactory<Program> Factory(string database) => new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        builder.UseEnvironment("Development").ConfigureLogging(logging => logging.ClearProviders())
+        .ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Development:StaffWorkspaceUrl"] = "",
+            ["MongoDb:ConnectionString"] = "mongodb://localhost:27017/?replicaSet=rs0",
+            ["MongoDb:DatabaseName"] = database,
+            ["MongoDb:ReplicaSetName"] = "rs0",
+            ["Smtp:Host"] = ""
+        }))
+        .ConfigureTestServices(services =>
+        {
+            services.AddSingleton<TimeProvider>(new Clock());
+            services.AddDataProtection().UseEphemeralDataProtectionProvider();
+            services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, TestAuth>("BlockTest", _ => { });
+            services.Configure<CookieAuthenticationOptions>(StaffPinAccess.Scheme, options => options.ForwardDefault = "BlockTest");
+        }));
+    private static HttpClient Client(WebApplicationFactory<Program> factory, string role)
+    {
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost"), AllowAutoRedirect = false });
+        if (role.Length > 0) { client.DefaultRequestHeaders.Add("X-Test-Role", role); }
+        return client;
+    }
+
+    [Theory]
+    [InlineData("Staff", HttpStatusCode.Forbidden)]
+    [InlineData("Customer", HttpStatusCode.Forbidden)]
+    [InlineData("", HttpStatusCode.Unauthorized)]
+    public async Task NonAdminsCannotReadOrSubmitBlocks(string role, HttpStatusCode expected)
+    {
+        await using var factory = Factory("test_block_access");
+        using var client = Client(factory, role);
+        Assert.Equal(role == "Staff" ? HttpStatusCode.BadRequest : expected, (await client.PostAsync("/staff/reservations/missing/attendance", new FormUrlEncodedContent([]))).StatusCode);
+        Assert.Equal(expected, (await client.GetAsync("/staff/reservations/blocks/new")).StatusCode);
+        Assert.Equal(expected, (await client.GetAsync("/staff/reservations/blocks/missing")).StatusCode);
+        Assert.Equal(expected, (await client.PostAsync("/staff/reservations/blocks/missing/release", new FormUrlEncodedContent([]))).StatusCode);
+        Assert.Equal(expected, (await client.PostAsync("/staff/reservations/blocks/new", new FormUrlEncodedContent([]))).StatusCode);
+    }
+
+    [Theory]
+    [InlineData("Admin")]
+    [InlineData("Manager")]
+    public async Task VenueManagementCannotSubmitWithoutAntiforgeryToken(string role)
+    {
+        await using var factory = Factory("test_block_access");
+        using var client = Client(factory, role);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync("/staff/reservations/missing/attendance", new FormUrlEncodedContent([]))).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync("/staff/reservations/blocks/new", new FormUrlEncodedContent([]))).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync("/staff/reservations/blocks/missing/release", new FormUrlEncodedContent([]))).StatusCode);
+    }
+
+    [Theory, Trait("Category", "Integration")]
+    [InlineData("Admin")]
+    [InlineData("Manager")]
+    public async Task VenueManagementCanSaveReplayAndReleaseBlocks(string role)
+    {
+        var database = "test_block_http_" + Guid.NewGuid().ToString("N");
+        await using var factory = Factory(database);
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IMongoDbContext>();
+        try
+        {
+            await new Migration_002_Reservations().UpAsync(context.Database, default);
+            await new AccountsMigration().UpAsync(context.Database, default);
+            await new Migration_004_BookingProcess().UpAsync(context.Database, default);
+            await new Migration_005_GoogleAccounts().UpAsync(context.Database, default);
+            await new Migration_006_SchemaHardening().UpAsync(context.Database, default);
+            await new Migration_011_AdminScheduleBlocks().UpAsync(context.Database, default);
+            await new Migration_012_ReleaseScheduleBlocks().UpAsync(context.Database, default);
+            using var client = Client(factory, role);
+            var html = await client.GetStringAsync("/staff/reservations/blocks/new?date=2026-11-10");
+            string Value(string name) => WebUtility.HtmlDecode(Regex.Match(html, "name=\"" + name + "\"[^>]*value=\"([^\"]+)\"").Groups[1].Value);
+            var form = new Dictionary<string, string>
+            {
+                ["__RequestVerificationToken"] = Value("__RequestVerificationToken"),
+                ["IdempotencyKey"] = Value("IdempotencyKey"),
+                ["ResourceId"] = "bay-2",
+                ["Date"] = "2026-11-10",
+                ["StartTime"] = "13:00",
+                ["DurationMinutes"] = "60",
+                ["Reason"] = "Simulator maintenance"
+            };
+            Assert.NotEmpty(form["__RequestVerificationToken"]);
+            Assert.NotEmpty(form["IdempotencyKey"]);
+            client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+            Assert.Equal(HttpStatusCode.OK, (await client.PostAsync("/staff/reservations/blocks/new", new FormUrlEncodedContent(form))).StatusCode);
+            Assert.Equal(HttpStatusCode.OK, (await client.PostAsync("/staff/reservations/blocks/new", new FormUrlEncodedContent(form))).StatusCode);
+            var saved = await context.Database.GetCollection<ScheduleBlock>("schedule_blocks").Find(FilterDefinition<ScheduleBlock>.Empty).SingleAsync();
+            Assert.Equal("test-admin", saved.CreatedBy);
+            form["IdempotencyKey"] = "conflict";
+            var conflict = await client.PostAsync("/staff/reservations/blocks/new", new FormUrlEncodedContent(form));
+            Assert.Equal(HttpStatusCode.UnprocessableEntity, conflict.StatusCode);
+            Assert.Contains("no longer free", await conflict.Content.ReadAsStringAsync());
+            var schedule = await client.GetStringAsync("/BookingReview?date=2026-11-10");
+            Assert.Contains("data-new-block", schedule);
+            Assert.Contains("Simulator maintenance", schedule);
+            Assert.Contains("block-reason", schedule);
+            client.DefaultRequestHeaders.Accept.Clear();
+            var fallback = await client.PostAsync("/staff/reservations/blocks/new", new FormUrlEncodedContent(form));
+            var fallbackHtml = await fallback.Content.ReadAsStringAsync();
+            Assert.Equal(HttpStatusCode.OK, fallback.StatusCode);
+            Assert.Contains("Simulator maintenance", fallbackHtml);
+            Assert.Contains("no longer free", fallbackHtml);
+            using var staff = Client(factory, "Staff");
+            Assert.DoesNotContain("data-new-block", await staff.GetStringAsync("/BookingReview?date=2026-11-10"));
+            var path = "/staff/reservations/blocks/" + Uri.EscapeDataString(saved.Id);
+            Assert.Contains(path, schedule);
+            Assert.DoesNotContain(path, await staff.GetStringAsync("/BookingReview?date=2026-11-10"));
+            Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/staff/reservations/blocks/missing")).StatusCode);
+            var details = await client.GetStringAsync(path);
+            Assert.Contains("Simulator maintenance", details);
+            Assert.Contains("Confirm unblock", details);
+            var release = new Dictionary<string, string>
+            {
+                ["__RequestVerificationToken"] = WebUtility.HtmlDecode(Regex.Match(details, "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"").Groups[1].Value),
+                ["Reason"] = "Maintenance finished",
+                ["ConfirmRelease"] = "false"
+            };
+            var unconfirmed = await client.PostAsync(path + "/release", new FormUrlEncodedContent(release));
+            Assert.Equal(HttpStatusCode.OK, unconfirmed.StatusCode);
+            Assert.Contains("Confirm that", await unconfirmed.Content.ReadAsStringAsync());
+            Assert.Null((await context.Database.GetCollection<ScheduleBlock>("schedule_blocks").Find(x => x.Id == saved.Id).SingleAsync()).ReleasedUtc);
+            release["ConfirmRelease"] = "true";
+            release["Reason"] = " ";
+            var emptyReason = await client.PostAsync(path + "/release", new FormUrlEncodedContent(release));
+            Assert.Contains("required", await emptyReason.Content.ReadAsStringAsync());
+            release["Reason"] = "Maintenance finished";
+            var released = await client.PostAsync(path + "/release", new FormUrlEncodedContent(release));
+            Assert.Equal(HttpStatusCode.Redirect, released.StatusCode);
+            Assert.Contains(saved.Id, Uri.UnescapeDataString(released.Headers.Location!.ToString()));
+            release["Reason"] = "A different retry";
+            Assert.Equal(HttpStatusCode.Redirect, (await client.PostAsync(path + "/release", new FormUrlEncodedContent(release))).StatusCode);
+            var history = await client.GetStringAsync(path);
+            Assert.Contains("Time unblocked", history);
+            Assert.Contains("Maintenance finished", history);
+            Assert.DoesNotContain("A different retry", history);
+            Assert.DoesNotContain("Confirm unblock", history);
+            Assert.DoesNotContain(path, await client.GetStringAsync("/BookingReview?date=2026-11-10"));
+        }
+        finally { await context.Client.DropDatabaseAsync(database); }
+    }
+    [Fact, Trait("Category", "Integration")]
+    public async Task StaffAttendanceRequiresConfirmationAndPreservesActualTimesAndRetries()
+    {
+        var database = "test_attendance_http_" + Guid.NewGuid().ToString("N");
+        await using var factory = Factory(database);
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IMongoDbContext>();
+        try
+        {
+            await new Migration_002_Reservations().UpAsync(context.Database, default);
+            await new AccountsMigration().UpAsync(context.Database, default);
+            await new Migration_004_BookingProcess().UpAsync(context.Database, default);
+            await new Migration_005_GoogleAccounts().UpAsync(context.Database, default);
+            await new Migration_006_SchemaHardening().UpAsync(context.Database, default);
+            await new Migration_013_ReservationAttendance().UpAsync(context.Database, default);
+            var start = new DateTime(2026, 11, 10, 4, 0, 0, DateTimeKind.Utc);
+            var booking = new ReservationRecord
+            {
+                AccountId = "customer",
+                Email = "customer@example.test",
+                Reference = "HIH-ATTENDANCE",
+                FirstName = "Alex",
+                LastName = "Santos",
+                Service = "Regular",
+                Status = "Confirmed",
+                ResourceIds = ["bay-2"],
+                StartUtc = start,
+                EndUtc = start.AddHours(2),
+                CreatedUtc = start.AddDays(-1),
+                ReviewDeadlineUtc = start,
+                IdempotencyKey = "attendance",
+                SubmissionHash = "test",
+                Attendees = 1
+            };
+            await context.Database.GetCollection<ReservationRecord>("reservations").InsertOneAsync(booking);
+            using var staff = Client(factory, "Staff");
+            var path = "/staff/reservations/" + booking.Id + "/attendance";
+            Assert.Equal(HttpStatusCode.BadRequest, (await staff.PostAsync(path, new FormUrlEncodedContent([]))).StatusCode);
+            var details = await staff.GetStringAsync("/BookingReview/Details/" + booking.Id);
+            string Value(string html, string name) => WebUtility.HtmlDecode(Regex.Match(html, "name=\"" + name + "\"[^>]*value=\"([^\"]+)\"").Groups[1].Value);
+            var form = new Dictionary<string, string>
+            {
+                ["__RequestVerificationToken"] = Value(details, "__RequestVerificationToken"),
+                ["Action"] = "check-in",
+                ["CommandId"] = Value(details, "CommandId"),
+                ["ExpectedRevision"] = "0",
+                ["ConfirmAttendance"] = "false",
+                ["Actor"] = "forged",
+                ["CheckedInUtc"] = "2000-01-01",
+                ["Status"] = "Completed"
+            };
+            Assert.NotEmpty(form["CommandId"]);
+            var uncheckedResponse = await staff.PostAsync(path, new FormUrlEncodedContent(form));
+            Assert.Equal(HttpStatusCode.OK, uncheckedResponse.StatusCode);
+            Assert.Contains("Confirm the attendance", await uncheckedResponse.Content.ReadAsStringAsync());
+            form["ConfirmAttendance"] = "true";
+            form["Action"] = "forged-action";
+            Assert.Equal(HttpStatusCode.OK, (await staff.PostAsync(path, new FormUrlEncodedContent(form))).StatusCode);
+            form["Action"] = "check-in";
+            Assert.Equal(HttpStatusCode.Redirect, (await staff.PostAsync(path, new FormUrlEncodedContent(form))).StatusCode);
+            Assert.Equal(HttpStatusCode.Redirect, (await staff.PostAsync(path, new FormUrlEncodedContent(form))).StatusCode);
+            var current = await context.Database.GetCollection<ReservationRecord>("reservations").Find(x => x.Id == booking.Id).SingleAsync();
+            Assert.Equal("Checked-In", current.Status); Assert.Equal(1, current.Revision);
+            Assert.Equal("test-admin", Assert.Single(current.History).Actor);
+            Assert.Equal(new DateTime(2026, 11, 10, 4, 15, 0, DateTimeKind.Utc), current.CheckedInUtc);
+            details = await staff.GetStringAsync("/BookingReview/Details/" + booking.Id);
+            form["Action"] = "check-out"; form["CommandId"] = Value(details, "CommandId"); form["ExpectedRevision"] = "1";
+            Assert.Contains("Confirm check out", details);
+            var noReason = await staff.PostAsync(path, new FormUrlEncodedContent(form));
+            Assert.Equal(HttpStatusCode.OK, noReason.StatusCode);
+            Assert.Contains("reason for early check-out", await noReason.Content.ReadAsStringAsync());
+            form["Reason"] = "Finished early";
+            Assert.Equal(HttpStatusCode.Redirect, (await staff.PostAsync(path, new FormUrlEncodedContent(form))).StatusCode);
+            Assert.Equal(HttpStatusCode.Redirect, (await staff.PostAsync(path, new FormUrlEncodedContent(form))).StatusCode);
+            current = await context.Database.GetCollection<ReservationRecord>("reservations").Find(x => x.Id == booking.Id).SingleAsync();
+            Assert.Equal("Completed", current.Status); Assert.Equal(2, current.History.Count);
+            Assert.Equal(booking.EndUtc, current.EndUtc);
+            var schedule = await staff.GetStringAsync("/staff?date=2026-11-10");
+            Assert.Contains("HIH-ATTENDANCE", schedule);
+            Assert.Contains("data-status=\"Completed\"", schedule);
+            Assert.DoesNotContain("data-holds-capacity=\"true\"", schedule);
+        }
+        finally { await context.Client.DropDatabaseAsync(database); }
+    }
+
+}

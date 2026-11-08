@@ -35,7 +35,7 @@ public sealed class ServicesCatalogTests
         using var client = factory.CreateClient();
         var first = await client.GetAsync("/Home/Services");
         var firstHtml = await first.Content.ReadAsStringAsync();
-        Assert.Contains("MORE WAYS TO PLAY", firstHtml);
+        Assert.Matches(@"<h1\b[^>]*>MORE WAYS\s*(?:<br\s*/?>\s*)?TO PLAY</h1>", firstHtml);
         Assert.Contains("Current venue service", firstHtml);
         Assert.Contains("/js/services.js", firstHtml);
         Assert.True(first.Headers.CacheControl?.NoStore);

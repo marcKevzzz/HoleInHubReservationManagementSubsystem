@@ -1,0 +1,69 @@
+@using HoleInHub.Business.Reservations
+@model StaffCustomerProfile
+@{
+    Layout = "_StaffLayout";
+    ViewData["Title"] = "Customer details";
+    var customer = Model.Customer;
+}
+<div class="staff-workspace staff-customers">
+    <a class="flow-back customer-back" asp-action="Index"><partial name="_BackArrow" /> Back to customers</a>
+    <header class="staff-workspace-heading">
+        <h1>@CustomerLabels.Name(customer.FirstName, customer.LastName)</h1>
+        <p>@CustomerLabels.Kind(customer.Kind)</p>
+    </header>
+    <div class="customer-profile-layout">
+        <aside class="customer-contact-panel">
+            <section class="review-section">
+                <h2>Contact details</h2>
+                <dl class="review-facts">
+                    <dt>Phone</dt><dd>@if (!string.IsNullOrWhiteSpace(customer.Phone)) { <a class="staff-link" href="tel:@CustomerLabels.Dial(customer.Phone)">@CustomerLabels.Phone(customer.Phone)</a> } else { <span>Not recorded</span> }</dd>
+                    <dt>Email</dt><dd>@if (!string.IsNullOrWhiteSpace(customer.Email)) { <a class="staff-link" href="mailto:@customer.Email">@customer.Email</a> } else { <span>Not recorded</span> }</dd>
+                    <dt>Recorded</dt><dd>@StaffReviewQueue.Local(customer.CreatedUtc).ToString("d MMM yyyy, h:mm tt")<small>Latest reservation contact · Manila time</small></dd>
+                </dl>
+                <p class="customer-directory-note">@(customer.Kind == "BookingContact" ? "This contact belongs to one reservation. Other contacts with the same name or phone remain separate." : "Contact details come from the latest linked reservation.")</p>
+            </section>
+            <section class="review-section">
+                <h2>Booking overview</h2>
+                <dl class="review-facts">
+                    <dt>Total</dt><dd>@Model.Total reservations</dd>
+                    <dt>Upcoming</dt><dd>@Model.Upcoming</dd>
+                    <dt>Completed</dt><dd>@Model.Completed @(Model.Completed == 1 ? "visit" : "visits")</dd>
+                    <dt>Cancelled</dt><dd>@Model.Cancelled</dd>
+                </dl>
+            </section>
+        </aside>
+        <section class="customer-booking-history" aria-labelledby="customer-bookings-heading">
+            <div class="customer-results-heading">
+                <h2 id="customer-bookings-heading">Reservation history</h2>
+                <nav class="review-filters" aria-label="Reservation history filter">
+                    <a asp-action="Details" asp-route-id="@customer.BookingId" aria-current="@(!Model.UpcomingOnly ? "page" : null)">All @Model.Total</a>
+                    <a asp-action="Details" asp-route-id="@customer.BookingId" asp-route-view="upcoming" aria-current="@(Model.UpcomingOnly ? "page" : null)">Upcoming @Model.Upcoming</a>
+                </nav>
+            </div>
+            @if (Model.Bookings.Count == 0)
+            {
+                <div class="review-empty"><h3>No upcoming reservations</h3><p>Choose All to see this customer’s recorded history.</p></div>
+            }
+            else
+            {
+                <p class="customer-page-label">Page @Model.Page · All times are Manila time.</p>
+                <ul class="customer-bookings">
+                    @foreach (var booking in Model.Bookings)
+                    {
+                        var start = StaffReviewQueue.Local(booking.StartUtc);
+                        var end = StaffReviewQueue.Local(booking.EndUtc);
+                        <li>
+                            <div class="customer-booking-date"><strong>@start.ToString("dd")</strong><span>@start.ToString("MMM yyyy")</span></div>
+                            <div><h3>@ReservationLabels.Service(booking.Service)</h3><p>@start.ToString("h:mm tt")–@(end.Date == start.Date ? end.ToString("h:mm tt") : end.ToString("d MMM, h:mm tt"))</p><p>@StaffReviewQueue.Bays(booking) · @booking.Attendees @(booking.Attendees == 1 ? "guest" : "guests")</p><small>@booking.Reference</small></div>
+                            <div class="customer-booking-action"><span class="staff-status review-chip" data-status="@booking.Status">@(booking.Status == "Checked-In" ? "Checked in" : booking.Status)</span><a class="button button-secondary" asp-controller="BookingReview" asp-action="Details" asp-route-id="@booking.Id" asp-route-date="@start.ToString("yyyy-MM-dd")">View booking</a></div>
+                        </li>
+                    }
+                </ul>
+                <nav class="customer-pagination" aria-label="Reservation history pages">
+                    @if (Model.Page > 1) { <a class="button button-secondary" asp-action="Details" asp-route-id="@customer.BookingId" asp-route-view="@(Model.UpcomingOnly ? "upcoming" : null)" asp-route-page="@(Model.Page - 1)">Previous</a> }
+                    @if (Model.HasMore && Model.Page < 1000) { <a class="button button-secondary" asp-action="Details" asp-route-id="@customer.BookingId" asp-route-view="@(Model.UpcomingOnly ? "upcoming" : null)" asp-route-page="@(Model.Page + 1)">Next page</a> }
+                </nav>
+            }
+        </section>
+    </div>
+</div>

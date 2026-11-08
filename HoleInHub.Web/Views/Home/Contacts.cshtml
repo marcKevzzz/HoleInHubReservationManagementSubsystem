@@ -1,1 +1,34 @@
-@{ViewData["Title"]="Contacts";}<div class="page-content"><h1 class="page-title">LET’S TALK GOLF.</h1><div class="contact-grid"><section><h2>FIND THE CLUBHOUSE</h2><p>3rd Floor, EK Building<br/>50 Holy Spirit Drive<br/>Quezon City, Metro Manila, Philippines</p><a href="https://www.google.com/maps/search/?api=1&amp;query=EK+Building+50+Holy+Spirit+Drive+Quezon+City" rel="noreferrer" target="_blank">Get directions →</a></section><section><h2>DIRECT INQUIRIES</h2><p><a href="tel:+639692654976">+63 969 265 4976</a></p><p><a href="mailto:holeinhub@gmail.com">holeinhub@gmail.com</a></p><a href="https://www.facebook.com/profile.php?id=61589175118662" rel="noreferrer">Facebook</a></section><section><h2>OPERATING HOURS</h2><p>Monday<br/>11 AM–midnight</p><p>Tuesday–Sunday<br/>10 AM–midnight</p><p>Asia/Manila · Midnight begins the following day.</p></section></div><div class="editorial-copy"><h2>YOUR BAY IS WAITING.</h2><a class="button" href="/Reservations/Create">MAKE A RESERVATION →</a></div></div>
+@{ ViewData["Title"] = "Contact & location"; }
+<div class="page-content venue-page">
+    <header class="venue-heading">
+        <h1 data-venue-title>CONTACT &amp; LOCATION</h1>
+        <p data-motion="load">Plan your visit to Hole In Hub in Quezon City. Get directions or reach out about coaching, group sessions and whole-shop bookings.</p>
+    </header>
+    <div class="venue-contact">
+        <section data-motion="stagger" class="venue-location" aria-labelledby="venue-location-title">
+            <h2 id="venue-location-title">Find the clubhouse</h2>
+            <address>3rd Floor, EK Building<br />50 Holy Spirit Drive<br />Quezon City, Metro Manila, Philippines</address>
+            <a class="button" href="https://www.google.com/maps/search/?api=1&amp;query=EK+Building+50+Holy+Spirit+Drive+Quezon+City" rel="noreferrer" target="_blank">Get directions</a>
+        </section>
+        <div class="venue-contact-info" data-motion="stagger">
+            <section aria-labelledby="venue-hours-title">
+                <h2 id="venue-hours-title">Opening hours</h2>
+                <dl>
+                    <div><dt>Monday</dt><dd>11 AM–midnight</dd></div>
+                    <div><dt>Tuesday–Sunday</dt><dd>10 AM–midnight</dd></div>
+                </dl>
+                <p>Manila time</p>
+            </section>
+            <section aria-labelledby="venue-inquiries-title">
+                <h2 id="venue-inquiries-title">Get in touch</h2>
+                <ul>
+                    <li><a class="prototype-link" href="tel:+639692654976">+63 969 265 4976</a></li>
+                    <li><a class="prototype-link" href="mailto:holeinhub@gmail.com">holeinhub@gmail.com</a></li>
+                    <li><a class="prototype-link" href="https://www.facebook.com/profile.php?id=61589175118662" rel="noreferrer">Facebook</a></li>
+                </ul>
+            </section>
+        </div>
+    </div>
+    <img class="venue-contact-photo" data-motion="reveal" src="/media/facebook/venue-overview.webp" alt="Indoor simulator bays at Hole In Hub" loading="lazy" />
+    <div class="venue-next" data-motion="reveal"><h2>Ready to play?</h2><a class="button button-secondary" href="/Reservations/Create">Reserve a bay</a></div>
+</div>

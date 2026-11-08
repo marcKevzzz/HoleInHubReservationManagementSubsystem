@@ -6,8 +6,8 @@
 @foreach (var item in Model)
 {
     <article class="service-entry">
-        <img src="@item.ImagePath" alt="@item.Title at Hole In Hub" loading="lazy" width="960" height="640" />
-        <div class="service-entry-copy">
+        <img src="@item.ImagePath" alt="@item.Title at Hole In Hub" loading="lazy" width="960" height="640" data-motion="reveal" />
+        <div class="service-entry-copy" data-motion="reveal">
             <h2>@item.Title</h2>
             <p class="service-entry-summary">@item.Summary</p>
             <p class="service-entry-rate">@item.RateText <span>Indicative rate</span></p>

@@ -13,6 +13,14 @@ public sealed record AccountDetails(string Id, string Email, string NormalizedEm
 
 public sealed class AccountService(AccountPersistence persistence)
 {
+    public async Task<AccountDirectory> GetDirectoryAsync(bool employeesOnly, int page, CancellationToken ct)
+    {
+        const int pageSize = 50;
+        page = Math.Clamp(page, 1, 1000);
+        var rows = await persistence.ReadDirectoryAsync(employeesOnly ? StaffRoles.Workspace : null, (page - 1) * pageSize, pageSize + 1, ct);
+        return new(rows.Take(pageSize).Select(x => new AccountDirectoryEntry(x.Email,
+            $"{x.FirstName} {x.LastName}".Trim(), x.Roles, x.EmailConfirmed)).ToArray(), page, rows.Count > pageSize && page < 1000);
+    }
     public async Task<AccountDetails?> FindByIdAsync(string id, CancellationToken ct) => Map(await persistence.FindByIdAsync(id, ct));
     public async Task<AccountDetails?> FindByEmailAsync(string email, CancellationToken ct) => Map(await persistence.FindByEmailAsync(email, ct));
     public async Task<AccountDetails?> FindByGoogleSubjectAsync(string subject, CancellationToken ct) => Map(await persistence.FindByGoogleSubjectAsync(subject, ct));
@@ -21,4 +29,7 @@ public sealed class AccountService(AccountPersistence persistence)
     private static AccountDetails? Map(AccountRecord? a) => a is null ? null : new(a.Id, a.Email, a.NormalizedEmail, a.PasswordHash, a.SecurityStamp, a.Version, a.EmailConfirmed, a.AccessFailedCount, a.LockoutEndUtc, a.Roles) { FirstName = a.FirstName, LastName = a.LastName, Phone = a.Phone, GoogleSubject = a.GoogleSubject };
     private static AccountRecord ToRecord(AccountDetails a) => new() { Id = a.Id, Email = a.Email, NormalizedEmail = a.NormalizedEmail, PasswordHash = a.PasswordHash, SecurityStamp = a.SecurityStamp, Version = a.Version, EmailConfirmed = a.EmailConfirmed, AccessFailedCount = a.AccessFailedCount, LockoutEndUtc = a.LockoutEndUtc, Roles = a.Roles, FirstName = a.FirstName, LastName = a.LastName, Phone = a.Phone, GoogleSubject = a.GoogleSubject };
 }
+
+public sealed record AccountDirectoryEntry(string Email, string Name, string[] Roles, bool EmailConfirmed);
+public sealed record AccountDirectory(IReadOnlyList<AccountDirectoryEntry> Entries, int Page, bool HasMore);
 

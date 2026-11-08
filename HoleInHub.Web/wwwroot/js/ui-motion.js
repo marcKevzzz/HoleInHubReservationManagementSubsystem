@@ -5,13 +5,13 @@
     const mounted = new WeakMap();
     const available = () => Boolean(window.gsap) && !preference.matches;
 
-    function enter(target, { y = 14, opacity = .85, duration = .35 } = {}) {
+    function enter(target, { y = 14, opacity = .85, duration = .35, stagger = 0 } = {}) {
         if (!target || !available()) return null;
         let tween;
         let completed = false;
         const finish = () => { completed = true; running.delete(tween); };
         tween = gsap.fromTo(target, { y, opacity }, {
-            y: 0, opacity: 1, duration, ease: 'power3.out', overwrite: 'auto',
+            y: 0, opacity: 1, duration, stagger, ease: 'power3.out', overwrite: 'auto',
             clearProps: 'transform,opacity',
             onComplete: finish,
             onInterrupt: finish,
@@ -38,12 +38,18 @@
 
     function mount(root = document) {
         if (mounted.has(root) || !window.gsap) return () => {};
+        const select = selector => [...root.querySelectorAll(selector)].filter(element => {
+            const scope = element.closest?.('[data-motion-scope]');
+            return !scope || scope === root;
+        });
         const context = gsap.context(() => {
             const media = gsap.matchMedia();
             media.add('(prefers-reduced-motion: no-preference)', () => {
-                root.querySelectorAll('[data-motion="load"]').forEach(element => enter(element));
-                root.querySelectorAll('[data-motion="reveal"]').forEach(element => reveal(element));
-                root.querySelectorAll('[data-parallax]').forEach(frame => {
+                select('[data-motion="load"]').forEach(element => enter(element));
+                select('[data-motion="stagger"]').forEach(group =>
+                    enter(group.children, { y: 8, opacity: .7, stagger: .07 }));
+                select('[data-motion="reveal"]').forEach(element => reveal(element));
+                select('[data-parallax]').forEach(frame => {
                     const depth = Number(frame.dataset.parallax || 7);
                     parallax(frame.querySelector('img,video'), {
                         trigger: frame, depth: Number.isFinite(depth) ? Math.min(18, Math.max(0, depth)) : 7,

@@ -1,3 +1,4 @@
+@{ var staffAccess = ViewData["StaffAccess"] is true; }
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,20 +8,31 @@
     <script src="~/js/page-transition-start.js" asp-append-version="true"></script>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
-<body class="auth-page">
+<body class="auth-page@(staffAccess ? " staff-auth" : "")">
     <a class="skip-link" href="#main-content">Skip to main content</a>
-    <div class="auth-shell">
+    <div class="smooth-wrapper"><div class="smooth-content auth-shell">
         <aside class="auth-story" aria-label="Hole In Hub Golf and Lounge">
             <img class="auth-photo" src="~/media/facebook/venue-overview.webp" alt="" />
-            <a class="auth-brand" href="/" aria-label="Hole In Hub home"><img src="~/media/brand/wordmark-hq.webp" alt="Hole In Hub Golf &amp; Lounge" /></a>
-            <div class="auth-story-copy"><h2>YOUR NEXT<br />ROUND STARTS HERE.</h2><p>A little practice. A little play.<br />Make time for both at Hole In Hub.</p></div>
-            <span class="auth-story-caption">GOLF &amp; LOUNGE</span>
+            <a class="auth-brand" href="@(staffAccess ? "/staff/sign-in" : "/")" aria-label="@(staffAccess ? "Hole In Hub staff sign-in" : "Hole In Hub home")"><img src="~/media/brand/wordmark-hq.webp" alt="Hole In Hub Golf &amp; Lounge" /></a>
+            @if (staffAccess)
+            {
+                <div class="auth-story-copy">
+                    <h2>Staff workspace</h2>
+                    <p>Reservations, arrivals, and the day ahead.</p>
+                </div>
+            }
+            else
+            {
+                <div class="auth-story-copy"><h2>YOUR NEXT<br />ROUND STARTS HERE.</h2><p>A little practice. A little play.<br />Make time for both at Hole In Hub.</p></div>
+                <span class="auth-story-caption">GOLF &amp; LOUNGE</span>
+            }
         </aside>
         <main id="main-content" class="auth-main" tabindex="-1">
             @RenderBody()
         </main>
-    </div>
+    </div></div>
     <script src="~/js/vendor/gsap.min.js" asp-append-version="true"></script><script src="~/js/ui-motion.js" asp-append-version="true"></script><script src="~/js/button-motion.js" asp-append-version="true"></script>
+    <partial name="_ScrollMotion" />
     <script src="~/js/contact-inputs.js" asp-append-version="true"></script>
     <script src="~/js/account.js" asp-append-version="true"></script>
     <script src="~/js/page-transitions.js" asp-append-version="true"></script>

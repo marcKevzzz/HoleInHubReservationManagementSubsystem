@@ -1,0 +1,15 @@
+@{
+    ViewData["Title"] = "Manager overview";
+    var pending = ViewData["PendingReviews"] as long? ?? 0;
+}
+<section class="staff-workspace staff-review leadership-page">
+    <header class="staff-workspace-heading"><h1>Manager overview</h1><p>Run the venue, manage bay closures, and stay on top of the review queue.</p></header>
+    <div class="review-summary"><span><strong>@pending</strong> pending review</span><a class="staff-link" asp-controller="BookingReview" asp-action="Queue">Open review queue</a></div>
+    <ul class="leadership-links">
+        <li><a asp-action="Availability"><strong>Venue availability</strong><span>Block or reopen bay time.</span><partial name="_StaffIcon" model='"calendar"' /></a></li>
+        <li><a asp-action="Team"><strong>Team</strong><span>See employee accounts and roles.</span><partial name="_StaffIcon" model='"customers"' /></a></li>
+        <li><a asp-action="Reports"><strong>Daily report</strong><span>See today’s bookings and attendance.</span><partial name="_StaffIcon" model='"reports"' /></a></li>
+        <li><a asp-action="Activity"><strong>Booking activity</strong><span>Find today’s bookings and open their histories.</span><partial name="_StaffIcon" model='"queue"' /></a></li>
+        <li><a asp-action="Notifications"><strong>Notifications</strong><span>Check configured review alerts.</span><partial name="_StaffIcon" model='"notifications"' /></a></li>
+    </ul>
+</section>

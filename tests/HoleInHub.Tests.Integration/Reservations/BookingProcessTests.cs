@@ -10,6 +10,59 @@ namespace HoleInHub.Tests.Integration.Reservations;
 [Trait("Category", "Integration")]
 public sealed class BookingProcessTests(MongoDbFixture fixture) : IClassFixture<MongoDbFixture>
 {
+    private sealed class ReviewTime : TimeProvider
+    {
+        public DateTimeOffset Now { get; set; } = new(2026, 11, 3, 1, 0, 0, TimeSpan.FromHours(8));
+        public override DateTimeOffset GetUtcNow() => Now;
+    }
+
+    [Fact]
+    public async Task OvernightRequestHoldsBayAndWaitsUntilOpeningForAlertsAndExpiry()
+    {
+        var (store, _, context) = await Setup();
+        await new Migration_014_OperatingReviewClock().UpAsync(context.Database, default);
+        var time = new ReviewTime();
+        var options = Microsoft.Extensions.Options.Options.Create(new ReservationPolicy
+        {
+            Approved = true,
+            DurationsApproved = true,
+            ReviewStart = TimeSpan.FromHours(10),
+            ReviewEnd = TimeSpan.FromDays(1),
+            ReviewDays = [0, 1, 2, 3, 4, 5, 6],
+            StaffEmails = ["staff@example.test"]
+        });
+        var service = new ReservationService(store, new OutboxPersistence(context), options, time);
+        var input = new SubmitReservationRequest
+        {
+            Date = new(2026, 11, 3),
+            StartTime = new(11, 0),
+            DurationMinutes = 60,
+            Service = "Regular",
+            ResourceIds = ["bay-2"],
+            FirstName = "Alex",
+            LastName = "Santos",
+            Phone = "09175550123",
+            PrivacyAccepted = true,
+            IdempotencyKey = "overnight"
+        };
+        var booking = await service.SubmitAsync(input, "customer", "customer@example.test", default);
+        Assert.Equal(new DateTime(2026, 11, 3, 2, 30, 0, DateTimeKind.Utc), booking.ReviewDeadlineUtc);
+        Assert.Equal(new DateTime(2026, 11, 3, 2, 0, 0, DateTimeKind.Utc), booking.ReviewStartsUtc);
+        Assert.Contains("bay-2", await store.OccupiedAsync(booking.StartUtc, booking.EndUtc, default));
+        time.Now = time.Now.AddHours(8);
+        await service.ProcessPendingAsync(default);
+        var messages = context.Database.GetCollection<OutboxRecord>("outbox");
+        Assert.Equal(0, await messages.CountDocumentsAsync(x => x.RequiredStatus == "Pending"));
+        time.Now = time.Now.AddHours(1).AddMinutes(15);
+        await service.ProcessPendingAsync(default);
+        await service.ProcessPendingAsync(default);
+        Assert.Single(await messages.Find(x => x.RequiredStatus == "Pending").ToListAsync());
+        time.Now = time.Now.AddMinutes(15);
+        await service.ProcessPendingAsync(default);
+        Assert.Equal("Expired", (await store.ByIdAsync(booking.Id, default))!.Status);
+        Assert.DoesNotContain("bay-2", await store.OccupiedAsync(booking.StartUtc, booking.EndUtc, default));
+    }
+
     private async Task<(ReservationPersistence Store, EmailVerificationPersistence Guests, HoleInHub.Data.Context.IMongoDbContext Context)> Setup()
     {
         Assert.True(fixture.IsServerAvailable, "Start the local MongoDB replica set.");
@@ -88,6 +141,26 @@ public sealed class BookingProcessTests(MongoDbFixture fixture) : IClassFixture<
         await Assert.ThrowsAsync<AllocationConflictException>(() => store.InsertAsync(request, default));
         Assert.Null((await guests.FindAsync("proof", default))!.ConsumedBySubmissionKey);
     }
+    [Fact]
+    public async Task ApprovalIgnoresItsOwnHoldButRejectsANewScheduleBlock()
+    {
+        var (store, _, context) = await Setup();
+        var booking = await store.InsertAsync(Request(), default);
+        Assert.False(await store.HasReviewConflictAsync(booking, default));
+        await context.Database.GetCollection<ScheduleBlock>("schedule_blocks").InsertOneAsync(new()
+        {
+            Id = "maintenance",
+            ResourceIds = booking.ResourceIds,
+            StartUtc = booking.StartUtc,
+            EndUtc = booking.EndUtc
+        });
+
+        Assert.True(await store.HasReviewConflictAsync(booking, default));
+        await Assert.ThrowsAsync<AllocationConflictException>(() =>
+            store.TransitionAsync(booking.Id, "approve", "staff", DateTime.UtcNow, [], default));
+        Assert.Equal("Pending", (await store.ByIdAsync(booking.Id, default))!.Status);
+    }
+
     [Fact]
     public async Task CoachAndVenueApprovalsAreBothRequired()
     {

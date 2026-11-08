@@ -8,8 +8,13 @@
 </head>
 <body class="verification-shell">
     <a class="skip-link" href="#main-content">Skip to main content</a>
+    <div class="smooth-wrapper"><div class="smooth-content">
     <a class="verification-brand" href="/" aria-label="Hole In Hub home"><img src="~/media/brand/wordmark-hq.webp" alt="Hole In Hub Golf &amp; Lounge" /></a>
     <main id="main-content" tabindex="-1">@RenderBody()</main>
+    </div></div>
+    <script src="~/js/vendor/gsap.min.js" asp-append-version="true"></script>
+    <script src="~/js/button-motion.js" asp-append-version="true"></script>
+    <partial name="_ScrollMotion" />
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

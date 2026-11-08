@@ -1,0 +1,48 @@
+@using HoleInHub.Business.Reservations
+@model ReleaseBlockForm
+@{
+    Layout = "_StaffLayout";
+    var block = Model.Block!;
+    ViewData["Title"] = block.ReleasedUtc is null ? "Schedule block" : "Time unblocked";
+    DateTime Local(DateTime utc) => TimeZoneInfo.ConvertTimeFromUtc(utc, ReservationRules.Manila);
+    var day = DateOnly.FromDateTime(Local(block.StartUtc)).ToString("yyyy-MM-dd");
+}
+<div class="staff-workspace staff-create-page">
+    <a class="flow-back" asp-action="Index" asp-route-date="@day"><partial name="_BackArrow" /> Back to reservations</a>
+    <header class="staff-workspace-heading">
+        <h1>@ViewData["Title"]</h1>
+        <p>@block.Location · Manila time</p>
+    </header>
+    <dl class="review-facts">
+        <dt>When</dt><dd>@Local(block.StartUtc).ToString("ddd, d MMM yyyy, h:mm tt") – @Local(block.EndUtc).ToString("d MMM, h:mm tt")</dd>
+        <dt>Block reason</dt><dd>@(block.Reason ?? "Not recorded")</dd>
+        <dt>Created by</dt><dd>@(block.CreatedBy ?? "Not recorded")</dd>
+        <dt>Created</dt><dd>@(block.CreatedUtc is DateTime created ? Local(created).ToString("d MMM yyyy, h:mm tt") : "Not recorded")</dd>
+        @if (block.ReleasedUtc is DateTime released)
+        {
+            <dt>Released by</dt><dd>@block.ReleasedBy</dd>
+            <dt>Released</dt><dd>@Local(released).ToString("d MMM yyyy, h:mm tt")</dd>
+            <dt>Release reason</dt><dd>@block.ReleaseReason</dd>
+        }
+    </dl>
+    @if (block.ReleasedUtc is null)
+    {
+        <form asp-action="ReleaseBlock" asp-route-id="@block.Id" method="post" class="staff-create-form">
+            <div asp-validation-summary="All" class="staff-error" role="alert"></div>
+            <div>
+                <label asp-for="Reason">Release reason</label>
+                <textarea asp-for="Reason" rows="3" maxlength="500" required></textarea>
+            </div>
+            <p class="staff-create-hint">Unblocking removes this hold so the time can be booked, subject to other bookings or blocks. The original block and release history will be kept.</p>
+            <label class="staff-create-confirm">
+                <input asp-for="ConfirmRelease" required />
+                <span>I confirm that @block.Location can be unblocked for this period.</span>
+            </label>
+            <button class="button" type="submit">Confirm unblock</button>
+        </form>
+    }
+    else
+    {
+        <p class="notice" role="status">This block has been released. Its original details and release history are preserved above.</p>
+    }
+</div>

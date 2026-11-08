@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.RegularExpressions;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -11,16 +12,19 @@ public sealed class PublicPagesSmokeTests : IClassFixture<WebApplicationFactory<
     private readonly HttpClient _client;
     public PublicPagesSmokeTests(WebApplicationFactory<Program> factory) { _client = factory.WithWebHostBuilder(builder => builder.ConfigureLogging(logging => logging.ClearProviders())).CreateClient(); }
     [Theory]
-    [InlineData("/Home/About", "THE HOLE IN HUB EXPERIENCE")]
-    [InlineData("/Home/Gallery", "INSIDE HOLE IN HUB")]
-    [InlineData("/Home/Contacts", "OPERATING HOURS")]
+    [InlineData("/Home/About", "ABOUT HOLE IN HUB")]
+    [InlineData("/Home/Gallery", "Gallery")]
+    [InlineData("/Home/Contacts", "CONTACT & LOCATION")]
     [InlineData("/Home/Services", "MORE WAYS TO PLAY")]
     public async Task Public_page_contains_real_content(string path, string heading)
     {
         var response = await _client.GetAsync(path);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var html = await response.Content.ReadAsStringAsync();
-        html.Should().Contain(heading).And.Contain("/media/brand/wordmark-hq.webp");
+        var title = Regex.Match(html, @"<h1\b[^>]*>(.*?)</h1>", RegexOptions.Singleline).Groups[1].Value;
+        var text = WebUtility.HtmlDecode(Regex.Replace(title, "<[^>]+>", " "));
+        Regex.Replace(text, @"\s+", " ").Trim().Should().Be(heading);
+        html.Should().Contain("/media/brand/wordmark-hq.webp");
         html.Should().NotContain("Simulators Live").And.NotContain("POS Simulation");
     }
 

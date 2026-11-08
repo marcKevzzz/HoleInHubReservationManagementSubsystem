@@ -1,0 +1,42 @@
+@using HoleInHub.Business.Reservations
+@model StaffBookingLinkModel
+@{
+    var entry = Model.Entry;
+    string TimeLabel(DateTime time) => DateOnly.FromDateTime(time) == Model.Day ? time.ToString("h:mm tt") : time.ToString("d MMM, h:mm tt");
+    var time = $"{TimeLabel(entry.Start)} – {TimeLabel(entry.End)}";
+    var name = string.IsNullOrWhiteSpace(entry.Guest) ? "Guest name unavailable" : entry.Guest;
+    var party = entry.Attendees > 0 ? $"{entry.Attendees} pax" : "Party size unavailable";
+    var status = entry.Status == "Checked-In" ? "Checked in" : entry.Status;
+    var service = ReservationLabels.Service(entry.Service!);
+    var description = $"{Model.Location}, {name}, {party}, booking {entry.Reference}, {time}, {status}"
+        + (entry.CheckedOut is DateTime departure ? $", checked out {TimeLabel(departure)}" : "");
+    var icon = entry.Status switch
+    {
+        "Pending" => "pending",
+        "Confirmed" => "confirmed",
+        "Checked-In" => "checked-in",
+        "Completed" => "completed",
+        _ => "calendar"
+    };
+}
+<a class="@Model.Css" style="@Model.Style" data-status="@entry.Status" data-holds-capacity="@entry.HoldsCapacity.ToString().ToLowerInvariant()"
+   title="@description" aria-label="@description" data-staff-booking="@(entry.Status != "Pending" ? "" : null)"
+   data-guest="@name" data-party="@party" data-reference="@entry.Reference" data-interval="@time"
+   data-state="@status" data-service="@service" data-location="@Model.Location"
+   data-move-booking="@(Model.Style is not null && entry.CanMove && entry.Start.Date == Model.Day.ToDateTime(TimeOnly.MinValue).Date && entry.End.Date == entry.Start.Date ? Url.Action("Move", new { id = entry.ReservationId }) : null)"
+   data-revision="@entry.Revision" data-start-minute="@entry.Start.TimeOfDay.TotalMinutes" data-duration="@((entry.End - entry.Start).TotalMinutes)"
+   asp-action="Details" asp-route-id="@entry.ReservationId" asp-route-date="@Model.Day.ToString("yyyy-MM-dd")">
+    <strong>@name</strong>
+    @if (Model.Style is not null)
+    {
+        <partial name="_StaffIcon" model="icon" />
+    }
+    <span class="staff-booking-meta">@party <span class="staff-booking-time @(Model.Wide ? "is-wide" : null)">· @time</span></span>
+    <small>
+        @entry.Reference
+        @if (entry.Status == "Completed")
+        {
+            <span>· Completed@(entry.CheckedOut is DateTime completedAt ? $" · Checked out {TimeLabel(completedAt)}" : "")</span>
+        }
+    </small>
+</a>

@@ -100,8 +100,8 @@ public sealed class AccountHubIdentityTests
             var transactions = await client.GetStringAsync("/transactions");
             Assert.Contains("OWN-DEMO", transactions);
             Assert.Contains("DEMO-PAYMENT-REF", transactions);
-            Assert.Contains("PHP 40,000.00", transactions);
-            Assert.Contains("PHP 20,000.00", transactions);
+            Assert.Contains("₱40,000.00", WebUtility.HtmlDecode(transactions));
+            Assert.Contains("₱20,000.00", WebUtility.HtmlDecode(transactions));
             Assert.DoesNotContain("OTHER-DEMO", transactions);
             Assert.DoesNotContain("ORDINARY-BOOKING", transactions);
             Assert.Contains("No money is collected", transactions);

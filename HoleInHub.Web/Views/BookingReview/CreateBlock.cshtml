@@ -1,0 +1,13 @@
+@model StaffBlockForm
+@{
+    Layout = "_StaffLayout";
+    ViewData["Title"] = "Block time";
+}
+<div class="staff-workspace staff-create-page">
+    <a class="flow-back" asp-action="Index" asp-route-date="@Model.Date?.ToString("yyyy-MM-dd")"><partial name="_BackArrow" /> Back to reservations</a>
+    <header class="staff-workspace-heading">
+        <h1>Block time</h1>
+        <p>Keep one bay free for maintenance or another staff activity.</p>
+    </header>
+    <partial name="_StaffBlockForm" model="Model" />
+</div>

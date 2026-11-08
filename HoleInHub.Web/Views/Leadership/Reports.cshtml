@@ -1,0 +1,19 @@
+@model IReadOnlyList<HoleInHub.Business.Reservations.StaffScheduleBay>
+@{
+    ViewData["Title"] = "Daily report";
+    var day = (DateOnly)ViewData["Day"]!;
+    var bookings = Model.SelectMany(x => x.Entries).Where(x => x.ReservationId is not null).DistinctBy(x => x.ReservationId).ToArray();
+}
+<section class="staff-workspace staff-review leadership-page">
+    <header class="staff-workspace-heading"><h1>Daily report</h1><p>@day.ToString("dddd, d MMMM yyyy") · Manila time</p></header>
+    <section class="review-section">
+        <h2>Reservations on the schedule</h2>
+        <dl class="review-facts">
+            <dt>Total</dt><dd>@bookings.Length</dd>
+            <dt>Pending</dt><dd>@bookings.Count(x => x.Status == "Pending")</dd>
+            <dt>Confirmed</dt><dd>@bookings.Count(x => x.Status == "Confirmed")</dd>
+            <dt>Checked in</dt><dd>@bookings.Count(x => x.Status == "Checked-In")</dd>
+            <dt>Completed</dt><dd>@bookings.Count(x => x.Status == "Completed")</dd>
+        </dl>
+    </section>
+</section>

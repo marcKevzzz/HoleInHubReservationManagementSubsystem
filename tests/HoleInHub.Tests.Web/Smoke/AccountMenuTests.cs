@@ -46,6 +46,7 @@ public sealed class AccountMenuTests
         Assert.Contains("id=\"logout-confirmation\"", html);
         Assert.Contains("data-confirm-logout", html);
         Assert.DoesNotContain("account-menu-secondary", html);
+        Assert.DoesNotContain("Staff workspace", html);
     }
 
     private sealed class MenuAuthenticationHandler(IOptionsMonitor<AuthenticationSchemeOptions> options,
@@ -53,6 +54,6 @@ public sealed class AccountMenuTests
     {
         protected override Task<AuthenticateResult> HandleAuthenticateAsync() => Task.FromResult(
             AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(new ClaimsIdentity(
-                [new Claim(ClaimTypes.NameIdentifier, "menu-test")], Scheme.Name)), Scheme.Name)));
+                [new Claim(ClaimTypes.NameIdentifier, "menu-test"), new Claim(ClaimTypes.Role, "Admin")], Scheme.Name)), Scheme.Name)));
     }
 }

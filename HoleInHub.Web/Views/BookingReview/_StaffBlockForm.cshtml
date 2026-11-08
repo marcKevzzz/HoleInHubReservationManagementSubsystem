@@ -1,0 +1,41 @@
+@model StaffBlockForm
+<form asp-action="CreateBlock" method="post" class="staff-create-form">
+    <input asp-for="IdempotencyKey" id="block-key" type="hidden" />
+    <p data-booking-error class="staff-error" role="alert" tabindex="-1" hidden></p>
+    <div asp-validation-summary="All" class="staff-error"></div>
+    <fieldset>
+        <legend>Block a bay</legend>
+        <div>
+            <label for="block-bay">Bay</label>
+            <select asp-for="ResourceId" id="block-bay" required>
+                <option value="">Choose a bay</option>
+                @foreach (var bay in Model.Bays)
+                {
+                    <option value="@bay.Id">@bay.Name</option>
+                }
+            </select>
+        </div>
+        <div class="staff-create-fields">
+            <div>
+                <label for="block-date">Date</label>
+                <input asp-for="Date" id="block-date" asp-format="{0:yyyy-MM-dd}" type="date" min="@Model.Today.ToString("yyyy-MM-dd")" required />
+            </div>
+            <div>
+                <label for="block-time">Start time</label>
+                <input asp-for="StartTime" id="block-time" asp-format="{0:HH:mm}" type="time" step="1800" required />
+            </div>
+        </div>
+        <div>
+            <label for="block-duration">Duration in minutes</label>
+            <input asp-for="DurationMinutes" id="block-duration" type="number" min="30" max="840" step="30" required />
+        </div>
+        <p class="staff-create-hint">Manila time, in 30-minute increments within opening hours. Existing bookings and holds cannot be blocked.</p>
+    </fieldset>
+    <div>
+        <label for="block-reason">Reason</label>
+        <textarea asp-for="Reason" id="block-reason" rows="3" maxlength="500" required aria-describedby="block-reason-hint"></textarea>
+        <p id="block-reason-hint" class="staff-create-hint">Visible to staff on the schedule. For example, simulator maintenance.</p>
+    </div>
+    <p class="staff-create-hint">Saving makes this bay unavailable for new bookings during the selected period.</p>
+    <button class="button" type="submit" disabled="@(Model.Bays.Count == 0)">Block time</button>
+</form>

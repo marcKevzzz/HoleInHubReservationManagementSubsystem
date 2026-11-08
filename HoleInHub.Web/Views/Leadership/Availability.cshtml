@@ -1,0 +1,38 @@
+@model IReadOnlyList<HoleInHub.Business.Reservations.StaffScheduleBay>
+@{
+    ViewData["Title"] = "Venue availability";
+    var day = (DateOnly)ViewData["Day"]!;
+    var selected = day.ToString("yyyy-MM-dd");
+    var blocks = Model.SelectMany(bay => bay.Entries.Where(entry => entry.BlockId is not null)
+        .Select(entry => (Bay: bay.Name, Entry: entry))).GroupBy(item => item.Entry.BlockId);
+}
+<section class="staff-workspace staff-review leadership-page">
+    <header class="staff-workspace-heading staff-schedule-heading">
+        <div><h1>Venue availability</h1><p>Manage temporary closures for maintenance, events, and private bookings.</p></div>
+        <div class="staff-schedule-actions">
+            <a class="button button-secondary" asp-controller="BookingReview" asp-action="Index" asp-route-date="@selected">Open schedule</a>
+            <a class="button" asp-controller="BookingReview" asp-action="CreateBlock" asp-route-date="@selected">Block time</a>
+        </div>
+    </header>
+    <form method="get" asp-action="Availability" class="review-filter-form leadership-filter">
+        <label>Session date <input type="date" name="date" value="@selected" required /></label>
+        <button class="button button-secondary" type="submit" data-no-icon>Show date</button>
+    </form>
+    <section class="review-section">
+        <h2>Blocks for @day.ToString("ddd, d MMM yyyy")</h2>
+        @if (!blocks.Any()) { <p class="staff-empty">No active blocks on this date. Reservations may still hold bay time.</p> }
+        else
+        {
+            <ul class="leadership-list">
+                @foreach (var group in blocks)
+                {
+                    var block = group.First().Entry;
+                    <li>
+                        <div><strong>@string.Join(", ", group.Select(item => item.Bay))</strong><p>@block.Start.ToString("d MMM, h:mm tt")–@block.End.ToString("d MMM, h:mm tt") · Manila time</p><p>@block.Reason</p></div>
+                        <a class="button button-secondary" asp-controller="BookingReview" asp-action="Block" asp-route-id="@group.Key" asp-route-date="@selected">Review block</a>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+</section>

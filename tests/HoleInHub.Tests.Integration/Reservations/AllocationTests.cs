@@ -1,6 +1,8 @@
+using HoleInHub.Business.Reservations;
 using HoleInHub.Data.Migrations.Definitions;
 using HoleInHub.Data.Reservations;
 using HoleInHub.Tests.Integration.Fixtures;
+using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using Xunit;
 namespace HoleInHub.Tests.Integration.Reservations;
@@ -13,6 +15,32 @@ public sealed class AllocationTests(MongoDbFixture fixture) : IClassFixture<Mong
         Assert.True(fixture.IsServerAvailable, "Start the MongoDB replica set."); var context = fixture.CreateDbContext(); await new Migration_002_Reservations().UpAsync(context.Database, default); return (new ReservationPersistence(context), context);
     }
     private static ReservationRecord Request(string[] ids, string service = "Regular") => new() { AccountId = Guid.NewGuid().ToString("N"), Email = "customer@example.test", IdempotencyKey = Guid.NewGuid().ToString("N"), SubmissionHash = "test", StartUtc = new DateTime(2026, 11, 3, 4, 0, 0, DateTimeKind.Utc), EndUtc = new DateTime(2026, 11, 3, 5, 0, 0, DateTimeKind.Utc), CreatedUtc = DateTime.UtcNow, ReviewDeadlineUtc = DateTime.UtcNow.AddMinutes(30), ResourceIds = ids, Service = service };
+    [Fact]
+    public async Task StaffScheduleUsesManilaDayAndShowsSharedBookingsAndTargetedBlocks()
+    {
+        var (store, context) = await Setup();
+        var service = new ReservationService(store, new OutboxPersistence(context), Options.Create(new ReservationPolicy()));
+        var booking = Request(["bay-1", "bay-2"]);
+        booking.Reference = "HIH-SCHEDULE";
+        booking.Status = "Confirmed";
+        var day = new DateOnly(2026, 11, 3);
+        var midnightUtc = new DateTime(2026, 11, 2, 16, 0, 0, DateTimeKind.Utc);
+        await context.Database.GetCollection<ReservationRecord>("reservations").InsertOneAsync(booking);
+        await context.Database.GetCollection<ScheduleBlock>("schedule_blocks").InsertManyAsync([
+            new() { Id = "ends-at-midnight", StartUtc = midnightUtc.AddHours(-1), EndUtc = midnightUtc },
+            new() { Id = "bay-one-maintenance", ResourceIds = ["bay-1"], StartUtc = midnightUtc.AddHours(1), EndUtc = midnightUtc.AddHours(2) },
+            new() { Id = "venue-closure", StartUtc = midnightUtc.AddHours(2), EndUtc = midnightUtc.AddHours(3) }
+        ]);
+
+        var schedule = await service.GetStaffScheduleAsync(day, default);
+        var shared = schedule.Where(bay => bay.Entries.Any(entry => entry.ReservationId == booking.Id)).ToArray();
+        Assert.Equal(2, shared.Length);
+        Assert.Equal(new[] { 1, 2 }, shared[0].Entries.Where(entry => entry.Status == "Blocked").Select(entry => entry.Start.Hour));
+        Assert.Equal(new[] { 2 }, shared[1].Entries.Where(entry => entry.Status == "Blocked").Select(entry => entry.Start.Hour));
+        Assert.Equal(booking.Id, await service.FindStaffBookingAsync(booking.Reference, default));
+        Assert.Null(await service.FindStaffBookingAsync("HIH-SCHED", default));
+    }
+
     [Fact]
     public async Task SubmissionReceiptIsDeliverableBeforeAndAfterStaffChangesTheStatus()
     {
@@ -31,11 +59,66 @@ public sealed class AllocationTests(MongoDbFixture fixture) : IClassFixture<Mong
     }
 
     [Fact]
+    public async Task AssistedBookingConfirmsWithoutCustomerOwnershipAndCannotDoubleBook()
+    {
+        var (store, context) = await Setup();
+        await new Migration_004_BookingProcess().UpAsync(context.Database, default);
+        await new AccountsMigration().UpAsync(context.Database, default);
+        await new Migration_005_GoogleAccounts().UpAsync(context.Database, default);
+        await new Migration_006_SchemaHardening().UpAsync(context.Database, default);
+        await new Migration_010_StaffAssistedReservations().UpAsync(context.Database, default);
+        var service = new ReservationService(store, new OutboxPersistence(context), Options.Create(new ReservationPolicy()));
+        var day = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(2));
+        var request = new StaffBookingRequest("bay-2", day, new TimeOnly(13, 0), 60, "Alex", "Santos", "09175550123", 4, "Walk-in", "front-desk-test");
+
+        var saved = await service.CreateStaffBookingAsync(request, "employee", default);
+        var record = (await store.ByIdAsync(saved.Id, default))!;
+        Assert.Equal("Confirmed", record.Status);
+        Assert.Equal("employee", Assert.Single(record.History).Actor);
+        Assert.Equal("Walk-in", record.BookingSource);
+        Assert.Null(record.CustomerAccountId);
+        Assert.Null(record.AccessTokenHash);
+        Assert.Null(await store.OwnedAsync("employee", saved.Id, default));
+        Assert.Equal(0, await context.Database.GetCollection<OutboxRecord>("outbox").CountDocumentsAsync(FilterDefinition<OutboxRecord>.Empty));
+        Assert.Equal(saved.Id, (await service.CreateStaffBookingAsync(request, "employee", default)).Id);
+        await Assert.ThrowsAsync<ReservationValidationException>(() => service.CreateStaffBookingAsync(request with { Attendees = 5 }, "employee", default));
+        await Assert.ThrowsAsync<ReservationValidationException>(() => service.CreateStaffBookingAsync(request with { IdempotencyKey = "other" }, "other-employee", default));
+        var publicRecord = Request(["bay-3"]);
+        publicRecord.Email = "";
+        publicRecord.Reference = "HIH-MISSING-EMAIL";
+        publicRecord.Attendees = 1;
+        await Assert.ThrowsAsync<MongoWriteException>(() => store.InsertAsync(publicRecord, default));
+    }
+
+    [Fact]
     public async Task ConcurrentOverlapsHaveOneWinner()
     {
         var (store, _) = await Setup(); async Task<bool> Attempt() { try { await store.InsertAsync(Request(["bay-1"]), default); return true; } catch (AllocationConflictException) { return false; } }
         var results = await Task.WhenAll(Attempt(), Attempt()); Assert.Single(results, x => x);
     }
+    [Fact]
+    public async Task RetiringBayAndTakingFutureBookingCannotBothSucceed()
+    {
+        var (store, _) = await Setup();
+        var now = DateTime.UtcNow;
+        var request = Request(["bay-1"]);
+        request.StartUtc = now.AddDays(1);
+        request.EndUtc = request.StartUtc.AddHours(1);
+        async Task<bool> Book()
+        {
+            try { await store.InsertAsync(request, default); return true; }
+            catch (AllocationConflictException) { return false; }
+        }
+        async Task<bool> Retire()
+        {
+            try { return await store.SetResourceActiveAsync("bay-1", false, now, default); }
+            catch (AllocationConflictException) { return false; }
+        }
+        var results = await Task.WhenAll(Book(), Retire());
+        Assert.Single(results, success => success);
+        Assert.Equal(results[0], (await store.ReadResourceDirectoryAsync(default)).Single(x => x.Id == "bay-1").Active);
+    }
+
     [Fact]
     public async Task MultiBayFailureDoesNotPartiallyHold()
     {

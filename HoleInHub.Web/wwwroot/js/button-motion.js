@@ -2,7 +2,7 @@
 (() => {
     const active = new WeakMap();
     const mounted = new WeakMap();
-    const selector = '.button, .booking-back, .auth-home';
+    const selector = '.button, .flow-back';
 
     function prepare(button, left = false) {
         if (button.querySelector('[data-button-label]')) return;
@@ -117,7 +117,7 @@
         if (mounted.has(root) || !window.gsap) return () => {};
         const buttons = [...root.querySelectorAll(selector)];
         if (root.matches?.(selector)) buttons.unshift(root);
-        buttons.forEach(button => prepare(button, button.matches('.booking-back, .auth-home, [data-icon-left]')));
+        buttons.forEach(button => prepare(button, button.matches('.flow-back, [data-icon-left]')));
         const media = gsap.matchMedia();
         media.add('(prefers-reduced-motion: no-preference)', () => {
             const cleanup = buttons.map(animate);

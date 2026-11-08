@@ -55,3 +55,27 @@ flowchart TD
 ## Existing-feature schema hardening
 
 Migration 006 adds typed collection validators, interval-order validation, optional CustomerAccountId links for account-owned bookings and the owner/creation-time history index. New email challenges have explicit purposes and new history writes separate EventType from ReservationStatus while preserving the old display description. Legacy BSON field names/collections remain mapped for compatibility; old history and unknown legacy challenge purposes are not invented. Readiness requires 001–007. Deployment requires the coordinated backup/stop/migrate/start procedure in MIGRATIONS.md; live/shared database migration is not implied by this source change.
+
+## Operating-hours review clock — 7 November 2026
+
+New ordinary online requests may be submitted at any hour. Their capacity hold starts immediately, while the 30/60-minute review clock counts only approved staff coverage within Manila operating hours. Unused time carries across closing. The full review window must finish by the session start. Whole-shop retains its elapsed-time deposit deadline.
+
+Migration 014 adds optional saved review start and two alert timestamps. Existing bookings retain their saved deadlines and legacy alerts. Apply migrations explicitly through the Migrator. Manual no-show actions and attendance corrections remain deferred.
+
+## Schedule changes — 7 November 2026
+
+The owner approved customer proposals for Confirmed Regular/VIP reservations with at least one hour of notice before the current start. Proposed starts must allow the full 30/60-minute staff review window under the operating-hours clock. One open proposal per reservation is retained. Submitting holds no new capacity.
+
+Customers use the existing account ownership, secure link or verified guest session. Staff open Change requests in the sidebar or Changes in the review queue, compare schedules and choose the same number of active bays for approval. Approval is available before both sessions begin and requires the proposal's base revision to remain current. A conflict, closure, stale revision or rejected decision preserves the original allocation. Declines require a reason. Approved and declined decisions enqueue customer email when an email is recorded.
+
+Migration 015 adds optional proposal and audit snapshots. The guarded transaction takes the catalog guard and sorted old/new resource-date guards, rechecks allocations, and commits the schedule, resource names, history and outbox together. Current/proposed resource IDs and intervals remain in history. Existing records remain readable. Apply the migration explicitly.
+
+This slice handles proposed changes before arrival. Whole-shop/coaching changes, changes during a session, direct staff moves without a customer proposal, manual no-show actions and attendance corrections remain deferred.
+
+## Staff Customers — 7 November 2026
+
+The Staff/Admin workspace now links to a reservation-derived customer directory at `/staff/customers`. Search by name, email, full phone or exact booking reference. Contact profiles show saved contact details, upcoming reservations, completed visits, cancellations and paginated reservation history with links to protected booking review.
+
+Account ownership, legacy account scopes and verified guest email scopes define linked histories. Account customers and guests with the same email remain separate. Staff-assisted and unverified legacy contacts remain individual booking contacts. Profile contacts use the newest linked reservation; historical contact spellings remain preserved.
+
+This page covers contacts with reservations. It adds read-only queries and requires no additional database migration. Queries return 25 contacts or bookings per page, project only contact/session fields, and have a five-second server budget. Name search and directory grouping currently scan matching reservations; index/search changes should follow measured volume.

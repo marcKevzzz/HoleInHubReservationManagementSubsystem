@@ -1,4 +1,5 @@
 using System.Net;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using HoleInHub.Business.Reservations;
@@ -67,6 +68,17 @@ public sealed class GuestBookingFlowTests
             ["Smtp:Host"] = ""
         })).ConfigureServices(services => services.AddSingleton<TimeProvider>(new BookingClock())));
     private static HttpClient Client(WebApplicationFactory<Program> factory) => factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost"), AllowAutoRedirect = false });
+    private static async Task SignInStaffAsync(HttpClient client, string email)
+    {
+        client.DefaultRequestHeaders.Add("X-Test-Desktop", "approved");
+        const string pin = "048217";
+        using var setup = await StaffPinAccessTests.SubmitAsync(client, "/staff/pin/setup",
+            new() { ["Email"] = email, ["Password"] = "TestingPassword123!", ["Pin"] = pin, ["ConfirmPin"] = pin });
+        Assert.Equal(HttpStatusCode.Redirect, setup.StatusCode);
+        using var signIn = await StaffPinAccessTests.SubmitAsync(client, "/staff/sign-in",
+            new() { ["Email"] = email, ["Pin"] = pin });
+        Assert.Equal(HttpStatusCode.Redirect, signIn.StatusCode);
+    }
     private static string Csrf(string html) => WebUtility.HtmlDecode(Regex.Match(html, "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"").Groups[1].Value);
     private static async Task Seed(IMongoDbContext context)
     {
@@ -204,9 +216,15 @@ public sealed class GuestBookingFlowTests
             var confirmation = await client.GetStringAsync(submitted.Headers.Location);
             Assert.Contains("id=\"receipt-status\">Reservation status</h2>", confirmation);
             Assert.Contains("class=\"booking-current-status\">Pending</p>", confirmation);
-            var location = WebUtility.HtmlDecode(Regex.Match(confirmation, "href=\"([^\"]*Checkout[^\"]*)\"").Groups[1].Value);
-            var checkout = await client.GetStringAsync(location); Assert.Contains("No real money", checkout);
-            var paid = await client.PostAsync(location, new FormUrlEncodedContent(new Dictionary<string, string> { ["__RequestVerificationToken"] = Csrf(checkout), ["outcome"] = "success" })); Assert.Equal(HttpStatusCode.Redirect, paid.StatusCode);
+            var location = WebUtility.HtmlDecode(Regex.Match(confirmation, "action=\"([^\"]*Checkout[^\"]*)\"").Groups[1].Value);
+            Assert.Contains("No real money", confirmation);
+            Assert.DoesNotContain("site-header", confirmation);
+            Assert.DoesNotContain("site-footer", confirmation);
+            var token = WebUtility.HtmlDecode(Regex.Match(confirmation, "name=\"token\" value=\"([^\"]*)\"").Groups[1].Value);
+            var paid = await client.PostAsync(location, new FormUrlEncodedContent(new Dictionary<string, string> { ["__RequestVerificationToken"] = Csrf(confirmation), ["token"] = token, ["outcome"] = "success" })); Assert.Equal(HttpStatusCode.Redirect, paid.StatusCode);
+            var receipt = await client.GetStringAsync(paid.Headers.Location);
+            Assert.Contains("RESERVATION CONFIRMED", receipt);
+            Assert.DoesNotContain("site-footer", receipt);
             var saved = await context.Database.GetCollection<ReservationRecord>("reservations").Find(FilterDefinition<ReservationRecord>.Empty).SingleAsync();
             Assert.Equal("Confirmed", saved.Status); Assert.Equal("DepositReceived", saved.PaymentStatus); var quote = BookingRules.DemoRentalTotal(DateOnly.Parse(form["Date"]), 360); Assert.Equal(quote, saved.RentalTotal); Assert.Equal(quote / 2, saved.DepositAmount); Assert.Equal(7, saved.ResourceIds.Length);
         }
@@ -241,7 +259,18 @@ public sealed class GuestBookingFlowTests
     [InlineData("reject", "Rejected")]
     public async Task GuestSubmissionStaffDecisionAndCancellationKeepStatusCapacityAndNotificationsConsistent(string decision, string expected)
     {
-        var database = "hih_process_acceptance_" + Guid.NewGuid().ToString("N"); await using var factory = Factory(database);
+        var database = "hih_process_acceptance_" + Guid.NewGuid().ToString("N");
+        using var certificate = StaffPinAccessTests.DesktopCertificate(TestNow);
+        await using var baseFactory = Factory(database);
+        await using var factory = baseFactory.WithWebHostBuilder(builder => builder
+            .ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["StaffPin:Enabled"] = "true",
+                ["StaffPin:Host"] = "localhost",
+                ["StaffPin:Pepper"] = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)),
+                ["StaffPin:DesktopFingerprints:0"] = certificate.GetCertHashString(HashAlgorithmName.SHA256)
+            }))
+            .ConfigureServices(services => services.AddSingleton<IStartupFilter>(new StaffPinAccessTests.DesktopTlsFixture(certificate))));
         using var scope = factory.Services.CreateScope(); var context = scope.ServiceProvider.GetRequiredService<IMongoDbContext>();
         try
         {
@@ -253,19 +282,27 @@ public sealed class GuestBookingFlowTests
             Assert.Equal("Pending", record.Status);
             Assert.False((await service.GetAvailabilityAsync(DateOnly.FromDateTime(record.StartUtc.AddHours(8)), TimeOnly.FromDateTime(record.StartUtc.AddHours(8)), 60, "Regular", default)).Single(x => x.Resource.Id == "bay-2").Available);
             Assert.Equal(HttpStatusCode.Redirect, (await guest.GetAsync("/BookingReview/Details/" + record.Id)).StatusCode);
+            Assert.Equal(HttpStatusCode.Redirect, (await guest.GetAsync("/BookingReview?reference=" + record.Reference)).StatusCode);
             var users = scope.ServiceProvider.GetRequiredService<UserManager<AccountUser>>();
             var staff = new AccountUser { Email = "acceptance-staff@example.test", EmailConfirmed = true, Roles = ["Staff"] };
             Assert.True((await users.CreateAsync(staff, "TestingPassword123!")).Succeeded);
             staff.Roles = ["Staff"]; Assert.True((await users.UpdateAsync(staff)).Succeeded);
             using var staffClient = Client(factory);
-            var signInPage = await staffClient.GetStringAsync("/account/sign-in");
-            var signedIn = await staffClient.PostAsync("/account/sign-in", new FormUrlEncodedContent(new Dictionary<string, string>
-            { ["__RequestVerificationToken"] = Csrf(signInPage), ["Email"] = staff.Email, ["Password"] = "TestingPassword123!" }));
-            Assert.Equal(HttpStatusCode.Redirect, signedIn.StatusCode);
-            Assert.Contains(record.Reference, await staffClient.GetStringAsync("/BookingReview"));
+            await SignInStaffAsync(staffClient, staff.Email);
+            Assert.Equal(HttpStatusCode.Redirect, (await guest.GetAsync("/staff/review-queue")).StatusCode);
+            var queuePage = await staffClient.GetStringAsync("/staff/review-queue");
+            Assert.Contains(record.Reference, queuePage);
+            Assert.DoesNotContain("Bay schedule", queuePage);
+            var day = TimeZoneInfo.ConvertTimeFromUtc(record.StartUtc, ReservationRules.Manila).ToString("yyyy-MM-dd");
+            var workspace = await staffClient.GetStringAsync($"/BookingReview?date={day}&reference={record.Reference.ToLowerInvariant()}");
+            Assert.Contains("Bay schedule", workspace);
+            Assert.Contains($"data-reference=\"{record.Reference}\"", workspace);
+            var guestSearch = await staffClient.GetStringAsync("/staff?reference=" + Uri.EscapeDataString($"{record.FirstName} {record.LastName}"));
+            Assert.Contains($"data-reference=\"{record.Reference}\"", guestSearch);
+            Assert.DoesNotContain(record.Email, workspace);
             var review = await staffClient.GetStringAsync("/BookingReview/Details/" + record.Id);
             var decided = await staffClient.PostAsync("/BookingReview/Decide/" + record.Id, new FormUrlEncodedContent(new Dictionary<string, string>
-            { ["__RequestVerificationToken"] = Csrf(review), ["decision"] = decision, ["reason"] = decision == "reject" ? "Venue cannot accommodate this request." : "" }));
+            { ["__RequestVerificationToken"] = Csrf(review), ["expectedRevision"] = Regex.Match(review, "name=\"expectedRevision\"[^>]*value=\"([^\"]+)\"").Groups[1].Value, ["decision"] = decision, ["reason"] = decision == "reject" ? "Venue cannot accommodate this request." : "" }));
             Assert.Equal(HttpStatusCode.Redirect, decided.StatusCode);
             var updated = (await service.GetStaffAsync(record.Id, default))!;
             Assert.Equal(expected, updated.Status);
@@ -284,7 +321,7 @@ public sealed class GuestBookingFlowTests
                 Assert.False((await service.GetAvailabilityAsync(DateOnly.FromDateTime(record.StartUtc.AddHours(8)), TimeOnly.FromDateTime(record.StartUtc.AddHours(8)), 60, "Regular", default)).Single(x => x.Resource.Id == "bay-2").Available);
                 review = await staffClient.GetStringAsync("/BookingReview/Details/" + record.Id);
                 var cancelled = await staffClient.PostAsync("/BookingReview/Decide/" + record.Id, new FormUrlEncodedContent(new Dictionary<string, string>
-                { ["__RequestVerificationToken"] = Csrf(review), ["decision"] = "cancel" }));
+                { ["__RequestVerificationToken"] = Csrf(review), ["expectedRevision"] = Regex.Match(review, "name=\"expectedRevision\"[^>]*value=\"([^\"]+)\"").Groups[1].Value, ["decision"] = "cancel" }));
                 Assert.Equal(HttpStatusCode.Redirect, cancelled.StatusCode);
                 Assert.Equal("Cancelled", (await service.GetStaffAsync(record.Id, default))!.Status);
                 Assert.Contains("Cancelled", await guest.GetStringAsync(link));
@@ -295,7 +332,7 @@ public sealed class GuestBookingFlowTests
     }
 
     [Fact]
-    public async Task VerifiedStaffAccountSkipsCodeAndCanReviewBooking()
+    public async Task VerifiedCustomerSkipsCodeAndCanOnlySeeOwnBookings()
     {
         var database = "hih_staff_flow_" + Guid.NewGuid().ToString("N"); await using var factory = Factory(database);
         using var scope = factory.Services.CreateScope(); var context = scope.ServiceProvider.GetRequiredService<IMongoDbContext>();
@@ -303,28 +340,24 @@ public sealed class GuestBookingFlowTests
         {
             await Seed(context);
             var users = scope.ServiceProvider.GetRequiredService<UserManager<AccountUser>>();
-            var staff = new AccountUser { Email = "staff@example.test", EmailConfirmed = true };
-            Assert.True((await users.CreateAsync(staff, "TestingPassword123!")).Succeeded);
-            staff.Roles = ["Staff"]; Assert.True((await users.UpdateAsync(staff)).Succeeded);
+            var customer = new AccountUser { Email = "customer@example.test", EmailConfirmed = true };
+            Assert.True((await users.CreateAsync(customer, "TestingPassword123!")).Succeeded);
             using var client = Client(factory);
             var login = await client.GetStringAsync("/account/sign-in");
-            var signedIn = await client.PostAsync("/account/sign-in", new FormUrlEncodedContent(new Dictionary<string, string> { ["__RequestVerificationToken"] = Csrf(login), ["Email"] = staff.Email, ["Password"] = "TestingPassword123!" }));
+            var signedIn = await client.PostAsync("/account/sign-in", new FormUrlEncodedContent(new Dictionary<string, string> { ["__RequestVerificationToken"] = Csrf(login), ["Email"] = customer.Email, ["Password"] = "TestingPassword123!" }));
             Assert.Equal(HttpStatusCode.Redirect, signedIn.StatusCode);
             var bookingPage = await client.GetStringAsync("/Reservations/Create"); Assert.DoesNotContain("Send verification code", bookingPage);
             var form = Form(bookingPage); form["Email"] = "attacker@example.test";
             var submitted = await client.PostAsync("/Reservations/Create", new FormUrlEncodedContent(form)); Assert.Equal(HttpStatusCode.Redirect, submitted.StatusCode);
             var saved = await context.Database.GetCollection<ReservationRecord>("reservations").Find(FilterDefinition<ReservationRecord>.Empty).SingleAsync();
-            Assert.Equal(staff.Id, saved.AccountId); Assert.Null(saved.EmailVerificationId);
-            Assert.Equal(staff.Email, saved.Email); Assert.Equal("", (await users.FindByIdAsync(staff.Id))!.FirstName);
+            Assert.Equal(customer.Id, saved.AccountId); Assert.Null(saved.EmailVerificationId);
+            Assert.Equal(customer.Email, saved.Email); Assert.Equal("", (await users.FindByIdAsync(customer.Id))!.FirstName);
             var prefilled = await client.GetStringAsync("/Reservations/Create");
             Assert.Contains("value=\"Guest\"", prefilled); Assert.Contains("value=\"Player\"", prefilled); Assert.Contains("value=\"09123456789\"", prefilled);
             var mine = await client.GetStringAsync("/Reservations"); Assert.Contains(saved.Reference, mine); Assert.Contains("Upcoming", mine);
             await context.Database.GetCollection<ReservationRecord>("reservations").InsertOneAsync(new ReservationRecord { AccountId = "another-owner", Email = "another@example.test", Reference = "PRIVATE-OTHER", Service = "Regular", ResourceIds = ["bay-3"], Attendees = 1, CreatedUtc = TestNow.UtcDateTime, ReviewDeadlineUtc = TestNow.UtcDateTime.AddMinutes(30), IdempotencyKey = "private", SubmissionHash = "private", StartUtc = TestNow.UtcDateTime.AddDays(2), EndUtc = TestNow.UtcDateTime.AddDays(2).AddHours(1) });
             Assert.DoesNotContain("PRIVATE-OTHER", await client.GetStringAsync("/Reservations"));
-            var review = await client.GetStringAsync("/BookingReview/Details/" + saved.Id); Assert.Contains("Approve booking", review);
-            var approved = await client.PostAsync("/BookingReview/Decide/" + saved.Id, new FormUrlEncodedContent(new Dictionary<string, string> { ["__RequestVerificationToken"] = Csrf(review), ["decision"] = "approve" }));
-            Assert.Equal(HttpStatusCode.Redirect, approved.StatusCode);
-            Assert.Equal("Confirmed", (await scope.ServiceProvider.GetRequiredService<ReservationService>().GetOwnedAsync(staff.Id, saved.Id, default))!.Status);
+            Assert.Equal(HttpStatusCode.Redirect, (await client.GetAsync("/staff/review/Details/" + saved.Id)).StatusCode);
         }
         finally { await context.Client.DropDatabaseAsync(database); }
     }

@@ -1,0 +1,40 @@
+@model IReadOnlyList<HoleInHub.Business.Reservations.ResourceDirectoryEntry>
+@{
+    ViewData["Title"] = "Resources";
+    ViewData["LeadershipPage"] = "Resources";
+}
+<section class="staff-workspace staff-review leadership-page">
+    <header class="staff-workspace-heading"><h1>Resources</h1><p>Manage permanent bay inventory. For a temporary closure, use venue availability.</p></header>
+    @if (TempData["ResourceMessage"] is string message) { <p class="review-summary" role="status">@message</p> }
+    <div asp-validation-summary="All" class="staff-error" role="alert"></div>
+    <section class="review-section leadership-section">
+        <h2>Add a bay</h2>
+        <form method="post" asp-action="AddBay" class="review-filter-form">
+            <label>Bay name <input name="name" maxlength="80" required /></label>
+            <label>Bay ID <input name="id" maxlength="32" placeholder="bay-8" required /></label>
+            <label>Type <select name="service"><option>Regular</option><option>VIP</option></select></label>
+            <button class="button" type="submit" data-no-icon>Add bay</button>
+        </form>
+    </section>
+    <div class="leadership-table" tabindex="0" role="region" aria-label="Bay inventory">
+        <table>
+            <thead><tr><th scope="col">Bay</th><th scope="col">Type</th><th scope="col">Status</th><th scope="col">Action</th></tr></thead>
+            <tbody>
+                @foreach (var bay in Model)
+                {
+                    <tr>
+                        <th scope="row">@bay.Name <small>@bay.Id</small></th><td>@bay.Service</td>
+                        <td><span class="staff-status" data-status="@(bay.Active ? "Confirmed" : "Completed")">@(bay.Active ? "Active" : "Retired")</span></td>
+                        <td>
+                            <form method="post" asp-action="SetBayActive">
+                                <input type="hidden" name="id" value="@bay.Id" />
+                                <input type="hidden" name="active" value="@(bay.Active ? "false" : "true")" />
+                                <button class="button button-secondary" type="submit" aria-label="@(bay.Active ? $"Retire {bay.Name}" : $"Restore {bay.Name}")" data-no-icon>@(bay.Active ? "Retire" : "Restore")</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

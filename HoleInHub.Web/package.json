@@ -8,7 +8,7 @@
     "build:css": "tailwindcss -i ./Styles/site.css -o ./wwwroot/css/site.css --minify",
     "build": "npm run copy:vendor && npm run build:css",
     "watch:css": "tailwindcss -i ./Styles/site.css -o ./wwwroot/css/site.css --watch",
-    "test:ui": "node --test ../tests/services.test.cjs ../tests/contact-inputs.test.cjs ../tests/booking-verification.test.cjs ../tests/ui-motion.test.cjs ../tests/button-motion.test.cjs ../tests/account-ui.test.cjs ../tests/account-menu.test.cjs ../tests/page-transitions.test.cjs ../tests/HoleInHub.Tests.Web/Smoke/reservation.test.cjs"
+    "test:ui": "node --test ../tests/services.test.cjs ../tests/contact-inputs.test.cjs ../tests/booking-verification.test.cjs ../tests/ui-motion.test.cjs ../tests/button-motion.test.cjs ../tests/account-ui.test.cjs ../tests/account-menu.test.cjs ../tests/page-transitions.test.cjs ../tests/staff-booking.test.cjs ../tests/HoleInHub.Tests.Web/Smoke/reservation.test.cjs"
   },
   "dependencies": {
     "gsap": "3.13.0"

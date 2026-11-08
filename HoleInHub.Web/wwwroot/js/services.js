@@ -6,6 +6,7 @@
     let refreshing = false;
     let lastHtml = null;
     let disposeButtons = () => {};
+    let disposeMotion = window.HoleInHubMotion?.mount(catalog);
     async function refresh() {
         if (document.hidden || refreshing || catalog.contains(document.activeElement)) return;
         refreshing = true;
@@ -18,9 +19,11 @@
             if (document.hidden || catalog.contains(document.activeElement)) return;
             if (lastHtml !== html) {
                 disposeButtons();
+                disposeMotion?.();
                 catalog.innerHTML = html;
                 lastHtml = html;
                 disposeButtons = window.HoleInHubButtons?.mount(catalog) || (() => {});
+                disposeMotion = window.HoleInHubMotion?.mount(catalog);
                 window.ScrollTrigger?.refresh();
             }
             status.textContent = 'Current offerings from the venue.';

@@ -18,6 +18,7 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IMongoDbContext, MongoDbContext>();
         services.AddScoped<HoleInHub.Data.Accounts.AccountPersistence>();
+        services.AddScoped<HoleInHub.Data.Accounts.StaffPinPersistence>();
         services.AddScoped<HoleInHub.Data.Services.ServiceCatalogPersistence>();
         services.AddScoped<HoleInHub.Data.Reservations.ReservationPersistence>();
         services.AddScoped<HoleInHub.Data.Reservations.EmailVerificationPersistence>();
@@ -38,6 +39,13 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_007_GuestReservationAccess>();
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_008_ServiceCatalog>();
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_009_RecoveryQuotaValidation>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_010_StaffAssistedReservations>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_011_AdminScheduleBlocks>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_012_ReleaseScheduleBlocks>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_013_ReservationAttendance>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_014_OperatingReviewClock>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_015_ScheduleChanges>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_016_StaffPinAttempts>();
         services.AddSingleton<MongoMigrationRunner>();
 
         return services;

@@ -6,6 +6,7 @@ const source = fs.readFileSync(require('node:path').join(__dirname, '../HoleInHu
 
 function setup() {
     const events = {};
+    const motion = [];
     let interval;
     let calls = 0;
     let response = { ok: true, text: async () => '<article>Updated offering</article>' };
@@ -14,12 +15,16 @@ function setup() {
     const page = { dataset: { refreshUrl: '/Home/ServiceCatalog' }, querySelector: selector => selector.includes('catalog') ? catalog : status };
     const document = { hidden: false, activeElement: {}, querySelector: () => page, addEventListener: (name, fn) => events[name] = fn };
     vm.runInNewContext(source, {
-        document, window: {}, AbortController,
+        document, window: { HoleInHubMotion: { mount(root) {
+            assert.equal(root, catalog);
+            motion.push(root.innerHTML);
+            return () => motion.push('disposed');
+        } } }, AbortController,
         fetch: async (url, options) => { calls++; assert.equal(options.cache, 'no-store'); return response; },
         setInterval: (fn, ms) => { assert.equal(ms, 45000); interval = fn; },
         setTimeout: () => 1, clearTimeout: () => {}
     });
-    return { document, catalog, status, refresh: () => interval(), events, calls: () => calls, response: value => response = value };
+    return { document, catalog, status, motion, refresh: () => interval(), events, calls: () => calls, response: value => response = value };
 }
 
 test('visible refresh updates content and failed refresh retains last good offerings', async () => {
@@ -30,6 +35,7 @@ test('visible refresh updates content and failed refresh retains last good offer
     await ui.refresh();
     assert.match(ui.catalog.innerHTML, /Updated offering/);
     assert.match(ui.status.textContent, /couldn’t refresh/);
+    assert.deepEqual(ui.motion, ['<article>Last good offering</article>', 'disposed', '<article>Updated offering</article>']);
 });
 
 test('hidden tabs and focused interactions are not refreshed', async () => {

@@ -10,9 +10,6 @@
 .reservation-studio .reservation-summary>img{height:210px;max-height:210px;min-height:0;aspect-ratio:auto;object-position:center 60%}
 .reservation-studio .reservation-summary{position:relative;top:auto}
 .reservation-studio .actions #step-next{margin-left:auto}
-.booking-back{display:inline-flex;align-items:center;justify-content:center;gap:18px;min-height:44px;padding:10px 0;border:0;background:transparent;color:var(--ink);font-family:var(--font-display);font-size:12px;letter-spacing:1px;cursor:pointer}
-.booking-back:hover{background:transparent;color:var(--green)}
-.booking-back::before,.booking-back::after{content:none}
 .reservation-studio .resource-option input{width:1px;height:1px;padding:0;margin:-1px;clip-path:inset(50%);overflow:hidden;white-space:nowrap}
 .reservation-studio .resource-option:has(input:focus-visible){outline:2px solid var(--green);outline-offset:4px}
 .reservation-studio .service-option:has(input:checked){background:var(--green);color:var(--paper)}
@@ -25,10 +22,9 @@
 .booking-auth-dialog .dialog-close{position:absolute;right:15px;top:10px;width:44px;height:44px;border:0;background:transparent;font-size:28px;cursor:pointer}
 .booking-auth-dialog .dialog-actions{display:flex;flex-wrap:wrap;gap:20px;align-items:center;margin-top:30px}
 .booking-auth-dialog :focus-visible{outline:2px solid var(--green);outline-offset:4px}
-@media(max-width:700px){.booking-auth-dialog{padding:50px 25px 30px}.reservation-studio .actions .booking-back{flex:0 0 auto}.reservation-studio .reservation-summary>img{height:180px;max-height:180px}}
+@media(max-width:700px){.booking-auth-dialog{padding:50px 25px 30px}.reservation-studio .reservation-summary>img{height:180px;max-height:180px}}
 
 .reservation-studio .actions :is(#booking-auth-required,#booking-submit,#booking-verify-required){margin-left:auto}
-.reservation-studio .actions .booking-back{min-width:0}
 
 /* Keep the full day available without stretching the booking step. */
 .reservation-studio{padding-top:125px}

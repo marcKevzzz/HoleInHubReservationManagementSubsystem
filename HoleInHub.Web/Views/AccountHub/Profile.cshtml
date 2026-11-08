@@ -3,8 +3,8 @@
 @{ ViewData["Title"] = "My profile"; ViewData["AccountPage"] = "profile"; }
 <div class="page-content account-hub">
     <partial name="_AccountNavigation" />
-    <header class="account-heading"><div><h1>MY PROFILE</h1></div><a class="button" href="/Reservations/Create">Book a bay</a></header>
-    <div class="account-profile-layout">
+    <header class="account-heading" data-motion="load"><h1>MY PROFILE</h1></header>
+    <div class="account-profile-layout" data-motion="load">
         <div><h2>Contact details</h2></div>
         <form class="account-profile-form" method="post" action="/my-profile">
             @Html.AntiForgeryToken()

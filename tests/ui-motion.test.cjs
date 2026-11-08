@@ -3,6 +3,47 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const source = fs.readFileSync(require('node:path').join(__dirname, '../HoleInHub.Web/wwwroot/js/ui-motion.js'), 'utf8');
+
+test('shared smooth scrolling respects the desktop motion query and starts paused behind a modal', () => {
+    const content = {};
+    const wrapper = { querySelector: () => content };
+    let mount, options, pauseArgs, killed;
+    const events = {};
+    const gsap = {
+        registerPlugin() {},
+        matchMedia: () => ({
+            add(query, callback) {
+                assert.equal(query, '(min-width: 701px) and (prefers-reduced-motion: no-preference)');
+                mount = callback;
+            },
+            revert() { killed = 'reverted'; },
+        }),
+    };
+    const ScrollTrigger = {};
+    const ScrollSmoother = {
+        create(config) {
+            options = config;
+            return { paused: (...args) => { pauseArgs = args; }, kill() { killed = true; } };
+        },
+    };
+    const scrollSource = fs.readFileSync(require('node:path').join(__dirname, '../HoleInHub.Web/wwwroot/js/scroll-motion.js'), 'utf8');
+    vm.runInNewContext(scrollSource, {
+        document: { querySelector: selector => selector === '.smooth-wrapper' ? wrapper : {} },
+        window: { gsap, ScrollTrigger, ScrollSmoother, addEventListener: (name, handler) => { events[name] = handler; } },
+        gsap, ScrollTrigger, ScrollSmoother,
+    });
+    assert.equal(options, undefined);
+    const cleanup = mount();
+    assert.equal(options.content, content);
+    assert.equal(options.smooth, .9);
+    assert.deepEqual(pauseArgs, [true, true]);
+    events.pagehide({ persisted: true });
+    assert.equal(killed, undefined);
+    cleanup();
+    assert.equal(killed, true);
+    events.pagehide({ persisted: false });
+    assert.equal(killed, 'reverted');
+});
 function setup(reduced = false, plugins = true) {
     const calls = [], sets = [], media = [], contexts = [];
     const preference = { matches: reduced, addEventListener(type, callback) { this.change = callback; } };

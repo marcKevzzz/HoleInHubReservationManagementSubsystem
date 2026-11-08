@@ -3,7 +3,6 @@
     {
         <h2 id="account-menu-title">Your account</h2>
         <nav aria-label="Account">
-            @if(User.IsInRole("Staff")||User.IsInRole("Admin")){<a href="/BookingReview" class="account-menu-row">Booking review</a>}
             <a href="/my-reservations" class="account-menu-row prototype-link">My reservations</a>
             <a href="/transactions" class="account-menu-row prototype-link">Transactions</a>
             <a href="/my-profile" class="account-menu-row prototype-link">My profile</a>
@@ -19,20 +18,12 @@
         <div class="account-menu-actions">
             <a class="button" href="/account/sign-in">Sign in</a>
             <a class="button button-tertiary" data-no-icon href="/account/sign-up">Create account</a>
-            <a class="account-text-link guest-find-link" href="/guest/reservations/find">Find my booking</a>
+            <a class="guest-find-link" href="/guest/reservations/find"><span>Find my booking</span></a>
         </div>
     }
 </div>
 
 @if (User.Identity?.IsAuthenticated == true)
 {
-    <dialog id="logout-confirmation" class="logout-confirmation" aria-labelledby="logout-title" aria-describedby="logout-description">
-        <button type="button" class="logout-close" data-cancel-logout aria-label="Close logout confirmation"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg></button>
-        <h2 id="logout-title" tabindex="-1" autofocus>Log out?</h2>
-        <p id="logout-description">You’ll need to sign in again to manage your reservations.</p>
-        <div class="logout-actions">
-            <button type="button" class="button button-tertiary" data-no-icon data-cancel-logout>Cancel</button>
-            <button type="submit" class="button logout-confirm" form="account-logout-form" data-confirm-logout>Log out</button>
-        </div>
-    </dialog>
+    <partial name="_LogoutConfirmation" model=' "You’ll need to sign in again to manage your reservations." ' />
 }

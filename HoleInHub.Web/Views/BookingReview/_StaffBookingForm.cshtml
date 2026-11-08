@@ -1,0 +1,68 @@
+@using HoleInHub.Business.Accounts
+@model StaffBookingForm
+<form asp-action="Create" method="post" class="staff-create-form">
+    <input asp-for="IdempotencyKey" type="hidden" />
+    <p data-booking-error class="staff-error" role="alert" tabindex="-1" hidden></p>
+    <div asp-validation-summary="All" class="staff-error"></div>
+    <fieldset>
+        <legend>Schedule</legend>
+        <div>
+            <label asp-for="ResourceId">Bay</label>
+            <select asp-for="ResourceId" required>
+                <option value="">Choose a bay</option>
+                @foreach (var bay in Model.Bays)
+                {
+                    <option value="@bay.Id">@bay.Name</option>
+                }
+            </select>
+        </div>
+        <div class="staff-create-fields">
+            <div>
+                <label asp-for="Date">Date</label>
+                <input asp-for="Date" asp-format="{0:yyyy-MM-dd}" type="date" min="@Model.Today.ToString("yyyy-MM-dd")" required />
+            </div>
+            <div>
+                <label asp-for="StartTime">Start time</label>
+                <input asp-for="StartTime" asp-format="{0:HH:mm}" type="time" step="1800" required />
+            </div>
+        </div>
+        <div>
+            <label asp-for="DurationMinutes">Duration in minutes</label>
+            <input asp-for="DurationMinutes" type="number" min="30" max="840" step="30" required />
+        </div>
+        <p class="staff-create-hint">Times are in Manila. Book in 30-minute increments.</p>
+    </fieldset>
+    <fieldset>
+        <legend>Guest details</legend>
+        <div class="staff-create-fields">
+            <div>
+                <label asp-for="FirstName">First name</label>
+                <input asp-for="FirstName" required />
+            </div>
+            <div>
+                <label asp-for="LastName">Last name</label>
+                <input asp-for="LastName" required />
+            </div>
+        </div>
+        <div>
+            <label asp-for="Phone">Contact number</label>
+            <input asp-for="Phone" type="tel" inputmode="tel" pattern="@ContactRules.PhonePattern" required />
+        </div>
+        <div class="staff-create-fields">
+            <div>
+                <label asp-for="Attendees">Party size</label>
+                <input asp-for="Attendees" type="number" min="1" max="10" aria-describedby="staff-party-hint" required />
+            </div>
+            <div>
+                <label asp-for="Source">Booking source</label>
+                <select asp-for="Source" required>
+                    <option>Walk-in</option>
+                    <option>Phone</option>
+                    <option>Messaging</option>
+                </select>
+            </div>
+        </div>
+        <p id="staff-party-hint" class="staff-create-hint">Include spectators. Up to 6 players per bay, with 8 guests total in Regular or 10 in VIP.</p>
+    </fieldset>
+    <button class="button" type="submit" disabled="@(Model.Bays.Count == 0)">Confirm booking</button>
+</form>

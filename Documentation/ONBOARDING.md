@@ -192,7 +192,9 @@ The booking form collects one Number of guests value including non-players. New 
 
 The booking form works without JavaScript. Verified accounts skip guest codes; signed-in unverified accounts use the existing account verification page. Signed-in users receive editable first name, last name and phone defaults from their account, with latest-owned-reservation fallback for missing legacy values. Account email is displayed read-only and derived again on the server. Guest mode offers a guest/sign-in choice. Past starts and starts inside the service review lead time are disabled in the enhanced calendar and rejected by the server. Selecting a new time defaults to a full hour. Whole-shop selections always include every active bay.
 
-Guests receive an unguessable status link; references alone never authorize access. Staff review is at `/BookingReview` and is linked from the account menu for `Staff`/`Admin` roles. Public registration always creates `Customer` only; an authorized administrator must provision staff roles through a controlled database administration step; no staff-provisioning UI is included. There is no public role-promotion endpoint.
+Guests receive an unguessable status link. References alone never authorize access. Customers sign in at `/account/sign-in`. Staff, Manager, and Admin use `/staff/sign-in` on the dedicated HTTPS staff hostname to access `/staff`. Admin alone can manage schedule blocks. Staff sessions use a separate cookie.
+
+Public registration creates Customer accounts. An authorized administrator provisions employee roles through the controlled database administration process. Follow the [staff PIN setup instructions](specs/2026-11-07-rbac-staff-authentication.md#registered-desktop-pin) to apply migration 016, configure the staff hostname, enroll TLS client certificates, and activate PIN sign-in.
 
 ### Enable a local demonstration
 

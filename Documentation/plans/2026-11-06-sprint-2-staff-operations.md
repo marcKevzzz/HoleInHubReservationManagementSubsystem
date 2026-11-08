@@ -81,3 +81,7 @@ npm --prefix HoleInHub.Web run test:ui
 ~~~
 
 Use an isolated local MongoDB replica set for integration. Run browser acceptance against the configured preview only after `/health/ready` reports healthy. An unchecked item is planned work. The PDF and this plan do not establish implementation or release readiness.
+
+## Owner-approved first change-request slice — 7 November 2026
+
+Confirmed Regular/VIP customers may propose a new schedule or longer duration at least one hour before their current start. Proposed starts must allow the normal 30/60-minute operating-hours review window. Approval requires an unchanged base revision, no pending cancellation, active matching-service bays and availability, before either current or proposed start. The number of bays and guest count stay unchanged. Staff can select replacement bays during review. Declining or failing a change preserves the original booking. Whole-shop/coaching changes, in-session extensions, direct staff moves, manual no-show actions and attendance corrections remain deferred.

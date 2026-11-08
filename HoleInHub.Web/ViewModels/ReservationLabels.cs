@@ -13,6 +13,17 @@ public static class ReservationLabels
         "WholeShop" => "Whole-shop rental",
         _ => "Reservation"
     };
+    public static string? IndicativeRate(string service) => service switch
+    {
+        "Regular" => "₱600–₱800 / hour",
+        "VIP" => "₱1,000 / hour",
+        "PhilippineCoach" => "₱2,000 / hour",
+        "KpgaPro" => "₱15,000 / 8 sessions",
+        "KpgaGroup" => "₱2,500 / 4 classes",
+        "WholeShop" => "₱40,000–₱80,000",
+        _ => null
+    };
+
     public static string Payment(string value) => value switch
     {
         "AwaitingDeposit" => "Awaiting deposit",

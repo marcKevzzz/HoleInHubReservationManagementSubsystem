@@ -7,8 +7,6 @@ const heritage=root.querySelector('.heritage-page');if(heritage){const container
 root.querySelectorAll('.feature-grid article').forEach(article=>{const fig=document.createElement('figure');article.replaceWith(fig);fig.append(article);const img=article.querySelector('img'),frame=document.createElement('div');frame.className='photo-frame';img.before(frame);frame.append(img);});
 root.querySelectorAll('h1,h2').forEach(h=>{const walk=document.createTreeWalker(h,NodeFilter.SHOW_TEXT),texts=[];while(walk.nextNode())texts.push(walk.currentNode);texts.forEach(text=>{const fragment=document.createDocumentFragment();text.textContent.split(/(\s+)/).forEach(word=>{if(!word.trim()){fragment.append(document.createTextNode(word));return;}const wrap=document.createElement('span'),inner=document.createElement('span');wrap.className='split-word-wrap';inner.className='split-word';inner.textContent=word;wrap.append(inner);fragment.append(wrap);});text.replaceWith(fragment);});});
 
-gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
-
 function initVideoControl(video, preference) {
   video.tabIndex = 0;
   video.setAttribute('role', 'button');
@@ -59,24 +57,6 @@ function animatePage(root) {
     media.add({ motion: '(prefers-reduced-motion: no-preference)', desktop: '(min-width: 701px)' }, ({ conditions }) => {
       if (!conditions.motion) return;
       const desktop = conditions.desktop;
-      // Ensure any previous smoother is cleanly killed before creating a new one
-      const existingSmoother = ScrollSmoother.get();
-      if (existingSmoother) {
-        existingSmoother.kill();
-      }
-
-      const smoother = desktop ? ScrollSmoother.create({
-        wrapper: root.closest('.smooth-wrapper'),
-        content: root.parentElement,
-        smooth: 0.9,
-        smoothTouch: 0.1,
-        effects: true,
-      }) : null;
-
-      if (smoother) {
-        cleanup.push(() => smoother.kill());
-      }
-
       const heroes = root.querySelectorAll('.hero'); heroes.forEach((section,index)=>{if(index>0){section.querySelector('.hero-content')?.classList.replace('hero-content','statement-content');}}); const hero = root.querySelector('.hero');
       const revealHeading = (element, entrance = false) => {
         const words = element.querySelectorAll('.split-word');
@@ -115,6 +95,8 @@ function animatePage(root) {
           });
         }
       };
+
+      root.querySelectorAll('[data-venue-title]').forEach(element => revealHeading(element, true));
 
       root.querySelectorAll('.intro h2,.mosaic-copy h2,.statement h2,.venue-promotions h2,.about-teaser h2,.final-cta h2,.contact-gallery h2')
         .forEach(element => revealHeading(element));
@@ -967,7 +949,6 @@ function animatePage(root) {
         cleanup.splice(0).forEach(dispose => {
           try { dispose(); } catch {}
         });
-        try { smoother?.kill(); } catch {}
       };
     });
   }, root);
