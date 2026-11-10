@@ -1,0 +1,47 @@
+
+@using HoleInHub.Business.Accounts
+@model StaffRoleEditModel
+@{
+    ViewData["Title"] = "Edit staff access";
+    ViewData["LeadershipPage"] = "Users";
+}
+<section class="staff-workspace staff-review leadership-page">
+    <header class="staff-workspace-heading">
+        <h1>Edit staff access</h1>
+        <p>@Model.Account.Name @Model.Account.Email</p>
+    </header>
+    <section class="review-section leadership-section">
+        <h2>Current access</h2>
+        <p>@string.Join(", ", Model.Account.Roles)</p>
+        @if (Model.IsStale)
+        {
+            <p class="staff-error" role="alert">This account changed after you opened the form. Review the current roles before saving.</p>
+            <a class="button" asp-action="EditUserRole" asp-route-id="@Model.Account.Id" data-no-icon>Reload role form</a>
+        }
+        else
+        {
+            <p id="staff-role-note">Changing access ends existing staff sessions. Anyone who keeps staff access must set up a PIN again on an enrolled desktop.</p>
+            <div asp-validation-summary="All" class="staff-error" role="alert"></div>
+            <form method="post" asp-action="EditUserRole" asp-route-id="@Model.Account.Id" class="review-filter-form">
+                <input asp-for="Form.Version" type="hidden" />
+                <label>
+                    Staff role
+                    <select asp-for="Form.Role" required aria-describedby="staff-role-note" class="focus-visible:ring-2">
+                        <option value="">Choose a role</option>
+                        <option value="@StaffRoleForm.NoStaffAccess">No staff access</option>
+                        @foreach (var role in StaffRoles.Workspace)
+                        {
+                            <option value="@role">@role</option>
+                        }
+                    </select>
+                </label>
+                <label>
+                    Reason
+                    <input asp-for="Form.Reason" required maxlength="500" class="focus-visible:ring-2" />
+                </label>
+                <button class="button" type="submit" data-no-icon>Save staff access</button>
+            </form>
+        }
+    </section>
+    <a class="button button-secondary" asp-action="Users" data-no-icon>Back to Users &amp; Roles</a>
+</section>

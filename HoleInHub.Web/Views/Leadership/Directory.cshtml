@@ -1,16 +1,20 @@
+@using System.Security.Claims
 @model HoleInHub.Business.Accounts.AccountDirectory
 @{
     var action = ViewContext.RouteData.Values["action"]?.ToString();
     var team = action == "Team";
+    var canEdit = !team && ViewData["RoleEditing"] is true;
+    var actorId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 }
 <section class="staff-workspace staff-customers leadership-page">
     <header class="staff-workspace-heading">
         <h1>@ViewData["Title"]</h1>
-        <p>@(team ? "See the accounts that can access the staff workspace." : "Browse registered accounts and their current roles. Provisioning and role changes are managed separately.")</p>
+        <p>@(team ? "See the accounts that can access the staff workspace." : "Browse registered accounts and their current roles.")</p>
     </header>
+    @if (TempData["RoleMessage"] is string message) { <p class="review-summary" role="status">@message</p> }
     <div class="leadership-table" tabindex="0" role="region" aria-label="Account directory">
         <table>
-            <thead><tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Roles</th><th scope="col">Email status</th></tr></thead>
+            <thead><tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Roles</th><th scope="col">Email status</th>@if (canEdit) { <th scope="col">Action</th> }</tr></thead>
             <tbody>
                 @foreach (var entry in Model.Entries)
                 {
@@ -18,6 +22,16 @@
                         <th scope="row">@(string.IsNullOrWhiteSpace(entry.Name) ? "Name unavailable" : entry.Name)</th>
                         <td>@entry.Email</td><td>@string.Join(", ", entry.Roles)</td>
                         <td>@(entry.EmailConfirmed ? "Verified" : "Unverified")</td>
+                        @if (canEdit)
+                        {
+                            <td>
+                                @if (entry.Id != actorId)
+                                {
+                                    <a class="button button-secondary" asp-action="EditUserRole" asp-route-id="@entry.Id"
+                                       aria-label="Edit staff access for @entry.Email" data-no-icon>Edit staff access</a>
+                                }
+                            </td>
+                        }
                     </tr>
                 }
             </tbody>

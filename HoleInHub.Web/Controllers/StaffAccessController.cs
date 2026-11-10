@@ -100,11 +100,14 @@ public sealed class StaffAccessController(StaffPinAccess access, StaffPinService
                 ModelState.AddModelError(nameof(form.Pin), "Choose a PIN without repeated digits or a simple sequence.");
                 return View(form);
             }
-            await pins.SaveAsync(employee.Id, hasher.HashPassword(employee, access.PinInput(employee, form.Pin)), ct);
-            await HttpContext.SignOutAsync(StaffPinAccess.Scheme);
-            logger.LogInformation("Staff PIN set for {EmployeeId}.", employee.Id);
-            TempData["StaffPinMessage"] = "PIN saved. Sign in with your work email and new PIN.";
-            return RedirectToAction(nameof(Index));
+            var hash = hasher.HashPassword(employee, access.PinInput(employee, form.Pin));
+            if (await pins.TrySaveAsync(employee.Id, hash, employee.SecurityStamp, ct))
+            {
+                await HttpContext.SignOutAsync(StaffPinAccess.Scheme);
+                logger.LogInformation("Staff PIN set for {EmployeeId}.", employee.Id);
+                TempData["StaffPinMessage"] = "PIN saved. Sign in with your work email and new PIN.";
+                return RedirectToAction(nameof(Index));
+            }
         }
         ModelState.AddModelError("", "Unable to set a PIN. Check your work email and password, or contact your administrator.");
         return View(form);

@@ -194,7 +194,11 @@ The booking form works without JavaScript. Verified accounts skip guest codes; s
 
 Guests receive an unguessable status link. References alone never authorize access. Customers sign in at `/account/sign-in`. Staff, Manager, and Admin use `/staff/sign-in` on the dedicated HTTPS staff hostname to access `/staff`. Admin alone can manage schedule blocks. Staff sessions use a separate cookie.
 
-Public registration creates Customer accounts. An authorized administrator provisions employee roles through the controlled database administration process. Follow the [staff PIN setup instructions](specs/2026-11-07-rbac-staff-authentication.md#registered-desktop-pin) to apply migration 016, configure the staff hostname, enroll TLS client certificates, and activate PIN sign-in.
+Public registration creates Customer accounts. Follow the [staff PIN setup instructions](specs/2026-11-07-rbac-staff-authentication.md#registered-desktop-pin) to configure the staff hostname, enroll TLS client certificates, and activate PIN sign-in. Apply migrations 016 and 017 through the Migrator before administering roles.
+
+On an enrolled desktop, open **Admin → Users & Roles → Edit staff access**. Select Staff, Manager, Admin, or **No staff access**, then enter a reason and save. The account needs a verified email and a password to receive a staff role. A saved change ends the employee's existing staff session on its next request. Employees retaining or gaining access must set up a PIN again. Revocation preserves the customer account and its reservations. Role editing is unavailable in PIN presentation mode.
+
+Use the controlled database administration process to bootstrap the first Admin or recover Admin access if all Admin sign-ins are unavailable. Perform recovery during a maintenance window and document the actor, reason, and affected account. Use **Users & Roles** for routine changes so they pass the concurrency guard and create an audit entry.
 
 ### Enable a local demonstration
 

@@ -16,11 +16,15 @@ Schema-hardening contract: **006_SchemaHardening**, reviewed 2026-11-04. The sha
 | `guest_recovery_quotas` | Recovery email delivery limits (007) | Per-email issuance timestamps and expiry for the separate recovery feature |
 | `outbox` | Notification delivery queue | Messages, worker claims, retry counts and delivery outcome |
 | `allocation_guards` | Booking concurrency controls | Counters competing transactions update to prevent incompatible allocations |
+| `staff_role_guards` | Role administration concurrency control (017) | The singleton `staff-role-administration` serializes role edits before checking the acting Admin |
+| `staff_role_audit` | Staff access history (017) | Append-only role change events with UTC time, actor and target account IDs, actor role, previous and new workspace roles, reason, and request correlation ID |
 | `__migrations` | Database upgrade history | Applied migration IDs, checksums and execution metadata |
 | `__migration_leases` | Database upgrade ownership | Temporary exclusive claim preventing concurrent migration runners |
 | `system_heartbeats` | Foundation diagnostic record | Baseline heartbeat written by migration 001; not live user activity |
 
 Internal records support correctness and recovery; they are not additional customer features. Do not delete guard/lease/upgrade records as routine cleanup. The application does not require a separate customer or allocation collection: contact snapshots and resource IDs are embedded in bookings.
+
+The staff role write commits the account role array, version, security stamp, and audit event in one transaction. A replay with an outdated version creates no second event. Audit events use account IDs and omit credentials and session data.
 
 ## Naming and compatibility
 

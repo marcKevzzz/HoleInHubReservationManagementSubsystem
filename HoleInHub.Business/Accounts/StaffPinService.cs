@@ -18,6 +18,7 @@ public sealed class StaffPinService(StaffPinPersistence persistence, TimeProvide
         return saved is null ? null : new(saved.Hash, saved.Version);
     }
 
-    public Task SaveAsync(string accountId, string hash, CancellationToken ct) =>
-        persistence.SaveAsync(new StaffPinCredential(accountId, hash, Guid.NewGuid().ToString("N")), ct);
+    public Task<bool> TrySaveAsync(string accountId, string hash, string expectedStamp, CancellationToken ct) =>
+        persistence.TrySaveAsync(new StaffPinCredential(accountId, hash, Guid.NewGuid().ToString("N")),
+            expectedStamp, StaffRoles.Workspace, ct);
 }

@@ -20,6 +20,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MongoDB.Driver;
 using Xunit;
 
 namespace HoleInHub.Tests.Web.Smoke;
@@ -35,6 +36,10 @@ public sealed class StaffPinAccessTests
                 if (context.Request.Headers["X-Test-Desktop"] == "approved")
                 {
                     context.Connection.ClientCertificate = certificate;
+                }
+                if (IPAddress.TryParse(context.Request.Headers["X-Test-Address"], out var address))
+                {
+                    context.Connection.RemoteIpAddress = address;
                 }
                 await continuation();
             });
@@ -145,7 +150,8 @@ public sealed class StaffPinAccessTests
                 Assert.True((await users.CreateAsync(employee, "StaffTestPassword123!")).Succeeded);
                 employee.Roles = [roles[i]];
                 Assert.True((await users.UpdateAsync(employee)).Succeeded);
-                await pins.SaveAsync(employee.Id, hasher.HashPassword(employee, access.PinInput(employee, codes[i])), default);
+                Assert.True(await pins.TrySaveAsync(employee.Id, hasher.HashPassword(employee, access.PinInput(employee, codes[i])),
+                    employee.SecurityStamp, default));
                 employees.Add(employee);
             }
             var html = await browser.GetStringAsync("/staff/sign-in");
@@ -159,7 +165,13 @@ public sealed class StaffPinAccessTests
                 var cookieName = isolatedDemo ? "__Host-HihRoleDemoPin=" : "__Host-HihStaffPin=";
                 Assert.Contains(signedIn.Headers.GetValues("Set-Cookie"), value => value.StartsWith(cookieName, StringComparison.Ordinal));
             }
-            await pins.SaveAsync(employees[1].Id, hasher.HashPassword(employees[1], access.PinInput(employees[1], codes[0])), default);
+            var rolePath = $"/admin/users/{employees[0].Id}/role";
+            Assert.DoesNotContain(rolePath, await browser.GetStringAsync("/admin/users"));
+            Assert.Equal(HttpStatusCode.NotFound, (await browser.GetAsync(rolePath)).StatusCode);
+            Assert.Equal(HttpStatusCode.NotFound,
+                (await SubmitAsync(browser, "/admin/users", rolePath, new() { ["Form.Role"] = "Admin" })).StatusCode);
+            Assert.True(await pins.TrySaveAsync(employees[1].Id, hasher.HashPassword(employees[1], access.PinInput(employees[1], codes[0])),
+                employees[1].SecurityStamp, default));
             using var ambiguous = await SubmitAsync(browser, "/staff/sign-in", new() { ["Pin"] = codes[0] });
             Assert.Equal(HttpStatusCode.OK, ambiguous.StatusCode);
             Assert.Contains("That PIN didn", await ambiguous.Content.ReadAsStringAsync());
@@ -238,6 +250,9 @@ public sealed class StaffPinAccessTests
         using var adminPage = await client.GetAsync("/staff/reservations/blocks/new");
         Assert.Equal(HttpStatusCode.Redirect, adminPage.StatusCode);
         Assert.Equal("/staff/sign-in", adminPage.Headers.Location?.AbsolutePath);
+        var roleEdit = "/admin/users/test-target/role";
+        Assert.Equal(HttpStatusCode.Redirect, (await client.GetAsync(roleEdit)).StatusCode);
+        Assert.Equal(HttpStatusCode.Redirect, (await client.PostAsync(roleEdit, new StringContent(""))).StatusCode);
         using var signIn = await client.GetAsync("/staff/sign-in");
         Assert.Equal(enabled ? HttpStatusCode.Forbidden : HttpStatusCode.ServiceUnavailable, signIn.StatusCode);
     }
@@ -274,7 +289,8 @@ public sealed class StaffPinAccessTests
                 var access = scope.ServiceProvider.GetRequiredService<StaffPinAccess>();
                 var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<AccountUser>>();
                 var pins = scope.ServiceProvider.GetRequiredService<StaffPinService>();
-                await pins.SaveAsync(employee.Id, hasher.HashPassword(employee, access.PinInput(employee, pin)), default);
+                Assert.True(await pins.TrySaveAsync(employee.Id, hasher.HashPassword(employee, access.PinInput(employee, pin)),
+                    employee.SecurityStamp, default));
                 using var wrong = await SubmitAsync(desktop, "/staff/sign-in", new() { ["Pin"] = "048216" });
                 Assert.Contains("That PIN didn", await wrong.Content.ReadAsStringAsync());
             }
@@ -320,6 +336,7 @@ public sealed class StaffPinAccessTests
             Assert.Equal("/staff/sign-in", switched.Headers.Location?.OriginalString);
             Assert.Equal(HttpStatusCode.Redirect, (await desktop.GetAsync("/staff")).StatusCode);
             Assert.Equal(HttpStatusCode.Redirect, (await SubmitAsync(desktop, "/staff/sign-in", credentials)).StatusCode);
+            employee = (await users.FindByIdAsync(employee.Id))!;
             employee.Roles = [role == "Staff" ? "Customer" : "Staff"];
             Assert.True((await users.UpdateAsync(employee)).Succeeded);
             Assert.Equal(HttpStatusCode.Redirect, (await desktop.GetAsync("/staff")).StatusCode);
@@ -330,6 +347,95 @@ public sealed class StaffPinAccessTests
             Assert.Equal(5, parallel.Count(granted => granted));
         }
         finally { await context.Client.DropDatabaseAsync(database); }
+    }
+
+
+    [Fact, Trait("Category", "Integration")]
+    public async Task AdminChangesStaffAccessAndRevokesOldDesktopSession()
+    {
+        using var certificate = DesktopCertificate(DateTimeOffset.UtcNow);
+        var database = "test_staff_roles_" + Guid.NewGuid().ToString("N");
+        await using var factory = Factory(certificate, database);
+        using var admin = Client(factory, true);
+        using var employee = Client(factory, true);
+        using var anonymous = Client(factory, true);
+        admin.DefaultRequestHeaders.Add("X-Test-Address", "192.0.2.1");
+        employee.DefaultRequestHeaders.Add("X-Test-Address", "192.0.2.2");
+        anonymous.DefaultRequestHeaders.Add("X-Test-Address", "192.0.2.3");
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IMongoDbContext>();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<AccountUser>>();
+        const string password = "StaffTestPassword123!";
+        try
+        {
+            await new AccountsMigration().UpAsync(context.Database, default);
+            await new Migration_016_StaffPinAttempts().UpAsync(context.Database, default);
+            var adminAccount = await CreateAsync("admin@example.test", StaffRoles.Admin);
+            var staffAccount = await CreateAsync("employee@example.test", StaffRoles.Staff);
+            var path = $"/admin/users/{staffAccount.Id}/role";
+            Assert.Equal(HttpStatusCode.Redirect, (await anonymous.GetAsync(path)).StatusCode);
+            await SignInAsync(admin, adminAccount.Email, "048217");
+            await SignInAsync(employee, staffAccount.Email, "281739");
+            staffAccount = (await users.FindByIdAsync(staffAccount.Id))!;
+            Assert.Equal(HttpStatusCode.Forbidden, (await employee.GetAsync(path)).StatusCode);
+            Assert.Contains(path, await admin.GetStringAsync("/admin/users"));
+            Assert.Equal(HttpStatusCode.BadRequest, (await admin.PostAsync(path, new StringContent(""))).StatusCode);
+            Assert.Equal(HttpStatusCode.OK, (await SubmitAsync(admin, path, Fields("Owner", staffAccount.Version))).StatusCode);
+
+            Assert.Equal(HttpStatusCode.ServiceUnavailable,
+                (await SubmitAsync(admin, path, Fields(StaffRoles.Manager, staffAccount.Version))).StatusCode);
+            await new Migration_017_StaffRoleAdministration().UpAsync(context.Database, default);
+            admin.DefaultRequestHeaders.Add("X-Correlation-ID", "untrusted-correlation");
+            Assert.Equal(HttpStatusCode.Redirect, (await SubmitAsync(admin, path, Fields(StaffRoles.Manager, staffAccount.Version))).StatusCode);
+            Assert.Equal(HttpStatusCode.Conflict, (await SubmitAsync(admin, path, Fields(StaffRoles.Manager, staffAccount.Version))).StatusCode);
+            Assert.Equal(HttpStatusCode.Redirect, (await employee.GetAsync("/manager/team")).StatusCode);
+            Assert.Equal(HttpStatusCode.OK, (await SubmitAsync(employee, "/staff/sign-in",
+                new() { ["Email"] = staffAccount.Email, ["Pin"] = "281739" })).StatusCode);
+            await SignInAsync(employee, staffAccount.Email, "281740");
+            Assert.Equal(HttpStatusCode.OK, (await employee.GetAsync("/manager/team")).StatusCode);
+            var otherRolePath = $"/admin/users/{adminAccount.Id}/role";
+            Assert.Equal(HttpStatusCode.Forbidden, (await employee.GetAsync(otherRolePath)).StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, (await employee.PostAsync(otherRolePath, new StringContent(""))).StatusCode);
+
+            var updated = (await users.FindByIdAsync(staffAccount.Id))!;
+            Assert.Equal(HttpStatusCode.Redirect, (await SubmitAsync(admin, path, Fields("None", updated.Version))).StatusCode);
+            Assert.Equal(HttpStatusCode.Redirect, (await employee.GetAsync("/manager/team")).StatusCode);
+            Assert.Equal(HttpStatusCode.OK, (await SubmitAsync(anonymous, "/staff/pin/setup",
+                new() { ["Email"] = staffAccount.Email, ["Password"] = password, ["Pin"] = "281741", ["ConfirmPin"] = "281741" })).StatusCode);
+            Assert.Equal(HttpStatusCode.OK, (await SubmitAsync(anonymous, "/staff/sign-in",
+                new() { ["Email"] = staffAccount.Email, ["Pin"] = "281740" })).StatusCode);
+            var revoked = (await users.FindByIdAsync(staffAccount.Id))!;
+            Assert.Equal(new[] { "Customer" }, revoked.Roles);
+            Assert.Equal(HttpStatusCode.Redirect,
+                (await SubmitAsync(admin, path, Fields(StaffRoles.Staff, revoked.Version))).StatusCode);
+            var restored = (await users.FindByIdAsync(staffAccount.Id))!;
+            Assert.Equal(new[] { "Customer", StaffRoles.Staff }, restored.Roles);
+            var audit = context.Database.GetCollection<HoleInHub.Data.Accounts.StaffRoleAuditRecord>("staff_role_audit");
+            var events = await audit.Find(x => x.TargetAccountId == staffAccount.Id).ToListAsync();
+            Assert.Equal(3, events.Count);
+            Assert.All(events, entry => Assert.True(Guid.TryParseExact(entry.CorrelationId, "N", out _)));
+        }
+        finally { await context.Client.DropDatabaseAsync(database); }
+
+        async Task<AccountUser> CreateAsync(string email, string role)
+        {
+            var user = new AccountUser { Email = email, EmailConfirmed = true };
+            Assert.True((await users.CreateAsync(user, password)).Succeeded);
+            user.Roles = [role];
+            Assert.True((await users.UpdateAsync(user)).Succeeded);
+            return user;
+        }
+
+        async Task SignInAsync(HttpClient client, string email, string pin)
+        {
+            Assert.Equal(HttpStatusCode.Redirect, (await SubmitAsync(client, "/staff/pin/setup",
+                new() { ["Email"] = email, ["Password"] = password, ["Pin"] = pin, ["ConfirmPin"] = pin })).StatusCode);
+            Assert.Equal(HttpStatusCode.Redirect, (await SubmitAsync(client, "/staff/sign-in",
+                new() { ["Email"] = email, ["Pin"] = pin })).StatusCode);
+        }
+
+        static Dictionary<string, string> Fields(string role, string version) =>
+            new() { ["Form.Role"] = role, ["Form.Version"] = version, ["Form.Reason"] = "Roster change" };
     }
 
     private static string Token(string html)

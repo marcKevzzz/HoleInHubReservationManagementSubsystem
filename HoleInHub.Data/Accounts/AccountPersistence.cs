@@ -1,13 +1,19 @@
 using HoleInHub.Data.Context;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace HoleInHub.Data.Accounts;
 
-public sealed record AccountDirectoryRow(string Email, string FirstName, string LastName, string[] Roles, bool EmailConfirmed);
+public sealed record AccountDirectoryRow(string Id, string Email, string FirstName, string LastName, string[] Roles, bool EmailConfirmed);
+
+public enum StaffRoleWriteResult { Applied, Forbidden, Stale, Unavailable }
 
 public sealed class AccountPersistence(IMongoDbContext context)
 {
-    private IMongoCollection<AccountRecord> Accounts => context.Database.GetCollection<AccountRecord>("accounts");
+    internal const string RoleGuards = "staff_role_guards";
+    internal const string RoleGuardId = "staff-role-administration";
+    internal const string AccountCollection = "accounts";
+    private IMongoCollection<AccountRecord> Accounts => context.Database.GetCollection<AccountRecord>(AccountCollection);
     public Task<AccountRecord?> FindByIdAsync(string id, CancellationToken ct) => Accounts.Find(x => x.Id == id).FirstOrDefaultAsync(ct)!;
     public Task<AccountRecord?> FindByEmailAsync(string email, CancellationToken ct) => Accounts.Find(x => x.NormalizedEmail == email).FirstOrDefaultAsync(ct)!;
     public Task<AccountRecord?> FindByGoogleSubjectAsync(string subject, CancellationToken ct) => Accounts.Find(x => x.GoogleSubject == subject).FirstOrDefaultAsync(ct)!;
@@ -15,8 +21,44 @@ public sealed class AccountPersistence(IMongoDbContext context)
     {
         var filter = roles is null ? Builders<AccountRecord>.Filter.Empty : Builders<AccountRecord>.Filter.AnyIn(x => x.Roles, roles);
         return Accounts.Find(filter).SortBy(x => x.NormalizedEmail).ThenBy(x => x.Id).Skip(offset).Limit(limit)
-            .Project(x => new AccountDirectoryRow(x.Email, x.FirstName, x.LastName, x.Roles, x.EmailConfirmed)).ToListAsync(ct);
+            .Project(x => new AccountDirectoryRow(x.Id, x.Email, x.FirstName, x.LastName, x.Roles, x.EmailConfirmed)).ToListAsync(ct);
     }
+    public async Task<StaffRoleWriteResult> ApplyStaffRoleChangeAsync(string actorStamp, string expectedVersion,
+        string[] roles, StaffRoleAuditRecord audit, CancellationToken ct)
+    {
+        var guards = context.Database.GetCollection<BsonDocument>(RoleGuards);
+        var events = context.Database.GetCollection<StaffRoleAuditRecord>(StaffRoleAuditRecord.CollectionName);
+        var update = Builders<AccountRecord>.Update.Set(x => x.Roles, roles)
+            .Set(x => x.Version, Guid.NewGuid().ToString("N"))
+            .Set(x => x.SecurityStamp, Guid.NewGuid().ToString("N"));
+
+        using var session = await context.Client.StartSessionAsync(cancellationToken: ct);
+        return await session.WithTransactionAsync(async (transaction, token) =>
+        {
+            // Serialize role changes before checking the actor, including mutual demotions.
+            var guard = await guards.UpdateOneAsync(transaction, new BsonDocument("_id", RoleGuardId),
+                new BsonDocument("$inc", new BsonDocument("version", 1L)), cancellationToken: token);
+            if (guard.MatchedCount == 0) { return StaffRoleWriteResult.Unavailable; }
+
+            var filters = Builders<AccountRecord>.Filter;
+            var actorFilter = filters.Where(x => x.Id == audit.ActorAccountId && x.EmailConfirmed
+                && x.SecurityStamp == actorStamp && (x.LockoutEndUtc == null || x.LockoutEndUtc <= audit.OccurredUtc))
+                & filters.AnyEq(x => x.Roles, audit.ActorRole);
+            var actor = await Accounts.Find(transaction, actorFilter).AnyAsync(token);
+            if (!actor) { return StaffRoleWriteResult.Forbidden; }
+
+            var result = await Accounts.UpdateOneAsync(transaction,
+                x => x.Id == audit.TargetAccountId && x.Version == expectedVersion, update, cancellationToken: token);
+            if (result.MatchedCount == 0) { return StaffRoleWriteResult.Stale; }
+
+            // Make concurrent password or lockout changes to the acting Admin contend with this write.
+            await Accounts.UpdateOneAsync(transaction, actorFilter,
+                Builders<AccountRecord>.Update.Set(x => x.Version, Guid.NewGuid().ToString("N")), cancellationToken: token);
+            await events.InsertOneAsync(transaction, audit, cancellationToken: token);
+            return StaffRoleWriteResult.Applied;
+        }, cancellationToken: ct);
+    }
+
     public async Task<bool> CreateAsync(AccountRecord account, CancellationToken ct)
     {
         try { await Accounts.InsertOneAsync(account, cancellationToken: ct); return true; }

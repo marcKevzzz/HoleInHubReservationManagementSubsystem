@@ -112,3 +112,7 @@ Creates the typed `service_catalog` collection, its active/order/ID index and si
 ## 009_RecoveryQuotaValidation
 
 Installs the existing recovery-quota schema on collections that predate 007. Migration 007 creates its validator only when creating the collection; this corrective migration preflights existing records and explicitly applies strict/error validation with collMod. It does not delete or rewrite records. Applied migrations 001–008 remain unchanged. Discovered and verified during the Atlas synchronization on 2026-11-04.
+
+## 017_StaffRoleAdministration
+
+Creates `staff_role_audit` and seeds the singleton guard in `staff_role_guards`. Apply it through the leased CLI before using the Admin role editor. Migration reruns preserve the guard counter, audit entries, and existing accounts. The role editor reports an unavailable feature when the guard is absent. The baseline readiness endpoint still checks migrations 001–008, so confirm 017 in `__migrations` during deployment.

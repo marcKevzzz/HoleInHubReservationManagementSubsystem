@@ -14,8 +14,29 @@ public sealed class StaffPinPersistence(HoleInHub.Data.Context.IMongoDbContext c
     public Task<StaffPinCredential?> ReadAsync(string accountId, CancellationToken ct) =>
         Credentials.Find(entry => entry.AccountId == accountId).FirstOrDefaultAsync(ct)!;
 
-    public Task SaveAsync(StaffPinCredential credential, CancellationToken ct) =>
-        Credentials.ReplaceOneAsync(entry => entry.AccountId == credential.AccountId, credential, new ReplaceOptions { IsUpsert = true }, ct);
+    public async Task<bool> TrySaveAsync(StaffPinCredential credential, string expectedStamp,
+        IReadOnlyList<string> workspaceRoles, CancellationToken ct)
+    {
+        var accounts = context.Database.GetCollection<AccountRecord>(AccountPersistence.AccountCollection);
+        var filters = Builders<AccountRecord>.Filter;
+        var eligible = filters.Where(x => x.Id == credential.AccountId && x.EmailConfirmed && x.SecurityStamp == expectedStamp)
+            & filters.AnyIn(x => x.Roles, workspaceRoles);
+        var update = Builders<AccountRecord>.Update.Set(x => x.Version, Guid.NewGuid().ToString("N"));
+
+        using var session = await context.Client.StartSessionAsync(cancellationToken: ct);
+        return await session.WithTransactionAsync(async (transaction, token) =>
+        {
+            // Serialize enrollment with role and password changes before replacing the stored PIN.
+            if ((await accounts.UpdateOneAsync(transaction, eligible, update, cancellationToken: token)).MatchedCount == 0)
+            {
+                return false;
+            }
+
+            await Credentials.ReplaceOneAsync(transaction, entry => entry.AccountId == credential.AccountId,
+                credential, new ReplaceOptions { IsUpsert = true }, token);
+            return true;
+        }, cancellationToken: ct);
+    }
 
     public async Task<bool> TakeAttemptAsync(string key, DateTime now, int limit, CancellationToken ct)
     {

@@ -46,6 +46,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_014_OperatingReviewClock>();
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_015_ScheduleChanges>();
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_016_StaffPinAttempts>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_017_StaffRoleAdministration>();
         services.AddSingleton<MongoMigrationRunner>();
 
         return services;
