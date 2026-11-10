@@ -1,15 +1,16 @@
 @model StaffBookingLookup
 @if (Model.Error is not null)
 {
-    <p class="staff-empty">@Model.Error</p>
+    <partial name="_StaffEmptyState" model='("search", "No bookings found", Model.Error, (string?)null, (string?)null)' />
 }
 else if (Model.Matches.Count > 0)
 {
-    <p>@(Model.Matches.Count == 10 ? "Showing up to 10 matches" : $"{Model.Matches.Count} found")</p>
+    <header class="staff-search-heading"><div><h2>Booking matches</h2><p>@(Model.Matches.Count == 10 ? "Showing up to 10 matches" : $"{Model.Matches.Count} found") · Select a guest to review their booking</p></div><button type="button" class="staff-icon-button" data-close-search aria-label="Close search results"><partial name="_StaffIcon" model='"close"' /></button></header>
+    <div class="staff-search-columns" aria-hidden="true"><span>Guest</span><span>Session</span><span>Bay & party</span><span>Reference & status</span></div>
     <ul>
         @foreach (var entry in Model.Matches)
         {
-            <li><partial name="_StaffBookingLink" model='new StaffBookingLinkModel(entry, Model.Day, "Search result", "staff-booking-list-link", Wide: true)' /></li>
+            <li><partial name="_StaffBookingLink" model='new StaffBookingLinkModel(entry, Model.Day, string.IsNullOrWhiteSpace(entry.Location) ? "Bay not recorded" : entry.Location, "staff-booking-list-link staff-search-match", Wide: true)' /></li>
         }
     </ul>
 }

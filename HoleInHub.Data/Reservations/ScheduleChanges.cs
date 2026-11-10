@@ -124,7 +124,7 @@ public sealed partial class ReservationPersistence
                 booking.EndUtc = proposal.EndUtc;
                 booking.ResourceIds = resources;
                 booking.ResourceNames = catalog.Where(bay => resources.Contains(bay.Id)).ToDictionary(bay => bay.Id, bay => bay.Name);
-                if (await HasReviewConflictAsync(booking, token, s))
+                if (await HasReviewConflictAsync(booking, token, s, now))
                 {
                     throw new AllocationConflictException("The proposed bays are unavailable. The original booking is unchanged.");
                 }

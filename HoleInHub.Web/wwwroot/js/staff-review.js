@@ -1,7 +1,8 @@
 (() => {
     const deadlines = [...document.querySelectorAll('[data-deadline]')];
     const history = [...document.querySelectorAll('[data-relative]')];
-    const review = document.querySelector('.review-decision');
+    const review = document.querySelector('[data-review-closes]');
+    const closes = Date.parse(review?.dataset.reviewCloses);
     const relative = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
 
     function updateTimes() {
@@ -12,12 +13,11 @@
             deadline.dataset.urgency = minutes <= 0 ? 'overdue' : minutes <= 5 ? 'critical' : minutes <= 15 ? 'soon' : 'normal';
             deadline.querySelector('[data-countdown]').textContent = minutes <= 0 ? 'Overdue'
                 : minutes < 60 ? `${minutes}m left` : `${Math.floor(minutes / 60)}h ${minutes % 60}m left`;
-            if (review && minutes <= 0) {
-                review.querySelectorAll('[data-pending-action] button').forEach(button => { button.disabled = true; });
-                review.querySelectorAll('[data-pending-action]').forEach(action => { action.hidden = true; });
-                const expired = review.querySelector('[data-review-expired]');
-                if (expired) expired.hidden = false;
-            }
+        }
+        if (now >= closes) {
+            review.querySelectorAll('[data-pending-action] button').forEach(button => { button.disabled = true; });
+            review.querySelectorAll('[data-pending-action]').forEach(action => { action.hidden = true; });
+            review.querySelector('[data-review-closed]').hidden = false;
         }
         for (const time of history) {
             const minutes = Math.max(0, Math.floor((now - Date.parse(time.dateTime)) / 60000));
@@ -26,7 +26,7 @@
             time.textContent = relative.format(-value, unit);
         }
     }
-    if (deadlines.length || history.length) {
+    if (deadlines.length || history.length || Number.isFinite(closes)) {
         updateTimes();
         setInterval(updateTimes, 15000);
     }

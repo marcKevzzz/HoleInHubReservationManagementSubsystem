@@ -1,0 +1,47 @@
+
+@using HoleInHub.Business.Reservations
+@model HoleInHub.Business.Accounts.RoleActivityPage
+@{
+    ViewData["Title"] = "Staff access log";
+}
+<section class="staff-workspace staff-review leadership-page">
+    <header class="staff-workspace-heading">
+        <h1>Staff access log</h1>
+        <p>Staff access changes, newest first. Times are shown in Manila time.</p>
+    </header>
+    @if (Model.Entries.Count == 0)
+    {
+        <p class="staff-empty">No staff access changes on this page.</p>
+    }
+    else
+    {
+        <div class="leadership-table role-activity-table focus-visible:ring-2" tabindex="0" role="region" aria-label="Staff access changes">
+            <table>
+                <thead>
+                    <tr><th scope="col">When</th><th scope="col">Changed by</th><th scope="col">Account</th><th scope="col">Previous role</th><th scope="col">New role</th><th scope="col">Reason</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var entry in Model.Entries)
+                    {
+                        var localTime = TimeZoneInfo.ConvertTimeFromUtc(entry.OccurredUtc, ReservationRules.Manila);
+                        <tr>
+                            <th scope="row"><time datetime="@entry.OccurredUtc.ToString("O")">@localTime.ToString("dd MMM yyyy, h:mm tt")</time></th>
+                            <td>@entry.Actor</td>
+                            <td>@entry.Target</td>
+                            <td>@string.Join(", ", entry.PreviousRoles.DefaultIfEmpty("No staff access"))</td>
+                            <td>@string.Join(", ", entry.NewRoles.DefaultIfEmpty("No staff access"))</td>
+                            <td>@entry.Reason</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    @if (Model.Page > 1 || Model.HasMore)
+    {
+        <nav class="customer-pagination" aria-label="Staff access log pages">
+            @if (Model.Page > 1) { <a class="button button-secondary" asp-action="AdminActivity" asp-route-page="@(Model.Page - 1)">Previous</a> }
+            @if (Model.HasMore) { <a class="button button-secondary" asp-action="AdminActivity" asp-route-page="@(Model.Page + 1)">Next page</a> }
+        </nav>
+    }
+</section>

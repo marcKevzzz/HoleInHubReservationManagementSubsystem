@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Threading.RateLimiting;
 using HoleInHub.Business.Accounts;
 using Microsoft.AspNetCore.Authentication;
@@ -20,6 +21,15 @@ public static class AccountExtensions
             options.Lockout.MaxFailedAccessAttempts = 5;
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
         }).AddUserStore<AccountStore>().AddSignInManager().AddDefaultTokenProviders();
+        services.Configure<SecurityStampValidatorOptions>(options => options.OnRefreshingPrincipal = context =>
+        {
+            if (context.CurrentPrincipal?.FindFirst("amr") is { Value: "pwd" } password
+                && context.NewPrincipal?.Identity is ClaimsIdentity identity)
+            {
+                identity.AddClaim(password);
+            }
+            return Task.CompletedTask;
+        });
         services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromHours(2));
         var authentication = services.AddAuthentication(IdentityConstants.ApplicationScheme);
         authentication.AddIdentityCookies();

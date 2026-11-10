@@ -202,6 +202,30 @@ public sealed class StaffRoleChangeTests(MongoDbFixture fixture) : IClassFixture
         Assert.Equal(fresh, await pins.ReadAsync(employee.Id, default));
     }
 
+    [Fact]
+    public async Task ActivityHistoryPagesConsistentlyAndKeepsMissingAccountIds()
+    {
+        var (persistence, service, audit) = await SetUpAsync();
+        var actor = Account(StaffRoles.Admin);
+        await persistence.CreateAsync(actor, default);
+        var occurred = DateTime.UtcNow;
+        var records = Enumerable.Range(0, 51).Select(index => new StaffRoleAuditRecord(
+            $"event-{index:D2}", "StaffRoleChanged", occurred, actor.Id, StaffRoles.Admin, "missing-account",
+            [], [StaffRoles.Staff], $"Change {index}", "walkthrough").ToBsonDocument());
+        await audit.InsertManyAsync(records);
+
+        var first = await service.GetRoleActivityAsync(1, default);
+        Assert.Equal(50, first.Entries.Count);
+        Assert.True(first.HasMore);
+        Assert.Equal("Change 50", first.Entries[0].Reason);
+        Assert.Equal(actor.Email, first.Entries[0].Actor);
+        Assert.Equal("missing-account", first.Entries[0].Target);
+
+        var second = await service.GetRoleActivityAsync(2, default);
+        Assert.False(second.HasMore);
+        Assert.Equal("Change 0", Assert.Single(second.Entries).Reason);
+    }
+
     private async Task<(AccountPersistence, AccountService, IMongoCollection<BsonDocument>)> SetUpAsync()
     {
         var db = fixture.CreateDbContext();

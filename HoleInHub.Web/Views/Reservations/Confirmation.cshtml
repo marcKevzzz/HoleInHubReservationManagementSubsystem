@@ -60,7 +60,7 @@
                 <p>@(wholeShop ? "Check the reservation for the latest deposit status." : "Your request is awaiting staff approval.")</p>
                 @if (!wholeShop && Model.ReviewStartsUtc is { } begins && begins > DateTime.UtcNow)
                 {
-                    <p>Staff review begins @TimeZoneInfo.ConvertTimeFromUtc(begins, ReservationRules.Manila).ToString("ddd, d MMM, h:mm tt") Manila time. Your selected bays are held while Pending.</p>
+                    <p>Staff review begins @TimeZoneInfo.ConvertTimeFromUtc(begins, ReservationRules.Manila).ToString("ddd, d MMM, h:mm tt") Manila time. Your selected bays are held until the review deadline.</p>
                 }
                 else if (!wholeShop && Model.ReviewStartsUtc.HasValue)
                 {

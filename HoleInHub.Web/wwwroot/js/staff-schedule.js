@@ -15,28 +15,8 @@
             else if (panel.dispatchEvent(new Event('cancel', { cancelable: true }))) panel.close();
         });
     }
-    const dateButton = page.querySelector('[data-open-date]');
-    const dateInput = page.querySelector('#staff-date');
-    if (typeof dateInput.showPicker === 'function') {
-        dateInput.form.classList.add('staff-date-enhanced');
-        dateInput.tabIndex = -1;
-        dateButton.hidden = false;
-        dateButton.addEventListener('click', () => {
-            try { dateInput.showPicker(); }
-            catch {
-                dateInput.form.classList.remove('staff-date-enhanced');
-                dateButton.hidden = true;
-                dateInput.removeAttribute('tabindex');
-                dateInput.focus();
-            }
-        });
-        dateInput.addEventListener('change', () => {
-            if (dateInput.value) dateInput.form.requestSubmit();
-        });
-    }
-
     const drawer = page.querySelector('[data-booking-details]');
-    let opener;
+    let opener, actionsRequest;
     if (typeof drawer.showModal === 'function') {
         page.addEventListener('click', event => {
             const booking = event.target.closest('[data-staff-booking]');
@@ -47,9 +27,29 @@
                 field.textContent = booking.dataset[field.dataset.drawer];
             });
             drawer.querySelector('[data-drawer-link]').href = booking.href;
+            const status = drawer.querySelector('[data-drawer="state"]');
+            status.dataset.status = booking.dataset.status;
             drawer.showModal();
+            const actions = drawer.querySelector('[data-drawer-actions]');
+            actionsRequest?.abort();
+            actionsRequest = new AbortController();
+            const { signal } = actionsRequest;
+            actions.classList.add('review-detail');
+            actions.textContent = 'Loading available actions…';
+            const url = new URL(booking.dataset.actionsUrl, window.location.href);
+            url.searchParams.set('drawer', 'true');
+            fetch(url, { signal, cache: 'no-store', redirect: 'error' }).then(async response => {
+                if (!response.ok) throw new Error();
+                const html = await response.text();
+                if (!signal.aborted) {
+                    actions.innerHTML = html;
+                    actions.querySelector('#reject-reason-choice')?.addEventListener('change', event => {
+                        event.target.form.elements.reason.required = event.target.value === 'Other';
+                    });
+                }
+            }).catch(() => { if (!signal.aborted) actions.textContent = 'Actions are unavailable. Open the full booking to try again.'; });
         });
-        drawer.addEventListener('close', () => opener?.focus({ preventScroll: true }));
+        drawer.addEventListener('close', () => { actionsRequest?.abort(); opener?.focus({ preventScroll: true }); });
     }
 
     const timeline = page.querySelector('.staff-timeline');
@@ -74,6 +74,7 @@
     }
 
     function updateClock() {
+        if (page.dataset.previewDate) { timeline.classList.remove('has-now'); return; }
         const parts = Object.fromEntries(clock.formatToParts(new Date()).map(({ type, value }) => [type, value]));
         const today = [parts.year, parts.month, parts.day].join('-') === page.dataset.date;
         const minute = Number(parts.hour) * 60 + Number(parts.minute);

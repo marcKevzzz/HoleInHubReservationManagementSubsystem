@@ -79,7 +79,7 @@ Extend the existing account directory with a server-rendered edit page. Business
 
 - [x] Update `Documentation/ONBOARDING.md`, `Documentation/DATABASE.md`, and `Documentation/MIGRATIONS.md` with the new audit and guard collections, migration order, PIN re-enrollment, and the controlled recovery path for bootstrapping Admin access. Normal staff role changes go through Users & Roles so the guard and audit apply.
 - [x] Run the repository checks below. For integration, use isolated local MongoDB databases and verify both fresh and migrated data. Check `/health/ready` on the configured isolated preview and verify that 017 is recorded before the walkthrough.
-- [ ] Walk through grant, PIN setup, role change with a session open, revocation, and denial from a Manager account. Check the saved audit events. Record the commit, commands, actual results, and any defects against the 19 November Sprint 2 milestone.
+- [x] Walk through grant, PIN setup, role change with a session open, revocation, and denial from a Manager account. Check the saved audit events. Record the commit, commands, actual results, and any defects against the 19 November Sprint 2 milestone.
 
 ```powershell
 dotnet build HoleInHubReservationManagementSubsystem.slnx
@@ -96,5 +96,18 @@ npm --prefix HoleInHub.Web run test:ui
 - The solution built with zero warnings and errors. The unit and web smoke suites passed 125 and 60 tests respectively. The CSS build and all 60 JavaScript UI tests passed.
 - The isolated MongoDB run passed all 50 web integration tests and 116 of 117 data integration tests. The existing `GuestProofIsConsumedWithBookingAndRetryReturnsOriginal` case failed with the same allocation conflict in the original checkout at the baseline.
 - The leased CLI applied migrations 001–017 on a fresh local database. A rerun applied zero migrations. The upgraded-database test verified that 017 preserves accounts, the guard counter, and existing audit entries. The isolated preview reported healthy at `/health/ready`.
-- Registered-desktop HTTP coverage exercises role changes, revocation, PIN re-enrollment, stale forms, and denied actions. A live staff walkthrough and deployment remain pending.
+- Registered-desktop HTTP coverage exercises role changes, revocation, PIN re-enrollment, stale forms, and denied actions. The follow-up live walkthrough is recorded below.
 - Review added transactional PIN enrollment against the current account stamp, transaction contention on the acting Admin's account version, and a server-generated audit correlation ID.
+
+## Live access walkthrough — 10 November 2026
+
+The approved walkthrough ran against an isolated loopback HTTPS preview from the working tree based on `6be87b4`. The CLI applied migrations 001–017 to a fresh local replica-set database and the preview reported healthy.
+
+- Admin password sign-in opened the workspace without a desktop certificate. Staff and Manager PINs signed in with the enrolled walkthrough certificate.
+- The Admin revoked and granted Staff access, then promoted the employee to Manager while their Staff session was open. The old session ended and the old PIN was rejected. The employee enrolled a new PIN, signed in as Manager, and lost that active session after revocation.
+- The Manager account received HTTP 403 from the Admin Activity Log. The Admin saw all four role changes in newest-first order, including the actor, affected account, previous and new roles, reason, and Manila timestamp.
+- The solution and Tailwind builds passed. The checks passed 125 unit, 61 Web smoke, 118 data integration, 49 Web integration, and 60 JavaScript tests.
+
+A second browser pass verified the styled Activity Log at desktop and 390 px widths, including a long wrapped reason, horizontal scrolling within the table, and visible keyboard focus.
+
+The walkthrough used synthetic accounts and role changes on the local database. It covered staff access and the audit page.

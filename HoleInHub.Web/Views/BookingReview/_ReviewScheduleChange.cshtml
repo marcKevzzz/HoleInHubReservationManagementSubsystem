@@ -1,0 +1,49 @@
+@using HoleInHub.Business.Reservations
+@model StaffReviewDetail
+@{
+    var booking = Model.Context.Booking;
+    var start = StaffReviewQueue.Local(booking.StartUtc);
+    var end = StaffReviewQueue.Local(booking.EndUtc);
+    var now = Model.Queue.Now;
+    var date = Model.ScheduleDate;
+}
+            @if (booking.Status != "Expired" && booking.ScheduleChange is { Status: "Pending" } proposal)
+            {
+                var proposedStart = StaffReviewQueue.Local(proposal.StartUtc);
+                var proposedEnd = StaffReviewQueue.Local(proposal.EndUtc);
+                var options = ViewData["ChangeBays"] as IReadOnlyList<ResourceDto> ?? [];
+                <section class="review-section review-decision">
+                    <h2>Requested schedule change</h2>
+                    <dl class="review-facts">
+                        <dt>Current</dt><dd>@start.ToString("d MMM, h:mm tt")–@end.ToString("h:mm tt")<br />@StaffReviewQueue.Bays(booking)</dd>
+                        <dt>Proposed</dt><dd>@proposedStart.ToString("d MMM yyyy, h:mm tt")–@proposedEnd.ToString("h:mm tt")<small>Manila time</small></dd>
+                        <dt>Reason</dt><dd>@proposal.Reason</dd>
+                    </dl>
+                    <p>The current booking stays allocated until approval. Availability is checked when you confirm.</p>
+                    <form asp-action="DecideChange" asp-route-id="@booking.Id" asp-route-date="@date" method="post" class="staff-create-form">
+                        <input type="hidden" name="proposalId" value="@proposal.Id" />
+                        <input type="hidden" name="expectedRevision" value="@booking.Revision" />
+                        <fieldset><legend>Assign bays</legend>
+                            <p>Select @booking.ResourceIds.Length @(booking.ResourceIds.Length == 1 ? "bay" : "bays") for the new session.</p>
+                            @foreach (var bay in options)
+                            {
+                                <label class="change-bay-option"><input type="checkbox" name="resources" value="@bay.Id" checked="@booking.ResourceIds.Contains(bay.Id)" />@bay.Name</label>
+                            }
+                        </fieldset>
+                        <label for="change-decision-reason">Decision notes (required to decline)</label>
+                        <textarea id="change-decision-reason" name="reason" maxlength="500" rows="3"></textarea>
+                        @if (booking.Status == "Confirmed" && !booking.CancellationRequested && now < booking.StartUtc && now < proposal.StartUtc)
+                        {
+                            <details class="review-action"><summary class="button">Approve change</summary>
+                                <p>This replaces the original schedule. @(Model.Context.HasEmail ? "The customer will be notified by email." : "Contact the guest by phone.")</p>
+                                <button class="button" type="submit" name="decision" value="approve">Confirm schedule change</button>
+                            </details>
+                        }
+                        else
+                        {
+                            <p class="staff-error">The booking is no longer eligible for this move. Decline this request to close it.</p>
+                        }
+                        <button class="button review-danger" type="submit" name="decision" value="decline">Decline change</button>
+                    </form>
+                </section>
+            }

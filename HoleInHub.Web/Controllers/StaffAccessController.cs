@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Security.Claims;
 using HoleInHub.Business.Accounts;
 using HoleInHub.Web.Accounts;
@@ -50,20 +49,14 @@ public sealed class StaffAccessController(StaffPinAccess access, StaffPinService
             if (credential is not null && !await users.IsLockedOutAsync(employee)
                 && hasher.VerifyHashedPassword(employee, credential.Hash, access.PinInput(employee, form.Pin)) != PasswordVerificationResult.Failed)
             {
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.NameIdentifier, employee.Id),
-                    new Claim(ClaimTypes.Name, employee.Email),
+                await StaffPinAccess.SignInAsync(HttpContext, employee, clock.GetUtcNow(),
+                [
                     new Claim(StaffPinAccess.StaffHostClaim, desktop),
                     new Claim(StaffPinAccess.PinVersionClaim, credential.Version),
-                    new Claim(StaffPinAccess.SecurityStampClaim, employee.SecurityStamp),
-                    new Claim(StaffPinAccess.StartedClaim, clock.GetUtcNow().ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture))
-                };
-                claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
-                await HttpContext.SignInAsync(StaffPinAccess.Scheme, new ClaimsPrincipal(new ClaimsIdentity(claims, StaffPinAccess.Scheme)));
+                    .. roles.Select(role => new Claim(ClaimTypes.Role, role))
+                ]);
                 logger.LogInformation("Staff PIN sign-in succeeded for {EmployeeId}.", employee.Id);
-                if (roles.Contains(StaffRoles.Admin)) { return RedirectToAction("Admin", "Leadership"); }
-                if (roles.Contains(StaffRoles.Manager)) { return RedirectToAction("Manager", "Leadership"); }
+                if (roles.Contains(StaffRoles.Manager)) { return RedirectToAction(nameof(LeadershipController.Dashboard), "Leadership"); }
                 return RedirectToAction("Index", "BookingReview");
             }
         }
@@ -92,7 +85,7 @@ public sealed class StaffAccessController(StaffPinAccess access, StaffPinService
         if (!await pins.TakeDeviceAttemptAsync(desktop, ct)) { return RateLimited("Setup", form); }
 
         var employee = await users.FindByEmailAsync(form.Email.Trim());
-        if (employee is not null && StaffPinAccess.GetWorkspaceRoles(employee).Any() &&
+        if (employee is not null && StaffPinAccess.GetPinRoles(employee).Any() &&
             (await signIn.CheckPasswordSignInAsync(employee, form.Password, lockoutOnFailure: true)).Succeeded)
         {
             if (form.Pin.Distinct().Count() == 1 || "0123456789".Contains(form.Pin) || "9876543210".Contains(form.Pin))
@@ -116,8 +109,13 @@ public sealed class StaffAccessController(StaffPinAccess access, StaffPinService
     [Authorize(Policy = StaffAuthorization.Workspace), HttpPost("sign-out"), HttpPost("switch")]
     public async Task<IActionResult> SignOutStaff()
     {
-        logger.LogInformation("Staff PIN session ended for {EmployeeId}.", User.FindFirstValue(ClaimTypes.NameIdentifier));
+        logger.LogInformation("Workspace session ended for {EmployeeId}.", User.FindFirstValue(ClaimTypes.NameIdentifier));
         await HttpContext.SignOutAsync(StaffPinAccess.Scheme);
+        if (User.IsInRole(StaffRoles.Admin))
+        {
+            await signIn.SignOutAsync();
+            return RedirectToAction("SignIn", "Account");
+        }
         return RedirectToAction(nameof(Index));
     }
 
@@ -131,7 +129,7 @@ public sealed class StaffAccessController(StaffPinAccess access, StaffPinService
     private async Task<AccountUser?> FindPresentationEmployeeAsync(string pin, CancellationToken ct)
     {
         AccountUser? match = null;
-        foreach (var email in new[] { access.PresentationAccount, access.PresentationManagerAccount, access.PresentationAdminAccount }
+        foreach (var email in new[] { access.PresentationAccount, access.PresentationManagerAccount }
             .Where(email => !string.IsNullOrWhiteSpace(email)).Distinct(StringComparer.OrdinalIgnoreCase))
         {
             var employee = await users.FindByEmailAsync(email);

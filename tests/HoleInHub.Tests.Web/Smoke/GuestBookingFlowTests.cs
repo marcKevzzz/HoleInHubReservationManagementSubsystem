@@ -192,7 +192,7 @@ public sealed class GuestBookingFlowTests
             status = await client.GetStringAsync("/Reservations/Status/" + saved.Id + "?token=" + token);
             var cancellation = await client.PostAsync("/Reservations/RequestCancellation/" + saved.Id, new FormUrlEncodedContent(new Dictionary<string, string> { ["__RequestVerificationToken"] = Csrf(status), ["token"] = token }));
             Assert.Equal(HttpStatusCode.Redirect, cancellation.StatusCode);
-            Assert.True((await scope.ServiceProvider.GetRequiredService<ReservationService>().GetStaffAsync(saved.Id, default))!.CancellationRequested);
+            Assert.Equal("Cancelled", (await scope.ServiceProvider.GetRequiredService<ReservationService>().GetStaffAsync(saved.Id, default))!.Status);
             var email = await context.Database.GetCollection<OutboxRecord>("outbox").Find(x => x.Id == saved.Id + ":submitted").SingleAsync();
             var receipt = scope.ServiceProvider.GetRequiredService<IDataProtectionProvider>().CreateProtector("BookingEmail").Unprotect(email.Body[10..]);
             Assert.Contains("Reservation status: Pending", receipt);
@@ -290,9 +290,13 @@ public sealed class GuestBookingFlowTests
             using var staffClient = Client(factory);
             await SignInStaffAsync(staffClient, staff.Email);
             Assert.Equal(HttpStatusCode.Redirect, (await guest.GetAsync("/staff/review-queue")).StatusCode);
-            var queuePage = await staffClient.GetStringAsync("/staff/review-queue");
+            var queuePage = await staffClient.GetStringAsync("/staff/review-queue/pending");
             Assert.Contains(record.Reference, queuePage);
             Assert.DoesNotContain("Bay schedule", queuePage);
+            Assert.Contains("Pending reviews", queuePage);
+            var overdueQueue = await staffClient.GetStringAsync("/staff/review-queue/overdue");
+            Assert.DoesNotContain(record.Reference, overdueQueue);
+            Assert.Contains("Overdue requests", overdueQueue);
             var day = TimeZoneInfo.ConvertTimeFromUtc(record.StartUtc, ReservationRules.Manila).ToString("yyyy-MM-dd");
             var workspace = await staffClient.GetStringAsync($"/BookingReview?date={day}&reference={record.Reference.ToLowerInvariant()}");
             Assert.Contains("Bay schedule", workspace);
@@ -301,6 +305,13 @@ public sealed class GuestBookingFlowTests
             Assert.Contains($"data-reference=\"{record.Reference}\"", guestSearch);
             Assert.DoesNotContain(record.Email, workspace);
             var review = await staffClient.GetStringAsync("/BookingReview/Details/" + record.Id);
+            Assert.Equal(HttpStatusCode.Redirect, (await guest.GetAsync($"/staff/reservations/{record.Id}/actions")).StatusCode);
+            var quickActions = await staffClient.GetStringAsync($"/staff/reservations/{record.Id}/actions");
+            Assert.DoesNotContain("<html", quickActions);
+            Assert.Contains("name=\"expectedRevision\"", quickActions);
+            Assert.Contains("Confirm approve booking", quickActions);
+            Assert.Contains("Confirm reject booking", quickActions);
+            Assert.Equal("Pending", (await service.GetStaffAsync(record.Id, default))!.Status);
             var decided = await staffClient.PostAsync("/BookingReview/Decide/" + record.Id, new FormUrlEncodedContent(new Dictionary<string, string>
             { ["__RequestVerificationToken"] = Csrf(review), ["expectedRevision"] = Regex.Match(review, "name=\"expectedRevision\"[^>]*value=\"([^\"]+)\"").Groups[1].Value, ["decision"] = decision, ["reason"] = decision == "reject" ? "Venue cannot accommodate this request." : "" }));
             Assert.Equal(HttpStatusCode.Redirect, decided.StatusCode);
@@ -317,13 +328,8 @@ public sealed class GuestBookingFlowTests
                 { ["__RequestVerificationToken"] = Csrf(page), ["token"] = token }));
                 Assert.Equal(HttpStatusCode.Redirect, cancellation.StatusCode);
                 updated = (await service.GetStaffAsync(record.Id, default))!;
-                Assert.True(updated.CancellationRequested); Assert.Equal("Confirmed", updated.Status);
-                Assert.False((await service.GetAvailabilityAsync(DateOnly.FromDateTime(record.StartUtc.AddHours(8)), TimeOnly.FromDateTime(record.StartUtc.AddHours(8)), 60, "Regular", default)).Single(x => x.Resource.Id == "bay-2").Available);
-                review = await staffClient.GetStringAsync("/BookingReview/Details/" + record.Id);
-                var cancelled = await staffClient.PostAsync("/BookingReview/Decide/" + record.Id, new FormUrlEncodedContent(new Dictionary<string, string>
-                { ["__RequestVerificationToken"] = Csrf(review), ["expectedRevision"] = Regex.Match(review, "name=\"expectedRevision\"[^>]*value=\"([^\"]+)\"").Groups[1].Value, ["decision"] = "cancel" }));
-                Assert.Equal(HttpStatusCode.Redirect, cancelled.StatusCode);
-                Assert.Equal("Cancelled", (await service.GetStaffAsync(record.Id, default))!.Status);
+                Assert.False(updated.CancellationRequested);
+                Assert.Equal("Cancelled", updated.Status);
                 Assert.Contains("Cancelled", await guest.GetStringAsync(link));
             }
             Assert.True((await service.GetAvailabilityAsync(DateOnly.FromDateTime(record.StartUtc.AddHours(8)), TimeOnly.FromDateTime(record.StartUtc.AddHours(8)), 60, "Regular", default)).Single(x => x.Resource.Id == "bay-2").Available);

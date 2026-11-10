@@ -46,6 +46,8 @@ public sealed class AllocationTests(MongoDbFixture fixture) : IClassFixture<Mong
     {
         var (store, context) = await Setup();
         var request = Request(["bay-1"]);
+        request.StartUtc = DateTime.UtcNow.AddHours(2);
+        request.EndUtc = request.StartUtc.AddHours(1);
         await store.InsertAsync(request, default);
         var receipt = await context.Database.GetCollection<OutboxRecord>("outbox").Find(x => x.Id == request.Id + ":submitted").SingleAsync();
         var outbox = new OutboxPersistence(context);
@@ -137,7 +139,7 @@ public sealed class AllocationTests(MongoDbFixture fixture) : IClassFixture<Mong
     [Fact]
     public async Task ExpiryReleasesCapacityAndWritesNotificationsOnce()
     {
-        var (store, context) = await Setup(); var request = Request(["bay-1"]); request.ReviewDeadlineUtc = DateTime.UtcNow.AddMinutes(-1); await store.InsertAsync(request, default); await store.ExpireAsync(DateTime.UtcNow, ["staff@example.test"], default); await store.ExpireAsync(DateTime.UtcNow, ["staff@example.test"], default); Assert.Equal("Expired", (await store.OwnedAsync(request.AccountId, request.Id, default))!.Status); Assert.Equal(3, await context.Database.GetCollection<OutboxRecord>("outbox").CountDocumentsAsync(FilterDefinition<OutboxRecord>.Empty)); await store.InsertAsync(Request(["bay-1"]), default);
+        var (store, context) = await Setup(); var request = Request(["bay-1"]); request.ReviewDeadlineUtc = DateTime.UtcNow.AddMinutes(-1); await store.InsertAsync(request, default); await store.ExpireAsync(request.StartUtc, ["staff@example.test"], default); await store.ExpireAsync(request.StartUtc, ["staff@example.test"], default); Assert.Equal("Expired", (await store.OwnedAsync(request.AccountId, request.Id, default))!.Status); Assert.Equal(3, await context.Database.GetCollection<OutboxRecord>("outbox").CountDocumentsAsync(FilterDefinition<OutboxRecord>.Empty)); await store.InsertAsync(Request(["bay-1"]), default);
     }
     [Fact]
     public async Task CatalogMutationContendsWithWholeShop()
@@ -157,9 +159,10 @@ public sealed class AllocationTests(MongoDbFixture fixture) : IClassFixture<Mong
     [Fact]
     public async Task PendingAlertsAreDeduplicatedAndStaleAlertsSuppressed()
     {
-        var (store, context) = await Setup(); var outbox = new OutboxPersistence(context); var request = Request(["bay-1"]); request.CreatedUtc = DateTime.UtcNow.AddMinutes(-26); request.ReviewDeadlineUtc = DateTime.UtcNow.AddMinutes(4); await store.InsertAsync(request, default);
+        var (store, context) = await Setup(); var outbox = new OutboxPersistence(context); var request = Request(["bay-1"]); request.CreatedUtc = DateTime.UtcNow.AddMinutes(-26); request.ReviewDeadlineUtc = DateTime.UtcNow.AddMinutes(4);
+        request.StartUtc = DateTime.UtcNow.AddHours(2); request.EndUtc = request.StartUtc.AddHours(1); await store.InsertAsync(request, default);
         var service = new HoleInHub.Business.Reservations.ReservationService(store, outbox, Microsoft.Extensions.Options.Options.Create(new HoleInHub.Business.Reservations.ReservationPolicy { StaffEmails = ["staff@example.test"] })); await service.ProcessPendingAsync(default); await service.ProcessPendingAsync(default);
-        var message = Assert.Single(await context.Database.GetCollection<OutboxRecord>("outbox").Find(x => x.RequiredStatus == "Pending").ToListAsync()); Assert.Contains("review25", message.Id); Assert.True(await outbox.IsEligibleAsync(message, default)); await store.ExpireAsync(DateTime.UtcNow.AddMinutes(5), ["staff@example.test"], default); Assert.False(await outbox.IsEligibleAsync(message, default));
+        var message = Assert.Single(await context.Database.GetCollection<OutboxRecord>("outbox").Find(x => x.RequiredStatus == "Pending").ToListAsync()); Assert.Contains("review25", message.Id); Assert.True(await outbox.IsEligibleAsync(message, default)); await store.ExpireAsync(request.StartUtc, ["staff@example.test"], default); Assert.False(await outbox.IsEligibleAsync(message, default));
     }
     [Fact]
     public async Task ClosureRejectsSubmission()

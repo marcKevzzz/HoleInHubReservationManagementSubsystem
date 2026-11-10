@@ -35,7 +35,7 @@ public sealed partial class ReservationPersistence
             }
             if (record.Revision != expectedRevision) { return AttendanceWriteResult.Stale; }
             var change = decide(record);
-            if (change is null || change.CheckAllocation && await HasReviewConflictAsync(record, token, s))
+            if (change is null || change.CheckAllocation && await HasReviewConflictAsync(record, token, s, change.AtUtc))
             {
                 return AttendanceWriteResult.NotEligible;
             }

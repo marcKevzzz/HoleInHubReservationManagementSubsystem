@@ -257,6 +257,10 @@ public sealed class ReservationsController(ReservationService reservations, Gues
     [AllowAnonymous, HttpGet]
     public async Task<IActionResult> Status(string? id, string? token, CancellationToken ct)
     {
+        if (string.IsNullOrEmpty(token) && User.Identity?.IsAuthenticated == true)
+        {
+            await reservations.ProcessPendingAsync(ct);
+        }
         var booking = await AccessibleAsync(id, token, ct);
         ViewData["AccessToken"] = token;
         ViewData["DemoPayments"] = DemoAllowed;
@@ -311,7 +315,11 @@ public sealed class ReservationsController(ReservationService reservations, Gues
         }
 
         var accepted = await reservations.ReviewAsync(booking.Id, "request-cancellation", "Customer", ct);
-        TempData["BookingMessage"] = accepted ? "Cancellation requested. Your booking remains allocated until staff approves. Deposit refunds are arranged with the venue." : "Cancellation requests must be made at least one hour before the session for an active booking.";
+        TempData["BookingMessage"] = !accepted
+            ? "Online cancellation is available until one hour before the session for Pending or Confirmed bookings."
+            : booking.Service == "WholeShop"
+                ? "Cancellation requested. Your booking remains allocated until staff approves. Deposit refunds are arranged with the venue."
+                : "Reservation cancelled. Any remaining bay hold has been released.";
         return ViewData["GuestAccess"] is true ? RedirectToAction("Details", "GuestReservations", new { id }) : RedirectToAction(nameof(Status), new { id, token });
     }
 

@@ -150,6 +150,7 @@ public sealed class AttendanceTests(MongoDbFixture fixture) : IClassFixture<Mong
     {
         var (store, context) = await Setup();
         var coaching = Booking("Pending", "PhilippineCoach");
+        coaching.StartUtc = Start.AddMinutes(1);
         var saved = await store.InsertAsync(coaching, default);
         Assert.True(await store.TransitionAsync(saved.Id, "coach", "staff", Start, [], default, expectedRevision: 0));
         Assert.False(await store.TransitionAsync(saved.Id, "approve", "staff", Start, [], default, expectedRevision: 0));

@@ -26,6 +26,39 @@ test('staff drag respects the earliest start and midnight', () => {
 const vm = require('node:vm');
 const fs = require('node:fs');
 
+test('overdue requests keep staff actions until the session starts', () => {
+    const due = '2026-11-10T06:30:00Z';
+    const closes = '2026-11-10T08:00:00Z';
+    let now = Date.parse(due);
+    let tick;
+    const countdown = {};
+    const deadline = { dataset: { deadline: due }, querySelector: () => countdown };
+    const action = { hidden: false };
+    const button = { disabled: false };
+    const notice = { hidden: true };
+    const review = {
+        dataset: { reviewCloses: closes },
+        querySelectorAll: selector => selector.endsWith('button') ? [button] : [action],
+        querySelector: () => notice
+    };
+    vm.runInNewContext(fs.readFileSync(require.resolve('../HoleInHub.Web/wwwroot/js/staff-review.js'), 'utf8'), {
+        document: {
+            querySelectorAll: selector => selector === '[data-deadline]' ? [deadline] : [],
+            querySelector: selector => selector === '[data-review-closes]' ? review : null
+        },
+        Date: class extends Date { static now() { return now; } },
+        setInterval: update => { tick = update; }
+    });
+    assert.equal(countdown.textContent, 'Overdue');
+    assert.equal(action.hidden, false);
+    assert.equal(button.disabled, false);
+    now = Date.parse(closes);
+    tick();
+    assert.equal(action.hidden, true);
+    assert.equal(button.disabled, true);
+    assert.equal(notice.hidden, false);
+});
+
 test('block drawer keeps values on errors, prevents duplicate saves, and restores focus', async () => {
     function node() {
         return { handlers: {}, addEventListener(type, handler) { this.handlers[type] = handler; }, focus() { this.focused = true; } };
@@ -69,7 +102,7 @@ test('block drawer keeps values on errors, prevents duplicate saves, and restore
     assert.equal(block.trigger.focused, true);
 });
 
-test('completed bars allow a new drag while a click still opens their history', () => {
+test('Ctrl dragging over completed bars creates a booking; plain dragging does not', () => {
     const eventNode = extra => ({ handlers: {}, addEventListener(type, handler) { this.handlers[type] = handler; }, removeEventListener() {}, ...extra });
     const error = { hidden: true }, submit = {}, close = {}, trigger = eventNode({ focus() {} });
     const form = eventNode({ reset() {}, elements: { ResourceId: {}, StartTime: { defaultValue: '12:00' }, DurationMinutes: {} },
@@ -80,15 +113,15 @@ test('completed bars allow a new drag while a click still opens their history', 
         querySelectorAll(selector) { assert.equal(selector, '[data-holds-capacity="true"]'); return []; } };
     const completed = { clicks: 0, click() { this.clicks++; } };
     const target = { closest(selector) { return selector === '[data-create-bay]' ? track : completed; } };
-    const timeline = eventNode({ classList: { add() {} }, querySelector() { return track; } });
-    const preview = { style: {}, setAttribute() {}, classList: { toggle() {} }, remove() {} };
+    const timeline = eventNode({ classList: { add() {} }, querySelector() { return track; }, querySelectorAll() { return [track]; } });
+    const preview = { style: {}, setAttribute() {}, classList: { toggle() {}, add() {}, remove() {} }, remove() { this.removed = true; } };
     const nodes = { '[data-create-booking]': drawer, '[data-new-booking]': trigger, '.staff-timeline': timeline,
         '[data-drag-hint]': {}, '[data-drag-error]': {} };
     const page = { dataset: { firstHour: '10', openingHour: '10' }, querySelector(selector) { return nodes[selector] || null; } };
     vm.runInNewContext(fs.readFileSync(require.resolve('../HoleInHub.Web/wwwroot/js/staff-booking.js'), 'utf8'), {
         document: { querySelector() { return page; }, createElement() { return preview; }, addEventListener() {} }, setTimeout() {},
     });
-    const pointer = x => ({ target, pointerType: 'mouse', button: 0, pointerId: 1, clientX: x, preventDefault() {} });
+    const pointer = x => ({ target, pointerType: 'mouse', button: 0, ctrlKey: true, pointerId: 1, clientX: x, preventDefault() {} });
     timeline.handlers.pointerdown(pointer(150));
     timeline.handlers.pointerup(pointer(240));
     assert.equal(drawer.open, true);
@@ -96,10 +129,15 @@ test('completed bars allow a new drag while a click still opens their history', 
     assert.equal(form.elements.StartTime.value, '12:30');
     assert.equal(form.elements.DurationMinutes.value, 120);
     assert.equal(completed.clicks, 0);
+    assert.match(preview.textContent, /New booking/);
+    assert.notEqual(preview.removed, true);
+    preview.removed = false;
+    drawer.handlers.close();
+    assert.equal(preview.removed, true);
     drawer.open = false;
-    timeline.handlers.pointerdown(pointer(150));
+    timeline.handlers.pointerdown({ ...pointer(150), ctrlKey: false });
     timeline.handlers.pointerup(pointer(150));
-    assert.equal(completed.clicks, 1);
+    assert.equal(completed.clicks, 0);
     assert.equal(drawer.open, false);
 });
 

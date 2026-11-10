@@ -4,11 +4,6 @@
     Layout = "_StaffLayout";
     ViewData["Title"] = "Review booking";
     var booking = Model.Context.Booking;
-    var attendance = Model.AttendanceForm ?? new StaffAttendanceForm
-    {
-        Action = Model.Context.CanCheckOut ? "check-out" : "check-in", ExpectedRevision = booking.Revision,
-        CommandId = Guid.NewGuid().ToString("N")
-    };
     var now = Model.Queue.Now;
     var start = StaffReviewQueue.Local(booking.StartUtc);
     var end = StaffReviewQueue.Local(booking.EndUtc);
@@ -17,31 +12,34 @@
     var scheduleDay = DateOnly.FromDateTime(start);
     var duration = (int)(end - start).TotalMinutes;
     var durationLabel = duration < 60 ? $"{duration}m" : duration % 60 == 0 ? $"{duration / 60}h" : $"{duration / 60}h {duration % 60}m";
-    var open = booking.Status == "Pending" && booking.ReviewDeadlineUtc > now;
+    var closes = booking.Service == "WholeShop" ? booking.ReviewDeadlineUtc : booking.StartUtc;
+    var open = booking.Status == "Pending" && closes > now;
+    var overdue = ReservationService.IsReviewOverdue(booking, now);
     var coaching = BookingRules.IsCoaching(booking.Service);
-    var canApprove = open && booking.Service != "WholeShop" && (!coaching || booking.CoachConfirmed) && !Model.Context.HasConflict;
+    var canApprove = open && booking.Service != "WholeShop" && !booking.CancellationRequested && (!coaching || booking.CoachConfirmed) && !Model.Context.HasConflict;
+    var canReviewCancellation = booking.CancellationRequested && booking.Status is "Pending" or "Confirmed";
     var phone = new string(booking.Phone.Where(char.IsAsciiDigit).ToArray());
     var national = phone.Length == 12 && phone.StartsWith("63") ? phone[2..] : phone.Length == 11 && phone.StartsWith('0') ? phone[1..] : null;
     var displayPhone = national is null ? booking.Phone : $"+63 {national[..3]} {national[3..6]} {national[6..]}";
     var dial = national is not null ? "+63" + national : phone.Length > 0 && booking.Phone.TrimStart().StartsWith('+') ? "+" + phone : phone;
     var timeline = new StaffTimeline(scheduleDay, Model.Bays);
     var statusLabel = booking.CancellationRequested || booking.PaymentStatus == "LatePayment" || booking.Status == "Pending"
-        ? StaffReviewQueue.Label(booking) : booking.Status == "Expired" ? "Review expired" : booking.Status;
-    var actions = new (string Key, string Label, string Consequence, bool Show)[]
-    {
-        ("approve", "Approve booking", "This confirms the reservation and keeps the selected bays reserved.", canApprove),
-        ("reject", "Reject booking", "This declines the request and releases its bay hold.", open),
-        ("coach", "Record coach confirmation", "This records the coach’s agreement. Venue approval is a separate step.", open && coaching && !booking.CoachConfirmed),
-        ("cancel", "Approve cancellation", "This cancels the reservation and releases its bay hold.", booking.CancellationRequested),
-        ("keep", "Decline cancellation", "The reservation stays in place.", booking.CancellationRequested)
-    };
+        ? StaffReviewQueue.Label(booking, now) : booking.Status == "Expired" ? "Closed" : booking.Status;
+
 }
-<div class="staff-workspace staff-review">
+<div class="staff-workspace staff-review review-detail">
     <div class="review-top-nav">
-        <a class="flow-back" asp-action="@(Model.FromQueue ? "Queue" : "Index")" asp-route-date="@date"
-           asp-route-filter="@(Model.FromQueue ? Model.Queue.Filter : null)" asp-route-day="@Model.Queue.Day" asp-route-sort="@(Model.FromQueue ? Model.Queue.Sort : null)">
-            <partial name="_BackArrow" /> @(Model.FromQueue ? "Back to review queue" : "Back to reservations")
-        </a>
+        @if (Model.FromQueue)
+        {
+            <a class="flow-back" asp-route="staff-review-section" asp-route-section="@Model.Queue.Filter"
+               asp-route-date="@date" asp-route-day="@Model.Queue.Day" asp-route-sort="@Model.Queue.Sort">
+                <partial name="_BackArrow" /> Back to review queue
+            </a>
+        }
+        else
+        {
+            <a class="flow-back" asp-action="Index" asp-route-date="@date"><partial name="_BackArrow" /> Back to reservations</a>
+        }
         @if (Model.FromQueue)
         {
             <nav aria-label="Adjacent review requests">
@@ -61,24 +59,38 @@
             <h1>Review booking</h1>
             <p class="review-reference">@booking.Reference <span class="staff-status review-chip" data-status="@booking.Status">@statusLabel</span></p>
         </div>
-        @if (booking.Status == "Expired")
-        {
-            <p class="staff-empty">This request expired. Its bay hold was released.</p>
-        }
-        else if (booking.Status == "Pending")
-        {
-            var deadline = new StaffDeadline(booking.ReviewDeadlineUtc, now, booking.Service == "WholeShop");
-            <partial name="_Deadline" model="deadline" />
-        }
+        <div class="review-header-actions">
+            <partial name="_ReviewDecision" model="Model" />
+        </div>
     </header>
     @if (TempData["BookingMessage"] is string message)
     {
         <p class="notice" role="status">@message</p>
     }
+    <section class="review-booking-summary" aria-label="Reservation summary">
+        <div class="review-guest">
+            <h2>@booking.FirstName @booking.LastName</h2>
+            @if (dial.Length > 0) { <a class="staff-link" href="tel:@dial">@displayPhone</a> }
+            @if (!string.IsNullOrWhiteSpace(Model.Context.Email)) { <a class="staff-link" href="mailto:@Model.Context.Email">@Model.Context.Email</a> }
+        </div>
+        <div><strong>@start.ToString("ddd, d MMM yyyy")</strong><span>@start.ToString("h:mm tt")–@(start.Date == end.Date ? end.ToString("h:mm tt") : end.ToString("d MMM, h:mm tt")) · @durationLabel</span><small>Manila time</small></div>
+        <div><strong>@StaffReviewQueue.Bays(booking)</strong><span>@ReservationLabels.Service(booking.Service) · @booking.Attendees @(booking.Attendees == 1 ? "guest" : "guests")</span></div>
+        <div class="review-time-left">
+            @if (booking.Status == "Pending")
+            {
+                <partial name="_Deadline" model='new StaffDeadline(booking.ReviewDeadlineUtc, now, booking.Service == "WholeShop")' />
+            }
+            else { <strong>@statusLabel</strong> }
+        </div>
+    </section>
+    @if (!string.IsNullOrWhiteSpace(booking.Notes))
+    {
+        <p class="review-booking-note"><strong>Customer note</strong> @booking.Notes</p>
+    }
     <div class="review-columns">
-        <div class="review-main">
-            <section class="review-section">
-                <h2>Customer</h2>
+        <div class="review-main review-supporting">
+            <details class="review-section review-disclosure">
+                <summary>Customer background</summary>
                 <a class="staff-link" asp-controller="Customers" asp-action="Details" asp-route-id="@booking.Id">View customer history</a>
                 <dl class="review-facts">
                     <dt>Name</dt><dd>@booking.FirstName @booking.LastName</dd>
@@ -86,9 +98,9 @@
                     <dt>History</dt><dd>@if (Model.Context.PastBookings is { } past) { <span>@past past @(past == 1 ? "booking" : "bookings") · @Model.Context.Cancellations @(Model.Context.Cancellations == 1 ? "cancellation" : "cancellations")</span> } else { <span>No linked customer history</span> }</dd>
                     @if (booking.BookingSource is not null) { <dt>Source</dt><dd>@booking.BookingSource</dd> }
                 </dl>
-            </section>
-            <section class="review-section">
-                <h2>Booking details</h2>
+            </details>
+            <details class="review-section review-disclosure">
+                <summary>Booking details &amp; notes</summary>
                 <dl class="review-facts">
                     <dt>When</dt><dd><strong>@start.ToString("ddd, d MMM yyyy")</strong><br />@start.ToString("h:mm tt")–@(start.Date == end.Date ? end.ToString("h:mm tt") : end.ToString("d MMM, h:mm tt")) · @durationLabel <small>Manila time</small></dd>
                     <dt>Where</dt><dd>@StaffReviewQueue.Bays(booking) · @ReservationLabels.Service(booking.Service)</dd>
@@ -108,18 +120,15 @@
                 {
                     <p class="review-callout"><span aria-hidden="true">ⓘ</span> Confirm the player distribution with the customer. Each bay allows up to six players.</p>
                 }
-            </section>
-            <section class="review-section">
+            </details>
+            <details class="review-section review-disclosure" open="@(open && Model.Context.HasConflict)">
+                <summary>Bay availability</summary>
                 <div class="review-section-heading">
-                    <h2>Bay availability</h2>
                     <a class="staff-link" asp-action="Index" asp-route-date="@scheduleDay.ToString("yyyy-MM-dd")">Open schedule ↗</a>
                 </div>
-                @if (booking.Status == "Pending")
+                @if (booking.Status == "Pending" && Model.Context.HasConflict)
                 {
-                    <p class="review-callout" data-conflict="@Model.Context.HasConflict.ToString().ToLowerInvariant()">
-                        <span aria-hidden="true">@(Model.Context.HasConflict ? "⚠" : "✓")</span>
-                        @(Model.Context.HasConflict ? "The requested slot conflicts with another allocation, a block, or an inactive bay." : "The requested slot is held for this booking. No overlap found.")
-                    </p>
+                    <p class="review-callout" data-conflict="true">The requested bay is unavailable for this session.</p>
                 }
                 @if (Model.Bays.Count > 0)
                 {
@@ -137,145 +146,39 @@
                                 }
                             </div></div>
                         }
-                        <p><i></i> Requested <i></i> Other bookings or blocks</p>
+
                     </div>
                 }
-            </section>
+            </details>
         </div>
         <aside class="review-side">
-            @if (booking.ScheduleChange is { Status: "Pending" } proposal)
-            {
-                var proposedStart = StaffReviewQueue.Local(proposal.StartUtc);
-                var proposedEnd = StaffReviewQueue.Local(proposal.EndUtc);
-                var options = ViewData["ChangeBays"] as IReadOnlyList<ResourceDto> ?? [];
-                <section class="review-section review-decision">
-                    <h2>Requested schedule change</h2>
-                    <dl class="review-facts">
-                        <dt>Current</dt><dd>@start.ToString("d MMM, h:mm tt")–@end.ToString("h:mm tt")<br />@StaffReviewQueue.Bays(booking)</dd>
-                        <dt>Proposed</dt><dd>@proposedStart.ToString("d MMM yyyy, h:mm tt")–@proposedEnd.ToString("h:mm tt")<small>Manila time</small></dd>
-                        <dt>Reason</dt><dd>@proposal.Reason</dd>
-                    </dl>
-                    <p>The current booking stays allocated until approval. Availability is checked when you confirm.</p>
-                    <form asp-action="DecideChange" asp-route-id="@booking.Id" asp-route-date="@date" method="post" class="staff-create-form">
-                        <input type="hidden" name="proposalId" value="@proposal.Id" />
-                        <input type="hidden" name="expectedRevision" value="@booking.Revision" />
-                        <fieldset><legend>Assign bays</legend>
-                            <p>Select @booking.ResourceIds.Length @(booking.ResourceIds.Length == 1 ? "bay" : "bays") for the new session.</p>
-                            @foreach (var bay in options)
-                            {
-                                <label class="change-bay-option"><input type="checkbox" name="resources" value="@bay.Id" checked="@booking.ResourceIds.Contains(bay.Id)" />@bay.Name</label>
-                            }
-                        </fieldset>
-                        <label for="change-decision-reason">Decision notes (required to decline)</label>
-                        <textarea id="change-decision-reason" name="reason" maxlength="500" rows="3"></textarea>
-                        @if (booking.Status == "Confirmed" && !booking.CancellationRequested && now < booking.StartUtc && now < proposal.StartUtc)
-                        {
-                            <details class="review-action"><summary class="button">Approve change</summary>
-                                <p>This replaces the original schedule. @(Model.Context.HasEmail ? "The customer will be notified by email." : "Contact the guest by phone.")</p>
-                                <button class="button" type="submit" name="decision" value="approve">Confirm schedule change</button>
-                            </details>
-                        }
-                        else
-                        {
-                            <p class="staff-error">The booking is no longer eligible for this move. Decline this request to close it.</p>
-                        }
-                        <button class="button review-danger" type="submit" name="decision" value="decline">Decline change</button>
-                    </form>
-                </section>
-            }
-            <section class="review-section review-attendance">
-                <h2>Attendance</h2>
-                @if (Model.Context.NeedsFollowUp)
+            <partial name="_ReviewScheduleChange" model="Model" />
+
+            <partial name="_StaffAttendance" model="Model" />
+
+            <details class="review-section review-disclosure" id="booking-history">
+                <summary>Booking history <span>@booking.History.Count events</span></summary>
+                @if (booking.History.Count == 0)
                 {
-                    <p class="review-callout">Needs follow-up. Contact the guest; this booking has not been automatically marked as a no-show.</p>
+                    <partial name="_StaffEmptyState" model='("history", "No events recorded", "Updates to this reservation will appear here.", (string?)null, (string?)null)' />
                 }
-                <div asp-validation-summary="All" class="staff-error" role="alert"></div>
-                @if (Model.Context.CanCheckIn || Model.Context.CanCheckOut)
-                {
-                    var checkout = Model.Context.CanCheckOut;
-                    var early = checkout && now < booking.EndUtc;
-                    <p>@(checkout ? "Confirm that the guest has finished and all booked bays are clear. Checking out releases all remaining bay capacity." : "Record the guest’s arrival. Late arrival does not extend the scheduled end.")</p>
-                    @if (early) { <p><strong>@Math.Ceiling((booking.EndUtc - now).TotalMinutes) minutes remain</strong> in the scheduled session. A reason is required for early departure.</p> }
-                    <form asp-action="Attendance" asp-route-id="@booking.Id" asp-route-date="@date" method="post" class="staff-create-form">
-                        <input type="hidden" name="Action" value="@attendance.Action" />
-                        <input type="hidden" name="ExpectedRevision" value="@attendance.ExpectedRevision" />
-                        <input type="hidden" name="CommandId" value="@attendance.CommandId" />
-                        <div>
-                            <label for="attendance-reason">@(early ? "Early departure reason" : "Notes (optional)")</label>
-                            <textarea id="attendance-reason" name="Reason" rows="3" maxlength="500" required="@early">@attendance.Reason</textarea>
-                        </div>
-                        <label class="staff-create-confirm"><input type="checkbox" name="ConfirmAttendance" value="true" required checked="@attendance.ConfirmAttendance" /><span>@(checkout ? "All booked bays are clear and can be released." : "The guest has arrived for this booking.")</span></label>
-                        <button class="button" type="submit">@(checkout ? "Confirm check out" : "Confirm check in")</button>
-                    </form>
-                }
-                else if (booking.Status == "Confirmed")
-                {
-                    <p>@(now < booking.StartUtc ? $"Check-in opens at {start:h:mm tt} on {start:d MMM}." : now >= booking.EndUtc ? "The scheduled session has ended. Check-in is unavailable." : "Resolve any cancellation request, coach/deposit approval or bay conflict before check-in.")</p>
-                }
-                else if (booking.Status == "Completed") { <p>The session is complete. Its attendance history is retained.</p> }
-                else { <p>No attendance action is available for this booking.</p> }
-            </section>
-            <section class="review-section review-decision">
-                <h2>Decision</h2>
-                @if (open)
-                {
-                    <p class="staff-error" data-review-expired hidden>The deadline passed. Refresh the booking for its latest status.</p>
-                }
-                @if (open && Model.Context.HasConflict && booking.Service != "WholeShop")
-                {
-                    <p class="staff-error">Approval is unavailable while the requested slot is in conflict.</p>
-                }
-                @if (booking.Service == "WholeShop" && (open || booking.PaymentStatus == "LatePayment"))
-                {
-                    <p>@(booking.PaymentStatus == "LatePayment" ? "Reconcile the late payment through the venue’s payment process." : "This reservation confirms after a verified deposit.")</p>
-                }
-                @if (!actions.Any(x => x.Show))
-                {
-                    <p class="staff-empty">No booking review decision is pending.</p>
-                }
-                @foreach (var action in actions.Where(x => x.Show))
-                {
-                    var decline = action.Key is "reject" or "keep";
-                    <details class="review-action" data-pending-action="@(action.Key is "approve" or "reject" or "coach" ? "" : null)">
-                        <summary class="button @(decline ? "review-danger" : action.Key == "approve" ? "" : "button-secondary")">@action.Label</summary>
-                        <form asp-action="Decide" asp-route-id="@booking.Id" asp-route-date="@date" asp-route-fromQueue="@fromQueue"
-                              asp-route-filter="@(Model.FromQueue ? Model.Queue.Filter : null)" asp-route-day="@Model.Queue.Day"
-                              asp-route-sort="@(Model.FromQueue ? Model.Queue.Sort : null)" method="post">
-                            <input type="hidden" name="expectedRevision" value="@booking.Revision" />
-                            <p>@action.Consequence @(Model.Context.HasEmail ? "The customer will be notified by email." : "Contact the guest by phone to share the outcome.")</p>
-                            @if (action.Key == "reject")
-                            {
-                                <label for="reject-reason-choice">Reason</label>
-                                <select id="reject-reason-choice" name="reasonChoice" required>
-                                    <option value="">Choose a reason</option>
-                                    <option>Bay unavailable</option><option>Outside operating hours</option><option>Can’t reach customer</option><option>Other</option>
-                                </select>
-                            }
-                            @if (decline)
-                            {
-                                <label for="reason-@action.Key">@(action.Key == "reject" ? "Details (required for Other)" : "Reason")</label>
-                                <textarea id="reason-@action.Key" name="reason" rows="3" maxlength="@(action.Key == "reject" ? 970 : 1000)" required="@(action.Key == "keep")"></textarea>
-                            }
-                            <button class="button @(decline ? "review-danger" : "")" name="decision" value="@action.Key" type="submit">Confirm @action.Label.ToLowerInvariant()</button>
-                        </form>
-                    </details>
-                }
-            </section>
-            <section class="review-section">
-                <h2>History</h2>
-                @if (booking.History.Count == 0) { <p class="staff-empty">No events recorded.</p> }
                 <ol class="review-history">
                     @foreach (var entry in booking.History.OrderByDescending(x => x.AtUtc))
                     {
                         var actor = entry.Actor is "Customer" or "System" ? entry.Actor : entry.Actor == "Demo POS" ? "POS" : "Staff";
-                        var label = entry.Status == "Pending" ? "Request submitted" : ReservationLabels.History(entry.Status);
+                        var label = entry.Status switch
+                        {
+                            "Pending" => "Request submitted",
+                            "Expired" => "Request closed",
+                            _ => ReservationLabels.History(entry.Status)
+                        };
                         var time = StaffReviewQueue.Local(entry.AtUtc).ToString("d MMM yyyy, h:mm tt");
                         <li><strong>@label <small>· @actor</small></strong><time data-relative datetime="@entry.AtUtc.ToString("O")" title="@time Manila time" aria-label="@time Manila time">@time</time>
                             @if (!string.IsNullOrWhiteSpace(entry.Reason)) { <p>@entry.Reason</p> }
                         </li>
                     }
                 </ol>
-            </section>
+            </details>
         </aside>
     </div>
 </div>

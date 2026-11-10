@@ -3,16 +3,20 @@
 @model StaffRoleEditModel
 @{
     ViewData["Title"] = "Edit staff access";
-    ViewData["LeadershipPage"] = "Users";
+    ViewData["LeadershipPage"] = "People";
 }
-<section class="staff-workspace staff-review leadership-page">
+<section class="staff-workspace staff-review leadership-page people-page people-access-edit">
+    <a class="flow-back" asp-action="People"><partial name="_BackArrow" /> Back to Team &amp; access</a>
     <header class="staff-workspace-heading">
         <h1>Edit staff access</h1>
-        <p>@Model.Account.Name @Model.Account.Email</p>
+
     </header>
-    <section class="review-section leadership-section">
-        <h2>Current access</h2>
-        <p>@string.Join(", ", Model.Account.Roles)</p>
+    <section class="people-summary" aria-label="Account overview">
+        <div><h2>Account</h2><strong class="people-account-name">@(string.IsNullOrWhiteSpace(Model.Account.Name) ? "Name unavailable" : Model.Account.Name)</strong><span>@Model.Account.Email</span></div>
+        <div><h2>Current access</h2><span class="people-role-list">@foreach (var role in Model.Account.Roles) { <span class="people-pill">@role</span> }</span></div>
+    </section>
+    <section class="people-access-form">
+        <h2>Update staff access</h2>
         @if (Model.IsStale)
         {
             <p class="staff-error" role="alert">This account changed after you opened the form. Review the current roles before saving.</p>
@@ -20,9 +24,9 @@
         }
         else
         {
-            <p id="staff-role-note">Changing access ends existing staff sessions. Anyone who keeps staff access must set up a PIN again on an enrolled desktop.</p>
+            <p id="staff-role-note" class="people-access-note">Changing access ends existing staff sessions. Staff and Managers who retain or gain access must set up a PIN on an enrolled desktop. Admins sign in with their email and password.</p>
             <div asp-validation-summary="All" class="staff-error" role="alert"></div>
-            <form method="post" asp-action="EditUserRole" asp-route-id="@Model.Account.Id" class="review-filter-form">
+            <form method="post" asp-action="EditUserRole" asp-route-id="@Model.Account.Id" class="staff-create-form people-role-form">
                 <input asp-for="Form.Version" type="hidden" />
                 <label>
                     Staff role
@@ -43,5 +47,5 @@
             </form>
         }
     </section>
-    <a class="button button-secondary" asp-action="Users" data-no-icon>Back to Users &amp; Roles</a>
+
 </section>

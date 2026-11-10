@@ -20,6 +20,8 @@
     const error = dialog.querySelector('[data-move-error]');
     const description = dialog.querySelector('[data-move-description]');
     const dragError = page.querySelector('[data-drag-error]');
+    const scroller = page.querySelector('.staff-timeline-scroll');
+    const gesture = page.timelineGesture;
     const first = Number(page.dataset.firstHour) * 60;
     const minimum = Number(page.dataset.openingHour) * 60;
     let move, saving = false;
@@ -30,8 +32,18 @@
     function begin(bar) {
         dragError.hidden = true;
         const track = bar.closest('.staff-timeline-track');
-        move = { bar, track, target: track, original: bar.style.getPropertyValue('--start'), start: Number(bar.dataset.startMinute),
-            duration: Number(bar.dataset.duration), command: crypto.randomUUID().replaceAll('-', '') };
+        move = { bar, track, target: track, lastTarget: track, original: bar.style.getPropertyValue('--start'), start: Number(bar.dataset.startMinute),
+            date: page.dataset.date, first, minimum, scroll: scroller?.scrollLeft || 0, duration: Number(bar.dataset.duration), command: crypto.randomUUID().replaceAll('-', '') };
+    }
+    function lift() {
+        if (move.ghost) return;
+        move.ghost = move.bar.cloneNode(true);
+        move.ghost.removeAttribute('href');
+        move.ghost.removeAttribute('id');
+        move.ghost.setAttribute('aria-hidden', 'true');
+        move.ghost.classList.add('staff-moving-ghost', 'is-moving');
+        document.body.append(move.ghost);
+        move.bar.style.visibility = 'hidden';
     }
     function update(minute, target = move.track) {
         const occupied = Array.from((target || move.track).querySelectorAll('[data-holds-capacity="true"]'))
@@ -42,17 +54,43 @@
         const compatible = target?.dataset.createBay && target.closest('[data-bay-type]').dataset.bayType === move.track.closest('[data-bay-type]').dataset.bayType;
         const alreadySelected = target !== move.track && target?.querySelector(`[data-move-booking="${move.bar.dataset.moveBooking}"]`);
         move.target = target;
-        move.range = moveRange(first, minimum, move.duration, occupied, minute);
+        if (target) move.lastTarget = target;
+        move.range = moveRange(move.first, move.minimum, move.duration, occupied, minute);
         move.range.valid = move.range.valid && !!compatible && !alreadySelected;
-        move.bar.style.setProperty('--start', move.range.left + '%');
+        if (move.date && Date.parse(`${move.date}T${time(move.range.start)}:00+08:00`) <= Date.now()) move.range.valid = false;
+        const left = Math.max(0, Math.min(100 - move.duration / (1440 - move.first) * 100, move.range.left));
+        move.bar.style.setProperty('--start', left + '%');
         const offset = target ? target.getBoundingClientRect().top - move.track.getBoundingClientRect().top : 0;
         move.bar.style.translate = `0 ${offset}px`;
         move.bar.classList.toggle('is-unavailable', !move.range.valid);
+        if (move.ghost && target) {
+            const rect = target.getBoundingClientRect();
+            move.ghost.style.left = rect.left + rect.width * move.range.left / 100 + 'px';
+            move.ghost.style.top = rect.top + 3 + 'px';
+            move.ghost.style.width = rect.width * move.duration / (1440 - move.first) + 'px';
+            move.ghost.style.height = Math.max(48, rect.height / Number(target.style.getPropertyValue('--lanes') || 1) - 4) + 'px';
+            const canvasLeft = scroller.getBoundingClientRect().left + timeline.querySelector('.staff-timeline-label').offsetWidth;
+            const ghostLeft = rect.left + rect.width * move.range.left / 100;
+            move.ghost.style.clipPath = `inset(0 0 0 ${Math.max(0, canvasLeft - ghostLeft)}px)`;
+        }
+        if (move.ghost) move.ghost.classList.toggle('is-unavailable', !move.range.valid);
     }
     function restore() {
         if (!move) return;
+        clearTimeout(move.edgeTimer);
+        move.request?.abort();
+        if (move.originalRows) {
+            timeline.replaceChildren(...move.originalRows);
+            timeline.style.setProperty('--hours', (1440 - first) / 60);
+            scroller.scrollLeft = move.originalScroll;
+        }
+        move.ghost?.remove();
+        delete page.dataset.moving;
+        delete page.dataset.previewDate;
+        gesture?.hide();
         move.bar.style.setProperty('--start', move.original);
         move.bar.style.removeProperty('translate');
+        move.bar.style.removeProperty('visibility');
         move.bar.classList.remove('is-moving', 'is-unavailable');
         move.bar.focus({ preventScroll: true });
         move = undefined;
@@ -64,7 +102,8 @@
             restore();
             return;
         }
-        if (move.range.start === move.start && move.target === move.track) { restore(); return; }
+        if (move.loading) { dragError.textContent = 'Wait for the destination day to load, then try the move again.'; dragError.hidden = false; restore(); return; }
+        if (move.range.start === move.start && move.target === move.track && move.date === page.dataset.date) { restore(); return; }
         const { bar, range } = move;
         form.action = bar.dataset.moveBooking;
         form.elements.revision.value = bar.dataset.revision;
@@ -72,38 +111,115 @@
         form.elements.startTime.value = time(range.start);
         form.elements.resourceId.value = move.target.dataset.createBay;
         form.elements.sourceResourceId.value = move.track.dataset.createBay;
+        if (form.elements.date) form.elements.date.value = move.date;
         const destination = move.target.closest('[data-bay-type]').getAttribute('aria-label');
-        description.textContent = `${bar.dataset.guest} · ${bar.dataset.reference}. Move from ${bar.dataset.location}, ${bar.dataset.interval} to ${destination}, ${timeLabel(range.start)}–${timeLabel(range.end)}?`;
+        description.textContent = `${bar.dataset.guest} · ${bar.dataset.reference}. Move from ${bar.dataset.location}, ${bar.dataset.interval} to ${destination}, ${gesture ? gesture.dayLabel(move.date) + ', ' : ''}${timeLabel(range.start)}–${timeLabel(range.end)}?`;
         error.hidden = true;
         dialog.showModal();
+    }
+    async function changeDay(direction) {
+        const current = move;
+        if (!current || current.loading) return;
+        const date = gesture.adjacentDay(current.date, direction);
+        if (date < page.dataset.today) { gesture.preview(current.date, 'Past dates are unavailable'); return; }
+        current.loading = true;
+        current.request = new AbortController();
+        gesture.preview(date, 'Loading schedule');
+        try {
+            const destination = await gesture.load(date, current.request.signal);
+            if (move !== current || current.request.signal.aborted) return;
+            if (!current.originalRows) {
+                current.originalRows = [...timeline.childNodes];
+                current.originalScroll = scroller.scrollLeft;
+                lift();
+            }
+            const incoming = destination.querySelector('.staff-timeline');
+            timeline.replaceChildren(...incoming.childNodes);
+            timeline.classList.remove('has-now');
+            current.date = page.dataset.previewDate = date;
+            current.first = Number(destination.dataset.firstHour) * 60;
+            current.minimum = Number(destination.dataset.openingHour) * 60;
+            timeline.style.setProperty('--hours', (1440 - current.first) / 60);
+            const target = [...timeline.querySelectorAll('[data-create-bay]')].find(track => track.dataset.createBay === current.lastTarget.dataset.createBay);
+            const minute = Math.max(current.start, current.minimum);
+            if (target) {
+                const width = target.getBoundingClientRect().width;
+                scroller.scrollLeft = Math.max(0, (minute - current.first) / (1440 - current.first) * width - scroller.clientWidth / 3);
+            }
+            update(minute, target || null);
+            gesture.preview(date, 'Drop to review move');
+        } catch (error) {
+            if (move === current && !current.request.signal.aborted) { dragError.textContent = error.message; dragError.hidden = false; gesture.hide(); }
+        } finally { current.loading = false; }
+    }
+    function edgeAt(event) {
+        if (!gesture || !scroller) return;
+        const rect = scroller.getBoundingClientRect();
+        const label = timeline.querySelector('.staff-timeline-label').offsetWidth;
+        const direction = event.clientX < rect.left + label + 24 ? -1 : event.clientX > rect.right - 28 ? 1 : 0;
+        if (move.edge === direction) return;
+        clearTimeout(move.edgeTimer);
+        move.edge = direction;
+        if (direction) {
+            const advance = () => {
+                if (!move || move.edge !== direction || move.pointer === undefined) return;
+                const before = scroller.scrollLeft;
+                scroller.scrollLeft += direction * 48;
+                if (scroller.scrollLeft !== before) {
+                    place(move.point);
+                    move.edgeTimer = setTimeout(advance, 70);
+                } else {
+                    gesture.preview(gesture.adjacentDay(move.date, direction), 'Hold to switch day');
+                    move.edgeTimer = setTimeout(() => changeDay(direction), 650);
+                }
+            };
+            move.edgeTimer = setTimeout(advance, 100);
+        } else if (!move.originalRows) gesture.hide();
     }
     timeline.addEventListener('pointerdown', event => {
         const bar = event.target.closest('[data-move-booking]');
         if (!bar || move || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        if (page.dataset.date && Date.parse(`${page.dataset.date}T${time(Number(bar.dataset.startMinute))}:00+08:00`) <= Date.now()) {
+            dragError.textContent = 'This reservation has already started and cannot be dragged.';
+            dragError.hidden = false;
+            return;
+        }
         event.preventDefault();
         begin(bar);
+        page.dataset.moving = 'true';
         move.pointer = event.pointerId;
         move.origin = event.clientX;
         move.originY = event.clientY;
         move.width = move.track.getBoundingClientRect().width;
-        bar.setPointerCapture(event.pointerId);
+        (gesture ? timeline : bar).setPointerCapture(event.pointerId);
     });
+    function place(event) {
+        const canvasLeft = scroller ? scroller.getBoundingClientRect().left + timeline.querySelector('.staff-timeline-label').offsetWidth : -Infinity;
+        const target = Array.from(timeline.querySelectorAll('.staff-timeline-track')).find(track => {
+            const rect = track.getBoundingClientRect();
+            return event.clientX >= canvasLeft && event.clientY >= rect.top && event.clientY < rect.bottom && event.clientX >= rect.left && event.clientX < rect.right;
+        });
+        if (move.originalRows && target) {
+            const rect = target.getBoundingClientRect();
+            update(move.first + (event.clientX - rect.left) / rect.width * (1440 - move.first) - move.duration / 2, target);
+        } else update(move.start + (event.clientX - move.origin + (scroller?.scrollLeft || 0) - move.scroll) / move.width * (1440 - first), target || null);
+    }
     timeline.addEventListener('pointermove', event => {
         if (move?.pointer !== event.pointerId) return;
         if (!move.dragged && Math.hypot(event.clientX - move.origin, event.clientY - move.originY) < 5) return;
+        if (gesture) lift();
         move.dragged = true;
+        move.point = { clientX: event.clientX, clientY: event.clientY };
         move.bar.classList.add('is-moving');
-        const target = Array.from(timeline.querySelectorAll('.staff-timeline-track')).find(track => {
-            const rect = track.getBoundingClientRect();
-            return event.clientY >= rect.top && event.clientY < rect.bottom && event.clientX >= rect.left && event.clientX < rect.right;
-        });
-        update(move.start + (event.clientX - move.origin) / move.width * (1440 - first), target || null);
+        place(event);
+        edgeAt(event);
     });
     timeline.addEventListener('pointerup', event => {
         if (move?.pointer !== event.pointerId) return;
         const { bar, dragged } = move;
         move.pointer = undefined;
-        bar.releasePointerCapture(event.pointerId);
+        clearTimeout(move.edgeTimer);
+        (gesture ? timeline : bar).releasePointerCapture(event.pointerId);
         if (!dragged) { restore(); bar.click(); }
         else confirm();
         const suppress = click => { click.preventDefault(); click.stopImmediatePropagation(); };
@@ -152,6 +268,7 @@
         submit.textContent = 'Continue';
     });
     for (const bar of timeline.querySelectorAll('[data-move-booking]')) {
+        if (!bar.dataset.moveBooking) { bar.removeAttribute('data-move-booking'); continue; }
         bar.draggable = false;
         bar.setAttribute('aria-keyshortcuts', 'Alt+ArrowLeft Alt+ArrowRight Alt+ArrowUp Alt+ArrowDown');
         bar.title += '. Drag to another time or bay. Alt+Left/Right changes time, Alt+Up/Down changes bay.';

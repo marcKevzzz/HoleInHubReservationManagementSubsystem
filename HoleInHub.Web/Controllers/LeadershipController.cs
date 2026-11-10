@@ -10,37 +10,45 @@ using Microsoft.Extensions.Options;
 
 namespace HoleInHubReservationManagementSubsystem.Controllers;
 
-[Authorize(Policy = StaffAuthorization.Workspace, Roles = StaffRoles.VenueManagement)]
+[Authorize(Policy = StaffAuthorization.Workspace)]
 [AutoValidateAntiforgeryToken, ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class LeadershipController(ReservationService reservations, AccountService accounts,
     IServiceCatalog services, IOptions<ReservationPolicy> policy, TimeProvider clock, StaffPinAccess staffAccess) : Controller
 {
     private DateOnly Today => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(clock.GetUtcNow(), ReservationRules.Manila).DateTime);
 
-    [HttpGet("/manager")]
-    public async Task<IActionResult> Manager(CancellationToken ct)
+    [HttpGet("/staff/dashboard")]
+    public async Task<IActionResult> Dashboard(CancellationToken ct)
     {
         ViewData["PendingReviews"] = await reservations.GetPendingReviewCountAsync(ct);
         return View();
     }
 
-    [HttpGet("/manager/availability")]
-    public async Task<IActionResult> Availability(DateOnly? date, CancellationToken ct)
+    [Authorize(Roles = StaffRoles.VenueManagement), HttpGet("/manager")]
+    public IActionResult Manager() => RedirectToAction(nameof(Dashboard));
+
+    [Authorize(Roles = StaffRoles.VenueManagement), HttpGet("/manager/availability")]
+    public IActionResult Availability(DateOnly? date)
     {
         var day = date ?? Today;
         if (!ModelState.IsValid || day <= DateOnly.MinValue || day >= DateOnly.MaxValue) { return BadRequest(); }
-        ViewData["Day"] = day;
-        return View(await reservations.GetStaffScheduleAsync(day, ct));
+        return RedirectToAction(nameof(BookingReviewController.Index), "BookingReview", new { date = day.ToString("yyyy-MM-dd") });
     }
 
-    [HttpGet("/manager/team")]
-    public async Task<IActionResult> Team(int page, CancellationToken ct)
+    [Authorize(Roles = StaffRoles.VenueManagement), HttpGet("/manager/team")]
+    public IActionResult Team(int? page) => RedirectToAction(nameof(People), new { page, scope = "team" });
+
+    [Authorize(Roles = StaffRoles.VenueManagement), HttpGet("/staff/people")]
+    public async Task<IActionResult> People(int page, string? scope, CancellationToken ct)
     {
-        ViewData["Title"] = "Team";
-        return View("Directory", await accounts.GetDirectoryAsync(true, page, ct));
+        var isAdmin = User.IsInRole(StaffRoles.Admin);
+        var role = StaffRoles.Workspace.Contains(scope) ? scope! : StaffRoles.Staff;
+        ViewData["SelectedRole"] = role;
+        ViewData["RoleEditing"] = isAdmin && !staffAccess.IsPresentation;
+        return View("Directory", await accounts.GetDirectoryAsync(true, page, ct, role));
     }
 
-    [HttpGet("/manager/reports")]
+    [Authorize(Roles = StaffRoles.VenueManagement), HttpGet("/manager/reports")]
     public async Task<IActionResult> Reports(CancellationToken ct)
     {
         var day = Today;
@@ -48,22 +56,21 @@ public sealed class LeadershipController(ReservationService reservations, Accoun
         return View(await reservations.GetStaffScheduleAsync(day, ct));
     }
 
-    [HttpGet("/manager/activity")]
-    public async Task<IActionResult> Activity(CancellationToken ct) => View(await reservations.GetStaffScheduleAsync(Today, ct));
+    [Authorize(Roles = StaffRoles.VenueManagement), HttpGet("/manager/activity")]
+    public IActionResult Activity() => RedirectToAction(nameof(BookingReviewController.Index), "BookingReview");
 
-    [HttpGet("/manager/notifications")]
-    public IActionResult Notifications() => View(policy.Value);
+    [Authorize(Roles = StaffRoles.VenueManagement), HttpGet("/manager/notifications")]
+    public IActionResult Notifications() => RedirectToAction(nameof(Settings));
 
     [Authorize(Roles = StaffRoles.Admin), HttpGet("/admin")]
-    public IActionResult Admin() => View();
+    public IActionResult Admin() => RedirectToAction(nameof(Dashboard));
+
+    [Authorize(Roles = StaffRoles.Admin), HttpGet("/admin/activity")]
+    public async Task<IActionResult> AdminActivity(int page, CancellationToken ct) =>
+        View(await accounts.GetRoleActivityAsync(page, ct));
 
     [Authorize(Roles = StaffRoles.Admin), HttpGet("/admin/users")]
-    public async Task<IActionResult> Users(int page, CancellationToken ct)
-    {
-        ViewData["Title"] = "Users & roles";
-        ViewData["RoleEditing"] = !staffAccess.IsPresentation;
-        return View("Directory", await accounts.GetDirectoryAsync(false, page, ct));
-    }
+    public IActionResult Users(int? page) => RedirectToAction(nameof(People), new { page });
 
     [Authorize(Roles = StaffRoles.Admin), HttpGet("/admin/users/{id}/role")]
     public async Task<IActionResult> EditUserRole([FromRoute] string id, CancellationToken ct)
@@ -100,7 +107,7 @@ public sealed class LeadershipController(ReservationService reservations, Accoun
                 case StaffRoleChangeResult.Unchanged:
                     TempData["RoleMessage"] = result == StaffRoleChangeResult.Applied
                         ? "Staff access updated." : "Staff access is already set to that role.";
-                    return RedirectToAction(nameof(Users));
+                    return RedirectToAction(nameof(People));
                 case StaffRoleChangeResult.NotFound:
                     return NotFound();
                 case StaffRoleChangeResult.Forbidden:
@@ -167,5 +174,8 @@ public sealed class LeadershipController(ReservationService reservations, Accoun
     public async Task<IActionResult> Services(CancellationToken ct) => View(await services.GetActiveAsync(ct));
 
     [Authorize(Roles = StaffRoles.Admin), HttpGet("/admin/settings")]
+    public IActionResult AdminSettings() => RedirectToAction(nameof(Settings));
+
+    [Authorize(Roles = StaffRoles.VenueManagement), HttpGet("/staff/settings")]
     public IActionResult Settings() => View(policy.Value);
 }

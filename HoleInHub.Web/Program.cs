@@ -33,7 +33,8 @@ if (app.Environment.IsDevelopment()
             && request.Host.Host is ("localhost" or "127.0.0.1" or "[::1]")
             && request.Path.StartsWithSegments("/staff")
             && (!request.IsHttps || !context.RequestServices.GetRequiredService<StaffPinAccess>().Enabled)
-            && (!request.IsHttps || request.Host != new HostString(staffWorkspace.Host, staffWorkspace.Port)))
+            && (!request.IsHttps || request.Host != new HostString(staffWorkspace.Host, staffWorkspace.Port))
+            && await StaffPinAccess.ReadPasswordAdminAsync(context) is null)
         {
             context.Response.Redirect(new Uri(staffWorkspace, request.Path + request.QueryString).AbsoluteUri);
             return;
@@ -101,7 +102,6 @@ app.MapControllerRoute("availability", "availability", new { controller = "Reser
 app.MapControllerRoute("reservation", "appointment", new { controller = "Reservations", action = "Create" });
 app.MapControllerRoute("my-reservations", "my-reservations", new { controller = "Reservations", action = "Index" });
 app.MapControllerRoute("staff", "staff", new { controller = "BookingReview", action = "Index" });
-app.MapControllerRoute("staff-review-queue", "staff/review-queue", new { controller = "BookingReview", action = "Queue" });
 app.MapControllerRoute("staff-review-actions", "staff/review/{action}/{id?}", new { controller = "BookingReview" });
 
 app.MapControllerRoute(

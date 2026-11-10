@@ -18,14 +18,32 @@ public enum StaffRoleChangeResult { Applied, Unchanged, Invalid, Forbidden, NotF
 
 public sealed class AccountService(AccountPersistence persistence, TimeProvider clock)
 {
-    public async Task<AccountDirectory> GetDirectoryAsync(bool employeesOnly, int page, CancellationToken ct)
+    public async Task<AccountDirectory> GetDirectoryAsync(bool employeesOnly, int page, CancellationToken ct, string? role = null)
     {
         const int pageSize = 50;
         page = Math.Clamp(page, 1, 1000);
-        var rows = await persistence.ReadDirectoryAsync(employeesOnly ? StaffRoles.Workspace : null, (page - 1) * pageSize, pageSize + 1, ct);
+        if (role is not null && !StaffRoles.Workspace.Contains(role)) { throw new ArgumentException("Choose a staff role.", nameof(role)); }
+        IReadOnlyList<string>? roles = role is not null ? [role] : employeesOnly ? StaffRoles.Workspace : null;
+        var rows = await persistence.ReadDirectoryAsync(roles, (page - 1) * pageSize, pageSize + 1, ct);
         return new(rows.Take(pageSize).Select(x => new AccountDirectoryEntry(x.Id, x.Email,
             $"{x.FirstName} {x.LastName}".Trim(), x.Roles, x.EmailConfirmed)).ToArray(), page, rows.Count > pageSize && page < 1000);
     }
+    public async Task<RoleActivityPage> GetRoleActivityAsync(int page, CancellationToken ct)
+    {
+        const int pageSize = 50;
+        page = Math.Clamp(page, 1, 1000);
+        var rows = await persistence.ReadRoleActivityAsync((page - 1) * pageSize, pageSize + 1, ct);
+        if (rows.Count == 0) { return new([], page, false); }
+
+        var entries = rows.Take(pageSize).ToArray();
+        var accountIds = entries.SelectMany(row => new[] { row.ActorAccountId, row.TargetAccountId }).Distinct();
+        var emails = await persistence.ReadAccountEmailsAsync(accountIds, ct);
+        return new(entries.Select(row => new RoleActivityEntry(row.OccurredUtc,
+            emails.GetValueOrDefault(row.ActorAccountId) ?? row.ActorAccountId,
+            emails.GetValueOrDefault(row.TargetAccountId) ?? row.TargetAccountId,
+            row.PreviousRoles, row.NewRoles, row.Reason)).ToArray(), page, rows.Count > pageSize && page < 1000);
+    }
+
     public async Task<StaffRoleChangeResult> ChangeStaffRoleAsync(StaffRoleChange command, CancellationToken ct)
     {
         var reason = command.Reason?.Trim();
@@ -77,4 +95,9 @@ public sealed class AccountService(AccountPersistence persistence, TimeProvider 
 
 public sealed record AccountDirectoryEntry(string Id, string Email, string Name, string[] Roles, bool EmailConfirmed);
 public sealed record AccountDirectory(IReadOnlyList<AccountDirectoryEntry> Entries, int Page, bool HasMore);
+
+public sealed record RoleActivityEntry(DateTime OccurredUtc, string Actor, string Target, string[] PreviousRoles,
+    string[] NewRoles, string Reason);
+
+public sealed record RoleActivityPage(IReadOnlyList<RoleActivityEntry> Entries, int Page, bool HasMore);
 

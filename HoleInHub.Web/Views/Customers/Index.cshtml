@@ -5,35 +5,37 @@
     ViewData["Title"] = "Customers";
     var error = ViewData["SearchError"] as string;
 }
-<div class="staff-workspace staff-customers">
+<div class="staff-workspace staff-customers people-page">
     <header class="staff-workspace-heading">
         <h1>Customers</h1>
-        <p>Find a reservation contact and see their booking history.</p>
     </header>
-    <form class="customer-search" asp-action="Index" method="get" role="search" aria-label="Find a customer">
-        <label for="customer-search">Name, email, phone or booking reference</label>
-        <div><input id="customer-search" name="search" value="@Model.Search" maxlength="100" placeholder="Search reservation contacts" aria-describedby="customer-search-help" />
-            <button class="button" type="submit" data-no-icon>Search customers</button>
-            @if (Model.Search.Length > 0) { <a class="staff-link" asp-action="Index">Clear search</a> }
-        </div>
-        <p id="customer-search-help">Use at least two characters, or a full phone number or reservation reference.</p>
-    </form>
+    <div class="people-toolbar">
+        <form class="staff-lookup people-search" asp-action="Index" method="get" role="search" aria-label="Find a customer">
+            <div class="auth-input-wrap">
+                <partial name="_StaffIcon" model='"search"' />
+                <label class="sr-only" for="customer-search">Name, email, phone or booking reference</label>
+                <input id="customer-search" type="search" name="search" value="@Model.Search" maxlength="100"
+                       placeholder="Find a customer" aria-describedby="customer-search-help" />
+            </div>
+        </form>
+        <span class="people-page-count" data-customer-count>Page @Model.Page · @Model.Items.Count shown</span>
+    </div>
+    <p id="customer-search-help" class="sr-only">Use at least two characters, or a full phone number or reservation reference.</p>
+    <p class="staff-error" data-customer-search-status role="status"></p>
+    <div data-customer-results>
     @if (error is not null)
     {
         <p class="staff-error" role="alert">@error</p>
     }
     else if (Model.Items.Count == 0)
     {
-        <section class="review-empty">
-            <h2>@(Model.Search.Length > 0 ? "No matching contacts" : "No reservation contacts yet")</h2>
-            <p>@(Model.Search.Length > 0 ? "Check the spelling or try an email, full phone number or booking reference." : "Contacts appear here when a reservation is recorded.")</p>
-            @if (Model.Search.Length > 0) { <a class="staff-link" asp-action="Index">View recent contacts</a> }
-            else { <a class="staff-link" asp-controller="BookingReview" asp-action="Index">Open reservations</a> }
-        </section>
+        <partial name="_StaffEmptyState" model='("customers", Model.Search.Length > 0 ? "No matching contacts" : "No reservation contacts yet",
+            Model.Search.Length > 0 ? "Try a name, email, phone number or booking reference." : "Customer contacts appear here when a reservation is recorded.",
+            Url.Action("Index"), "View recent contacts")' />
+
     }
     else
     {
-        <div class="customer-results-heading"><h2>@(Model.Search.Length > 0 ? "Matching contacts" : "Recent reservation contacts")</h2><p>Page @Model.Page · @Model.Items.Count shown</p></div>
         <div class="customer-directory" role="table" aria-label="Reservation contacts">
             <div class="customer-directory-row customer-directory-head" role="row">
                 <span role="columnheader">Customer</span><span role="columnheader">Contact</span><span role="columnheader">Matched reservation</span><span role="columnheader">Action</span>
@@ -47,8 +49,8 @@
                         <small>@(string.IsNullOrWhiteSpace(customer.Email) ? "Email not recorded" : customer.Email)</small>
                     </div>
                     <div role="cell"><span>@customer.Reference</span><small>Recorded @StaffReviewQueue.Local(customer.CreatedUtc).ToString("d MMM yyyy")</small></div>
-                    <div role="cell"><a class="button button-secondary customer-profile-link" asp-action="Details" asp-route-id="@customer.BookingId"
-                        aria-label="@($"View {CustomerLabels.Name(customer.FirstName, customer.LastName)}")">View customer</a></div>
+                    <div role="cell" class="review-row-actions"><a class="customer-profile-link" asp-action="Details" asp-route-id="@customer.BookingId"
+                        aria-label="@($"View {CustomerLabels.Name(customer.FirstName, customer.LastName)}")" title="View customer"><partial name="_StaffIcon" model='"view"' /></a></div>
                 </div>
             }
         </div>
@@ -57,5 +59,8 @@
             @if (Model.HasMore && Model.Page < 1000) { <a class="button button-secondary" asp-action="Index" asp-route-search="@Model.Search" asp-route-page="@(Model.Page + 1)">Next page</a> }
         </nav>
     }
-    <p class="customer-directory-note">This directory contains reservation contacts. Account customers, verified guests and individual booking contacts keep their own histories.</p>
+    </div>
 </div>
+@section Scripts {
+    <script src="~/js/customer-search.js" asp-append-version="true"></script>
+}

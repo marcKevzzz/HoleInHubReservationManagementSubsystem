@@ -14,6 +14,8 @@ public sealed class AccountPersistence(IMongoDbContext context)
     internal const string RoleGuardId = "staff-role-administration";
     internal const string AccountCollection = "accounts";
     private IMongoCollection<AccountRecord> Accounts => context.Database.GetCollection<AccountRecord>(AccountCollection);
+    private IMongoCollection<StaffRoleAuditRecord> RoleAudit =>
+        context.Database.GetCollection<StaffRoleAuditRecord>(StaffRoleAuditRecord.CollectionName);
     public Task<AccountRecord?> FindByIdAsync(string id, CancellationToken ct) => Accounts.Find(x => x.Id == id).FirstOrDefaultAsync(ct)!;
     public Task<AccountRecord?> FindByEmailAsync(string email, CancellationToken ct) => Accounts.Find(x => x.NormalizedEmail == email).FirstOrDefaultAsync(ct)!;
     public Task<AccountRecord?> FindByGoogleSubjectAsync(string subject, CancellationToken ct) => Accounts.Find(x => x.GoogleSubject == subject).FirstOrDefaultAsync(ct)!;
@@ -23,11 +25,22 @@ public sealed class AccountPersistence(IMongoDbContext context)
         return Accounts.Find(filter).SortBy(x => x.NormalizedEmail).ThenBy(x => x.Id).Skip(offset).Limit(limit)
             .Project(x => new AccountDirectoryRow(x.Id, x.Email, x.FirstName, x.LastName, x.Roles, x.EmailConfirmed)).ToListAsync(ct);
     }
+    public Task<List<StaffRoleAuditRecord>> ReadRoleActivityAsync(int offset, int limit, CancellationToken ct) =>
+        RoleAudit.Find(FilterDefinition<StaffRoleAuditRecord>.Empty)
+            .SortByDescending(entry => entry.OccurredUtc).ThenByDescending(entry => entry.Id)
+            .Skip(offset).Limit(limit).ToListAsync(ct);
+
+    public async Task<IReadOnlyDictionary<string, string>> ReadAccountEmailsAsync(IEnumerable<string> ids, CancellationToken ct)
+    {
+        var rows = await Accounts.Find(Builders<AccountRecord>.Filter.In(account => account.Id, ids))
+            .Project(account => new { account.Id, account.Email }).ToListAsync(ct);
+        return rows.ToDictionary(row => row.Id, row => row.Email, StringComparer.Ordinal);
+    }
+
     public async Task<StaffRoleWriteResult> ApplyStaffRoleChangeAsync(string actorStamp, string expectedVersion,
         string[] roles, StaffRoleAuditRecord audit, CancellationToken ct)
     {
         var guards = context.Database.GetCollection<BsonDocument>(RoleGuards);
-        var events = context.Database.GetCollection<StaffRoleAuditRecord>(StaffRoleAuditRecord.CollectionName);
         var update = Builders<AccountRecord>.Update.Set(x => x.Roles, roles)
             .Set(x => x.Version, Guid.NewGuid().ToString("N"))
             .Set(x => x.SecurityStamp, Guid.NewGuid().ToString("N"));
@@ -54,7 +67,7 @@ public sealed class AccountPersistence(IMongoDbContext context)
             // Make concurrent password or lockout changes to the acting Admin contend with this write.
             await Accounts.UpdateOneAsync(transaction, actorFilter,
                 Builders<AccountRecord>.Update.Set(x => x.Version, Guid.NewGuid().ToString("N")), cancellationToken: token);
-            await events.InsertOneAsync(transaction, audit, cancellationToken: token);
+            await RoleAudit.InsertOneAsync(transaction, audit, cancellationToken: token);
             return StaffRoleWriteResult.Applied;
         }, cancellationToken: ct);
     }

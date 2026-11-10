@@ -6,11 +6,12 @@ using HoleInHub.Web.Accounts;
 using HoleInHubReservationManagementSubsystem.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace HoleInHubReservationManagementSubsystem.Controllers;
 
 [Authorize(Policy = StaffAuthorization.Workspace), ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class BookingReviewController(ReservationService reservations, TimeProvider clock) : Controller
+public sealed class BookingReviewController(ReservationService reservations, TimeProvider clock, IOptions<AccountEmailOptions> emailOptions) : Controller
 {
     private DateOnly Today => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(clock.GetUtcNow(), ReservationRules.Manila).DateTime);
 
@@ -209,22 +210,40 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
         };
     }
 
-    [HttpGet]
-    public async Task<IActionResult> Queue(string? filter, string? day, string? sort, CancellationToken ct)
+    [HttpGet("/staff/review-queue/counts")]
+    public async Task<IActionResult> Counts(CancellationToken ct) =>
+        Json(await reservations.GetReviewCountsAsync(ct));
+
+    [HttpGet("/staff/review-queue/{section?}", Name = "staff-review-section")]
+    [HttpGet("/BookingReview/Queue")]
+    public async Task<IActionResult> Queue(string? section, string? filter, string? date, string? day, string? sort, CancellationToken ct)
     {
-        var queue = await LoadQueueAsync(filter, day, sort, ct);
+        if (section == "cancellations" || filter == "cancellations")
+        {
+            return RedirectToAction(nameof(Cancellations), new { date, day, sort });
+        }
+        if (section == "closed" || section is null && filter is not null)
+        {
+            return RedirectToRoute("staff-review-section", new { section = StaffReviewQueue.SectionKey(section ?? filter), date, day, sort });
+        }
+        if (section is not null && !StaffReviewQueue.Sections.Any(page => page.Key == section)) { return NotFound(); }
+        var queue = await LoadQueueAsync(section, day, sort, ct);
         ViewData["PendingReviews"] = await reservations.GetPendingReviewCountAsync(ct);
         return View(queue);
     }
 
+    [HttpGet("/staff/cancellations")]
+    public async Task<IActionResult> Cancellations(string? day, string? sort, CancellationToken ct) =>
+        View("Queue", await LoadQueueAsync("cancellations", day, sort, ct));
+
     private async Task<StaffReviewQueue> LoadQueueAsync(string? filter, string? day, string? sort, CancellationToken ct)
     {
+        var section = StaffReviewQueue.SectionKey(filter);
         var validDay = TryScheduleDate(day, out var selected);
-        var items = filter == "expired"
+        var items = section == "expired"
             ? await reservations.GetExpiredRequestsAsync(validDay ? selected : null, ct)
-            : await reservations.GetReviewQueueAsync(ct);
-        return new(items, filter is "pending" or "cancellations" or "deposit" or "changes" or "expired" ? filter : "all",
-            validDay ? day : null, sort == "session" ? sort : "deadline", clock.GetUtcNow().UtcDateTime);
+            : await reservations.GetReviewQueueAsync(ct, section, validDay ? selected : null, sort == "session");
+        return new(items, section, validDay ? day : null, sort == "session" ? sort : "deadline", clock.GetUtcNow().UtcDateTime);
     }
 
     [HttpGet]
@@ -237,7 +256,7 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
         }
         ViewData["ChangeBays"] = (await reservations.GetCatalogAsync(ct)).Where(bay => bay.Service == context.Booking.Service).ToArray();
         var queue = fromQueue ? await LoadQueueAsync(filter, day, sort, ct)
-            : new StaffReviewQueue([], "all", null, "deadline", clock.GetUtcNow().UtcDateTime);
+            : new StaffReviewQueue([], StaffReviewQueue.DefaultSection, null, "deadline", clock.GetUtcNow().UtcDateTime);
         var ids = queue.Visible.Select(x => x.Id).ToList();
         var position = ids.IndexOf(id);
         var startDay = DateOnly.FromDateTime(StaffReviewQueue.Local(context.Booking.StartUtc));
@@ -245,6 +264,15 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
         ViewData["PendingReviews"] = await reservations.GetPendingReviewCountAsync(ct);
         return View(new StaffReviewDetail(context, queue, bays.Where(bay => context.Booking.ResourceIds.Contains(bay.Id)).ToArray(), fromQueue, date,
             position > 0 ? ids[position - 1] : null, position + 1 < ids.Count ? ids[position + 1] : null));
+    }
+
+    [HttpGet("/staff/reservations/{id}/actions")]
+    public async Task<IActionResult> Actions(string id, string? date, string? filter, string? day, string? sort, CancellationToken ct, bool drawer = false)
+    {
+        ViewData["QueueActions"] = !drawer;
+        var result = await Details(id, date, !drawer, filter, day, sort, ct);
+        return result is ViewResult { Model: StaffReviewDetail detail }
+            ? PartialView(drawer ? "_StaffDrawerActions" : "_ReviewDecision", detail) : result;
     }
 
     [HttpPost, ValidateAntiForgeryToken]
@@ -299,7 +327,7 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
         if (!expectedRevision.HasValue || expectedRevision.Value < 0) { return BadRequest(); }
         var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(actor)) { return Forbid(); }
-        if (decision is not ("approve" or "reject" or "coach" or "cancel" or "keep"))
+        if (decision is not ("approve" or "reject" or "coach" or "cancel" or "keep" or "reschedule"))
         {
             return BadRequest();
         }
@@ -310,7 +338,17 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
             {
                 reason = string.IsNullOrWhiteSpace(reason) ? reasonChoice : $"{reasonChoice}. {reason.Trim()}";
             }
-            var changed = await reservations.ReviewAsync(id, decision, actor, ct, reason, expectedRevision);
+            string? rebookUrl = null;
+            if (decision == "reschedule")
+            {
+                if (!Uri.TryCreate(emailOptions.Value.PublicBaseUrl, UriKind.Absolute, out var baseUrl)
+                    || baseUrl.Scheme != Uri.UriSchemeHttps && !(baseUrl.IsLoopback && baseUrl.Scheme == Uri.UriSchemeHttp))
+                {
+                    throw new ReservationValidationException("Set the public booking URL before sending a reschedule request.");
+                }
+                rebookUrl = new Uri(baseUrl, Url.Action("Create", "Reservations")!).AbsoluteUri;
+            }
+            var changed = await reservations.ReviewAsync(id, decision, actor, ct, reason, expectedRevision, rebookUrl);
             TempData["BookingMessage"] = changed ? "Decision recorded." : "This booking changed or the action is no longer available. Review the latest details and try again.";
         }
         catch (ReservationValidationException error) { TempData["BookingMessage"] = error.Message; }

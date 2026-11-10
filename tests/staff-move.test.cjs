@@ -41,7 +41,7 @@ test(`vertical dragging into a bay with ${name} validates the actual time`, () =
     const timeline = node({ querySelectorAll(selector) { return selector === '[data-move-booking]' ? [bar] : [source, destination]; } });
     const page = { dataset: { firstHour: '10', openingHour: '10' }, querySelector(selector) { return { '[data-move-confirmation]': dialog, '.staff-timeline': timeline, '[data-drag-error]': dragError }[selector]; } };
     vm.runInNewContext(fs.readFileSync(require.resolve('../HoleInHub.Web/wwwroot/js/staff-move.js'), 'utf8'), {
-        document: { querySelector() { return page; }, addEventListener() {} }, crypto: { randomUUID() { return '12345678-1234-1234-1234-123456789abc'; } }, setTimeout() {},
+        document: { querySelector() { return page; }, addEventListener() {} }, crypto: { randomUUID() { return '12345678-1234-1234-1234-123456789abc'; } }, setTimeout() {}, clearTimeout() {},
     });
     const pointer = y => ({ target: bar, button: 0, pointerId: 1, clientX: 130, clientY: y, preventDefault() {} });
     timeline.handlers.pointerdown(pointer(25));

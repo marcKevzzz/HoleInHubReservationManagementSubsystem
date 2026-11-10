@@ -14,7 +14,7 @@
     string Interval(StaffScheduleEntry entry) => $"{TimeLabel(entry.Start)} – {TimeLabel(entry.End)}";
     string Status(string status) => status == "Checked-In" ? "Checked in" : status;
 }
-<div class="staff-workspace" data-staff-schedule data-date="@selectedDate" data-first-hour="@timeline.FirstHour"
+<div class="staff-workspace" data-staff-schedule data-date="@selectedDate" data-today="@today" data-first-hour="@timeline.FirstHour"
      data-opening-hour="@ReservationRules.OpeningHour(Model.Day.DayOfWeek)">
     <header class="staff-workspace-heading staff-schedule-heading">
         <h1>Reservations</h1>
@@ -43,7 +43,7 @@
                             <partial name="_StaffIcon" model='"chevron-left"' />
                         </a>
                     }
-                    <form asp-action="Index" method="get" class="staff-date-form">
+                    <form asp-action="Index" method="get" class="staff-date-form" data-staff-date-filter>
                         <label class="sr-only" for="staff-date">Schedule date</label>
                         <input id="staff-date" type="date" name="date" value="@selectedDate" required />
                         <button class="button staff-date-submit" type="submit" data-no-icon>Go</button>
@@ -95,9 +95,12 @@
         else
         {
             <div class="staff-schedule-timeline">
+                <div class="staff-timeline-tools"><output data-timeline-zoom aria-label="Timeline zoom">100%</output></div>
+                <output class="staff-date-preview" data-date-preview aria-live="polite" hidden><span class="staff-date-preview-arrow"><partial name="_StaffIcon" model='"chevron-right"' /></span><span data-date-preview-label></span></output>
                 <p class="staff-error" data-drag-error role="status" hidden></p>
-                <div class="staff-timeline-scroll" tabindex="0" role="region" aria-label="Bay timeline">
-                    <div class="staff-timeline" style="@($"--hours:{timeline.Hours}")">
+                <p id="staff-timeline-help" class="sr-only">Drag empty space to pan. Pull past either edge to change days. Ctrl and drag creates a booking. Ctrl and scroll zooms; Shift and scroll moves horizontally; scroll moves vertically. Hold a reservation at the edge to preview another day, then drop to review the move.</p>
+                <div class="staff-timeline-scroll" tabindex="0" role="region" aria-label="Bay timeline" aria-describedby="staff-timeline-help">
+                    <div class="staff-timeline" style="@($"--hours:{timeline.Hours};--rows:{rows.Count}")">
                         <div class="staff-timeline-row staff-timeline-axis" aria-hidden="true">
                             <div class="staff-timeline-label">Bay</div>
                             <div class="staff-timeline-hours">
@@ -117,7 +120,7 @@
                                     @if (!bay.Active) { <small>Retired</small> }
                                 </div>
                                 <div class="staff-timeline-track" style="@($"--lanes:{lanes}")"
-                                     data-create-bay="@(Model.Day >= Model.Today && bay.Active && bay.Id.Length > 0 && bay.Service is ("Regular" or "VIP") ? bay.Id : null)">
+                                     data-create-bay="@(bay.Active && bay.Id.Length > 0 && bay.Service is ("Regular" or "VIP") ? bay.Id : null)">
                                     @foreach (var block in coverage)
                                     {
                                         var position = FormattableString.Invariant($"--start:{block.StartPercent:F4}%;--span:{block.WidthPercent:F4}%");
@@ -194,8 +197,8 @@
     @if (User.ManagesVenue() && Model.BlockForm is { Bays.Count: > 0 })
     {
         <dialog class="staff-booking-drawer" data-create-block aria-labelledby="staff-block-title">
-            <form method="dialog"><button class="staff-icon-button" aria-label="Close block time">×</button></form>
-            <h2 id="staff-block-title" tabindex="-1" autofocus>Block time</h2>
+            <form method="dialog"><button class="staff-icon-button" aria-label="Close block time"><partial name="_StaffIcon" model='"close"' /></button></form>
+            <h2 id="staff-block-title">Block time</h2>
             <p class="staff-create-hint">Keep one bay free for maintenance or another staff activity.</p>
             <partial name="_StaffBlockForm" model="Model.BlockForm" />
         </dialog>
@@ -219,23 +222,23 @@
         </form>
     </dialog>
     <dialog class="staff-booking-drawer" data-booking-details aria-labelledby="staff-drawer-title">
-        <form method="dialog"><button class="staff-icon-button" aria-label="Close booking details">×</button></form>
-        <h2 id="staff-drawer-title" data-drawer="guest" tabindex="-1" autofocus></h2>
-        <p data-drawer="reference"></p>
-        <dl>
-            <div><dt>Status</dt><dd data-drawer="state"></dd></div>
-            <div><dt>Party size</dt><dd data-drawer="party"></dd></div>
+        <form method="dialog"><button class="staff-icon-button" aria-label="Close booking details"><partial name="_StaffIcon" model='"close"' /></button></form>
+        <h2 id="staff-drawer-title" data-drawer="guest"></h2>
+        <div class="staff-drawer-identity"><p data-drawer="reference"></p><span class="staff-status" data-drawer="state"></span></div>
+        <dl class="staff-drawer-summary">
             <div><dt>When</dt><dd data-drawer="interval"></dd></div>
-            <div><dt>Service</dt><dd data-drawer="service"></dd></div>
-            <div><dt>Schedule row</dt><dd data-drawer="location"></dd></div>
+            <div><dt>Bay</dt><dd data-drawer="location"></dd></div>
+            <div><dt>Guests</dt><dd data-drawer="party"></dd></div>
+            <div><dt>Experience</dt><dd data-drawer="service"></dd></div>
         </dl>
-        <a class="button" data-drawer-link>Open full booking details</a>
+        <section class="staff-drawer-actions" aria-label="Booking actions" data-drawer-actions></section>
+        <a class="staff-drawer-full" data-drawer-link>View full booking & history <partial name="_StaffIcon" model='"website"' /></a>
     </dialog>
     @if (Model.BookingForm.Bays.Count > 0)
     {
         <dialog class="staff-booking-drawer" data-create-booking aria-labelledby="staff-create-title">
-            <form method="dialog"><button class="staff-icon-button" aria-label="Close new booking">×</button></form>
-            <h2 id="staff-create-title" tabindex="-1" autofocus>New booking</h2>
+            <form method="dialog"><button class="staff-icon-button" aria-label="Close new booking"><partial name="_StaffIcon" model='"close"' /></button></form>
+            <h2 id="staff-create-title">New booking</h2>
             <p class="staff-create-hint">Reserve one Regular or VIP bay and confirm it for the guest.</p>
             <partial name="_StaffBookingForm" model="Model.BookingForm" />
         </dialog>
@@ -244,6 +247,7 @@
 @section Scripts {
     <script src="~/js/staff-search.js" asp-append-version="true"></script>
     <script src="~/js/staff-schedule.js" asp-append-version="true"></script>
+    <script src="~/js/staff-timeline-gestures.js" asp-append-version="true"></script>
     <script src="~/js/staff-booking.js" asp-append-version="true"></script>
     <script src="~/js/staff-move.js" asp-append-version="true"></script>
 }
