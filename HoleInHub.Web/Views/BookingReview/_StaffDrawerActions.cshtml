@@ -1,0 +1,13 @@
+@model StaffReviewDetail
+@if (Model.Context.Booking.Status == "Pending" || Model.Context.Booking.CancellationRequested)
+{
+    <partial name="_ReviewDecision" model="Model" />
+}
+@if (Model.Context.CanCheckIn || Model.Context.CanCheckOut || Model.Context.Booking.Status is "Confirmed" or "Checked-In")
+{
+    <partial name="_StaffAttendance" model="Model" />
+}
+@if (Model.Context.Booking.ScheduleChange?.Status == "Pending")
+{
+    <partial name="_ReviewScheduleChange" model="Model" />
+}

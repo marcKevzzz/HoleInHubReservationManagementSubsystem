@@ -28,8 +28,8 @@ public static class ReservationLabels
     {
         "AwaitingDeposit" => "Awaiting deposit",
         "DepositReceived" => "Deposit received",
-        "Failed" => "Payment failed — retry before expiry",
-        "CheckoutCancelled" => "Checkout cancelled — retry before expiry",
+        "Failed" => "Payment failed — retry before the deposit deadline",
+        "CheckoutCancelled" => "Checkout cancelled — retry before the deposit deadline",
         "LatePayment" => "Late payment — reconciliation required",
         _ => "No deposit required"
     };

@@ -1,13 +1,19 @@
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using HoleInHub.Business.Accounts;
+using HoleInHub.Data.Customers;
 using HoleInHub.Data.Reservations;
 
 namespace HoleInHub.Business.Reservations;
 
 public sealed record StaffBookingRequest(string ResourceId, DateOnly Date, TimeOnly StartTime,
     int DurationMinutes, string FirstName, string LastName, string Phone, int Attendees,
-    string Source, string IdempotencyKey);
+    string Source, string IdempotencyKey)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? CustomerProfileId { get; init; }
+}
 
 public sealed partial class ReservationService
 {
@@ -29,6 +35,9 @@ public sealed partial class ReservationService
             throw new ReservationValidationException(ContactRules.PhoneError);
         }
 
+        if (request.CustomerProfileId is not null && (request.CustomerProfileId.Length != 67
+            || !request.CustomerProfileId.StartsWith("cp_", StringComparison.Ordinal) || !request.CustomerProfileId[3..].All(char.IsAsciiHexDigit)))
+        { throw new ReservationValidationException("Choose a valid customer profile from the customer directory."); }
         request = request with { FirstName = request.FirstName.Trim(), LastName = request.LastName.Trim(), Phone = request.Phone!.Trim() };
         var scope = "staff:" + actor;
         var hash = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(request)));
@@ -88,7 +97,8 @@ public sealed partial class ReservationService
                 AtUtc = now, Actor = actor, Reason = "Staff-assisted booking."
             }]
         };
-        try { return Result(await persistence.InsertAsync(record, ct)); }
+        try { return Result(await persistence.InsertAsync(record, ct, customerProfileId: request.CustomerProfileId)); }
+        catch (CustomerProfileConflictException e) { throw new ReservationValidationException(e.Message); }
         catch (AllocationConflictException error) { throw new ReservationValidationException(error.Message); }
     }
 }

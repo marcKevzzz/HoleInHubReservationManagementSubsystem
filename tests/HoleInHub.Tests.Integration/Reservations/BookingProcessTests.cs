@@ -48,7 +48,7 @@ public sealed class BookingProcessTests(MongoDbFixture fixture) : IClassFixture<
         var booking = await service.SubmitAsync(input, "customer", "customer@example.test", default);
         Assert.Equal(new DateTime(2026, 11, 3, 2, 30, 0, DateTimeKind.Utc), booking.ReviewDeadlineUtc);
         Assert.Equal(new DateTime(2026, 11, 3, 2, 0, 0, DateTimeKind.Utc), booking.ReviewStartsUtc);
-        Assert.Contains("bay-2", await store.OccupiedAsync(booking.StartUtc, booking.EndUtc, default));
+        Assert.Contains("bay-2", await store.OccupiedAsync(booking.StartUtc, booking.EndUtc, default, time.Now.UtcDateTime));
         time.Now = time.Now.AddHours(8);
         await service.ProcessPendingAsync(default);
         var messages = context.Database.GetCollection<OutboxRecord>("outbox");
@@ -59,8 +59,13 @@ public sealed class BookingProcessTests(MongoDbFixture fixture) : IClassFixture<
         Assert.Single(await messages.Find(x => x.RequiredStatus == "Pending").ToListAsync());
         time.Now = time.Now.AddMinutes(15);
         await service.ProcessPendingAsync(default);
+        Assert.Equal("Pending", (await store.ByIdAsync(booking.Id, default))!.Status);
+        Assert.DoesNotContain("bay-2", await store.OccupiedAsync(booking.StartUtc, booking.EndUtc, default, time.Now.UtcDateTime));
+        await service.ProcessPendingAsync(default);
+        Assert.Equal(2, await messages.CountDocumentsAsync(x => x.Subject == "Overdue review: " + booking.Reference));
+        time.Now = new DateTimeOffset(booking.StartUtc);
+        await service.ProcessPendingAsync(default);
         Assert.Equal("Expired", (await store.ByIdAsync(booking.Id, default))!.Status);
-        Assert.DoesNotContain("bay-2", await store.OccupiedAsync(booking.StartUtc, booking.EndUtc, default));
     }
 
     private async Task<(ReservationPersistence Store, EmailVerificationPersistence Guests, HoleInHub.Data.Context.IMongoDbContext Context)> Setup()
@@ -171,13 +176,28 @@ public sealed class BookingProcessTests(MongoDbFixture fixture) : IClassFixture<
         Assert.Equal("Confirmed", (await store.ByIdAsync(request.Id, default))!.Status);
     }
     [Fact]
-    public async Task CancellationKeepsAllocationUntilStaffApproves()
+    public async Task CustomerCancellationReleasesCapacityImmediately()
     {
         var (store, _, _) = await Setup(); var request = Request(); await store.InsertAsync(request, default);
-        Assert.True(await store.TransitionAsync(request.Id, "request-cancellation", "Customer", DateTime.UtcNow, [], default));
-        await Assert.ThrowsAsync<AllocationConflictException>(() => store.InsertAsync(Request(), default));
-        Assert.True(await store.TransitionAsync(request.Id, "cancel", "staff", DateTime.UtcNow, [], default));
+        Assert.True(await store.TransitionAsync(request.Id, "request-cancellation", "Customer", request.StartUtc.AddHours(-1), [], default));
+        var cancelled = (await store.ByIdAsync(request.Id, default))!;
+        Assert.Equal("Cancelled", cancelled.Status);
+        Assert.False(cancelled.CancellationRequested);
+        Assert.True(await store.TransitionAsync(request.Id, "request-cancellation", "Customer", request.StartUtc.AddMinutes(-59), [], default));
+        Assert.Single((await store.ByIdAsync(request.Id, default))!.History, item => item.EventType == "ReservationCancelled");
         await store.InsertAsync(Request(), default);
+    }
+
+    [Fact]
+    public async Task OverdueRequestCanBeConfirmedBeforeItsSession()
+    {
+        var (store, _, _) = await Setup();
+        var request = Request();
+        await store.InsertAsync(request, default);
+        await store.ExpireAsync(request.ReviewDeadlineUtc, [], default);
+        Assert.Equal("Pending", (await store.ByIdAsync(request.Id, default))!.Status);
+        Assert.True(await store.TransitionAsync(request.Id, "approve", "staff", request.ReviewDeadlineUtc, [], default));
+        Assert.Equal("Confirmed", (await store.ByIdAsync(request.Id, default))!.Status);
     }
     [Fact]
     public async Task CancellationCutoffIsEnforcedByPersistence()
@@ -186,6 +206,56 @@ public sealed class BookingProcessTests(MongoDbFixture fixture) : IClassFixture<
         Assert.False(await store.TransitionAsync(request.Id, "request-cancellation", "Customer", request.StartUtc.AddMinutes(-59), [], default));
         Assert.True(await store.TransitionAsync(request.Id, "request-cancellation", "Customer", request.StartUtc.AddHours(-1), [], default));
     }
+    [Fact]
+    public async Task ConflictBlocksLateConfirmationAndOffersARebookingLink()
+    {
+        var (store, _, context) = await Setup();
+        var original = Request();
+        await store.InsertAsync(original, default);
+        var now = original.ReviewDeadlineUtc;
+        var replacement = Request();
+        replacement.CreatedUtc = now;
+        replacement.ReviewDeadlineUtc = now.AddMinutes(30);
+        await store.InsertAsync(replacement, default);
+
+        await Assert.ThrowsAsync<AllocationConflictException>(() => store.TransitionAsync(original.Id, "approve", "staff", now, [], default));
+        Assert.Equal("Pending", (await store.ByIdAsync(original.Id, default))!.Status);
+        const string url = "https://example.test/Reservations/Create";
+        Assert.True(await store.TransitionAsync(original.Id, "reschedule", "staff", now, [], default, expectedRevision: 0, rebookUrl: url));
+        var closed = (await store.ByIdAsync(original.Id, default))!;
+        Assert.Equal("Rejected", closed.Status);
+        Assert.Contains(closed.History, entry => entry.Status == "Reschedule requested");
+        Assert.Equal("Pending", (await store.ByIdAsync(replacement.Id, default))!.Status);
+        var email = await context.Database.GetCollection<OutboxRecord>("outbox").Find(item => item.Subject == "Reschedule requested").SingleAsync();
+        Assert.Contains(url, email.Body);
+    }
+
+    [Fact]
+    public async Task SelectedDayFindsOverdueRequestsBeyondTheUnfilteredQueueLimit()
+    {
+        var (store, _, context) = await Setup();
+        var now = DateTime.UtcNow;
+        var selected = Request();
+        selected.ReviewDeadlineUtc = now.AddMinutes(-1);
+        var earlier = Enumerable.Range(0, 201).Select(_ =>
+        {
+            var item = Request();
+            item.StartUtc = selected.StartUtc.AddDays(-1);
+            item.EndUtc = item.StartUtc.AddHours(1);
+            item.ReviewDeadlineUtc = now.AddHours(-1);
+            return item;
+        });
+        await context.Database.GetCollection<ReservationRecord>("reservations").InsertManyAsync(earlier.Append(selected));
+        var dayStart = new DateTime(selected.StartUtc.Year, selected.StartUtc.Month, selected.StartUtc.Day, 0, 0, 0, DateTimeKind.Utc);
+        var result = await store.ReviewQueueAsync("overdue", now, dayStart, false, default);
+        Assert.Equal(selected.Id, Assert.Single(result).Id);
+        var counts = await store.ReviewCountsAsync(now, default);
+        Assert.Equal(202, counts["overdue"]);
+        Assert.Equal(0, counts["pending"]);
+        Assert.Equal(0, counts["deposit"]);
+        Assert.False(counts.ContainsKey("expired"));
+    }
+
     [Fact]
     public async Task DemoDepositConfirmsExactlyOnceAndCannotBeStaffApproved()
     {
@@ -213,7 +283,7 @@ public sealed class BookingProcessTests(MongoDbFixture fixture) : IClassFixture<
     public async Task ExpiryAndApprovalHaveOneFinalOutcome()
     {
         var (store, _, _) = await Setup(); var request = Request(); await store.InsertAsync(request, default);
-        await Task.WhenAll(store.TransitionAsync(request.Id, "approve", "staff", request.ReviewDeadlineUtc.AddTicks(-1), [], default), store.ExpireAsync(request.ReviewDeadlineUtc, [], default));
+        await Task.WhenAll(store.TransitionAsync(request.Id, "approve", "staff", request.StartUtc.AddSeconds(-1), [], default), store.ExpireAsync(request.StartUtc, [], default));
         var saved = (await store.ByIdAsync(request.Id, default))!;
         Assert.Contains(saved.Status, new[] { "Confirmed", "Expired" });
         Assert.Single(saved.History, x => x.Status is "Confirmed" or "Expired");

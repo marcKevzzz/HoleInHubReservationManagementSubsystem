@@ -43,7 +43,7 @@ Manager starts with operational access and oversight. Supervisor exceptions and 
 
 ## Separate staff sign-in
 
-Use /staff/sign-in for Staff, Manager and Admin. Customer sign-in remains under /account/sign-in. The staff page has clear staff identity, credentials, recovery and an administrative contact path. It has no public staff registration or role selector.
+Staff and Managers use /staff/sign-in. Admins use email and password at the existing /account/sign-in page. The staff page has clear staff identity, credentials, recovery and an administrative contact path. It has no public staff registration or role selector.
 
 An arbitrary browser is an untrusted sign-in origin. A permanent six-digit secret has one million possible values and would be a centrally checked password. Device PIN guidance does not make that an adequate standalone public staff credential.
 
@@ -115,7 +115,7 @@ Verify unauthorized/customer denial, each employee role, forged role claims and 
 
 ## Registered desktop PIN
 
-Staff, Manager, and Admin use a verified work account and its password on an enrolled desktop to set or reset a personal six-digit PIN at `/staff/pin/setup`. Daily sign-in at `/staff/sign-in` asks for the work email and PIN. The workspace shows Switch staff to end the staff session.
+Staff and Managers use a verified work account and its password on an enrolled desktop to set or reset a personal six-digit PIN at `/staff/pin/setup`. Daily sign-in at `/staff/sign-in` asks for the work email and PIN. Admins enter their verified work email and password at `/account/sign-in` to open `/admin`. Admin sessions check the stored role, email verification, lockout and security stamp on each workspace request. The workspace logout ends the workspace session.
 
 Staff sign-in starts disabled and requires configuration before staff can access the workspace. Apply migration 016 to the intended database before enabling it. It adds a TTL index for retry counters. The credentials collection stores salted password hashes of peppered PIN inputs, with one version per employee. Keep the random pepper in a secret store.
 
@@ -132,7 +132,7 @@ Add one indexed fingerprint entry per desktop. Provision each private key as non
 
 Every PIN-authenticated staff request rechecks the enrolled certificate, employee role, security stamp and PIN version. Remove a desktop fingerprint and reload application configuration to revoke that desktop. The staff cookie expires after 15 minutes of inactivity and has an eight-hour absolute cap. Durable counters allow five attempts per employee and 20 per desktop in each 15-minute window. PIN setup and reset also use the desktop counter and Identity password lockout.
 
-The workspace requires the staff PIN session for all three employee roles. Staff, Manager, and Admin can use the schedule, assisted booking, customer lookup, reservation review, and attendance workflows. Manager and Admin can create and release temporary schedule blocks. Admin alone can add, retire, and restore bays in the inventory. An active booking can prevent a catalog change. The server reads current employee roles on every staff request and ends the session when those roles change. The application emits structured sign-in and switch events with the employee account ID where known. The persistent activity log remains future work.
+The workspace accepts Staff and Manager PIN sessions and Admin password sessions. Staff, Manager, and Admin can use the schedule, assisted booking, customer lookup, reservation review, and attendance workflows. Manager and Admin can create and release temporary schedule blocks. Admin alone can add, retire, and restore bays in the inventory. An active booking can prevent a catalog change. The server reads current employee roles on every staff request and ends the session when those roles change. The application emits structured sign-in and switch events with the employee account ID where known. The Admin activity log displays persisted staff role changes. A persistent log of sign-in and switch events remains future work.
 
 ### Presentation mode
 
@@ -140,6 +140,6 @@ For a private demonstration, start a Development HTTPS instance and set `StaffPi
 
 ### Local leadership walkthrough
 
-`/manager` links to venue availability, the team directory, the daily report, booking histories, and review alert settings. `/admin` adds the account directory, bay inventory, public service catalog, and deployed booking settings. Account directories, services, and settings are read-only. The team directory shows employee accounts. The Admin directory includes customer accounts. The booking activity page links to existing reservation histories.
+Staff, Managers, and Admins share the Dashboard and Schedule. Managers and Admins use Schedule to manage venue blocks, and booking details show the booking history. Team & access is a read-only staff directory for Managers. Admins can see all registered accounts and make audited staff role changes after migration 017. PIN presentation mode keeps the directory read-only. Settings shows the alert summary to Managers and the full booking policy to Admins. Admins also have links to the staff access log, bay inventory, and public service catalog.
 
-To enable Manager and Admin PINs without client certificates for a walkthrough, set `StaffPin__PresentationManagerAccount` and `StaffPin__PresentationAdminAccount` alongside the Staff presentation account. Use verified local demo accounts with the matching roles and distinct PINs. This mode requires a Development instance on `localhost`, a loopback MongoDB URI with `directConnection=true`, and a separate database whose name starts with `hih_role_demo_`. The sign-in page lists the configured demo roles. Use the existing certificate-based sign-in for deployed employee accounts.
+To enable Manager PINs without client certificates for a walkthrough, set `StaffPin__PresentationManagerAccount` alongside the Staff presentation account. Use verified local demo accounts with the matching roles and distinct PINs. Admin demo accounts use the account sign-in page with email and password. This mode requires a Development instance on `localhost`, a loopback MongoDB URI with `directConnection=true`, and a separate database whose name starts with `hih_role_demo_`. The sign-in page lists the configured demo roles. Use the existing certificate-based sign-in for deployed employee accounts.

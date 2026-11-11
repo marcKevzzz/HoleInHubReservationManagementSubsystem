@@ -112,3 +112,16 @@ Creates the typed `service_catalog` collection, its active/order/ID index and si
 ## 009_RecoveryQuotaValidation
 
 Installs the existing recovery-quota schema on collections that predate 007. Migration 007 creates its validator only when creating the collection; this corrective migration preflights existing records and explicitly applies strict/error validation with collMod. It does not delete or rewrite records. Applied migrations 001–008 remain unchanged. Discovered and verified during the Atlas synchronization on 2026-11-04.
+
+## 017_StaffRoleAdministration
+
+Creates `staff_role_audit` and seeds the singleton guard in `staff_role_guards`. Apply it through the leased CLI before using the Admin role editor. Migration reruns preserve the guard counter, audit entries, and existing accounts. The role editor reports an unavailable feature when the guard is absent. The baseline readiness endpoint still checks migrations 001–008, so confirm 017 in `__migrations` during deployment.
+
+
+### 018 — Staff customer profiles and consolidation
+
+`018_CustomerProfiles` adds four profile collections, validators, membership/history indexes, seeded guards and an idempotent compatibility backfill. It never updates accounts or reservation documents. Merge and undo become available together only after the installed marker is written. Stop reservation writers for the backfill/rollout so older binaries cannot create unassociated records during installation.
+
+Before applying to a shared environment, take and verify the existing deployment backup. Configure Migrator with the intended database and its separate migration credential, then run `dotnet run --project HoleInHub.Migrator -- migrate` explicitly. Deploy/restart all updated Web writers together and check `/health/ready`; inspect a known account, verified guest and walk-in record plus original booking ownership. No Web startup migration is permitted.
+
+Migration 018 was applied and rerun on isolated local MongoDB during implementation. On 11 November 2026, the owner explicitly authorized applying it to the configured development database using its current connection. A full backup restored 223 documents successfully into isolated local MongoDB; the CLI then applied only migration 018. Original accounts/reservations fingerprints and the 23-booking count remained unchanged. The merge action and picker were verified on port 5275; no customer consolidation was performed. Keep profile collections on rollback. Stop writes and use the tested backup/forward recovery procedure rather than dropping memberships or rewriting reservation ownership. A manually mistaken consolidation uses the audited Undo merge action when eligible.

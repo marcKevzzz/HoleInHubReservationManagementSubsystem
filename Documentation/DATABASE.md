@@ -16,11 +16,15 @@ Schema-hardening contract: **006_SchemaHardening**, reviewed 2026-11-04. The sha
 | `guest_recovery_quotas` | Recovery email delivery limits (007) | Per-email issuance timestamps and expiry for the separate recovery feature |
 | `outbox` | Notification delivery queue | Messages, worker claims, retry counts and delivery outcome |
 | `allocation_guards` | Booking concurrency controls | Counters competing transactions update to prevent incompatible allocations |
+| `staff_role_guards` | Role administration concurrency control (017) | The singleton `staff-role-administration` serializes role edits before checking the acting Admin |
+| `staff_role_audit` | Staff access history (017) | Append-only role change events with UTC time, actor and target account IDs, actor role, previous and new workspace roles, reason, and request correlation ID |
 | `__migrations` | Database upgrade history | Applied migration IDs, checksums and execution metadata |
 | `__migration_leases` | Database upgrade ownership | Temporary exclusive claim preventing concurrent migration runners |
 | `system_heartbeats` | Foundation diagnostic record | Baseline heartbeat written by migration 001; not live user activity |
 
 Internal records support correctness and recovery; they are not additional customer features. Do not delete guard/lease/upgrade records as routine cleanup. The application does not require a separate customer or allocation collection: contact snapshots and resource IDs are embedded in bookings.
+
+The staff role write commits the account role array, version, security stamp, and audit event in one transaction. A replay with an outdated version creates no second event. Audit events use account IDs and omit credentials and session data.
 
 ## Naming and compatibility
 
@@ -191,3 +195,12 @@ Migration 014 adds optional `ReviewStartsUtc` (UTC date) and `ReviewAlertsUtc` (
 ### Schedule change proposals
 
 Migration 015 adds an optional `ScheduleChange` object to a reservation and its relevant history events. It stores one current proposal, base revision, command identity/hash, original and proposed intervals/resources, reason and decision state. Completed proposals remain in append-only history when a new proposal replaces the current object. Proposal submission allocates nothing. Schedule approval commits updated allocation, revision, history and notification together.
+
+
+### Staff customer profiles (migration 018)
+
+`customer_profiles` holds stable staff-facing contact records and retained booking-contact variants. `customer_profile_bookings` has one membership per reservation (`_id` is the reservation ID). `customer_profile_operations` stores merge/undo receipts, actor, reason, original profile snapshots, membership provenance and resulting semantic-state hashes. `customer_profile_guards` serializes these metadata writes in MongoDB transactions; this does not replace reservation capacity guards.
+
+A manual merge changes staff profile membership and preferred contact fields only. Reservation contact snapshots, account IDs, guest verification/access, allocations, payments, status and customer-owned history are untouched. Matching contact values never authorize ownership or an automatic merge. Backfill preserves existing account/verified-guest groupings; new guests and walk-ins stay separate unless staff explicitly select a profile. Account bookings use immutable account identity.
+
+Full merges redirect staff aliases to the main profile; selected-booking merges leave the source active. Search includes retained variants. Undo requires the same semantic profile/membership result and operation lineage, while revision counters remain monotonic. A later booking or unreversed merge blocks undo; reversing a dependent merge can make its predecessor eligible again. Each command is idempotent and audited. A merge moves at most 1,000 reservations; larger groups require reviewed subsets.

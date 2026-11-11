@@ -6,6 +6,7 @@ namespace HoleInHubReservationManagementSubsystem.ViewModels;
 
 public sealed class StaffBookingForm
 {
+    [StringLength(100)] public string? CustomerProfileId { get; set; }
     [Required] public string ResourceId { get; set; } = "";
     [Required] public DateOnly? Date { get; set; }
     [Required] public TimeOnly? StartTime { get; set; }

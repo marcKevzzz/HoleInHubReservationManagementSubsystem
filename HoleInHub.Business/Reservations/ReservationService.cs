@@ -8,7 +8,7 @@ namespace HoleInHub.Business.Reservations;
 public sealed partial class ReservationService(ReservationPersistence persistence, OutboxPersistence outbox, IOptions<ReservationPolicy> policy, TimeProvider? clock = null)
 {
     public async Task<IReadOnlyList<ResourceDto>> GetCatalogAsync(CancellationToken ct) => (await persistence.CatalogAsync(ct)).Select(x => new ResourceDto(x.Id, x.Name, x.Service)).ToArray();
-    public async Task<IReadOnlyList<AvailabilityDto>> GetAvailabilityAsync(DateOnly date, TimeOnly startTime, int durationMinutes, string service, CancellationToken ct) { var (start, end) = ReservationRules.PreviewInterval(date, startTime, durationMinutes, service); BookingRules.ValidateLeadTime(service, start, (clock ?? TimeProvider.System).GetUtcNow()); await ProcessPendingAsync(ct); var occupied = await persistence.OccupiedAsync(start, end, ct); return (await GetCatalogAsync(ct)).Where(x => service == "WholeShop" || x.Service == (service == "VIP" ? "VIP" : "Regular")).Select(x => new AvailabilityDto(x, !occupied.Contains(x.Id))).ToArray(); }
+    public async Task<IReadOnlyList<AvailabilityDto>> GetAvailabilityAsync(DateOnly date, TimeOnly startTime, int durationMinutes, string service, CancellationToken ct) { var (start, end) = ReservationRules.PreviewInterval(date, startTime, durationMinutes, service); BookingRules.ValidateLeadTime(service, start, (clock ?? TimeProvider.System).GetUtcNow()); await ProcessPendingAsync(ct); var occupied = await persistence.OccupiedAsync(start, end, ct, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime); return (await GetCatalogAsync(ct)).Where(x => service == "WholeShop" || x.Service == (service == "VIP" ? "VIP" : "Regular")).Select(x => new AvailabilityDto(x, !occupied.Contains(x.Id))).ToArray(); }
     public async Task<ReservationDto> SubmitAsync(SubmitReservationRequest request, string accountId, string verifiedEmail, CancellationToken ct, string? guestSessionHash = null, string? accessTokenHash = null, bool demoAllowed = false, string? encryptedReceipt = null)
     {
         if (string.IsNullOrWhiteSpace(accountId) || !System.Net.Mail.MailAddress.TryCreate(verifiedEmail, out var address) || address.Address != verifiedEmail)
@@ -131,7 +131,10 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
     public async Task<ReservationDto?> GetOwnedAsync(string accountId, string id, CancellationToken ct) { var record = await persistence.OwnedAsync(accountId, id, ct); return record == null ? null : Map(record); }
     public async Task ProcessPendingAsync(CancellationToken ct)
     {
-        var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime; await persistence.ExpireAsync(now, policy.Value.StaffEmails, ct); foreach (var record in await persistence.PendingAsync(ct))
+        var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime;
+        await persistence.ExpireAsync(now, policy.Value.StaffEmails, ct);
+        await persistence.MarkOverdueAsync(now, policy.Value.StaffEmails, ct);
+        foreach (var record in await persistence.PendingAsync(now, ct))
         {
             var alerts = record.ReviewAlertsUtc ?? ((record.ReviewDeadlineUtc - record.CreatedUtc).TotalMinutes > 30 ? new[] { 30, 50 } : new[] { 15, 25 }).Select(minutes => record.CreatedUtc.AddMinutes(minutes)).ToArray();
             for (var index = 0; index < alerts.Length; index++)
@@ -171,10 +174,14 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         var record = await persistence.ByAccessAsync(id, hash, ct);
         return record == null ? null : Map(record);
     }
-    public async Task<IReadOnlyList<ReservationDto>> GetReviewQueueAsync(CancellationToken ct)
+    public async Task<IReadOnlyList<ReservationDto>> GetReviewQueueAsync(CancellationToken ct,
+        string filter = "all", DateOnly? day = null, bool bySession = false)
     {
         await ProcessPendingAsync(ct);
-        return (await persistence.ReviewQueueAsync(ct)).Select(Map).ToArray();
+        var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime;
+        DateTime? start = day.HasValue
+            ? TimeZoneInfo.ConvertTimeToUtc(day.Value.ToDateTime(TimeOnly.MinValue), ReservationRules.Manila) : null;
+        return (await persistence.ReviewQueueAsync(filter, now, start, bySession, ct)).Select(Map).ToArray();
     }
 
     public async Task<IReadOnlyList<ReservationDto>> GetExpiredRequestsAsync(DateOnly? day, CancellationToken ct)
@@ -191,7 +198,15 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         var record = await persistence.ByIdAsync(id, ct);
         return record == null ? null : Map(record);
     }
-    public async Task<bool> ReviewAsync(string id, string action, string actor, CancellationToken ct, string? reason = null, long? expectedRevision = null)
+    public static bool IsReviewOverdue(ReservationDto booking, DateTime now) =>
+        booking.Status == "Pending" && booking.Service != "WholeShop" && booking.ReviewDeadlineUtc <= now;
+
+    public static bool CanCancelOnline(ReservationDto booking, DateTime now) =>
+        (booking.Status is "Pending" or "Confirmed") && booking.StartUtc >= now.AddHours(1)
+        && (booking.Service != "WholeShop" || !booking.CancellationRequested);
+
+    public async Task<bool> ReviewAsync(string id, string action, string actor, CancellationToken ct, string? reason = null,
+        long? expectedRevision = null, string? rebookUrl = null)
     {
         if (reason?.Length > 1000 || (action is "reject" or "keep" && string.IsNullOrWhiteSpace(reason)))
         {
@@ -199,7 +214,7 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         }
         try
         {
-            return await persistence.TransitionAsync(id, action, actor, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime, policy.Value.StaffEmails, ct, reason?.Trim() ?? "", expectedRevision);
+            return await persistence.TransitionAsync(id, action, actor, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime, policy.Value.StaffEmails, ct, reason?.Trim() ?? "", expectedRevision, rebookUrl);
         }
         catch (AllocationConflictException error) { throw new ReservationValidationException(error.Message); }
     }

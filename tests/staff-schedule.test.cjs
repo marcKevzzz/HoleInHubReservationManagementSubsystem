@@ -19,7 +19,7 @@ test('side panel dismisses only after an outside press and respects cancellation
         addEventListener() {},
     };
     vm.runInNewContext(fs.readFileSync(require.resolve('../HoleInHub.Web/wwwroot/js/staff-schedule.js'), 'utf8'), {
-        document: { querySelector() { return page; } }, Event,
+        document: { addEventListener() {}, querySelector() { return page; } }, Event,
     });
     const point = x => ({ target: panel, clientX: x, clientY: 200 });
     handlers.pointerdown(point(700));

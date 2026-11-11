@@ -23,12 +23,12 @@ Reviewed against the working tree on 2026-11-04, including uncommitted feature w
 - Asia/Manila venue time: Monday 11:00–midnight, other days 10:00–midnight. Store UTC instants; conflicts use half-open `[start, end)` intervals.
 - Ordinary sessions: 30-minute start/duration increments, minimum 30 minutes, maximum 840 minutes within opening hours. Whole-shop: 15:00–21:00 or opening–midnight.
 - Regular review/lead time: 30 minutes; other services: 60. Submission must fit opening hours, configured approved review coverage and booking start. No maximum advance-booking horizon is enforced.
-- Verified submission creates Pending and holds capacity. Regular alerts occur at 15/25 minutes; longer windows use 30/50. Expiry uses the saved deadline; older records retain their policy.
+- Verified submission creates Pending and holds capacity until the saved review deadline. Regular alerts occur at 15/25 minutes and longer windows use 30/50. A missed review deadline releases ordinary online capacity and flags the request as overdue. Staff can approve it before the session starts if the bays are available, or send a link to choose another time if the slot conflicts. The request expires at session start if undecided.
 - Total capacity: eight per regular bay, ten per VIP bay; group coaching capped at eight. The current form records total guests including non-players. Legacy participant splits remain readable; staff must check the six-player limit when splits are absent.
 - Service identifiers: `Regular`, `VIP`, `PhilippineCoach`, `KpgaPro`, `KpgaGroup`, `WholeShop`. KPGA Pro is Tuesday/Thursday/Saturday; group coaching is Tuesday 15:00–16:00. These application assumptions do not establish client-approved coaching terms.
 - Staff approve Regular/VIP; coaching also requires the coach-confirmed flag. Whole-shop demonstration deposit success confirms through the demo flow.
-- Customers may request cancellation of Pending/Confirmed bookings at least one hour before start; staff accept or decline. A request alone releases no capacity.
-- Capacity queries protect `Pending`, `Confirmed` and legacy `Checked-In`. Current actions also produce `Rejected`, `Cancelled` and `Expired`. Proposed `CheckedIn`/`NoShow` identifiers are not the implemented lifecycle contract.
+- Customers may cancel ordinary Pending or Confirmed bookings at least one hour before start. The update releases any remaining bay hold immediately. Staff review Whole-shop and previously queued cancellation requests.
+- Capacity queries protect unexpired Pending holds, `Confirmed` and legacy `Checked-In`. Current actions also produce `Rejected`, `Cancelled` and `Expired`. Proposed `CheckedIn`/`NoShow` identifiers are not the implemented lifecycle contract.
 
 ## Current booking flow
 
@@ -44,7 +44,9 @@ flowchart TD
     G --> H[Pending receipt and capacity hold]
     H --> I[Staff review or whole-shop demo deposit]
     I --> J[Confirmed or rejected/payment outcome]
-    H --> K[Unresolved deadline: Expired]
+    H --> K[Ordinary review deadline: Overdue and hold released]
+    K --> I
+    K --> L[Undecided at session start: Expired]
 ```
 
 ## Document boundaries
@@ -66,7 +68,7 @@ Migration 014 adds optional saved review start and two alert timestamps. Existin
 
 The owner approved customer proposals for Confirmed Regular/VIP reservations with at least one hour of notice before the current start. Proposed starts must allow the full 30/60-minute staff review window under the operating-hours clock. One open proposal per reservation is retained. Submitting holds no new capacity.
 
-Customers use the existing account ownership, secure link or verified guest session. Staff open Change requests in the sidebar or Changes in the review queue, compare schedules and choose the same number of active bays for approval. Approval is available before both sessions begin and requires the proposal's base revision to remain current. A conflict, closure, stale revision or rejected decision preserves the original allocation. Declines require a reason. Approved and declined decisions enqueue customer email when an email is recorded.
+Customers use the existing account ownership, secure link or verified guest session. Staff open **Review queue → Schedule changes**, compare schedules and choose the same number of active bays for approval. Approval is available before both sessions begin and requires the proposal's base revision to remain current. A conflict, closure, stale revision or rejected decision preserves the original allocation. Declines require a reason. Approved and declined decisions enqueue customer email when an email is recorded.
 
 Migration 015 adds optional proposal and audit snapshots. The guarded transaction takes the catalog guard and sorted old/new resource-date guards, rechecks allocations, and commits the schedule, resource names, history and outbox together. Current/proposed resource IDs and intervals remain in history. Existing records remain readable. Apply the migration explicitly.
 

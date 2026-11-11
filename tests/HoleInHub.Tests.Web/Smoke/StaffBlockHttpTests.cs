@@ -132,7 +132,14 @@ public sealed class StaffBlockHttpTests
             var conflict = await client.PostAsync("/staff/reservations/blocks/new", new FormUrlEncodedContent(form));
             Assert.Equal(HttpStatusCode.UnprocessableEntity, conflict.StatusCode);
             Assert.Contains("no longer free", await conflict.Content.ReadAsStringAsync());
+            client.DefaultRequestHeaders.Add("X-Staff-Schedule", "true");
+            var prefetched = await client.GetStringAsync("/BookingReview?date=2026-11-10");
+            Assert.DoesNotContain("data-toast-seed", prefetched);
+            client.DefaultRequestHeaders.Remove("X-Staff-Schedule");
             var schedule = await client.GetStringAsync("/BookingReview?date=2026-11-10");
+            Assert.Contains("data-toast-seed data-kind=\"success\"", schedule);
+            Assert.Contains(">Time blocked<", schedule);
+            Assert.DoesNotContain("data-toast-seed", await client.GetStringAsync("/BookingReview?date=2026-11-10"));
             Assert.Contains("data-new-block", schedule);
             Assert.Contains("Simulator maintenance", schedule);
             Assert.Contains("block-reason", schedule);
@@ -173,6 +180,8 @@ public sealed class StaffBlockHttpTests
             Assert.Equal(HttpStatusCode.Redirect, (await client.PostAsync(path + "/release", new FormUrlEncodedContent(release))).StatusCode);
             var history = await client.GetStringAsync(path);
             Assert.Contains("Time unblocked", history);
+            Assert.Contains("data-toast-seed data-kind=\"info\"", history);
+            Assert.Contains(">Time block already released<", history);
             Assert.Contains("Maintenance finished", history);
             Assert.DoesNotContain("A different retry", history);
             Assert.DoesNotContain("Confirm unblock", history);
@@ -180,6 +189,98 @@ public sealed class StaffBlockHttpTests
         }
         finally { await context.Client.DropDatabaseAsync(database); }
     }
+    [Theory, Trait("Category", "Integration")]
+    [InlineData("changes", "approve", "Schedule change approved", "/staff/review-queue/changes", "12 Nov, 2:00 PM")]
+    [InlineData("changes", "decline", "Schedule change declined", "/staff/review-queue/changes", "Original time kept: 11 Nov, 12:00 PM")]
+    [InlineData("cancellations", "cancel", "Cancellation approved", "/staff/cancellations", "reserved bay time was released")]
+    [InlineData("cancellations", "keep", "Cancellation declined", "/staff/cancellations", "reservation remains scheduled")]
+    public async Task QuickReviewDecisionsReturnToTheFilteredListWithOneToast(
+        string section, string decision, string title, string destinationPath, string message)
+    {
+        var database = "test_review_toast_" + Guid.NewGuid().ToString("N");
+        await using var factory = Factory(database);
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IMongoDbContext>();
+        try
+        {
+            await new Migration_002_Reservations().UpAsync(context.Database, default);
+            await new AccountsMigration().UpAsync(context.Database, default);
+            await new Migration_004_BookingProcess().UpAsync(context.Database, default);
+            await new Migration_005_GoogleAccounts().UpAsync(context.Database, default);
+            await new Migration_006_SchemaHardening().UpAsync(context.Database, default);
+            await new Migration_015_ScheduleChanges().UpAsync(context.Database, default);
+            var start = new DateTime(2026, 11, 11, 4, 0, 0, DateTimeKind.Utc);
+            var booking = new ReservationRecord
+            {
+                AccountId = "customer",
+                Email = "guest@example.test",
+                Reference = "HIH-REVIEW-TOAST",
+                FirstName = "Alex",
+                LastName = "Santos",
+                Service = "Regular",
+                Status = "Confirmed",
+                ResourceIds = ["bay-2"],
+                Attendees = 1,
+                StartUtc = start,
+                EndUtc = start.AddHours(1),
+                CreatedUtc = start.AddDays(-2),
+                ReviewDeadlineUtc = start.AddDays(-1),
+                IdempotencyKey = "toast",
+                SubmissionHash = "test",
+                CancellationRequested = section == "cancellations"
+            };
+            if (section == "changes")
+            {
+                booking.ScheduleChange = new ScheduleChangeRecord
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    PayloadHash = new string('a', 64),
+                    RequestedUtc = start.AddDays(-1),
+                    Status = "Pending",
+                    StartUtc = start.AddDays(1).AddHours(2),
+                    EndUtc = start.AddDays(1).AddHours(3),
+                    OriginalStartUtc = start,
+                    OriginalEndUtc = booking.EndUtc,
+                    OriginalResourceIds = booking.ResourceIds,
+                    ResourceIds = booking.ResourceIds,
+                    Reason = "Move our visit."
+                };
+            }
+            await context.Database.GetCollection<ReservationRecord>("reservations").InsertOneAsync(booking);
+            using var admin = Client(factory, "Admin");
+            var actions = await admin.GetStringAsync($"/staff/reservations/{booking.Id}/actions?filter={section}&day=2026-11-11&sort=session");
+            var formAction = WebUtility.HtmlDecode(Regex.Match(actions, "action=\"([^\"]*?/Decide(?:Change)?[^\"]*)\"").Groups[1].Value);
+            Assert.Contains("returnToQueue=true", formAction, StringComparison.OrdinalIgnoreCase);
+            var token = WebUtility.HtmlDecode(Regex.Match(actions, "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"").Groups[1].Value);
+            var form = new Dictionary<string, string>
+            {
+                ["__RequestVerificationToken"] = token,
+                ["expectedRevision"] = "0",
+                ["decision"] = decision,
+                ["reason"] = "Reviewed with the guest.",
+                ["proposalId"] = booking.ScheduleChange?.Id ?? "",
+                ["resources"] = "bay-2"
+            };
+            var response = await admin.PostAsync(formAction, new FormUrlEncodedContent(form));
+            Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+            var destination = new Uri(new Uri("https://localhost"), response.Headers.Location!);
+            Assert.Equal(destinationPath, destination.AbsolutePath);
+            Assert.Contains("day=2026-11-11", destination.Query);
+            Assert.Contains("sort=session", destination.Query);
+            var page = await admin.GetStringAsync(destination);
+            Assert.Contains("data-toast-seed data-kind=\"success\"", page);
+            Assert.Contains(">" + title + "<", page);
+            Assert.Contains(message, WebUtility.HtmlDecode(page));
+            Assert.DoesNotContain("data-toast-action aria-label=", page);
+            Assert.DoesNotContain("data-toast-seed", await admin.GetStringAsync(destination));
+
+            var replay = await admin.PostAsync(formAction, new FormUrlEncodedContent(form));
+            Assert.Equal(HttpStatusCode.Redirect, replay.StatusCode);
+            Assert.Contains("data-toast-seed data-kind=\"warning\"", await admin.GetStringAsync(replay.Headers.Location));
+        }
+        finally { await context.Client.DropDatabaseAsync(database); }
+    }
+
     [Fact, Trait("Category", "Integration")]
     public async Task StaffAttendanceRequiresConfirmationAndPreservesActualTimesAndRetries()
     {
@@ -239,21 +340,33 @@ public sealed class StaffBlockHttpTests
             form["Action"] = "forged-action";
             Assert.Equal(HttpStatusCode.OK, (await staff.PostAsync(path, new FormUrlEncodedContent(form))).StatusCode);
             form["Action"] = "check-in";
-            Assert.Equal(HttpStatusCode.Redirect, (await staff.PostAsync(path, new FormUrlEncodedContent(form))).StatusCode);
+            var checkedIn = await staff.PostAsync(path, new FormUrlEncodedContent(form));
+            Assert.Equal(HttpStatusCode.Redirect, checkedIn.StatusCode);
+            var checkedInPage = await staff.GetStringAsync(checkedIn.Headers.Location);
+            Assert.Contains("data-toast-seed data-kind=\"success\"", checkedInPage);
+            Assert.Contains(">Guest checked in<", checkedInPage);
             Assert.Equal(HttpStatusCode.Redirect, (await staff.PostAsync(path, new FormUrlEncodedContent(form))).StatusCode);
             var current = await context.Database.GetCollection<ReservationRecord>("reservations").Find(x => x.Id == booking.Id).SingleAsync();
             Assert.Equal("Checked-In", current.Status); Assert.Equal(1, current.Revision);
             Assert.Equal("test-admin", Assert.Single(current.History).Actor);
             Assert.Equal(new DateTime(2026, 11, 10, 4, 15, 0, DateTimeKind.Utc), current.CheckedInUtc);
             details = await staff.GetStringAsync("/BookingReview/Details/" + booking.Id);
+            Assert.Contains(">Guest already checked in<", details);
             form["Action"] = "check-out"; form["CommandId"] = Value(details, "CommandId"); form["ExpectedRevision"] = "1";
             Assert.Contains("Confirm check out", details);
             var noReason = await staff.PostAsync(path, new FormUrlEncodedContent(form));
             Assert.Equal(HttpStatusCode.OK, noReason.StatusCode);
             Assert.Contains("reason for early check-out", await noReason.Content.ReadAsStringAsync());
             form["Reason"] = "Finished early";
+            var checkedOut = await staff.PostAsync(path, new FormUrlEncodedContent(form));
+            Assert.Equal(HttpStatusCode.Redirect, checkedOut.StatusCode);
+            var checkedOutPage = await staff.GetStringAsync(checkedOut.Headers.Location);
+            Assert.Contains("data-toast-seed data-kind=\"success\"", checkedOutPage);
+            Assert.Contains(">Guest checked out<", checkedOutPage);
             Assert.Equal(HttpStatusCode.Redirect, (await staff.PostAsync(path, new FormUrlEncodedContent(form))).StatusCode);
-            Assert.Equal(HttpStatusCode.Redirect, (await staff.PostAsync(path, new FormUrlEncodedContent(form))).StatusCode);
+            var replayPage = await staff.GetStringAsync("/BookingReview/Details/" + booking.Id);
+            Assert.Contains("data-toast-seed data-kind=\"info\"", replayPage);
+            Assert.Contains(">Guest already checked out<", replayPage);
             current = await context.Database.GetCollection<ReservationRecord>("reservations").Find(x => x.Id == booking.Id).SingleAsync();
             Assert.Equal("Completed", current.Status); Assert.Equal(2, current.History.Count);
             Assert.Equal(booking.EndUtc, current.EndUtc);

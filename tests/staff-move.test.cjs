@@ -38,10 +38,10 @@ test(`vertical dragging into a bay with ${name} validates the actual time`, () =
     const undo = node({}), error = {}, description = {}, dragError = {};
     const dialog = node({ open: false, showModal() { this.open = true; }, close() { this.open = false; this.handlers.close(); },
         querySelector(selector) { return { '[data-move-form]': form, '[data-move-undo]': undo, '[data-move-error]': error, '[data-move-description]': description }[selector]; } });
-    const timeline = node({ querySelectorAll(selector) { return selector === '[data-move-booking]' ? [bar] : [source, destination]; } });
-    const page = { dataset: { firstHour: '10', openingHour: '10' }, querySelector(selector) { return { '[data-move-confirmation]': dialog, '.staff-timeline': timeline, '[data-drag-error]': dragError }[selector]; } };
+    const timeline = node({ style: { removeProperty() {} }, querySelectorAll(selector) { return selector === '[data-move-booking]' ? [bar] : [source, destination]; } });
+    const page = { addEventListener() {}, dataset: { firstHour: '10', openingHour: '10' }, querySelector(selector) { return { '[data-move-confirmation]': dialog, '.staff-timeline': timeline, '[data-drag-error]': dragError }[selector]; } };
     vm.runInNewContext(fs.readFileSync(require.resolve('../HoleInHub.Web/wwwroot/js/staff-move.js'), 'utf8'), {
-        document: { querySelector() { return page; }, addEventListener() {} }, crypto: { randomUUID() { return '12345678-1234-1234-1234-123456789abc'; } }, setTimeout() {},
+        document: { querySelector() { return page; }, addEventListener() {} }, crypto: { randomUUID() { return '12345678-1234-1234-1234-123456789abc'; } }, setTimeout() {}, clearTimeout() {},
     });
     const pointer = y => ({ target: bar, button: 0, pointerId: 1, clientX: 130, clientY: y, preventDefault() {} });
     timeline.handlers.pointerdown(pointer(25));

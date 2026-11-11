@@ -48,7 +48,7 @@ public sealed partial class ReservationPersistence
                 {
                     throw new AllocationConflictException("Choose an active Regular or VIP bay.");
                 }
-                if (await HasAllocationConflictAsync(allocation, s, token))
+                if (await HasAllocationConflictAsync(allocation, s, token, block.CreatedUtc ?? DateTime.UtcNow))
                 {
                     throw new AllocationConflictException("This bay is no longer free for that time. Choose another bay or time.");
                 }

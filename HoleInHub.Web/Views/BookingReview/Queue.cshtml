@@ -1,102 +1,100 @@
 @model StaffReviewQueue
 @{
     Layout = "_StaffLayout";
-    ViewData["Title"] = "Review queue";
+    var queuePage = StaffReviewQueue.Sections.Single(page => page.Key == Model.Filter);
+    ViewData["Title"] = queuePage.Title;
     var date = Context.Request.Query["date"].ToString();
     var visible = Model.Visible.ToArray();
     var expired = Model.Filter == "expired";
-    var filters = new[] { ("all", "All"), ("pending", "Pending"), ("changes", "Changes"), ("cancellations", "Cancellations"), ("deposit", "Deposit issues"), ("expired", "Expired") };
-    var dayItems = Model.Items.Where(x => Model.Day is null || StaffReviewQueue.Local(x.StartUtc).ToString("yyyy-MM-dd") == Model.Day).ToArray();
-    var cancellations = dayItems.Count(x => x.CancellationRequested);
+    var today = DateOnly.FromDateTime(StaffReviewQueue.Local(Model.Now));
+    var selectedDay = Model.Day is null ? today : DateOnly.ParseExact(Model.Day, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+    var allDates = Url.RouteUrl("staff-review-section", new { section = Model.Filter, date, sort = Model.Sort });
+    string DayKey(DateOnly day) => day.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
 }
 <div class="staff-workspace staff-review">
     <header class="staff-workspace-heading">
-        <h1>Review queue</h1>
-        <p>Triage booking requests, cancellations, and deposits. Times are in Manila.</p>
+        <h1>@queuePage.Title</h1>
     </header>
-    @if (expired)
-    {
-        <p class="staff-empty">Expired requests have released their bay holds. Open a booking to view its history.</p>
-    }
-    else
-    {
-    <div class="review-summary" aria-label="Queue summary">
-        <span><strong>@dayItems.Count(x => StaffReviewQueue.Type(x) == "pending")</strong> pending review</span>
-        <span><strong>@dayItems.Count(Model.Overdue)</strong> overdue</span>
-        <span><strong>@cancellations</strong> cancellation @(cancellations == 1 ? "request" : "requests")</span>
-    </div>
-    }
-    <div class="review-controls">
-        <nav class="review-filters" aria-label="Request type">
-            @foreach (var (key, label) in filters)
-            {
-                <a asp-action="Queue" asp-route-filter="@key" asp-route-day="@Model.Day" asp-route-sort="@Model.Sort" asp-route-date="@date"
-                   aria-current="@(Model.Filter == key ? "page" : null)">
-                    @label
-                    @if (!expired && key != "expired")
-                    {
-                        <strong>@dayItems.Count(x => key == "all" || StaffReviewQueue.Type(x) == key)</strong>
-                    }
-                </a>
-            }
+    <div class="staff-date-controls review-toolbar">
+        <div class="review-sort" role="group" aria-label="Sort requests">
+            <a asp-route="staff-review-section" asp-route-section="@Model.Filter" asp-route-day="@Model.Day" asp-route-date="@date" asp-route-sort="deadline"
+               aria-current="@(Model.Sort == "deadline" ? "true" : null)">
+                @(expired ? "Most recent" : "Deadline")
+            </a>
+            <a asp-route="staff-review-section" asp-route-section="@Model.Filter" asp-route-day="@Model.Day" asp-route-date="@date" asp-route-sort="session"
+               aria-current="@(Model.Sort == "session" ? "true" : null)">
+                Session date
+            </a>
+        </div>
+        <nav aria-label="Filter by session date">
+            <div class="staff-date-stepper">
+                @if (selectedDay.DayNumber > DateOnly.MinValue.DayNumber + 1)
+                {
+                    <a asp-route="staff-review-section" asp-route-section="@Model.Filter" asp-route-date="@date" asp-route-sort="@Model.Sort"
+                       asp-route-day="@DayKey(selectedDay.AddDays(-1))" aria-label="Previous day" title="Previous day"><partial name="_StaffIcon" model='"chevron-left"' /></a>
+                }
+                <form asp-route="staff-review-section" asp-route-section="@Model.Filter" method="get" class="staff-date-form" data-staff-date-filter>
+                    <input type="hidden" name="date" value="@date" />
+                    <input type="hidden" name="sort" value="@Model.Sort" />
+                    <label class="sr-only" for="review-date">Session date</label>
+                    <input id="review-date" type="date" name="day" value="@Model.Day" required />
+                    <button class="button staff-date-submit" type="submit" data-no-icon>Go</button>
+                    <button type="button" class="staff-date-picker" data-open-date aria-label="Choose session date" hidden>
+                        @(Model.Day is null ? "All dates" : selectedDay.ToString("dd.MM.yyyy"))
+                    </button>
+                </form>
+                @if (selectedDay.DayNumber < DateOnly.MaxValue.DayNumber - 1)
+                {
+                    <a asp-route="staff-review-section" asp-route-section="@Model.Filter" asp-route-date="@date" asp-route-sort="@Model.Sort"
+                       asp-route-day="@DayKey(selectedDay.AddDays(1))" aria-label="Next day" title="Next day"><partial name="_StaffIcon" model='"chevron-right"' /></a>
+                }
+            </div>
+            <a class="staff-today" asp-route="staff-review-section" asp-route-section="@Model.Filter" asp-route-date="@date" asp-route-sort="@Model.Sort"
+               asp-route-day="@DayKey(today)" aria-current="@(Model.Day == DayKey(today) ? "date" : null)">Today</a>
+            @if (Model.Day is not null) { <a class="staff-today" href="@allDates">All dates</a> }
         </nav>
-        <form asp-action="Queue" method="get" class="review-filter-form">
-            <input type="hidden" name="filter" value="@Model.Filter" />
-            <input type="hidden" name="date" value="@date" />
-            <label>Session date<input type="date" name="day" value="@Model.Day" /></label>
-            <label>Sort by<select name="sort"><option value="deadline" selected="@(Model.Sort == "deadline")">@(expired ? "Most recent" : "Deadline")</option><option value="session" selected="@(Model.Sort == "session")">Session date</option></select></label>
-            <button class="button button-secondary" type="submit" data-no-icon>Apply</button>
-        </form>
     </div>
     @if (Model.Items.Count == 200)
     {
-        <p class="staff-empty">@(expired ? "Showing the latest 200 expired requests. Choose a session date to find older requests." : "Showing the first 200 requests. Filters apply to this set.")</p>
+        <p class="staff-empty">Showing up to 200 requests. Choose a session date to narrow the results.</p>
     }
     @if (visible.Length == 0)
     {
-        <section class="review-empty">
-            <h2>@(expired ? "No expired requests" : Model.Items.Count == 0 ? "All caught up" : "No matching requests")</h2>
-            <p>@(expired ? "Try another session date, or return to the active review queue." : Model.Items.Count == 0 ? "There are no requests waiting for staff." : "Try another request type or session date.")</p>
-            @if (Model.Items.Count == 0)
-            {
-                <a class="staff-link" asp-action="Index">View today’s schedule</a>
-            }
-            else
-            {
-                <a class="staff-link" asp-action="Queue" asp-route-date="@date">Clear filters</a>
-            }
-        </section>
+        <partial name="_StaffEmptyState" model='("inbox", Model.Day is not null ? "No requests on this date" : expired ? "No expired requests" : "No requests in this queue",
+            Model.Day is not null ? "Choose another session date or show all dates." : "Requests will appear here when they match this queue.",
+            Model.Day is not null ? allDates : null, Model.Day is not null ? "Show all dates" : null)' />
     }
     else
     {
-        <div role="table" class="review-table" aria-label="@(expired ? "Expired reservation requests" : "Requests to review")">
+        <div role="table" class="review-table" aria-label="@queuePage.Title">
             <div role="row" class="review-row review-table-head">
                 <span role="columnheader">Customer</span><span role="columnheader">Session</span>
-                <span role="columnheader">@(expired ? "Status" : "Request type")</span><span role="columnheader">@(expired ? "Review deadline" : "Deadline")</span><span role="columnheader">Action</span>
+                <span role="columnheader">Status</span><span role="columnheader">@(expired ? "Review deadline" : "Deadline")</span><span role="columnheader">Actions</span>
             </div>
             @foreach (var item in visible)
             {
                 var start = StaffReviewQueue.Local(item.StartUtc);
                 var end = StaffReviewQueue.Local(item.EndUtc);
                 var deadline = StaffReviewQueue.Deadline(item);
+                var readOnly = item.Status == "Expired";
                 <div role="row" class="review-row review-request">
                     <div role="cell"><strong>@item.FirstName @item.LastName</strong><small>@item.Reference · @item.Attendees @(item.Attendees == 1 ? "guest" : "guests")</small></div>
                     <div role="cell" data-column="Session"><strong>@start.ToString("ddd, d MMM")</strong><small>@start.ToString("h:mm tt")–@end.ToString("h:mm tt") · @StaffReviewQueue.Bays(item)</small></div>
-                    <div role="cell" data-column="@(expired ? "Status" : "Request type")">
-                        @if (expired)
+                    <div role="cell" data-column="Status">
+                        @if (readOnly)
                         {
                             <span class="staff-status" data-status="Expired">Expired</span>
                         }
                         else
                         {
-                            <span class="staff-status review-chip" data-status="@(StaffReviewQueue.Type(item) == "pending" ? "Pending" : StaffReviewQueue.Type(item) == "deposit" ? "LatePayment" : "Cancellation")">@if (StaffReviewQueue.Type(item) != "pending"){<span aria-hidden="true">@(item.CancellationRequested || StaffReviewQueue.Type(item) == "changes" ? "↶" : "₱") </span>}@StaffReviewQueue.Label(item)</span>
+                            <span class="staff-status review-chip" data-status="@(StaffReviewQueue.Type(item) == "pending" ? "Pending" : StaffReviewQueue.Type(item) == "deposit" ? "LatePayment" : "Cancellation")">@if (StaffReviewQueue.Type(item) != "pending"){<span aria-hidden="true">@(item.CancellationRequested || StaffReviewQueue.Type(item) == "changes" ? "↶" : "₱") </span>}@StaffReviewQueue.Label(item, Model.Now)</span>
                         }
                     </div>
                     <div role="cell" data-column="Deadline">
-                        @if (expired)
+                        @if (readOnly)
                         {
                             <time datetime="@item.ReviewDeadlineUtc.ToString("O")">@StaffReviewQueue.Local(item.ReviewDeadlineUtc).ToString("d MMM, h:mm tt")</time>
-                            <small>Bay hold released</small>
+                            <small>Read-only history</small>
                         }
                         else if (deadline is { } due)
                         {
@@ -104,9 +102,25 @@
                         }
                         else { <small>No set deadline</small> }
                     </div>
-                    <div role="cell"><a class="button button-secondary review-row-link" asp-action="Details" asp-route-id="@item.Id" asp-route-date="@date"
-                       asp-route-fromQueue="true" asp-route-filter="@Model.Filter" asp-route-day="@Model.Day" asp-route-sort="@Model.Sort"
-                       aria-label="@($"View {item.FirstName} {item.LastName}, {item.Reference}")">@(expired ? "View booking" : "Review")</a></div>
+                    <div role="cell" class="review-row-actions">
+                        <a class="review-view-link" asp-action="Details" asp-route-id="@item.Id" asp-route-date="@date" asp-route-fromQueue="true" asp-route-filter="@Model.Filter"
+                           asp-route-day="@Model.Day" asp-route-sort="@Model.Sort" title="Open booking" aria-label="@($"Open booking {item.Reference}")">
+                            <partial name="_StaffIcon" model='"view"' />
+                        </a>
+                        @if (!readOnly && (item.CancellationRequested || item.ScheduleChange?.Status == "Pending" || item.Status == "Pending" && item.Service != "WholeShop"))
+                        {
+                            var change = !item.CancellationRequested && item.ScheduleChange?.Status == "Pending";
+                            var first = item.CancellationRequested ? "cancel" : change ? "approve-change" : HoleInHub.Business.Reservations.BookingRules.IsCoaching(item.Service) && !item.CoachConfirmed ? "coach" : "approve";
+                            var second = item.CancellationRequested ? "keep" : change ? "decline-change" : "reject";
+                            @foreach (var command in new[] { first, second })
+                            {
+                                var label = command switch { "cancel" => "Approve cancellation", "keep" => "Decline cancellation", "coach" => "Confirm coach", "approve" => "Approve booking", "approve-change" => "Approve schedule change", "decline-change" => "Decline schedule change", _ => "Reject booking" };
+                                <button type="button" class="staff-icon-button" data-queue-decision="@command"
+                                        data-actions-url="@Url.Action("Actions", new { id = item.Id, date, filter = Model.Filter, day = Model.Day, sort = Model.Sort })"
+                                        title="@label" aria-label="@label"><partial name="_StaffIcon" model='(command is "reject" or "keep" or "decline-change" ? "close" : "confirmed")' /></button>
+                            }
+                        }
+                    </div>
                 </div>
             }
         </div>

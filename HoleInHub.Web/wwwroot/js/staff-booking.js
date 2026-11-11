@@ -1,4 +1,5 @@
 (() => {
+    function mount() {
     function selection(firstMinute, minimum, occupied, anchor, current) {
         const slot = minute => Math.min(1410, Math.max(firstMinute, Math.floor(minute / 30 + 0.000001) * 30));
         const start = slot(Math.min(anchor, current));
@@ -84,7 +85,7 @@
     preview.className = 'staff-drag-preview';
     preview.setAttribute('aria-hidden', 'true');
     timeline.classList.add('staff-drag-enabled');
-    let drag;
+    let drag, draft = false;
 
     function timeValue(minute) {
         return String(Math.floor(minute / 60)).padStart(2, '0') + ':' + String(minute % 60).padStart(2, '0');
@@ -97,6 +98,7 @@
 
     function update(x) {
         const range = selection(firstMinute, minimum, drag.occupied, drag.anchor, minuteAt(drag.track, x));
+        if (page.dataset.date && Date.parse(`${page.dataset.date}T${timeValue(range.start)}:00+08:00`) <= Date.now()) range.valid = false;
         const { start, end, left, right, valid } = range;
         drag.range = { ...range, bay: drag.track.dataset.createBay };
         preview.style.left = left + '%';
@@ -105,26 +107,27 @@
         preview.classList.toggle('is-unavailable', !valid);
     }
 
-    function clear() {
+    function clear(keepPreview = false) {
         if (!drag) return;
         const { track, pointer } = drag;
         drag = undefined;
-        preview.remove();
+        if (!keepPreview) preview.remove();
         if (track.hasPointerCapture(pointer)) track.releasePointerCapture(pointer);
     }
 
     timeline.addEventListener('pointerdown', event => {
         const track = event.target.closest('[data-create-bay]');
         const completed = event.target.closest('a[data-status="Completed"]');
-        if (drag || event.pointerType !== 'mouse' || event.button !== 0 || !track
-            || (event.target !== track && !completed) || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        if (drag || page.dataset.moving || event.pointerType !== 'mouse' || event.button !== 0 || !track
+            || (event.target !== track && !completed) || (!event.ctrlKey && !page.dataset.customerProfileId) || event.metaKey || event.shiftKey || event.altKey) return;
         event.preventDefault();
+        preview.classList.remove('is-selected');
         dragError.hidden = true;
         const occupied = Array.from(track.querySelectorAll('[data-holds-capacity="true"]'), bar => {
             const start = parseFloat(bar.style.getPropertyValue('--start'));
             return [start, start + parseFloat(bar.style.getPropertyValue('--span'))];
         });
-        drag = { track, pointer: event.pointerId, anchor: minuteAt(track, event.clientX), occupied, completed, originX: event.clientX };
+        drag = { track, pointer: event.pointerId, anchor: minuteAt(track, event.clientX), occupied };
         track.setPointerCapture(event.pointerId);
         track.append(preview);
         update(event.clientX);
@@ -135,25 +138,59 @@
     timeline.addEventListener('pointerup', event => {
         if (drag?.pointer !== event.pointerId) return;
         update(event.clientX);
-        const { range, completed, originX } = drag;
-        clear();
-        if (completed) {
-            const clicked = Math.abs(event.clientX - originX) < 5;
-            if (clicked) completed.click();
-            // Capture prevents the synthetic click after a drag from opening a second drawer.
-            const suppress = click => { click.preventDefault(); click.stopImmediatePropagation(); };
-            timeline.addEventListener('click', suppress, { capture: true, once: true });
-            setTimeout(() => timeline.removeEventListener('click', suppress, true), 0);
-            if (clicked) return;
+        const { range } = drag;
+        clear(range.valid);
+        const suppress = click => { click.preventDefault(); click.stopImmediatePropagation(); };
+        timeline.addEventListener('click', suppress, { capture: true, once: true });
+        setTimeout(() => timeline.removeEventListener('click', suppress, true), 0);
+        if (range.valid) {
+            draft = true;
+            preview.classList.add('is-selected');
+            openBooking(range);
+            updateDraft();
         }
-        if (range.valid) openBooking(range);
         else {
-            dragError.textContent = 'Choose an open range within booking hours.';
+            dragError.textContent = 'Choose a future, open range within booking hours.';
             dragError.hidden = false;
+            const track = event.target.closest('[data-create-bay]');
+            if (track && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                track.append(preview);
+                preview.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-6px)' },
+                    { transform: 'translateX(6px)' }, { transform: 'translateX(-3px)' }, { transform: 'translateX(0)' }],
+                    { duration: 300, easing: 'ease-out' }).finished.then(() => { if (!drag) preview.remove(); });
+            }
         }
     });
+    function updateDraft() {
+        if (!draft || !drawer.open) return;
+        const [hour, minute] = form.elements.StartTime.value.split(':').map(Number);
+        const start = hour * 60 + minute;
+        const end = start + Number(form.elements.DurationMinutes.value);
+        const track = [...timeline.querySelectorAll('[data-create-bay]')].find(item => item.dataset.createBay === form.elements.ResourceId.value);
+        if (!track || (form.elements.Date && form.elements.Date.value !== page.dataset.date)
+            || !Number.isFinite(start + end) || start < firstMinute || end <= start || end > 1440) { preview.remove(); return; }
+        const left = (start - firstMinute) / total * 100;
+        const right = (end - firstMinute) / total * 100;
+        const occupied = [...track.querySelectorAll('[data-holds-capacity="true"]')].some(bar => {
+            const from = parseFloat(bar.style.getPropertyValue('--start'));
+            return from < right && from + parseFloat(bar.style.getPropertyValue('--span')) > left;
+        });
+        const past = page.dataset.date && Date.parse(`${page.dataset.date}T${timeValue(start)}:00+08:00`) <= Date.now();
+        preview.classList.toggle('is-unavailable', occupied || past || start < minimum);
+        preview.style.left = left + '%';
+        preview.style.width = (right - left) + '%';
+        const guest = [form.elements.FirstName?.value, form.elements.LastName?.value].filter(Boolean).join(' ').trim();
+        preview.textContent = `${guest || 'New booking'} · ${timeValue(start)}–${timeValue(end)}`;
+        track.append(preview);
+    }
+    form.addEventListener('input', updateDraft);
+    form.addEventListener('change', updateDraft);
+    drawer.addEventListener('close', () => { draft = false; preview.remove(); });
     for (const type of ['pointercancel', 'lostpointercapture']) {
         timeline.addEventListener(type, event => { if (drag?.pointer === event.pointerId) clear(); });
     }
-    document.addEventListener('keydown', event => { if (event.key === 'Escape') clear(); });
+    page.addEventListener('keydown', event => { if (event.key === 'Escape') clear(); })
+    }
+    if (typeof document !== 'undefined') document.addEventListener('staff:schedule-mounted', mount);
+    mount();
 })();

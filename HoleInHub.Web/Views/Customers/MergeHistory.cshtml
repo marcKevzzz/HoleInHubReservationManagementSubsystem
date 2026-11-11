@@ -1,0 +1,43 @@
+@using HoleInHub.Business.Customers
+@using HoleInHub.Business.Reservations
+@model CustomerMergeHistory
+@{
+    Layout="_StaffLayout";
+    ViewData["Title"]="Customer merge history";
+}
+<section class="staff-workspace people-page customer-merge-page">
+    @if (HoleInHub.Web.Navigation.ActivityNavigation.FromRequest(Context.Request) is null)
+    {
+        <a class="flow-back" asp-action="Details" asp-route-id="@Model.Profile.Id"><partial name="_BackArrow" /> Back to customer</a>
+    }
+    <header class="staff-workspace-heading"><h1>Merge history</h1><p>@CustomerLabels.Name(Model.Profile.FirstName,Model.Profile.LastName)</p></header>
+    <div asp-validation-summary="All" class="staff-error" role="alert"></div>
+    @if (Model.Entries.Length==0) { <p class="staff-empty">No customer consolidations recorded for this profile.</p> }
+    <ol class="customer-merge-history">
+        @foreach (var entry in Model.Entries)
+        {
+            var formId="undo-"+entry.Id;
+            <li><article>
+                <div class="merge-history-heading"><h2>@(entry.Kind=="Undo"?"Merge reversed":"Customer records combined")</h2><span>@StaffReviewQueue.Local(entry.AtUtc).ToString("d MMM yyyy, h:mm tt") · Manila</span></div>
+                <p>@entry.SourceName <span aria-hidden="true">→</span> @entry.TargetName · @entry.BookingCount reservations</p>
+                <p class="merge-context">@entry.Actor · @entry.Reason</p>
+                <small>Reference @entry.Id[..8]</small>
+                @if (entry.CanUndo)
+                {
+                    <form id="@formId" method="post" asp-action="UndoMerge" asp-route-id="@Model.Profile.Id" data-reason-form>
+                        <input type="hidden" name="Form.OperationId" value="@entry.Id" /><input type="hidden" name="Form.CommandId" value="@Guid.NewGuid().ToString("N")" />
+                        <noscript><label>Reason <textarea name="Form.Reason" required maxlength="500"></textarea></label></noscript>
+                        <button class="button button-secondary" type="submit" data-reason-fallback data-no-icon>Undo merge</button>
+                        <partial name="_ReasonConfirmation" model='new ReasonConfirmationModel(formId+"-confirmation", formId, "Undo this merge?", "Restore the original staff profiles and booking memberships. Later changes will be checked before saving.", "Form.Reason", "", "Undo merge")' />
+                    </form>
+                }
+                else if (entry.Kind=="Merge") { <p class="merge-context">@(entry.UndoneById is not null ? "This merge was undone." : "Later changes prevent undo. Review subsequent operations before making corrections.")</p> }
+            </article></li>
+        }
+    </ol>
+    <nav class="customer-pagination" aria-label="Merge history pages">
+        @if (Model.Page>1) { <a asp-action="MergeHistory" asp-route-id="@Model.Profile.Id" asp-route-page="@(Model.Page-1)">Previous</a> }
+        @if (Model.HasMore) { <a asp-action="MergeHistory" asp-route-id="@Model.Profile.Id" asp-route-page="@(Model.Page+1)">Next</a> }
+    </nav>
+</section>
+@section Scripts { <script src="~/js/reason-confirmation.js" asp-append-version="true"></script> }

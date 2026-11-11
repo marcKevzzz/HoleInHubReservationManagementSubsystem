@@ -1,34 +1,46 @@
 @using HoleInHub.Business.Accounts
 @model StaffBookingForm
 <form asp-action="Create" method="post" class="staff-create-form">
+    @if (Model.CustomerProfileId is not null)
+    {
+        <input asp-for="CustomerProfileId" type="hidden" />
+    }
     <input asp-for="IdempotencyKey" type="hidden" />
     <p data-booking-error class="staff-error" role="alert" tabindex="-1" hidden></p>
     <div asp-validation-summary="All" class="staff-error"></div>
     <fieldset>
         <legend>Schedule</legend>
         <div>
-            <label asp-for="ResourceId">Bay</label>
-            <select asp-for="ResourceId" required>
-                <option value="">Choose a bay</option>
-                @foreach (var bay in Model.Bays)
-                {
-                    <option value="@bay.Id">@bay.Name</option>
-                }
-            </select>
+            <div class="auth-input-wrap auth-select-wrap">
+                <select asp-for="ResourceId" required>
+                    <option value="">Choose a bay</option>
+                    @foreach (var bay in Model.Bays)
+                    {
+                        <option value="@bay.Id">@bay.Name</option>
+                    }
+                </select>
+                <label asp-for="ResourceId">Bay</label>
+            </div>
         </div>
         <div class="staff-create-fields">
             <div>
-                <label asp-for="Date">Date</label>
-                <input asp-for="Date" asp-format="{0:yyyy-MM-dd}" type="date" min="@Model.Today.ToString("yyyy-MM-dd")" required />
+                <div class="auth-input-wrap">
+                    <input asp-for="Date" asp-format="{0:yyyy-MM-dd}" type="date" min="@Model.Today.ToString("yyyy-MM-dd")" required placeholder=" " />
+                    <label asp-for="Date">Date</label>
+                </div>
             </div>
             <div>
-                <label asp-for="StartTime">Start time</label>
-                <input asp-for="StartTime" asp-format="{0:HH:mm}" type="time" step="1800" required />
+                <div class="auth-input-wrap">
+                    <input asp-for="StartTime" asp-format="{0:HH:mm}" type="time" step="1800" required placeholder=" " />
+                    <label asp-for="StartTime">Start time</label>
+                </div>
             </div>
         </div>
         <div>
-            <label asp-for="DurationMinutes">Duration in minutes</label>
-            <input asp-for="DurationMinutes" type="number" min="30" max="840" step="30" required />
+            <div class="auth-input-wrap">
+                <input asp-for="DurationMinutes" type="number" min="30" max="840" step="30" required placeholder=" " />
+                <label asp-for="DurationMinutes">Duration in minutes</label>
+            </div>
         </div>
         <p class="staff-create-hint">Times are in Manila. Book in 30-minute increments.</p>
     </fieldset>
@@ -36,30 +48,40 @@
         <legend>Guest details</legend>
         <div class="staff-create-fields">
             <div>
-                <label asp-for="FirstName">First name</label>
-                <input asp-for="FirstName" required />
+                <div class="auth-input-wrap">
+                    <input asp-for="FirstName" required placeholder=" " />
+                    <label asp-for="FirstName">First name</label>
+                </div>
             </div>
             <div>
-                <label asp-for="LastName">Last name</label>
-                <input asp-for="LastName" required />
+                <div class="auth-input-wrap">
+                    <input asp-for="LastName" required placeholder=" " />
+                    <label asp-for="LastName">Last name</label>
+                </div>
             </div>
         </div>
         <div>
-            <label asp-for="Phone">Contact number</label>
-            <input asp-for="Phone" type="tel" inputmode="tel" pattern="@ContactRules.PhonePattern" required />
+            <div class="auth-input-wrap">
+                <input asp-for="Phone" type="tel" inputmode="tel" pattern="@ContactRules.PhonePattern" required placeholder=" " />
+                <label asp-for="Phone">Contact number</label>
+            </div>
         </div>
         <div class="staff-create-fields">
             <div>
-                <label asp-for="Attendees">Party size</label>
-                <input asp-for="Attendees" type="number" min="1" max="10" aria-describedby="staff-party-hint" required />
+                <div class="auth-input-wrap">
+                    <input asp-for="Attendees" type="number" min="1" max="10" aria-describedby="staff-party-hint" required placeholder=" " />
+                    <label asp-for="Attendees">Party size</label>
+                </div>
             </div>
             <div>
-                <label asp-for="Source">Booking source</label>
-                <select asp-for="Source" required>
-                    <option>Walk-in</option>
-                    <option>Phone</option>
-                    <option>Messaging</option>
-                </select>
+                <div class="auth-input-wrap auth-select-wrap">
+                    <select asp-for="Source" required>
+                        <option>Walk-in</option>
+                        <option>Phone</option>
+                        <option>Messaging</option>
+                    </select>
+                    <label asp-for="Source">Booking source</label>
+                </div>
             </div>
         </div>
         <p id="staff-party-hint" class="staff-create-hint">Include spectators. Up to 6 players per bay, with 8 guests total in Regular or 10 in VIP.</p>

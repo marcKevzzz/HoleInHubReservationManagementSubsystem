@@ -1,0 +1,13 @@
+@model ReasonConfirmationModel
+<dialog id="@Model.Id" class="logout-confirmation reason-confirmation" data-reason-dialog aria-labelledby="@(Model.Id + "-title")" aria-describedby="@(Model.Id + "-description")">
+    <h2 id="@(Model.Id + "-title")">@Model.Title</h2>
+    <p id="@(Model.Id + "-description")" data-reason-description>@Model.Description</p>
+    <div class="auth-input-wrap">
+        <label for="@(Model.Id + "-reason")">Reason</label>
+        <textarea id="@(Model.Id + "-reason")" name="@Model.FieldName" form="@Model.FormId" data-reason-input rows="2" required disabled maxlength="500" autofocus>@Model.Value</textarea>
+    </div>
+    <div class="logout-actions">
+        <button type="button" class="button button-tertiary" data-no-icon data-reason-cancel>Cancel</button>
+        <button type="submit" class="button" form="@Model.FormId" data-reason-submit>@Model.ConfirmLabel</button>
+    </div>
+</dialog>

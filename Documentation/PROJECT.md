@@ -27,7 +27,8 @@ Multi-bay group appointments and consolidated POS billing are distinct: sequenti
 | Ownership | Guests verify email before submission and use a secure status link. Find my booking verifies their email again for temporary access to their guest reservation history, including confirmed bookings; it never grants access to account-owned bookings with the same email. Verified account holders access their own account-linked reservations |
 | Submission | Successful submission creates Pending and immediately holds all requested allocations; browsing alone holds nothing |
 | Ordinary online Pending | Owner-approved provisional review deadlines: Regular 30 minutes (alerts 15/25); VIP/coaching 60 minutes (alerts 30/50) |
-| Pending expiry | Unresolved ordinary online requests become Expired at the deadline, release all allocations, and notify customer and staff |
+| Overdue review | An ordinary online Pending request releases its bay hold at the review deadline. It stays Pending, shows an Overdue flag, and notifies the customer and staff. Staff can confirm before the session starts if they can reserve the bays atomically, decline the request, or email a rebooking link if the slot is unavailable. Undecided requests expire at session start. |
+| Online cancellation | Customers can cancel ordinary Pending and Confirmed bookings directly at least one hour before start, including exactly one hour before. Cancellation releases any remaining bay hold and notifies staff. Whole-shop cancellation requests follow the separate deposit workflow. |
 | Review coverage | Owner directs review during operating hours only; review minutes pause outside operating hours and resume at the next staffed opening. The full review window must finish by the booked start. Existing operating hours remain authoritative |
 | Confirmation | Staff approve Regular/VIP; coaching requires recorded coach confirmation plus venue approval. Whole-shop confirms automatically after a verified 50% deposit; currently demonstrated with simulated POS only |
 | Whole shop | Exclusive allocation of all active bays. Provisional 60-minute deposit deadline; simulated 50% deposit confirms automatically. Live collection remains POS-owned and disabled |
@@ -49,7 +50,7 @@ The owner approved these provisional online booking rules on 2026-11-03. Require
 
 ## Reservation lifecycle and access
 
-Submission, approval, arrival, completion, cancellation, expiry, and no-show are distinct events. Expired applies to unresolved ordinary online Pending requests at the agreed review deadline; No-show applies to confirmed unattended bookings after staff follow-up. Payment/deposit statuses remain separate from reservation status. A deposit or payment response alone does not establish attendance or completion.
+Submission, approval, arrival, completion, cancellation, expiry, and no-show are distinct events. Expired applies to unresolved ordinary online Pending requests when the session starts. No-show applies to confirmed unattended bookings after staff follow-up. Payment/deposit statuses remain separate from reservation status. A deposit or payment response alone does not establish attendance or completion.
 
 Record actor, timestamp, reason, and relevant changes in history. Exact status identifiers, exceptional transitions, and completion criteria must be specified during feature design; the paper does not establish a complete transition matrix.
 
@@ -73,7 +74,7 @@ MongoDB is the sole database, with MongoDB Atlas specified in Chapter I and a lo
 - Use half-open intervals `[start, end)` and persisted resource/date guards within MongoDB transactions to prevent concurrent incompatible allocations.
 - Commit all resources together, including whole-shop exclusivity; failed changes preserve original allocations.
 - Use submission idempotency keys and stale-edit protection. Preserve history after capacity release.
-- Expiry and confirmation must compete safely against the same reservation state; release allocations only when the eligible Pending request actually expires.
+- Approval, cancellation, and final expiry must compete safely against the same reservation state. Ordinary Pending holds end at the review deadline, and any late approval must reacquire capacity atomically.
 - Deliver notifications after commit; delivery failures do not undo reservations. Prevent duplicate/stale messages after changes.
 - Run migrations only through the dedicated CLI under its distributed lease, never on Web startup.
 

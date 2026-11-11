@@ -1,0 +1,32 @@
+@using HoleInHub.Business.Accounts
+@using HoleInHub.Web.Accounts
+@{
+    ViewData["Title"] = "Dashboard";
+    var pending = ViewData["PendingReviews"] as long? ?? 0;
+}
+<section class="staff-workspace staff-review leadership-page">
+    <header class="staff-workspace-heading">
+        <h1>Dashboard</h1>
+        <p>Check bay reservations and review incoming booking requests.</p>
+    </header>
+    <div class="review-summary">
+        <span><strong>@pending</strong> pending review</span>
+        <a class="staff-link" asp-route="staff-review-section" asp-route-section="pending">Open review queue</a>
+    </div>
+    <ul class="leadership-links">
+        <li><a asp-controller="BookingReview" asp-action="Index"><strong>Schedule</strong><span>Find bookings and see which bays are in use.</span><partial name="_StaffIcon" model='"calendar"' /></a></li>
+        <li><a asp-controller="Customers" asp-action="Index"><strong>Customers</strong><span>Look up customer reservations.</span><partial name="_StaffIcon" model='"customers"' /></a></li>
+        <li><a asp-controller="Activity" asp-action="Index"><strong>Activity</strong><span>See recorded booking, customer and schedule changes.</span><partial name="_StaffIcon" model='"history"' /></a></li>
+        @if (User.ManagesVenue())
+        {
+            <li><a asp-action="People"><strong>Team &amp; access</strong><span>See who can access the staff workspace.</span><partial name="_StaffIcon" model='"roles"' /></a></li>
+            <li><a asp-action="Reports"><strong>Daily report</strong><span>See today’s bookings and attendance.</span><partial name="_StaffIcon" model='"reports"' /></a></li>
+            <li><a asp-action="Settings"><strong>Settings</strong><span>Check booking alerts and review coverage.</span><partial name="_StaffIcon" model='"sidebar"' /></a></li>
+        }
+        @if (User.IsInRole(StaffRoles.Admin))
+        {
+            <li><a asp-action="Resources"><strong>Resources</strong><span>Add, retire, or restore bays.</span><partial name="_StaffIcon" model='"resources"' /></a></li>
+            <li><a asp-action="Services"><strong>Services</strong><span>Review the customer-facing service catalog.</span><partial name="_StaffIcon" model='"queue"' /></a></li>
+        }
+    </ul>
+</section>

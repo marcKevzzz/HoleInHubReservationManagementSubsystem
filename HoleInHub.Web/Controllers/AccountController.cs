@@ -1,7 +1,9 @@
+using System.Security.Claims;
 using System.Text;
 using HoleInHub.Business.Accounts;
 using HoleInHub.Web.Accounts;
 using HoleInHub.Web.ViewModels;
+using HoleInHubReservationManagementSubsystem.Controllers;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
@@ -60,8 +62,18 @@ public sealed partial class AccountController(UserManager<AccountUser> users, Si
                     await EnsureAccountChallengeAsync(user, model.ReturnUrl, HttpContext.RequestAborted);
                     return RedirectToAction(nameof(VerifyEmail), new { returnUrl = model.ReturnUrl });
                 }
+                var isAdmin = user.Roles.Contains(StaffRoles.Admin);
+                if (isAdmin)
+                {
+                    await StaffPinAccess.SignInAsync(HttpContext, user, clock.GetUtcNow(),
+                    [
+                        new Claim(ClaimTypes.Role, StaffRoles.Admin),
+                        new Claim(ClaimTypes.AuthenticationMethod, StaffPinAccess.AdminPasswordMethod)
+                    ]);
+                }
                 TempData["PageArrival"] = true;
-                return LocalRedirect(Url.IsLocalUrl(model.ReturnUrl) ? model.ReturnUrl! : "/");
+                if (model.ReturnUrl is { } destination) { return LocalRedirect(destination); }
+                return isAdmin ? RedirectToAction(nameof(LeadershipController.Dashboard), "Leadership") : LocalRedirect("/");
             }
         }
         ModelState.AddModelError("", "Unable to sign in. Check your details or try again later.");
@@ -71,6 +83,11 @@ public sealed partial class AccountController(UserManager<AccountUser> users, Si
     [HttpPost("sign-out")]
     public async Task<IActionResult> SignOutAccount()
     {
+        var workspace = await HttpContext.AuthenticateAsync(StaffPinAccess.Scheme);
+        if (workspace.Principal?.HasClaim(ClaimTypes.AuthenticationMethod, StaffPinAccess.AdminPasswordMethod) == true)
+        {
+            await HttpContext.SignOutAsync(StaffPinAccess.Scheme);
+        }
         await signIn.SignOutAsync();
         return Redirect("/");
     }

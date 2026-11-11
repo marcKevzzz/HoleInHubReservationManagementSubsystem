@@ -3,11 +3,18 @@
     Layout = "_StaffLayout";
     ViewData["Title"] = "New booking";
 }
-<div class="staff-workspace staff-create-page">
-    <a class="flow-back" asp-action="Index" asp-route-date="@Model.Date?.ToString("yyyy-MM-dd")"><partial name="_BackArrow" /> Back to reservations</a>
+<div class="staff-workspace staff-create-page staff-new-booking-page">
+    @if (Model.CustomerProfileId is not null)
+    {
+        <a class="flow-back" asp-controller="Customers" asp-action="Details" asp-route-id="@Model.CustomerProfileId"><partial name="_BackArrow" /> Back to customer</a>
+    }
+    else
+    {
+        <a class="flow-back" asp-action="Index" asp-route-date="@Model.Date?.ToString("yyyy-MM-dd")"><partial name="_BackArrow" /> Back to reservations</a>
+    }
     <header class="staff-workspace-heading">
         <h1>New booking</h1>
-        <p>Reserve one Regular or VIP bay and confirm it for the guest.</p>
+        <p>@(Model.CustomerProfileId is not null ? $"For {Model.FirstName} {Model.LastName}. Choose a bay and session below." : "Reserve one Regular or VIP bay and confirm it for the guest.")</p>
     </header>
     <partial name="_StaffBookingForm" model="Model" />
 </div>

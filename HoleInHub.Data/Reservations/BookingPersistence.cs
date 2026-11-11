@@ -9,8 +9,46 @@ public sealed partial class ReservationPersistence
 {
     public Task<ReservationRecord?> ByIdAsync(string id, CancellationToken ct) => Reservations.Find(x => x.Id == id).FirstOrDefaultAsync(ct)!;
     public Task<ReservationRecord?> ByAccessAsync(string id, string hash, CancellationToken ct) => Reservations.Find(x => (id == "" || x.Id == id) && x.AccessTokenHash == hash).FirstOrDefaultAsync(ct)!;
-    public async Task<IReadOnlyList<ReservationRecord>> ReviewQueueAsync(CancellationToken ct) =>
-        await Reservations.Find(x => x.Status == "Pending" || x.CancellationRequested || x.PaymentStatus == "LatePayment" || x.ScheduleChange != null && x.ScheduleChange.Status == "Pending").SortBy(x => x.ReviewDeadlineUtc).ThenBy(x => x.Id).Limit(200).ToListAsync(ct);
+    public async Task<IReadOnlyDictionary<string, long>> ReviewCountsAsync(DateTime now, CancellationToken ct)
+    {
+        var keys = new[] { "pending", "overdue", "changes", "cancellations", "deposit" };
+        var counts = await Task.WhenAll(keys.Select(key =>
+            Reservations.CountDocumentsAsync(ReviewSelection(key, now), cancellationToken: ct)));
+        return keys.Select((key, index) => (key, count: counts[index])).ToDictionary(item => item.key, item => item.count);
+    }
+
+    public async Task<IReadOnlyList<ReservationRecord>> ReviewQueueAsync(string kind, DateTime now, DateTime? dayStart,
+        bool bySession, CancellationToken ct)
+    {
+        var filters = Builders<ReservationRecord>.Filter;
+        var selection = ReviewSelection(kind, now);
+        if (dayStart is { } start)
+        {
+            selection &= filters.Gte(x => x.StartUtc, start) & filters.Lt(x => x.StartUtc, start.AddDays(1));
+        }
+        var query = Reservations.Find(selection);
+        var ordered = bySession ? query.SortBy(x => x.StartUtc) : query.SortBy(x => x.ReviewDeadlineUtc);
+        return await ordered.ThenBy(x => x.Id).Limit(200).ToListAsync(ct);
+    }
+
+    private static FilterDefinition<ReservationRecord> ReviewSelection(string kind, DateTime now)
+    {
+        var filters = Builders<ReservationRecord>.Filter;
+        var pending = filters.Eq(x => x.Status, "Pending");
+        var cancellation = filters.Eq(x => x.CancellationRequested, true);
+        var changes = filters.Where(x => x.ScheduleChange != null && x.ScheduleChange.Status == "Pending");
+        var deposit = filters.Where(x => x.PaymentStatus == "LatePayment" || x.Service == "WholeShop" && x.Status == "Pending");
+        var ordinary = pending & filters.Ne(x => x.Service, "WholeShop");
+        return kind switch
+        {
+            "overdue" => ordinary & filters.Lte(x => x.ReviewDeadlineUtc, now),
+            "pending" => ordinary & filters.Gt(x => x.ReviewDeadlineUtc, now) & filters.Not(cancellation) & filters.Not(changes) & filters.Not(deposit),
+            "cancellations" => cancellation,
+            "changes" => changes & filters.Not(cancellation),
+            "deposit" => deposit & filters.Not(cancellation) & filters.Not(changes),
+            _ => pending | cancellation | changes | deposit
+        };
+    }
 
     public async Task<IReadOnlyList<ReservationRecord>> ExpiredRequestsAsync(DateTime? startUtc, DateTime? endUtc, CancellationToken ct)
     {
@@ -25,7 +63,7 @@ public sealed partial class ReservationPersistence
     }
 
     public Task<long> PendingReviewCountAsync(DateTime now, CancellationToken ct) =>
-        Reservations.CountDocumentsAsync(x => x.Status == "Pending" && !x.CancellationRequested && x.Service != "WholeShop" && x.ReviewDeadlineUtc > now, cancellationToken: ct);
+        Reservations.CountDocumentsAsync(x => x.Status == "Pending" && !x.CancellationRequested && x.Service != "WholeShop" && x.StartUtc > now, cancellationToken: ct);
 
     public async Task<(long Past, long Cancellations)?> ReadCustomerContextAsync(ReservationRecord booking, DateTime now, CancellationToken ct)
     {
@@ -47,12 +85,12 @@ public sealed partial class ReservationPersistence
         return (past, cancellations);
     }
 
-    public async Task<bool> HasReviewConflictAsync(ReservationRecord record, CancellationToken ct, IClientSessionHandle? session = null)
+    public async Task<bool> HasReviewConflictAsync(ReservationRecord record, CancellationToken ct, IClientSessionHandle? session = null, DateTime? now = null)
     {
         var resources = Builders<ResourceRecord>.Filter.Where(x => x.Active) & Builders<ResourceRecord>.Filter.In(x => x.Id, record.ResourceIds);
         var active = session is null ? Resources.Find(resources) : Resources.Find(session, resources);
         return record.ResourceIds.Length == 0 || await active.CountDocumentsAsync(ct) != record.ResourceIds.Length ||
-            await HasAllocationConflictAsync(record, session, ct);
+            await HasAllocationConflictAsync(record, session, ct, now ?? DateTime.UtcNow);
     }
 
     public Task<string?> FindIdByReferenceAsync(string reference, CancellationToken ct) =>
@@ -84,16 +122,19 @@ public sealed partial class ReservationPersistence
                 EndUtc = x.EndUtc,
                 Service = x.Service,
                 Status = x.Status,
+                ResourceIds = x.ResourceIds,
+                ResourceNames = x.ResourceNames,
                 Attendees = x.Attendees
             }).ToListAsync(ct);
     }
 
     public async Task<(List<ResourceRecord> Resources, List<ReservationRecord> Bookings, List<ScheduleBlock> Blocks)>
-        ReadScheduleAsync(DateTime startUtc, DateTime endUtc, CancellationToken ct)
+        ReadScheduleAsync(DateTime startUtc, DateTime endUtc, CancellationToken ct, DateTime now)
     {
         var resources = await Resources.Find(_ => true).SortBy(x => x.Id).ToListAsync(ct);
-        var bookings = await Reservations.Find(x => x.StartUtc < endUtc && x.EndUtc > startUtc &&
-            (x.Status == "Pending" || x.Status == "Confirmed" || x.Status == "Checked-In" || x.Status == "Completed"))
+        var filters = Builders<ReservationRecord>.Filter;
+        var bookings = await Reservations.Find(filters.Where(x => x.StartUtc < endUtc && x.EndUtc > startUtc) &
+            (HoldingCapacity(now) | filters.Eq(x => x.Status, "Completed")))
             .SortBy(x => x.StartUtc).ToListAsync(ct);
         var blocks = await context.Database.GetCollection<ScheduleBlock>("schedule_blocks")
             .Find(x => x.ReleasedUtc == null && x.StartUtc < endUtc && x.EndUtc > startUtc).ToListAsync(ct);
@@ -112,7 +153,7 @@ public sealed partial class ReservationPersistence
             DueUtc = DateTime.UtcNow
         }, cancellationToken: ct);
 
-    public async Task<bool> TransitionAsync(string id, string action, string actor, DateTime now, string[] staffEmails, CancellationToken ct, string reason = "", long? expectedRevision = null)
+    public async Task<bool> TransitionAsync(string id, string action, string actor, DateTime now, string[] staffEmails, CancellationToken ct, string reason = "", long? expectedRevision = null, string? rebookUrl = null)
     {
         using var session = await context.Client.StartSessionAsync(cancellationToken: ct);
         return await session.WithTransactionAsync(async (s, token) =>
@@ -127,17 +168,25 @@ public sealed partial class ReservationPersistence
             if (expectedRevision.HasValue && record.Revision != expectedRevision.Value) { return false; }
             // The guard makes expiry, payment, approval and cancellation compete on the same allocation.
             var update = Builders<ReservationRecord>.Update;
-            var pending = record.Status == "Pending" && record.ReviewDeadlineUtc > now;
+            var pending = record.Status == "Pending" && (record.Service == "WholeShop"
+                ? record.ReviewDeadlineUtc > now : record.StartUtc > now);
+            var selfService = action == "request-cancellation" && record.Service != "WholeShop";
             UpdateDefinition<ReservationRecord> change;
             string history;
             switch (action)
             {
-                case "approve" when pending && record.Service != "WholeShop" && (!(record.Service is "PhilippineCoach" or "KpgaPro" or "KpgaGroup") || record.CoachConfirmed):
-                    if (await HasReviewConflictAsync(record, token, s))
+                case "approve" when pending && record.Service != "WholeShop" && !record.CancellationRequested && (!(record.Service is "PhilippineCoach" or "KpgaPro" or "KpgaGroup") || record.CoachConfirmed):
+                    if (await HasReviewConflictAsync(record, token, s, now))
                     {
                         throw new AllocationConflictException("The bay is no longer available for this session. Check the schedule before approving.");
                     }
                     record.Status = "Confirmed"; history = "Confirmed"; change = update.Set(x => x.Status, record.Status); break;
+                case "reschedule" when pending && record.Service != "WholeShop" && !record.CancellationRequested
+                    && record.ReviewDeadlineUtc <= now && !string.IsNullOrWhiteSpace(record.Email) && rebookUrl is not null:
+                    if (!await HasReviewConflictAsync(record, token, s, now)) { return false; }
+                    record.Status = "Rejected"; history = "Reschedule requested";
+                    reason = "Original slot no longer available.";
+                    change = update.Set(x => x.Status, record.Status); break;
                 case "reject" when pending:
                     record.Status = "Rejected"; history = "Rejected"; change = update.Set(x => x.Status, record.Status).Set(x => x.CancellationRequested, false); break;
                 case "coach" when pending && record.Service is "PhilippineCoach" or "KpgaPro" or "KpgaGroup":
@@ -147,7 +196,17 @@ public sealed partial class ReservationPersistence
                     }
 
                     history = "Coach confirmed"; change = update.Set(x => x.CoachConfirmed, true); break;
-                case "request-cancellation" when (record.Status is "Pending" or "Confirmed") && record.StartUtc >= now.AddHours(1):
+                case "request-cancellation" when selfService && record.Status == "Cancelled":
+                    return true;
+                case "request-cancellation" when selfService && (record.Status is "Pending" or "Confirmed") && record.StartUtc >= now.AddHours(1):
+                    record.Status = "Cancelled"; history = "Cancelled";
+                    change = update.Set(x => x.Status, record.Status).Set(x => x.CancellationRequested, false);
+                    if (record.ScheduleChange?.Status == "Pending")
+                    {
+                        change = change.Set(x => x.ScheduleChange!.Status, "Declined").Set(x => x.ScheduleChange!.DecidedUtc, now);
+                    }
+                    break;
+                case "request-cancellation" when !selfService && (record.Status is "Pending" or "Confirmed") && record.StartUtc >= now.AddHours(1):
                     if (record.CancellationRequested)
                     {
                         return true;
@@ -163,21 +222,34 @@ public sealed partial class ReservationPersistence
             var eventType = action switch
             {
                 "approve" => "ReservationConfirmed",
-                "reject" => "ReservationRejected",
+                "reject" or "reschedule" => "ReservationRejected",
                 "coach" => "CoachConfirmed",
-                "request-cancellation" => "CancellationRequested",
+                "request-cancellation" => selfService ? "ReservationCancelled" : "CancellationRequested",
                 "cancel" => "ReservationCancelled",
                 "keep" => "CancellationDeclined",
                 _ => throw new InvalidOperationException("Unsupported reservation action.")
             };
             change = change.Push(x => x.History, new HistoryRecord { EventType = eventType, ReservationStatus = record.Status, Status = history, Actor = actor, AtUtc = now, Reason = reason });
             await Reservations.UpdateOneAsync(s, x => x.Id == id, change.Inc(x => x.Revision, 1), cancellationToken: token);
-            await NotifyAsync(s, record, $"action:{record.History.Count}:{action}", history, token);
+            var message = action == "reschedule"
+                ? $"The original slot for request {record.Reference} is no longer available. Choose another time: {rebookUrl}"
+                : selfService ? $"You cancelled reservation {record.Reference}. Any remaining bay hold has been released." : null;
+            await NotifyAsync(s, record, $"action:{record.History.Count}:{action}", history, token, message);
             if (action == "request-cancellation")
             {
                 foreach (var email in staffEmails.Distinct())
                 {
-                    await context.Database.GetCollection<OutboxRecord>("outbox").InsertOneAsync(s, new OutboxRecord { Id = $"{id}:cancel:{record.History.Count}:{email}", Recipient = email, Subject = "Cancellation review needed", Body = $"Review cancellation for {record.Reference}. Its allocation remains held.", DueUtc = now }, cancellationToken: token);
+                    await context.Database.GetCollection<OutboxRecord>("outbox").InsertOneAsync(s, new OutboxRecord
+                    {
+                        Id = $"{id}:cancel:{record.History.Count}:{email}",
+                        Recipient = email,
+                        Subject = selfService ? "Reservation cancelled" : "Cancellation review needed",
+                        Body = selfService ? $"The customer cancelled {record.Reference}."
+                            : $"Review cancellation for {record.Reference}. Its allocation remains held.",
+                        DueUtc = now,
+                        ReservationId = id,
+                        RequiredStatus = selfService ? "Cancelled" : null
+                    }, cancellationToken: token);
                 }
             }
             return true;

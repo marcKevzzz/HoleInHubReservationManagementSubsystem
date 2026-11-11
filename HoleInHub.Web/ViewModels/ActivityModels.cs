@@ -1,0 +1,28 @@
+using HoleInHub.Business.Activity;
+using Microsoft.AspNetCore.WebUtilities;
+namespace HoleInHubReservationManagementSubsystem.ViewModels;
+
+public sealed class ActivityQuery
+{
+    public string Range { get; set; } = "week";
+    public DateOnly? From { get; set; }
+    public DateOnly? To { get; set; }
+    public string? Search { get; set; }
+    public string Category { get; set; } = "All";
+    public string Actor { get; set; } = "everyone";
+    public string? Cursor { get; set; }
+    public DateTime? AsOf { get; set; }
+    public string Url(string path = "/staff/activity", bool reset = false, string? actor = null, string? cursor = null) => QueryHelpers.AddQueryString(path, new Dictionary<string, string?>
+    {
+        ["range"] = Range,
+        ["from"] = From?.ToString("yyyy-MM-dd"),
+        ["to"] = To?.ToString("yyyy-MM-dd"),
+        ["search"] = string.IsNullOrWhiteSpace(Search) ? null : Search,
+        ["category"] = Category,
+        ["actor"] = actor ?? Actor,
+        ["cursor"] = reset ? null : cursor ?? Cursor,
+        ["asOf"] = reset ? null : AsOf?.ToString("O")
+    });
+}
+public sealed record ActivityListModel(ActivityQuery Query, ActivityPage? Page, bool IncludeAccess, string? Error = null);
+public sealed record ActivityDetailModel(ActivityEntry Entry, string BackUrl, string? TargetUrl, string TargetAction);

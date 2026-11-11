@@ -98,7 +98,7 @@ public sealed partial class ReservationService
         catch (AllocationConflictException error) { throw new ReservationValidationException(error.Message); }
     }
 
-    public async Task DecideScheduleChangeAsync(string id, string proposal, long revision, bool approve,
+    public async Task<(string Reference, DateTime StartUtc, DateTime EndUtc)> DecideScheduleChangeAsync(string id, string proposal, long revision, bool approve,
         string[] resources, string actor, string? reason, CancellationToken ct)
     {
         if (revision < 0 || !Guid.TryParseExact(proposal, "N", out _) || (approve && resources.Length is (< 1 or > 8))
@@ -118,7 +118,7 @@ public sealed partial class ReservationService
                 }
                 BookingRules.ValidateGuests(booking.Service, resources, booking.Attendees);
             }
-            await persistence.DecideScheduleChangeAsync(id, proposal, revision, approve, resources, actor, reason?.Trim() ?? "",
+            return await persistence.DecideScheduleChangeAsync(id, proposal, revision, approve, resources, actor, reason?.Trim() ?? "",
                 (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime, ct);
         }
         catch (AllocationConflictException error) { throw new ReservationValidationException(error.Message); }

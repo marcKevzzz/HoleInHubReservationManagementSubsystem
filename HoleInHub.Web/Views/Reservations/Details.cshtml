@@ -1,8 +1,12 @@
 @using HoleInHubReservationManagementSubsystem.ViewModels
 @using HoleInHub.Business.Reservations
 @model ReservationDto
+@inject TimeProvider Clock
 @{
     ViewData["Title"] = "Reservation details";
+    var now = Clock.GetUtcNow().UtcDateTime;
+    var overdue = ReservationService.IsReviewOverdue(Model, now);
+    var needsRebooking = Model.Status == "Rejected" && Model.History.Any(entry => entry.Status == "Reschedule requested");
     var start = TimeZoneInfo.ConvertTimeFromUtc(Model.StartUtc, ReservationRules.Manila);
     var end = TimeZoneInfo.ConvertTimeFromUtc(Model.EndUtc, ReservationRules.Manila);
 }
@@ -93,14 +97,18 @@
         </div>
         <aside class="booking-status-sidebar" aria-labelledby="booking-status">
             <h2 id="booking-status">Reservation status</h2>
-            <p class="booking-current-status">@Model.Status</p>
+            <p class="booking-current-status">@(overdue ? "Pending · Overdue" : needsRebooking ? "Choose another time" : Model.Status)</p>
             @if (Model.Status == "Pending")
             {
                 <p>@(Model.Service == "WholeShop" ? "Awaiting the simulated 50% deposit." : "Awaiting staff review.") This request does not confirm your reservation.</p>
                 <dl class="booking-deadline"><dt>@(Model.Service == "WholeShop" ? "Payment deadline" : "Review deadline") · Asia/Manila</dt><dd>@TimeZoneInfo.ConvertTimeFromUtc(Model.ReviewDeadlineUtc, ReservationRules.Manila).ToString("dd MMM yyyy h:mm tt")</dd></dl>
-                @if (Model.Service != "WholeShop" && Model.ReviewStartsUtc is { } begins)
+                @if (overdue)
                 {
-                    <p>@(begins > DateTime.UtcNow ? $"Staff review begins {TimeZoneInfo.ConvertTimeFromUtc(begins, ReservationRules.Manila):ddd, d MMM, h:mm tt} Manila time." : "The review clock pauses outside operating hours and resumes at the next opening.") Your selected bays are held while Pending.</p>
+                    <p>The bay hold has been released. Staff can still review this request before the session starts. Confirmation depends on availability.</p>
+                }
+                else if (Model.Service != "WholeShop" && Model.ReviewStartsUtc is { } begins)
+                {
+                    <p>@(begins > DateTime.UtcNow ? $"Staff review begins {TimeZoneInfo.ConvertTimeFromUtc(begins, ReservationRules.Manila):ddd, d MMM, h:mm tt} Manila time." : "The review clock pauses outside operating hours and resumes at the next opening.") Your selected bays are held until the review deadline.</p>
                 }
             }
             <div class="booking-status-actions">
@@ -113,7 +121,12 @@
             </div>
             @if (Model.CancellationRequested)
             {
-                <p class="booking-cancellation">Cancellation awaits staff approval. Your allocation remains held.</p>
+                <p class="booking-cancellation">A cancellation request is awaiting staff review.</p>
+            }
+            @if (needsRebooking)
+            {
+                <p>The original slot is unavailable. You can choose another time.</p>
+                <a class="button button-secondary" asp-controller="Reservations" asp-action="Create">Choose another time</a>
             }
             @if (Model.ScheduleChange is { } proposal)
             {
@@ -129,13 +142,28 @@
                 <a class="button button-secondary" asp-controller="Reservations" asp-action="Change" asp-route-id="@Model.Id" asp-route-token="@ViewData["AccessToken"]"
                    asp-route-guest="@(ViewData["GuestAccess"] is true ? "true" : null)">Request schedule change</a>
             }
-            @if (!Model.CancellationRequested && (Model.Status is "Pending" or "Confirmed") && Model.StartUtc >= DateTime.UtcNow.AddHours(1))
+            @if (ReservationService.CanCancelOnline(Model, now))
             {
-                <form class="booking-cancellation" asp-controller="Reservations" asp-action="RequestCancellation" asp-route-id="@Model.Id" asp-route-guest="@(ViewData["GuestAccess"] is true?"true":null)" method="post">
-                    <input type="hidden" name="token" value="@ViewData["AccessToken"]" />
-                    <p>No cancellation fee. Deposit refunds must be arranged with the venue.</p>
-                    <button class="button button-secondary">Request cancellation</button>
-                </form>
+                <details class="booking-cancellation">
+                    <summary class="focus-visible:ring-2">@(Model.Service == "WholeShop" ? "Request cancellation" : "Cancel reservation")</summary>
+                    <form asp-controller="Reservations" asp-action="RequestCancellation" asp-route-id="@Model.Id"
+                          asp-route-guest="@(ViewData["GuestAccess"] is true ? "true" : null)" method="post">
+                        <input type="hidden" name="token" value="@ViewData["AccessToken"]" />
+                        @if (Model.Service == "WholeShop")
+                        {
+                            <p>Staff review this cancellation. Arrange any deposit refund with the venue.</p>
+                        }
+                        else
+                        {
+                            <p>This cancels your reservation immediately and releases any remaining bay hold.</p>
+                        }
+                        <button class="button button-secondary" type="submit">@(Model.Service == "WholeShop" ? "Send cancellation request" : "Confirm cancellation")</button>
+                    </form>
+                </details>
+            }
+            else if ((Model.Status is "Pending" or "Confirmed") && !Model.CancellationRequested)
+            {
+                <p class="booking-cancellation">Online cancellation closes one hour before the session.</p>
             }
         </aside>
     </div>

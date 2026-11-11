@@ -1,0 +1,41 @@
+@using System.Security.Claims
+@using HoleInHub.Business.Accounts
+@model StaffRoleEditModel
+@{
+    ViewData["Title"] = "Team member";
+    var scope = ViewData["SelectedRole"] as string;
+    var account = Model.Account;
+    var ownAccount = account.Id == User.FindFirstValue(ClaimTypes.NameIdentifier);
+}
+<section class="staff-workspace leadership-page people-page people-person">
+    @if (HoleInHub.Web.Navigation.ActivityNavigation.FromRequest(Context.Request) is null)
+    {
+        <a class="flow-back" asp-action="People" asp-route-scope="@scope" asp-route-page="@ViewData["DirectoryPage"]"><partial name="_BackArrow" /> Back to Team &amp; access</a>
+    }
+    <header class="staff-workspace-heading">
+        <h1>@(string.IsNullOrWhiteSpace(account.Name) ? (account.Roles.Contains(StaffRoles.Admin) ? "Administrator" : "Name not recorded") : account.Name)</h1>
+        @if (ownAccount) { <span class="people-pill">Your account</span> }
+    </header>
+    <section class="people-summary" aria-label="Team member overview">
+        <div><h2>Email</h2><a href="mailto:@account.Email">@account.Email</a><span class="people-pill" data-verified="@account.EmailConfirmed.ToString().ToLowerInvariant()">@(account.EmailConfirmed ? "Verified email" : "Email not verified")</span></div>
+        <div>
+            @if (ViewData["RoleEditing"] is true)
+            {
+                <partial name="_StaffRoleControl" model="Model" />
+            }
+            else
+            {
+                <h2>Staff role</h2><span class="people-role-list">@foreach (var role in account.Roles.Where(StaffRoles.Workspace.Contains)) { <span class="people-pill">@role</span> }</span>
+            }
+        </div>
+    </section>
+    @if (ownAccount)
+    {
+        <p class="people-account-note">@(User.IsInRole(StaffRoles.Admin) ? "Another administrator manages changes to your staff access." : "An administrator manages changes to your staff access.")</p>
+    }
+
+</section>
+
+@section Scripts {
+    <script src="~/js/reason-confirmation.js" asp-append-version="true"></script>
+}
