@@ -42,10 +42,25 @@ public sealed class LeadershipController(ReservationService reservations, Accoun
     public async Task<IActionResult> People(int page, string? scope, CancellationToken ct)
     {
         var isAdmin = User.IsInRole(StaffRoles.Admin);
-        var role = StaffRoles.Workspace.Contains(scope) ? scope! : StaffRoles.Staff;
-        ViewData["SelectedRole"] = role;
+        var role = StaffRoles.Workspace.Contains(scope) ? scope : null;
+        ViewData["SelectedRole"] = role ?? "all";
         ViewData["RoleEditing"] = isAdmin && !staffAccess.IsPresentation;
         return View("Directory", await accounts.GetDirectoryAsync(true, page, ct, role));
+    }
+
+    [Authorize(Roles = StaffRoles.VenueManagement), HttpGet("/staff/people/{id}")]
+    public async Task<IActionResult> Person(string id, string? scope, int page, CancellationToken ct)
+    {
+        var account = await accounts.FindByIdAsync(id, ct);
+        if (account is null || (!account.Roles.Any(StaffRoles.Workspace.Contains) && !User.IsInRole(StaffRoles.Admin))) { return NotFound(); }
+        ViewData["SelectedRole"] = StaffRoles.Workspace.Contains(scope) ? scope : "all";
+        ViewData["DirectoryPage"] = Math.Clamp(page, 1, 1000);
+        ViewData["RoleEditing"] = User.IsInRole(StaffRoles.Admin) && !staffAccess.IsPresentation
+            && account.Id != User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var roles = StaffRoles.Workspace.Intersect(account.Roles).ToArray();
+        return View(new StaffRoleEditModel(new AccountDirectoryEntry(account.Id, account.Email,
+            $"{account.FirstName} {account.LastName}".Trim(), account.Roles, account.EmailConfirmed),
+            new StaffRoleForm { Version = account.Version, Role = roles.Length switch { 0 => StaffRoleForm.NoStaffAccess, 1 => roles[0], _ => "" } }));
     }
 
     [Authorize(Roles = StaffRoles.VenueManagement), HttpGet("/manager/reports")]
@@ -57,7 +72,7 @@ public sealed class LeadershipController(ReservationService reservations, Accoun
     }
 
     [Authorize(Roles = StaffRoles.VenueManagement), HttpGet("/manager/activity")]
-    public IActionResult Activity() => RedirectToAction(nameof(BookingReviewController.Index), "BookingReview");
+    public IActionResult Activity() => RedirectToAction("Index", "Activity");
 
     [Authorize(Roles = StaffRoles.VenueManagement), HttpGet("/manager/notifications")]
     public IActionResult Notifications() => RedirectToAction(nameof(Settings));
@@ -66,8 +81,7 @@ public sealed class LeadershipController(ReservationService reservations, Accoun
     public IActionResult Admin() => RedirectToAction(nameof(Dashboard));
 
     [Authorize(Roles = StaffRoles.Admin), HttpGet("/admin/activity")]
-    public async Task<IActionResult> AdminActivity(int page, CancellationToken ct) =>
-        View(await accounts.GetRoleActivityAsync(page, ct));
+    public IActionResult AdminActivity() => RedirectToAction("Index", "Activity", new { category = "access" });
 
     [Authorize(Roles = StaffRoles.Admin), HttpGet("/admin/users")]
     public IActionResult Users(int? page) => RedirectToAction(nameof(People), new { page });
@@ -89,7 +103,7 @@ public sealed class LeadershipController(ReservationService reservations, Accoun
     }
 
     [Authorize(Roles = StaffRoles.Admin), HttpPost("/admin/users/{id}/role")]
-    public async Task<IActionResult> EditUserRole([FromRoute] string id, [FromForm] StaffRoleForm form, CancellationToken ct)
+    public async Task<IActionResult> EditUserRole([FromRoute] string id, [FromForm] StaffRoleForm form, CancellationToken ct, string? scope = null, int page = 1)
     {
         if (staffAccess.IsPresentation) { return NotFound(); }
         var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -105,9 +119,15 @@ public sealed class LeadershipController(ReservationService reservations, Accoun
             {
                 case StaffRoleChangeResult.Applied:
                 case StaffRoleChangeResult.Unchanged:
-                    TempData["RoleMessage"] = result == StaffRoleChangeResult.Applied
-                        ? "Staff access updated." : "Staff access is already set to that role.";
-                    return RedirectToAction(nameof(People));
+                    var toast = (result, role) switch
+                    {
+                        (StaffRoleChangeResult.Applied, null) => new ToastNotice("success", "Staff access removed"),
+                        (StaffRoleChangeResult.Applied, _) => new ToastNotice("success", "Staff access updated", $"New role: {role}."),
+                        (_, null) => new ToastNotice("info", "Staff access unchanged", "This account already has no staff access."),
+                        _ => new ToastNotice("info", "Staff access unchanged", $"Already set to {role}.")
+                    };
+                    toast.Store(TempData);
+                    return RedirectToAction(nameof(Person), new { id, scope, page = Math.Clamp(page, 1, 1000) });
                 case StaffRoleChangeResult.NotFound:
                     return NotFound();
                 case StaffRoleChangeResult.Forbidden:
@@ -129,10 +149,17 @@ public sealed class LeadershipController(ReservationService reservations, Accoun
         return target is null ? NotFound() : RoleView(target, form);
     }
 
-    private ViewResult RoleView(AccountDetails target, StaffRoleForm form) =>
-        View(nameof(EditUserRole), new StaffRoleEditModel(
+    private ViewResult RoleView(AccountDetails target, StaffRoleForm form)
+    {
+        ViewData["RoleEditing"] = User.IsInRole(StaffRoles.Admin) && !staffAccess.IsPresentation
+            && target.Id != User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var scope = Request.Query["scope"].ToString();
+        ViewData["SelectedRole"] = StaffRoles.Workspace.Contains(scope) ? scope : "all";
+        ViewData["DirectoryPage"] = int.TryParse(Request.Query["page"], out var page) ? Math.Clamp(page, 1, 1000) : 1;
+        return View(nameof(Person), new StaffRoleEditModel(
             new AccountDirectoryEntry(target.Id, target.Email, $"{target.FirstName} {target.LastName}".Trim(), target.Roles, target.EmailConfirmed),
             form, Response.StatusCode == StatusCodes.Status409Conflict));
+    }
 
     [Authorize(Roles = StaffRoles.Admin), HttpGet("/admin/resources")]
     public async Task<IActionResult> Resources(CancellationToken ct) => View(await reservations.GetResourceDirectoryAsync(ct));

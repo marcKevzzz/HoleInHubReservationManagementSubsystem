@@ -1,4 +1,5 @@
 (() => {
+    function mount() {
     const form = document.querySelector('[data-staff-search]');
     const results = document.querySelector('[data-staff-search-results]');
     if (!form || !results) return;
@@ -10,11 +11,13 @@
     let changing = false;
     if (enhanced) results.setAttribute('popover', 'auto');
     input.setAttribute('aria-expanded', 'false');
+    function onScroll(event) { if (!results.contains(event.target)) position(); }
     function position() {
         if (!enhanced) return;
         const rect = form.getBoundingClientRect();
-        const left = window.innerWidth < 640 ? 16 : 24;
-        const width = window.innerWidth - left * 2;
+        const panel = document.querySelector('.staff-workspace')?.getBoundingClientRect?.() || { left: 0, width: window.innerWidth };
+        const width = Math.min(window.innerWidth - 32, panel.width * .9);
+        const left = Math.max(16, Math.min(window.innerWidth - width - 16, panel.left + (panel.width - width) / 2));
         results.style.cssText = `left:${left}px;top:${rect.bottom + 12}px;width:${width}px;max-height:${Math.max(120, window.innerHeight - rect.bottom - 30)}px`;
     }
     function reveal() {
@@ -37,7 +40,7 @@
         results.addEventListener('toggle', event => input.setAttribute('aria-expanded', String(event.newState === 'open')));
         results.addEventListener('click', event => { if (event.target.closest('a,[data-close-search]')) close(); });
         window.addEventListener('resize', position);
-        window.addEventListener('scroll', event => { if (!results.contains(event.target)) position(); }, true);
+        window.addEventListener('scroll', onScroll, true);
         results.addEventListener('keydown', event => {
             if (event.key === 'Escape') { close(); input.focus(); return; }
             if (!['ArrowDown', 'ArrowUp'].includes(event.key)) return;
@@ -99,5 +102,15 @@
         reset();
         void search();
     });
+    form.closest?.('[data-staff-schedule]')?.addEventListener('staff:schedule-unmount', () => {
+        clearTimeout(timer);
+        request?.abort();
+        window.removeEventListener('resize', position);
+        window.removeEventListener('scroll', onScroll, true);
+    }, { once: true });
     reveal();
+
+    }
+    if (typeof document !== 'undefined') document.addEventListener('staff:schedule-mounted', mount);
+    mount();
 })();

@@ -1,4 +1,5 @@
 (() => {
+    function mount() {
     const page = document.querySelector('[data-staff-schedule]');
     if (!page) return;
     for (const panel of page.querySelectorAll('.staff-booking-drawer')) {
@@ -98,5 +99,9 @@
     setView('timeline');
     viewControls.hidden = false;
     views.forEach(button => button.addEventListener('click', () => setView(button.dataset.scheduleView)));
-    window.setInterval(updateClock, 15000);
+    const clockTimer = window.setInterval(updateClock, 15000);
+    page.addEventListener('staff:schedule-unmount', () => { window.clearInterval(clockTimer); actionsRequest?.abort(); }, { once: true });
+    }
+    if (typeof document !== 'undefined') document.addEventListener('staff:schedule-mounted', mount);
+    mount();
 })();

@@ -241,11 +241,14 @@ public sealed partial class ReservationPersistence
                 {
                     await context.Database.GetCollection<OutboxRecord>("outbox").InsertOneAsync(s, new OutboxRecord
                     {
-                        Id = $"{id}:cancel:{record.History.Count}:{email}", Recipient = email,
+                        Id = $"{id}:cancel:{record.History.Count}:{email}",
+                        Recipient = email,
                         Subject = selfService ? "Reservation cancelled" : "Cancellation review needed",
                         Body = selfService ? $"The customer cancelled {record.Reference}."
                             : $"Review cancellation for {record.Reference}. Its allocation remains held.",
-                        DueUtc = now, ReservationId = id, RequiredStatus = selfService ? "Cancelled" : null
+                        DueUtc = now,
+                        ReservationId = id,
+                        RequiredStatus = selfService ? "Cancelled" : null
                     }, cancellationToken: token);
                 }
             }

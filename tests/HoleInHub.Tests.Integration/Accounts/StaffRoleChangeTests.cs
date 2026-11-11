@@ -240,7 +240,11 @@ public sealed class StaffRoleChangeTests(MongoDbFixture fixture) : IClassFixture
         var email = $"{Guid.NewGuid():N}@example.test";
         return new AccountRecord
         {
-            Email = email, NormalizedEmail = email.ToUpperInvariant(), EmailConfirmed = true, PasswordHash = "test-hash", Roles = roles
+            Email = email,
+            NormalizedEmail = email.ToUpperInvariant(),
+            EmailConfirmed = true,
+            PasswordHash = "test-hash",
+            Roles = roles
         };
     }
 

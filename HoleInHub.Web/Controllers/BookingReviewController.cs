@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Security.Claims;
 using HoleInHub.Business.Accounts;
+using HoleInHub.Business.Customers;
 using HoleInHub.Business.Reservations;
 using HoleInHub.Web.Accounts;
 using HoleInHubReservationManagementSubsystem.ViewModels;
@@ -11,7 +12,7 @@ using Microsoft.Extensions.Options;
 namespace HoleInHubReservationManagementSubsystem.Controllers;
 
 [Authorize(Policy = StaffAuthorization.Workspace), ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class BookingReviewController(ReservationService reservations, TimeProvider clock, IOptions<AccountEmailOptions> emailOptions) : Controller
+public sealed class BookingReviewController(ReservationService reservations, TimeProvider clock, IOptions<AccountEmailOptions> emailOptions, CustomerProfileService customerProfiles) : Controller
 {
     private DateOnly Today => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(clock.GetUtcNow(), ReservationRules.Manila).DateTime);
 
@@ -29,14 +30,15 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
         try
         {
             await reservations.MoveStaffBookingAsync(id, revision.Value, commandId, date.Value, startTime.Value, actor, ct, resourceId, sourceResourceId);
-            TempData["BookingMessage"] = "Booking moved.";
+            new ToastNotice("success", "Booking moved", date.Value.ToString("d MMM") + " at " + startTime.Value.ToString("h:mm tt"),
+                Url.Action(nameof(Details), new { id, date = date.Value.ToString("yyyy-MM-dd") }), "View booking").Store(TempData);
             return Json(new { redirect = Url.Action(nameof(Index), new { date = date.Value.ToString("yyyy-MM-dd") }) });
         }
         catch (ReservationValidationException error) { return Conflict(new { error = error.Message }); }
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index(string? date, string? reference, CancellationToken ct)
+    public async Task<IActionResult> Index(string? date, string? reference, CancellationToken ct, string? customerProfileId = null)
     {
         var today = Today;
         var validDate = TryScheduleDate(date, out var selected);
@@ -49,8 +51,19 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
         var bays = await reservations.GetStaffScheduleAsync(day, ct);
         var bookable = bays.Where(bay => bay.Active && bay.Service is ("Regular" or "VIP"))
             .Select(bay => new ResourceDto(bay.Id, bay.Name, bay.Service)).ToArray();
-        return View(new StaffWorkspaceModel(day, today, bays, lookup, dateError, NewBookingForm(day, bookable),
-            User.ManagesVenue() ? NewBlockForm(day, bookable) : null));
+        var bookingForm = NewBookingForm(day, bookable);
+        if (!string.IsNullOrWhiteSpace(customerProfileId))
+        {
+            var profile = await customerProfiles.GetAsync(customerProfileId, ct);
+            if (profile is null) { return NotFound(); }
+            bookingForm.CustomerProfileId = profile.Id;
+            bookingForm.FirstName = profile.FirstName;
+            bookingForm.LastName = profile.LastName;
+            bookingForm.Phone = ContactRules.PhoneDigits(profile.Phone);
+        }
+        var model = new StaffWorkspaceModel(day, today, bays, lookup, dateError, bookingForm,
+            User.ManagesVenue() ? NewBlockForm(day, bookable) : null);
+        return Request.Headers["X-Staff-Schedule"] == "true" ? PartialView("_StaffSchedule", model) : View(model);
     }
 
     [HttpGet("/staff/reservations/search")]
@@ -67,11 +80,20 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
     }
 
     [HttpGet("/staff/reservations/new")]
-    public async Task<IActionResult> Create(string? date, CancellationToken ct)
+    public async Task<IActionResult> Create(string? date, CancellationToken ct, string? customerProfileId = null)
     {
         var day = DateOnly.TryParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var selected)
             ? selected : (DateOnly?)null;
-        return View(NewBookingForm(day, await reservations.GetCatalogAsync(ct)));
+        var form = NewBookingForm(day, await reservations.GetCatalogAsync(ct));
+        if (!string.IsNullOrWhiteSpace(customerProfileId))
+        {
+            var profile = await customerProfiles.GetAsync(customerProfileId, ct);
+            if (profile is null) { return NotFound(); }
+            form.CustomerProfileId = profile.Id;
+            form.FirstName = profile.FirstName; form.LastName = profile.LastName;
+            form.Phone = HoleInHub.Business.Accounts.ContactRules.PhoneDigits(profile.Phone);
+        }
+        return View(form);
     }
 
     [HttpPost("/staff/reservations/new"), ValidateAntiForgeryToken]
@@ -89,10 +111,12 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
             try
             {
                 var request = new StaffBookingRequest(form.ResourceId, form.Date!.Value, form.StartTime!.Value,
-                    form.DurationMinutes, form.FirstName, form.LastName, form.Phone, form.Attendees, form.Source, form.IdempotencyKey);
+                    form.DurationMinutes, form.FirstName, form.LastName, form.Phone, form.Attendees, form.Source, form.IdempotencyKey)
+                { CustomerProfileId = form.CustomerProfileId };
                 var saved = await reservations.CreateStaffBookingAsync(request, actor, ct);
-                TempData["BookingMessage"] = $"Booking {saved.Reference} confirmed.";
                 var date = form.Date.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                new ToastNotice("success", "Booking confirmed", saved.Reference,
+                    Url.Action(nameof(Details), new { id = saved.Id, date }), "View booking").Store(TempData);
                 if (Request.Headers.Accept == "application/json")
                 {
                     return Json(new { redirect = Url.Action(nameof(Index), new { date }) });
@@ -134,7 +158,7 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
             {
                 await reservations.CreateScheduleBlockAsync(new StaffBlockRequest(form.ResourceId, form.Date!.Value,
                     form.StartTime!.Value, form.DurationMinutes, form.Reason, form.IdempotencyKey), actor, ct);
-                TempData["BookingMessage"] = "Time blocked. The selected bay is unavailable for new bookings during this period.";
+                new ToastNotice("success", "Time blocked", "The selected time is unavailable for bookings.").Store(TempData);
                 var date = form.Date.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
                 if (Request.Headers.Accept == "application/json")
                 {
@@ -171,6 +195,8 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
             try
             {
                 if (!await reservations.ReleaseScheduleBlockAsync(id, form.Reason, actor, ct)) { return NotFound(); }
+                new ToastNotice(form.Block.ReleasedUtc is null ? "success" : "info",
+                    form.Block.ReleasedUtc is null ? "Time block released" : "Time block already released", form.Block.Location).Store(TempData);
                 return RedirectToAction(nameof(Block), new { id });
             }
             catch (ReservationValidationException error) { ModelState.AddModelError("", error.Message); }
@@ -247,8 +273,11 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
     }
 
     [HttpGet]
-    public async Task<IActionResult> Details(string id, string? date, bool fromQueue, string? filter, string? day, string? sort, CancellationToken ct)
+    public async Task<IActionResult> Details(string id, string? date, bool fromQueue, string? filter, string? day, string? sort, CancellationToken ct, string? customerId = null, string? customerView = null, int customerPage = 1)
     {
+        ViewData["CustomerId"] = customerId is { Length: > 0 and <= 100 } ? customerId : null;
+        ViewData["CustomerView"] = customerView == "upcoming" ? "upcoming" : null;
+        ViewData["CustomerPage"] = Math.Clamp(customerPage, 1, 1000);
         var context = await reservations.GetStaffReviewAsync(id, ct);
         if (context is null)
         {
@@ -277,22 +306,36 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
 
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> DecideChange(string id, string proposalId, long? expectedRevision,
-        string decision, string[] resources, string? reason, string? date, CancellationToken ct)
+        string decision, string[] resources, string? reason, string? date, CancellationToken ct,
+        bool fromQueue = false, string? day = null, string? sort = null, bool returnToQueue = false)
     {
         var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(actor)) { return Forbid(); }
         if (!expectedRevision.HasValue || decision is not ("approve" or "decline")) { return BadRequest(); }
+        var approved = decision == "approve";
+        var queueAction = fromQueue && returnToQueue;
         try
         {
-            await reservations.DecideScheduleChangeAsync(id, proposalId, expectedRevision.Value, decision == "approve",
+            var receipt = await reservations.DecideScheduleChangeAsync(id, proposalId, expectedRevision.Value, approved,
                 resources, actor, reason, ct);
-            TempData["BookingMessage"] = decision == "approve" ? "Schedule change approved." : "Schedule change declined. The original booking is unchanged.";
+            var start = StaffReviewQueue.Local(receipt.StartUtc);
+            var end = StaffReviewQueue.Local(receipt.EndUtc);
+            var interval = $"{start:d MMM, h:mm tt}–{(start.Date == end.Date ? end.ToString("h:mm tt") : end.ToString("d MMM, h:mm tt"))}";
+            var title = approved ? "Schedule change approved" : "Schedule change declined";
+            var message = $"{receipt.Reference} · {(approved ? interval : $"Original time kept: {interval}")}";
+            new ToastNotice("success", title, message).Store(TempData);
+            if (queueAction) { return RedirectToRoute("staff-review-section", new { section = "changes", date, day, sort }); }
         }
-        catch (ReservationValidationException error) { TempData["BookingMessage"] = error.Message; }
-        return RedirectToAction(nameof(Details), new { id, date, fromQueue = true, filter = "changes" });
+        catch (ReservationValidationException error)
+        {
+            new ToastNotice("warning", "Schedule change not saved", error.Message).Store(TempData);
+        }
+        return RedirectToAction(nameof(Details), new { id, date, fromQueue, filter = fromQueue ? "changes" : null, day, sort });
     }
+
     [HttpPost("/staff/reservations/{id}/attendance"), ValidateAntiForgeryToken]
-    public async Task<IActionResult> Attendance(string id, StaffAttendanceForm form, string? date, CancellationToken ct)
+    public async Task<IActionResult> Attendance(string id, StaffAttendanceForm form, string? date, CancellationToken ct,
+        bool fromQueue = false, string? filter = null, string? day = null, string? sort = null)
     {
         var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(actor)) { return Forbid(); }
@@ -305,24 +348,29 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
                 if (result == AttendanceResult.NotFound) { return NotFound(); }
                 if (result is AttendanceResult.Applied or AttendanceResult.AlreadyApplied or AttendanceResult.Stale)
                 {
-                    TempData["BookingMessage"] = result == AttendanceResult.Stale
-                        ? "This booking changed. Review the latest details before trying again."
-                        : result == AttendanceResult.AlreadyApplied ? "This attendance action was already recorded."
-                        : form.Action == "check-in" ? "Guest checked in. The scheduled end is unchanged." : "Guest checked out. Remaining bay capacity has been released.";
-                    return RedirectToAction(nameof(Details), new { id, date });
+                    var toast = result switch
+                    {
+                        AttendanceResult.Stale => new ToastNotice("warning", "Booking changed", "Review the latest details before trying again."),
+                        AttendanceResult.AlreadyApplied => new ToastNotice("info",
+                            form.Action == "check-in" ? "Guest already checked in" : "Guest already checked out"),
+                        _ when form.Action == "check-in" => new ToastNotice("success", "Guest checked in"),
+                        _ => new ToastNotice("success", "Guest checked out", "Remaining bay time was released.")
+                    };
+                    toast.Store(TempData);
+                    return RedirectToAction(nameof(Details), new { id, date, fromQueue, filter, day, sort });
                 }
                 ModelState.AddModelError("", "This action is unavailable for the current state, session time or bay availability. Review the latest booking details.");
             }
             catch (ReservationValidationException error) { ModelState.AddModelError("", error.Message); }
         }
-        var page = await Details(id, date, false, null, null, null, ct);
+        var page = await Details(id, date, fromQueue, filter, day, sort, ct);
         return page is ViewResult { Model: StaffReviewDetail detail }
             ? View("Details", detail with { AttendanceForm = form }) : page;
     }
 
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Decide(string id, string decision, string? reason, string? reasonChoice, string? date, bool fromQueue,
-        string? filter, string? day, string? sort, long? expectedRevision, CancellationToken ct)
+        string? filter, string? day, string? sort, long? expectedRevision, CancellationToken ct, bool returnToQueue = false)
     {
         if (!expectedRevision.HasValue || expectedRevision.Value < 0) { return BadRequest(); }
         var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -349,9 +397,25 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
                 rebookUrl = new Uri(baseUrl, Url.Action("Create", "Reservations")!).AbsoluteUri;
             }
             var changed = await reservations.ReviewAsync(id, decision, actor, ct, reason, expectedRevision, rebookUrl);
-            TempData["BookingMessage"] = changed ? "Decision recorded." : "This booking changed or the action is no longer available. Review the latest details and try again.";
+            var toast = changed ? decision switch
+            {
+                "approve" => new ToastNotice("success", "Booking approved"),
+                "reject" => new ToastNotice("success", "Booking rejected"),
+                "coach" => new ToastNotice("success", "Coach confirmation recorded"),
+                "cancel" => new ToastNotice("success", "Cancellation approved", "The reserved bay time was released."),
+                "keep" => new ToastNotice("success", "Cancellation declined", "The reservation remains scheduled."),
+                _ => new ToastNotice("success", "Reschedule requested")
+            } : new ToastNotice("warning", "Booking changed", "Review the latest details before trying again.");
+            toast.Store(TempData);
+            if (changed && fromQueue && returnToQueue && filter == "cancellations" && (decision is "cancel" or "keep"))
+            {
+                return RedirectToAction(nameof(Cancellations), new { day, sort });
+            }
         }
-        catch (ReservationValidationException error) { TempData["BookingMessage"] = error.Message; }
+        catch (ReservationValidationException error)
+        {
+            new ToastNotice("warning", "Decision not saved", error.Message).Store(TempData);
+        }
         return RedirectToAction(nameof(Details), new { id, date, fromQueue = fromQueue ? true : (bool?)null, filter, day, sort });
     }
 }

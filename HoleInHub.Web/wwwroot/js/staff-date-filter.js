@@ -1,3 +1,5 @@
+(() => {
+function mount() {
 for (const form of document.querySelectorAll('[data-staff-date-filter]')) {
     const input = form.querySelector('input[type=date]');
     const button = form.querySelector('[data-open-date]');
@@ -19,3 +21,8 @@ for (const form of document.querySelectorAll('[data-staff-date-filter]')) {
         if (input.value) form.requestSubmit();
     });
 }
+
+}
+document.addEventListener('staff:schedule-mounted', mount);
+mount();
+})();

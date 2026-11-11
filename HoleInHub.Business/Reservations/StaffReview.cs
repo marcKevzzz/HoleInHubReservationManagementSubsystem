@@ -27,6 +27,7 @@ public sealed partial class ReservationService
         return new(Map(record), conflict, !string.IsNullOrWhiteSpace(record.Email), customer?.Past, customer?.Cancellations,
             !conflict && AttendanceRules.CanCheckIn(record, now),
             record.Status == "Checked-In" && now >= record.StartUtc && (record.CheckedInUtc is null || now >= record.CheckedInUtc),
-            record.Status == "Confirmed" && now >= AttendanceRules.FollowUpDue(record.StartUtc, record.EndUtc)) { Email = record.Email };
+            record.Status == "Confirmed" && now >= AttendanceRules.FollowUpDue(record.StartUtc, record.EndUtc))
+        { Email = record.Email };
     }
 }

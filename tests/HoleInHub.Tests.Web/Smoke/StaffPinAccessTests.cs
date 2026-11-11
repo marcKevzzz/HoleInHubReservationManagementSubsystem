@@ -5,8 +5,8 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 using HoleInHub.Business.Accounts;
 using HoleInHub.Data.Context;
-using HoleInHub.Data.Reservations;
 using HoleInHub.Data.Migrations.Definitions;
+using HoleInHub.Data.Reservations;
 using HoleInHub.Web.Accounts;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -353,11 +353,20 @@ public sealed class StaffPinAccessTests
             Assert.Contains("/js/staff-timeline-gestures.js", workspaceHtml);
             var drawerBooking = new ReservationRecord
             {
-                AccountId = "guest:drawer", Reference = "HIH-DRAWER", Service = "Regular", Status = "Confirmed",
-                ResourceIds = ["bay-2"], ResourceNames = new() { ["bay-2"] = "Bay 1" },
-                FirstName = "Preview", LastName = "Guest", Phone = "09175550123", Attendees = 1,
-                StartUtc = DateTime.UtcNow.AddDays(2), EndUtc = DateTime.UtcNow.AddDays(2).AddHours(1),
-                IdempotencyKey = Guid.NewGuid().ToString("N"), SubmissionHash = "drawer-preview"
+                AccountId = "guest:drawer",
+                Reference = "HIH-DRAWER",
+                Service = "Regular",
+                Status = "Confirmed",
+                ResourceIds = ["bay-2"],
+                ResourceNames = new() { ["bay-2"] = "Bay 1" },
+                FirstName = "Preview",
+                LastName = "Guest",
+                Phone = "09175550123",
+                Attendees = 1,
+                StartUtc = DateTime.UtcNow.AddDays(2),
+                EndUtc = DateTime.UtcNow.AddDays(2).AddHours(1),
+                IdempotencyKey = Guid.NewGuid().ToString("N"),
+                SubmissionHash = "drawer-preview"
             };
             await context.Database.GetCollection<ReservationRecord>("reservations").InsertOneAsync(drawerBooking);
             using var drawerActions = await desktop.GetAsync($"/staff/reservations/{drawerBooking.Id}/actions?drawer=true");
@@ -473,7 +482,10 @@ public sealed class StaffPinAccessTests
                 new() { ["Email"] = adminAccount.Email, ["Password"] = password });
             Assert.Equal(HttpStatusCode.Redirect, adminLogin.StatusCode);
             Assert.Equal("/staff/dashboard", adminLogin.Headers.Location?.OriginalString);
-            Assert.Contains("/admin/activity", await admin.GetStringAsync("/staff/dashboard"));
+            Assert.Contains("/staff/activity", await admin.GetStringAsync("/staff/dashboard"));
+            using var legacyActivity = await admin.GetAsync("/admin/activity");
+            Assert.Equal(HttpStatusCode.Redirect, legacyActivity.StatusCode);
+            Assert.Equal("/staff/activity?category=access", legacyActivity.Headers.Location?.OriginalString);
             using var legacyAdmin = await admin.GetAsync("/admin");
             Assert.Equal("/staff/dashboard", legacyAdmin.Headers.Location?.OriginalString);
             using var legacyUsers = await admin.GetAsync("/admin/users?page=2");
@@ -484,9 +496,10 @@ public sealed class StaffPinAccessTests
             staffAccount = (await users.FindByIdAsync(staffAccount.Id))!;
             Assert.Equal(HttpStatusCode.Forbidden, (await employee.GetAsync(path)).StatusCode);
             var directory = await admin.GetStringAsync("/staff/people");
-            Assert.Contains(path, directory);
+            Assert.Contains($"/staff/people/{staffAccount.Id}", directory);
+            Assert.Contains(path, await admin.GetStringAsync($"/staff/people/{staffAccount.Id}"));
             Assert.DoesNotContain(customer.Email, directory);
-            Assert.DoesNotContain(adminAccount.Email, directory);
+            Assert.Contains(adminAccount.Email, directory);
             Assert.Contains(adminAccount.Email, await admin.GetStringAsync("/staff/people?scope=Admin"));
             Assert.DoesNotContain(staffAccount.Email, await admin.GetStringAsync("/staff/people?scope=Admin"));
             Assert.DoesNotContain(customer.Email, await admin.GetStringAsync("/staff/people?scope=team"));
@@ -496,9 +509,15 @@ public sealed class StaffPinAccessTests
             Assert.Equal(HttpStatusCode.ServiceUnavailable,
                 (await SubmitAsync(admin, path, Fields(StaffRoles.Manager, staffAccount.Version))).StatusCode);
             await new Migration_017_StaffRoleAdministration().UpAsync(context.Database, default);
-            Assert.Contains("No staff access changes on this page.", await admin.GetStringAsync("/admin/activity"));
+            Assert.Equal(HttpStatusCode.OK, (await admin.GetAsync("/staff/activity?category=access")).StatusCode);
             admin.DefaultRequestHeaders.Add("X-Correlation-ID", "untrusted-correlation");
-            Assert.Equal(HttpStatusCode.Redirect, (await SubmitAsync(admin, path, Fields(StaffRoles.Manager, staffAccount.Version))).StatusCode);
+            using var roleChanged = await SubmitAsync(admin, path, Fields(StaffRoles.Manager, staffAccount.Version));
+            Assert.Equal(HttpStatusCode.Redirect, roleChanged.StatusCode);
+            var changeFeedback = await admin.GetStringAsync(roleChanged.Headers.Location);
+            Assert.Contains("data-toast-seed data-kind=\"success\"", changeFeedback);
+            Assert.Contains("Staff access updated", changeFeedback);
+            Assert.Contains("New role: Manager.", changeFeedback);
+            Assert.DoesNotContain("data-toast-seed", await admin.GetStringAsync(roleChanged.Headers.Location));
             Assert.Equal(HttpStatusCode.Conflict, (await SubmitAsync(admin, path, Fields(StaffRoles.Manager, staffAccount.Version))).StatusCode);
             Assert.Equal(HttpStatusCode.Redirect, (await employee.GetAsync("/manager/team")).StatusCode);
             Assert.Equal(HttpStatusCode.OK, (await SubmitAsync(employee, "/staff/sign-in",
@@ -509,21 +528,33 @@ public sealed class StaffPinAccessTests
             var team = await employee.GetStringAsync("/staff/people?scope=Manager");
             Assert.Contains(staffAccount.Email, team);
             Assert.DoesNotContain(customer.Email, team);
+            var person = await employee.GetStringAsync($"/staff/people/{staffAccount.Id}");
+            Assert.Contains(staffAccount.Email, person);
+            Assert.DoesNotContain("Edit staff access", person);
+            Assert.Equal(HttpStatusCode.NotFound, (await employee.GetAsync($"/staff/people/{customer.Id}")).StatusCode);
+            var ownProfile = await admin.GetStringAsync($"/staff/people/{adminAccount.Id}");
+            Assert.Contains("Your account", ownProfile);
+            Assert.DoesNotContain("Edit staff access", ownProfile);
             Assert.DoesNotContain("Edit staff access", team);
             Assert.Equal(HttpStatusCode.Forbidden, (await employee.GetAsync("/admin/activity")).StatusCode);
-            var activity = await admin.GetStringAsync("/admin/activity");
-            Assert.Contains(adminAccount.Email, activity);
-            Assert.Contains(staffAccount.Email, activity);
-            Assert.Contains("Roster change", activity);
-            Assert.Contains(">Staff<", activity);
-            Assert.Contains(">Manager<", activity);
+            var activity = await admin.GetStringAsync("/staff/activity?category=access");
+            var eventLink = Regex.Match(activity, "href=\"(/staff/activity/[^\"]+)\"");
+            Assert.True(eventLink.Success, "The Access feed should link to the recorded role change.");
+            var activityDetail = await admin.GetStringAsync(WebUtility.HtmlDecode(eventLink.Groups[1].Value));
+            Assert.Contains("Roster change", activityDetail);
+            Assert.Contains("Staff", activityDetail);
+            Assert.Contains("Manager", activityDetail);
             Assert.DoesNotContain("untrusted-correlation", activity);
             var otherRolePath = $"/admin/users/{adminAccount.Id}/role";
             Assert.Equal(HttpStatusCode.Forbidden, (await employee.GetAsync(otherRolePath)).StatusCode);
             Assert.Equal(HttpStatusCode.Forbidden, (await employee.PostAsync(otherRolePath, new StringContent(""))).StatusCode);
 
             var updated = (await users.FindByIdAsync(staffAccount.Id))!;
-            Assert.Equal(HttpStatusCode.Redirect, (await SubmitAsync(admin, path, Fields("None", updated.Version))).StatusCode);
+            using var roleRemoved = await SubmitAsync(admin, path, Fields("None", updated.Version));
+            Assert.Equal(HttpStatusCode.Redirect, roleRemoved.StatusCode);
+            var removalFeedback = await admin.GetStringAsync(roleRemoved.Headers.Location);
+            Assert.Contains("data-toast-seed data-kind=\"success\"", removalFeedback);
+            Assert.Contains("Staff access removed", removalFeedback);
             Assert.Equal(HttpStatusCode.Redirect, (await employee.GetAsync("/manager/team")).StatusCode);
             Assert.Equal(HttpStatusCode.OK, (await SubmitAsync(anonymous, "/staff/pin/setup",
                 new() { ["Email"] = staffAccount.Email, ["Password"] = password, ["Pin"] = "281741", ["ConfirmPin"] = "281741" })).StatusCode);
@@ -548,7 +579,9 @@ public sealed class StaffPinAccessTests
 
             using var returnToBookings = await SubmitAsync(admin, "/account/sign-in", new()
             {
-                ["Email"] = adminAccount.Email, ["Password"] = password, ["ReturnUrl"] = "/my-reservations"
+                ["Email"] = adminAccount.Email,
+                ["Password"] = password,
+                ["ReturnUrl"] = "/my-reservations"
             });
             Assert.Equal("/my-reservations", returnToBookings.Headers.Location?.OriginalString);
             Assert.Equal(HttpStatusCode.OK, (await admin.GetAsync("/my-reservations")).StatusCode);

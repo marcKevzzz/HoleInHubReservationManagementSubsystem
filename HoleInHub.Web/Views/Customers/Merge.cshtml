@@ -1,0 +1,18 @@
+@using HoleInHub.Business.Customers
+@using HoleInHub.Business.Reservations
+@model CustomerMergeModel
+@{
+    Layout = "_StaffLayout";
+    ViewData["Title"] = "Merge customer records";
+
+}
+<section class="staff-workspace people-page customer-merge-page">
+    <a class="flow-back" asp-action="Details" asp-route-id="@Model.Source.Id"><partial name="_BackArrow" /> Back to customer</a>
+    <header class="staff-workspace-heading"><h1>Merge customer records</h1><p>Keep one staff profile for the same person. Review the records before combining their history.</p></header>
+    <partial name="_CustomerMergeContent" model="Model" />
+</section>
+@section Scripts {
+    <script src="~/js/reason-confirmation.js" asp-append-version="true"></script>
+    <script src="~/js/customer-search.js" asp-append-version="true"></script>
+    <script src="~/js/customer-merge.js" asp-append-version="true"></script>
+}

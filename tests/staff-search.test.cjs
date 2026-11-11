@@ -25,7 +25,7 @@ function mount(popover = false) {
     };
     let timerId = 0;
     vm.runInNewContext(readFileSync(require.resolve('../HoleInHub.Web/wwwroot/js/staff-search.js'), 'utf8'), {
-        document: { querySelector: selector => selector === '[data-staff-search]' ? form : results },
+        document: { addEventListener() {}, querySelector: selector => selector === '[data-staff-search]' ? form : results },
         window: { location: { href: 'https://example.test/staff' }, innerWidth: 1200, innerHeight: 800, addEventListener() {} },
         URL, AbortController,
         setTimeout: callback => { timers.set(++timerId, callback); return timerId; },

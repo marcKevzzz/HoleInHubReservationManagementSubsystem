@@ -46,6 +46,12 @@ public sealed partial class ReservationPersistence
 
     public async Task<CustomerDirectoryRecords> SearchCustomersAsync(string term, string[] phones, int page, CancellationToken ct)
     {
+        var profiles = new HoleInHub.Data.Customers.CustomerProfilePersistence(context);
+        if (await profiles.InstalledAsync(ct))
+        {
+            return await profiles.SearchAsync(term, phones, page, ct);
+        }
+
         var filter = Builders<ReservationRecord>.Filter;
         var search = FilterDefinition<ReservationRecord>.Empty;
         if (term.Length > 0)
@@ -83,6 +89,12 @@ public sealed partial class ReservationPersistence
 
     public async Task<CustomerProfileRecords?> ReadCustomerProfileAsync(string bookingId, bool upcomingOnly, int page, DateTime now, CancellationToken ct)
     {
+        var profiles = new HoleInHub.Data.Customers.CustomerProfilePersistence(context);
+        if (await profiles.InstalledAsync(ct))
+        {
+            return await profiles.ReadHistoryAsync(bookingId, upcomingOnly, page, now, ct);
+        }
+
         var identity = await Reservations.Aggregate(new AggregateOptions { MaxTime = CustomerQueryTimeout })
             .Match(x => x.Id == bookingId).Project<BsonDocument>(new BsonDocument("Identity", CustomerIdentity())).FirstOrDefaultAsync(ct);
         if (identity is null) { return null; }

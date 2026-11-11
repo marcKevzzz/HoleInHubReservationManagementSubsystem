@@ -57,7 +57,8 @@
                         <summary class="button @(decline ? "review-danger" : action.Key == "approve" ? "" : "button-secondary")"><partial name="_StaffIcon" model="@icon" /> @action.Label</summary>
                         <form asp-action="Decide" asp-route-id="@booking.Id" asp-route-date="@date" asp-route-fromQueue="@fromQueue"
                               asp-route-filter="@(Model.FromQueue ? Model.Queue.Filter : null)" asp-route-day="@Model.Queue.Day"
-                              asp-route-sort="@(Model.FromQueue ? Model.Queue.Sort : null)" method="post">
+                              asp-route-sort="@(Model.FromQueue ? Model.Queue.Sort : null)"
+                              asp-route-returnToQueue="@(ViewData["QueueActions"] is true && Model.Queue.Filter == "cancellations" ? "true" : null)" method="post">
                             <input type="hidden" name="expectedRevision" value="@booking.Revision" />
                             <p>@action.Consequence @(Model.Context.HasEmail ? "The customer will be notified by email." : "Contact the guest by phone to share the outcome.")</p>
                             @if (action.Key == "reject")

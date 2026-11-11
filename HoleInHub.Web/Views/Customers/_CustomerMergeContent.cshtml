@@ -1,0 +1,130 @@
+@using HoleInHub.Business.Customers
+@using HoleInHub.Business.Reservations
+@model CustomerMergeModel
+@{
+    var dialogMode = ViewData["RowMergeDialog"] is true;
+    string Name(CustomerProfile p) => CustomerLabels.Name(p.FirstName,p.LastName);
+    string Value(string text) => string.IsNullOrWhiteSpace(text) ? "Not recorded" : text;
+    string DateLabel(DateTime? date) => date is DateTime value ? StaffReviewQueue.Local(value).ToString("d MMM yyyy") : "No reservations";
+}
+<div data-row-merge-content data-merge-error="@(dialogMode ? Model.Error : null)">
+    @if (!dialogMode && Model.Error is not null && Model.Preview is not null) { <p class="notice" role="status">@Model.Error</p> }
+    <div asp-validation-summary="All" class="staff-error" role="alert" tabindex="-1"></div>
+    @if (Model.Preview is not { } preview)
+    {
+        <section class="merge-current"><h2>Main profile</h2><strong>@Name(Model.Source)</strong><span>@Value(Model.Source.Email) · @CustomerLabels.Phone(Model.Source.Phone)</span><small>@Model.Source.BookingCount @(Model.Source.BookingCount == 1 ? "reservation" : "reservations")</small></section>
+        <form class="staff-lookup people-search merge-customer-search" asp-action="Merge" asp-route-id="@Model.Source.Id" method="get" role="search" aria-label="Find a duplicate customer">
+            <div class="auth-input-wrap"><partial name="_StaffIcon" model='"search"' /><label class="sr-only" for="merge-search">Name, phone, email or reference</label><input id="merge-search" type="search" name="search" value="@Model.Search" maxlength="100" placeholder="Find another customer record" /></div>
+
+        </form>
+        <p class="people-search-status" data-customer-search-status role="status">@(dialogMode ? null : Model.Error)</p>
+        <div class="merge-results-heading"><h2 class="merge-section-title">Choose another record</h2><span class="people-page-count" data-customer-count hidden="@(Model.Search.Length == 1)">Page @Model.Candidates.Page · @Model.Candidates.Items.Count(c=>c.BookingId!=Model.Source.BookingId) shown</span></div>
+        <div data-customer-results hidden="@(Model.Search.Length == 1)">
+        <ul class="merge-candidates">
+            @foreach (var candidate in Model.Candidates.Items.Where(c=>c.BookingId!=Model.Source.BookingId))
+            {
+                <li><a asp-action="Merge" asp-route-id="@Model.Source.Id" asp-route-target="@candidate.BookingId">
+                    <span><strong>@CustomerLabels.Name(candidate.FirstName,candidate.LastName)</strong><small>@CustomerLabels.Kind(candidate.Kind)</small></span>
+                    <span>@Value(candidate.Email)<small>@Value(CustomerLabels.Phone(candidate.Phone))</small></span>
+                    <span>@candidate.Reference <small>@if (!string.IsNullOrWhiteSpace(candidate.Phone) && CustomerLabels.Phone(candidate.Phone)==CustomerLabels.Phone(Model.Source.Phone)) { <span>Same phone · verify the person</span> }</small></span>
+                    <partial name="_StaffIcon" model='"arrow-right"' />
+                </a></li>
+            }
+        </ul>
+        @if (Model.Candidates.Items.Count == 0 && Model.Search.Length != 1) { <p class="staff-empty">No matching records. Try another name, phone, email or reference.</p> }
+        <nav class="customer-pagination" aria-label="Duplicate search pages">
+            @if (Model.Candidates.Page>1) { <a asp-action="Merge" asp-route-id="@Model.Source.Id" asp-route-search="@Model.Search" asp-route-page="@(Model.Candidates.Page-1)">Previous</a> }
+            @if (Model.Candidates.HasMore) { <a asp-action="Merge" asp-route-id="@Model.Source.Id" asp-route-search="@Model.Search" asp-route-page="@(Model.Candidates.Page+1)">Next</a> }
+        </nav>
+        </div>
+    }
+    else
+    {
+        var matchingDetails = CustomerProfileService.HaveMatchingDetails(preview.Source, preview.Target);
+        <div data-merge-pair-review>
+        <div class="merge-compare-heading">@if (!dialogMode) { <h2>Compare the records</h2> }<a class="button button-tertiary" asp-action="Merge" asp-route-id="@preview.Source.Id" asp-route-target="@preview.Target.Id" data-merge-switch>@(dialogMode ? "Switch main profile" : $"Make {Name(preview.Source)} the main profile") <partial name="_StaffIcon" model='"arrow-right"' /></a></div>
+        <div class="merge-profile-pair">
+            <section><span class="people-pill">Combine</span><h3>@Name(preview.Source)</h3>@if (!dialogMode) { <p>@Value(preview.Source.Email)</p><p>@Value(CustomerLabels.Phone(preview.Source.Phone))</p> }<strong>@preview.Source.BookingCount @(preview.Source.BookingCount == 1 ? "reservation" : "reservations")</strong>@if (!dialogMode) { <small>@DateLabel(preview.SourceFirst) – @DateLabel(preview.SourceLast)</small><a asp-action="Details" asp-route-id="@preview.Source.Id" target="_blank" rel="noopener">Inspect source history <partial name="_StaffIcon" model='"arrow-up-right"' /></a> }</section>
+            <section class="merge-main-profile"><span class="people-pill">Keep profile</span><h3>@Name(preview.Target)</h3>@if (!dialogMode) { <p>@Value(preview.Target.Email)</p><p>@Value(CustomerLabels.Phone(preview.Target.Phone))</p> }<strong>@preview.Target.BookingCount @(preview.Target.BookingCount == 1 ? "reservation" : "reservations")</strong>@if (!dialogMode) { <small>@DateLabel(preview.TargetFirst) – @DateLabel(preview.TargetLast)</small><a asp-action="Details" asp-route-id="@preview.Target.Id" target="_blank" rel="noopener">Inspect main history <partial name="_StaffIcon" model='"arrow-up-right"' /></a> }</section>
+        </div>
+        @if (preview.Source.Variants.Length > 1 || preview.Target.Variants.Length > 1)
+        {
+            <details class="review-disclosure merge-retained-contacts"><summary>Saved contact details</summary><div class="merge-profile-pair">
+            @foreach (var contactProfile in new[] { preview.Source, preview.Target })
+            {
+                <section><h3>@Name(contactProfile)</h3>@foreach (var email in CustomerLabels.ContactEmails(contactProfile.Email, contactProfile.Variants)) { <p>@email</p> }@foreach (var phone in CustomerLabels.ContactPhones(contactProfile.Phone, contactProfile.Variants)) { <p>@phone</p> }</section>
+            }
+            </div></details>
+        }
+        @if (!dialogMode && !matchingDetails)
+        {
+            <p class="staff-error" role="alert">These records need two matching name words, a matching email, or a matching phone number.</p>
+        }
+        @if (!ViewData.ModelState.IsValid) { <a class="staff-link" asp-action="Merge" asp-route-id="@preview.Target.Id" asp-route-target="@preview.Source.Id" data-merge-reload>Reload comparison with current records</a> }
+        </div>
+        <form id="customer-merge-form" method="post" asp-action="Merge" asp-route-id="@Model.Source.Id" class="customer-merge-form" data-reason-form data-customer-merge data-row-merge-form="@dialogMode.ToString().ToLowerInvariant()" data-history-url="@Url.Action("MergeHistory",new { id=preview.Target.Id })" data-matching-details="@matchingDetails.ToString().ToLowerInvariant()" data-target-count="@preview.Target.BookingCount" data-source-count="@preview.Source.BookingCount" data-open-on-load="@((ViewData.ModelState["Form.Reason"]?.Errors.Count>0).ToString().ToLowerInvariant())">
+            <input asp-for="Form.SourceId" type="hidden" /><input asp-for="Form.TargetId" type="hidden" /><input asp-for="Form.OperationId" type="hidden" />
+            <input asp-for="Form.SourceContactRevision" type="hidden" /><input asp-for="Form.SourceMembershipRevision" type="hidden" /><input asp-for="Form.TargetContactRevision" type="hidden" /><input asp-for="Form.TargetMembershipRevision" type="hidden" />
+            <div data-merge-review-content>
+            @if (!dialogMode) { <h2>Choose the main contact details</h2> }
+
+            @foreach (var field in new[] {
+                (Label:"Name",Field:"Form.NameFrom",Source:Name(preview.Source),Target:Name(preview.Target),Choice:Model.Form.NameFrom),
+                (Label:"Phone",Field:"Form.PhoneFrom",Source:Value(CustomerLabels.Phone(preview.Source.Phone)),Target:Value(CustomerLabels.Phone(preview.Target.Phone)),Choice:Model.Form.PhoneFrom),
+                (Label:"Email",Field:"Form.EmailFrom",Source:Value(preview.Source.Email),Target:Value(preview.Target.Email),Choice:Model.Form.EmailFrom) })
+            {
+                var identical = string.Equals(field.Source, field.Target, StringComparison.OrdinalIgnoreCase);
+                <fieldset class="merge-contact-choice">
+                    <legend class="@(dialogMode ? "sr-only" : null)">@field.Label</legend>
+                    @if (dialogMode) { <span class="merge-field-label" aria-hidden="true">@field.Label</span> }
+                    @if (identical)
+                    {
+                        <input type="hidden" name="@field.Field" value="@field.Choice" data-choice-label="@field.Target" />
+                        <p class="merge-matching-detail">@field.Target <small>Shared</small></p>
+                    }
+                    else
+                    {
+                        <div class="merge-field-options"><label><input type="radio" name="@field.Field" value="source" data-choice-label="@field.Source" checked="@(field.Choice=="source")" /><span>@field.Source@if (!dialogMode) { <small>Use as primary · other record</small> }</span></label>
+                        <label><input type="radio" name="@field.Field" value="target" data-choice-label="@field.Target" checked="@(field.Choice=="target")" /><span>@field.Target@if (!dialogMode) { <small>Use as primary · main record</small> }</span></label></div>
+                    }
+                </fieldset>
+            }
+            @if (dialogMode)
+            {
+                <input asp-for="Form.BookingScope" type="hidden" />
+            }
+            else
+            {
+                <fieldset class="merge-booking-scope">
+                    <legend>Reservations</legend>
+                    <label><input asp-for="Form.BookingScope" id="merge-all-bookings" type="radio" value="all" disabled="@(preview.Source.BookingCount > CustomerProfileService.MaximumMergeBookings)" /> All @preview.Source.BookingCount</label>
+                    <label><input asp-for="Form.BookingScope" id="merge-selected-bookings" type="radio" value="selected" /> Select reservations</label>
+                </fieldset>
+            }
+            @if (preview.Source.BookingCount>CustomerProfileService.MaximumMergeBookings) { <p class="merge-context">Showing the latest 1,000 bookings. Select a reviewed set; remaining bookings stay in the source profile.</p> }
+            <details class="review-disclosure merge-booking-review"><summary>Reservation history <span data-merge-included>@preview.SourceBookings.Length included</span></summary>
+                <ul class="merge-booking-list">@foreach (var booking in preview.SourceBookings) {
+                    <li><label><input type="checkbox" name="Form.ReservationIds" value="@booking.Id" checked="@Model.Form.ReservationIds.Contains(booking.Id)" /><span><strong>@booking.Reference · @booking.FirstName @booking.LastName</strong><span>@StaffReviewQueue.Local(booking.StartUtc).ToString("d MMM yyyy, h:mm tt") · @booking.Status</span><small>@CustomerLabels.Phone(booking.Phone)</small></span></label></li>
+                }</ul>
+            </details>
+            <div class="merge-result-preview"><span>@(dialogMode ? "After merging" : "Combined staff history")</span><strong><output data-merge-count>@(preview.Target.BookingCount+preview.Source.BookingCount)</output> reservations</strong></div>
+            </div>
+            @if (dialogMode)
+            {
+                <section data-merge-confirmation hidden>
+                    <h2>Review and confirm</h2>
+                    <p data-reason-description class="merge-context">This combines staff records only. Customer account access and original booking details stay the same.</p>
+                    <dl class="merge-final-fields" data-merge-final-fields></dl>
+                    <div class="auth-input-wrap"><label for="row-merge-reason">Reason</label><textarea id="row-merge-reason" name="Form.Reason" rows="2" required disabled maxlength="500">@Model.Form.Reason</textarea></div>
+                </section>
+                <div data-confirm-actions hidden><button type="button" class="button button-tertiary" data-no-icon data-merge-back>Back to review</button><button type="submit" class="button" form="customer-merge-form" data-merge-save>Merge records <partial name="_StaffIcon" model='"arrow-right"' /></button></div>
+            }
+            else
+            {
+                <noscript><label>Reason <textarea name="Form.Reason" required maxlength="500">@Model.Form.Reason</textarea></label></noscript>
+                <partial name="_ReasonConfirmation" model='new ReasonConfirmationModel("customer-merge-confirmation", "customer-merge-form", "Merge customer records?", "This combines staff records only. Customer account access and original booking details stay the same.", "Form.Reason", Model.Form.Reason, "Merge records")' />
+            }
+            <div class="merge-page-actions" data-review-actions><div>@if (dialogMode) { <button class="button button-tertiary" type="button" data-no-icon data-merge-cancel>Cancel</button> }@if (!dialogMode) { <a class="staff-link" asp-action="Merge" asp-route-id="@Model.Source.Id">Choose another record</a> }</div><button class="button" type="@(dialogMode ? "button" : "submit")" data-reason-fallback data-merge-review disabled="@(!dialogMode && !matchingDetails)">Review merge @if (dialogMode) { <partial name="_StaffIcon" model='"arrow-right"' /> }</button></div>
+        </form>
+    }
+</div>

@@ -195,3 +195,12 @@ Migration 014 adds optional `ReviewStartsUtc` (UTC date) and `ReviewAlertsUtc` (
 ### Schedule change proposals
 
 Migration 015 adds an optional `ScheduleChange` object to a reservation and its relevant history events. It stores one current proposal, base revision, command identity/hash, original and proposed intervals/resources, reason and decision state. Completed proposals remain in append-only history when a new proposal replaces the current object. Proposal submission allocates nothing. Schedule approval commits updated allocation, revision, history and notification together.
+
+
+### Staff customer profiles (migration 018)
+
+`customer_profiles` holds stable staff-facing contact records and retained booking-contact variants. `customer_profile_bookings` has one membership per reservation (`_id` is the reservation ID). `customer_profile_operations` stores merge/undo receipts, actor, reason, original profile snapshots, membership provenance and resulting semantic-state hashes. `customer_profile_guards` serializes these metadata writes in MongoDB transactions; this does not replace reservation capacity guards.
+
+A manual merge changes staff profile membership and preferred contact fields only. Reservation contact snapshots, account IDs, guest verification/access, allocations, payments, status and customer-owned history are untouched. Matching contact values never authorize ownership or an automatic merge. Backfill preserves existing account/verified-guest groupings; new guests and walk-ins stay separate unless staff explicitly select a profile. Account bookings use immutable account identity.
+
+Full merges redirect staff aliases to the main profile; selected-booking merges leave the source active. Search includes retained variants. Undo requires the same semantic profile/membership result and operation lineage, while revision counters remain monotonic. A later booking or unreversed merge blocks undo; reversing a dependent merge can make its predecessor eligible again. Each command is idempotent and audited. A merge moves at most 1,000 reservations; larger groups require reviewed subsets.

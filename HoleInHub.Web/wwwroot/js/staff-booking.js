@@ -1,4 +1,5 @@
 (() => {
+    function mount() {
     function selection(firstMinute, minimum, occupied, anchor, current) {
         const slot = minute => Math.min(1410, Math.max(firstMinute, Math.floor(minute / 30 + 0.000001) * 30));
         const start = slot(Math.min(anchor, current));
@@ -118,7 +119,7 @@
         const track = event.target.closest('[data-create-bay]');
         const completed = event.target.closest('a[data-status="Completed"]');
         if (drag || page.dataset.moving || event.pointerType !== 'mouse' || event.button !== 0 || !track
-            || (event.target !== track && !completed) || !event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+            || (event.target !== track && !completed) || (!event.ctrlKey && !page.dataset.customerProfileId) || event.metaKey || event.shiftKey || event.altKey) return;
         event.preventDefault();
         preview.classList.remove('is-selected');
         dragError.hidden = true;
@@ -188,5 +189,8 @@
     for (const type of ['pointercancel', 'lostpointercapture']) {
         timeline.addEventListener(type, event => { if (drag?.pointer === event.pointerId) clear(); });
     }
-    document.addEventListener('keydown', event => { if (event.key === 'Escape') clear(); });
+    page.addEventListener('keydown', event => { if (event.key === 'Escape') clear(); })
+    }
+    if (typeof document !== 'undefined') document.addEventListener('staff:schedule-mounted', mount);
+    mount();
 })();

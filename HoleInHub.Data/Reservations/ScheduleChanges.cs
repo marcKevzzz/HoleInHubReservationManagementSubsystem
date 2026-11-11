@@ -51,13 +51,13 @@ public sealed partial class ReservationPersistence
         }, new TransactionOptions(readConcern: ReadConcern.Snapshot, writeConcern: WriteConcern.WMajority), ct);
     }
 
-    public async Task DecideScheduleChangeAsync(string id, string proposalId, long revision, bool approve,
+    public async Task<(string Reference, DateTime StartUtc, DateTime EndUtc)> DecideScheduleChangeAsync(string id, string proposalId, long revision, bool approve,
         string[] resources, string actor, string reason, DateTime now, CancellationToken ct, ScheduleChangeRecord? directMove = null)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeout.CancelAfter(TimeSpan.FromSeconds(15));
         using var session = await context.Client.StartSessionAsync(cancellationToken: timeout.Token);
-        await session.WithTransactionAsync(async (s, token) =>
+        return await session.WithTransactionAsync(async (s, token) =>
         {
             var booking = await Reservations.Find(s, x => x.Id == id).FirstOrDefaultAsync(token)
                 ?? throw new AllocationConflictException("This booking is no longer available.");
@@ -65,7 +65,7 @@ public sealed partial class ReservationPersistence
             if (directMove is not null && prior is not null)
             {
                 if (prior.CommandHash != directMove.PayloadHash) { throw new AllocationConflictException("This move was submitted with different details. Reload the schedule."); }
-                return true;
+                return (booking.Reference, booking.StartUtc, booking.EndUtc);
             }
             if (directMove is not null && booking.ScheduleChange?.Status == "Pending")
             {
@@ -161,7 +161,7 @@ public sealed partial class ReservationPersistence
             }
             await Reservations.UpdateOneAsync(s, Builders<ReservationRecord>.Filter.Eq(x => x.Id, id) & AtRevision(revision), update, cancellationToken: token);
             await NotifyAsync(s, booking, $"change:{proposal.Id}:{proposal.Status}", approve ? "Schedule change approved" : "Schedule change declined", token);
-            return true;
+            return (booking.Reference, booking.StartUtc, booking.EndUtc);
         }, new TransactionOptions(readConcern: ReadConcern.Snapshot, writeConcern: WriteConcern.WMajority), timeout.Token);
     }
 }

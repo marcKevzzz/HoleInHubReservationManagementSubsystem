@@ -4,8 +4,10 @@
     Layout = "_StaffLayout";
     ViewData["Title"] = "Customers";
     var error = ViewData["SearchError"] as string;
+    var hint = ViewData["SearchHint"] as string;
+    var mergeReady = ViewData["CustomerMergeReady"] is true;
 }
-<div class="staff-workspace staff-customers people-page">
+<div class="staff-workspace staff-customers people-page" data-customer-directory-page>
     <header class="staff-workspace-heading">
         <h1>Customers</h1>
     </header>
@@ -18,11 +20,13 @@
                        placeholder="Find a customer" aria-describedby="customer-search-help" />
             </div>
         </form>
-        <span class="people-page-count" data-customer-count>Page @Model.Page · @Model.Items.Count shown</span>
+        <span class="people-page-count" data-customer-count hidden="@(hint is not null)">Page @Model.Page · @Model.Items.Count shown</span>
     </div>
     <p id="customer-search-help" class="sr-only">Use at least two characters, or a full phone number or reservation reference.</p>
-    <p class="staff-error" data-customer-search-status role="status"></p>
-    <div data-customer-results>
+    <p class="people-search-status" data-customer-search-status role="status">@hint</p>
+    <p class="sr-only" data-merge-drop-status role="status"></p>
+    <div data-row-merge-result role="status" tabindex="-1" hidden></div>
+    <div data-customer-results hidden="@(hint is not null)">
     @if (error is not null)
     {
         <p class="staff-error" role="alert">@error</p>
@@ -36,21 +40,21 @@
     }
     else
     {
-        <div class="customer-directory" role="table" aria-label="Reservation contacts">
+        <div class="customer-directory @(mergeReady ? "customer-directory-merge-enabled" : "")" role="table" aria-label="Reservation contacts">
             <div class="customer-directory-row customer-directory-head" role="row">
                 <span role="columnheader">Customer</span><span role="columnheader">Contact</span><span role="columnheader">Matched reservation</span><span role="columnheader">Action</span>
             </div>
             @foreach (var customer in Model.Items)
             {
-                <div class="customer-directory-row customer-directory-item" role="row">
-                    <div role="cell"><strong>@CustomerLabels.Name(customer.FirstName, customer.LastName)</strong><small>@CustomerLabels.Kind(customer.Kind)</small></div>
+                <div class="customer-directory-row customer-directory-item" role="row" data-customer-key="@customer.BookingId" data-customer-name="@CustomerLabels.Name(customer.FirstName,customer.LastName)" data-merge-url="@Url.Action("Merge",new { id=customer.BookingId })">
+                    <div role="cell" class="customer-identity-cell">@if (mergeReady) { <span class="customer-merge-grip" data-merge-handle hidden aria-hidden="true" title="Drag to another customer to review a merge"><partial name="_StaffIcon" model='"grip"' /></span> }<div><strong>@CustomerLabels.Name(customer.FirstName, customer.LastName)</strong><small>@CustomerLabels.Kind(customer.Kind)</small><small data-merge-row-feedback aria-hidden="true"></small></div></div>
                     <div role="cell">
                         <span>@(string.IsNullOrWhiteSpace(customer.Phone) ? "Phone not recorded" : CustomerLabels.Phone(customer.Phone))</span>
                         <small>@(string.IsNullOrWhiteSpace(customer.Email) ? "Email not recorded" : customer.Email)</small>
                     </div>
                     <div role="cell"><span>@customer.Reference</span><small>Recorded @StaffReviewQueue.Local(customer.CreatedUtc).ToString("d MMM yyyy")</small></div>
                     <div role="cell" class="review-row-actions"><a class="customer-profile-link" asp-action="Details" asp-route-id="@customer.BookingId"
-                        aria-label="@($"View {CustomerLabels.Name(customer.FirstName, customer.LastName)}")" title="View customer"><partial name="_StaffIcon" model='"view"' /></a></div>
+                        aria-label="@($"View {CustomerLabels.Name(customer.FirstName, customer.LastName)}")" title="View customer"><partial name="_StaffIcon" model='"arrow-right"' /></a></div>
                 </div>
             }
         </div>
@@ -60,7 +64,19 @@
         </nav>
     }
     </div>
+    @if (mergeReady)
+    {
+        <dialog class="customer-row-merge" data-customer-row-merge aria-labelledby="customer-row-merge-title">
+            <div class="customer-row-merge-panel">
+                <header class="customer-row-merge-header"><h2 id="customer-row-merge-title">Merge customers</h2><button type="button" class="staff-icon-button" data-row-merge-close aria-label="Close merge review"><partial name="_StaffIcon" model='"close"' /></button></header>
+                <div class="customer-row-merge-scroll"><p class="customer-row-merge-status" data-row-merge-status role="status" tabindex="-1"></p><a class="staff-link" data-row-merge-fallback target="_blank" rel="noopener" hidden>Open full comparison</a><div data-row-merge-body></div></div>
+                <footer class="customer-row-merge-footer" data-row-merge-footer hidden></footer>
+            </div>
+        </dialog>
+    }
 </div>
 @section Scripts {
     <script src="~/js/customer-search.js" asp-append-version="true"></script>
+    <script src="~/js/customer-merge.js" asp-append-version="true"></script>
+    <script src="~/js/customer-row-merge.js" asp-append-version="true"></script>
 }

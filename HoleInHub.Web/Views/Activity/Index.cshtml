@@ -1,0 +1,18 @@
+@model ActivityListModel
+@{ Layout="_StaffLayout"; ViewData["Title"]="Activity"; }
+<div class="staff-workspace people-page activity-page" data-activity-page>
+<header class="staff-workspace-heading"><h1>Activity</h1><a class="staff-icon-button" href="@Model.Query.Url(reset:true)" data-activity-refresh aria-label="Refresh activity" title="Refresh"><partial name="_StaffIcon" model='"refresh"' /></a></header>
+<form class="activity-filters" method="get" action="/staff/activity" data-activity-filters>
+<div class="staff-lookup people-search"><div class="auth-input-wrap"><partial name="_StaffIcon" model='"search"' /><label for="activity-search" class="sr-only">Search activity</label><input id="activity-search" type="search" name="search" value="@Model.Query.Search" maxlength="100" placeholder="Search activity" /></div></div>
+<label class="activity-filter-field"><span>Date range</span><select name="range" aria-label="Date range"><option value="today" selected="@(Model.Query.Range=="today")">Today</option><option value="week" selected="@(Model.Query.Range=="week")">Last 7 days</option><option value="month" selected="@(Model.Query.Range=="month")">Last 30 days</option><option value="custom" selected="@(Model.Query.Range=="custom")">Custom dates</option></select></label>
+<label class="activity-filter-field"><span>Actor</span><select name="actor" aria-label="Actor"><option value="everyone" selected="@(Model.Query.Actor=="everyone")">Everyone</option><option value="mine" selected="@(Model.Query.Actor=="mine")">My activity</option>@if(Model.Query.Actor is not ("everyone" or "mine")){<option selected value="@Model.Query.Actor">Selected employee</option>}</select></label>
+<div class="activity-dates" data-activity-dates hidden="@(Model.Query.Range != "custom")"><label class="activity-filter-field"><span>From</span><input type="date" name="from" value="@Model.Query.From?.ToString("yyyy-MM-dd")" /></label><label class="activity-filter-field"><span>To</span><input type="date" name="to" value="@Model.Query.To?.ToString("yyyy-MM-dd")" /></label></div>
+<input type="hidden" name="category" value="@Model.Query.Category" />
+<noscript><button class="button button-secondary" type="submit">Search</button></noscript>
+</form>
+<nav class="activity-categories" aria-label="Activity categories">@foreach(var category in new[]{"All","Reservations","Customers","Schedule","Access"}.Where(c=>c!="Access"||Model.IncludeAccess)) {var values=new ActivityQuery{Range=Model.Query.Range,From=Model.Query.From,To=Model.Query.To,Search=Model.Query.Search,Actor=Model.Query.Actor,Category=category};<a href="@values.Url(reset:true)" aria-current="@(Model.Query.Category.Equals(category,StringComparison.OrdinalIgnoreCase)?"page":null)" data-activity-filter>@category</a>}</nav>
+<p class="activity-feedback" data-activity-status role="status" hidden></p>
+<partial name="_Results" model="Model" />
+<dialog class="activity-panel" data-activity-panel aria-label="Activity details"><header><span>Activity details</span><button type="button" class="staff-icon-button" aria-label="Close activity details" data-activity-close><partial name="_StaffIcon" model='"close"' /></button></header><div data-activity-panel-body></div></dialog>
+</div>
+@section Scripts {<script src="~/js/activity.js" asp-append-version="true"></script>}

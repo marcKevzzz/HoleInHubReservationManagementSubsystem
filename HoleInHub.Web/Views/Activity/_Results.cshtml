@@ -1,0 +1,70 @@
+@using HoleInHub.Business.Reservations
+@model ActivityListModel
+@{
+    DateOnly? previousDay = null;
+    var query = Model.Query;
+}
+<div data-activity-results data-list-url="@query.Url()">
+    @if (Model.Error is not null)
+    {
+        <p class="staff-error" role="alert">@Model.Error <a href="@query.Url(reset: true)" data-activity-refresh>Refresh activity</a></p>
+    }
+    else if (Model.Page is { Entries.Count: 0 })
+    {
+        var filtered = !string.IsNullOrEmpty(query.Search) || query.Category != "All" || query.Actor != "everyone";
+        <partial name="_StaffEmptyState" model='("inbox", filtered ? "No matching activity" : "No activity in this date range",
+            filtered ? "Try a different search or clear the filters." : "Recorded events will appear here.", "/staff/activity", "Clear filters")' />
+    }
+    else if (Model.Page is { } page)
+    {
+        <div class="activity-table" role="table" aria-label="Activity">
+            <div class="sr-only" role="row">
+                <span role="columnheader">Time in Manila</span><span role="columnheader">Event</span>
+                <span role="columnheader">Actor</span><span role="columnheader">View</span>
+            </div>
+            @foreach (var entry in page.Entries)
+            {
+                var local = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(entry.OccurredUtc, DateTimeKind.Utc), ReservationRules.Manila);
+                var day = DateOnly.FromDateTime(local);
+                if (day != previousDay)
+                {
+                    <div class="activity-day" role="row"><span role="cell" aria-colspan="4">@local.ToString("ddd, d MMM yyyy")</span></div>
+                    previousDay = day;
+                }
+                <div class="activity-row" role="row" data-activity-row data-event-key="@entry.Key" tabindex="0" aria-label="@entry.Title, @entry.TargetLabel">
+                    <div role="cell"><time datetime="@entry.OccurredUtc.ToString("O")" title="@local.ToString("d MMM yyyy, h:mm:ss tt")">@local.ToString("h:mm tt")</time></div>
+                    <div role="cell"><strong>@entry.Title</strong><small>@entry.TargetLabel</small></div>
+                    <span role="cell">
+                        @if (!string.IsNullOrWhiteSpace(entry.ActorId))
+                        {
+                            <a class="activity-actor" data-activity-actor="@entry.ActorId"
+                               href="@query.Url(reset: true, actor: entry.ActorId)" title="Filter by @entry.Actor">@entry.Actor</a>
+                        }
+                        else
+                        {
+                            @entry.Actor
+                        }
+                    </span>
+                    <span role="cell" class="activity-action">
+                        <a data-activity-event href="@query.Url("/staff/activity/" + entry.Key)" aria-label="View @entry.Title">
+                            <partial name="_StaffIcon" model='"arrow-right"' />
+                        </a>
+                    </span>
+                </div>
+            }
+        </div>
+        @if (query.Cursor is not null || page.NextCursor is not null)
+        {
+            <nav class="activity-pagination" aria-label="Activity pages">
+                @if (query.Cursor is not null)
+                {
+                    <a class="staff-link" href="@query.Url(reset: true)" data-activity-previous>Newest</a>
+                }
+                @if (page.NextCursor is not null)
+                {
+                    <a class="button button-secondary" href="@query.Url(cursor: page.NextCursor)" data-activity-next>Next <partial name="_StaffIcon" model='"arrow-right"' /></a>
+                }
+            </nav>
+        }
+    }
+</div>

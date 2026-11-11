@@ -1,4 +1,5 @@
 (() => {
+    function mount() {
     function moveRange(first, minimum, duration, occupied, minute) {
         const start = Math.round(minute / 30) * 30;
         const end = start + duration;
@@ -17,6 +18,7 @@
     const form = dialog.querySelector('[data-move-form]');
     const undo = dialog.querySelector('[data-move-undo]');
     const submit = form.querySelector('[type=submit]');
+    const submitContent = submit.innerHTML;
     const error = dialog.querySelector('[data-move-error]');
     const description = dialog.querySelector('[data-move-description]');
     const dragError = page.querySelector('[data-drag-error]');
@@ -65,13 +67,17 @@
         move.bar.classList.toggle('is-unavailable', !move.range.valid);
         if (move.ghost && target) {
             const rect = target.getBoundingClientRect();
-            move.ghost.style.left = rect.left + rect.width * move.range.left / 100 + 'px';
+            move.ghost.style.left = rect.left + rect.width * left / 100 + 'px';
             move.ghost.style.top = rect.top + 3 + 'px';
             move.ghost.style.width = rect.width * move.duration / (1440 - move.first) + 'px';
             move.ghost.style.height = Math.max(48, rect.height / Number(target.style.getPropertyValue('--lanes') || 1) - 4) + 'px';
-            const canvasLeft = scroller.getBoundingClientRect().left + timeline.querySelector('.staff-timeline-label').offsetWidth;
-            const ghostLeft = rect.left + rect.width * move.range.left / 100;
-            move.ghost.style.clipPath = `inset(0 0 0 ${Math.max(0, canvasLeft - ghostLeft)}px)`;
+            const viewport = scroller.getBoundingClientRect();
+            const canvasLeft = viewport.left + timeline.querySelector('.staff-timeline-label').offsetWidth;
+            const ghostLeft = parseFloat(move.ghost.style.left);
+            const ghostTop = parseFloat(move.ghost.style.top);
+            const ghostRight = ghostLeft + parseFloat(move.ghost.style.width);
+            const ghostBottom = ghostTop + parseFloat(move.ghost.style.height);
+            move.ghost.style.clipPath = `inset(${Math.max(0, viewport.top - ghostTop)}px ${Math.max(0, ghostRight - viewport.right + 1)}px ${Math.max(0, ghostBottom - viewport.bottom + 1)}px ${Math.max(0, canvasLeft - ghostLeft)}px)`;
         }
         if (move.ghost) move.ghost.classList.toggle('is-unavailable', !move.range.valid);
     }
@@ -88,6 +94,8 @@
         delete page.dataset.moving;
         delete page.dataset.previewDate;
         gesture?.hide();
+        gesture?.setDate(page.dataset.date);
+        timeline.style.removeProperty('--pan-offset');
         move.bar.style.setProperty('--start', move.original);
         move.bar.style.removeProperty('translate');
         move.bar.style.removeProperty('visibility');
@@ -137,6 +145,8 @@
             timeline.replaceChildren(...incoming.childNodes);
             timeline.classList.remove('has-now');
             current.date = page.dataset.previewDate = date;
+            gesture.setDate(date);
+            timeline.style.removeProperty('--pan-offset');
             current.first = Number(destination.dataset.firstHour) * 60;
             current.minimum = Number(destination.dataset.openingHour) * 60;
             timeline.style.setProperty('--hours', (1440 - current.first) / 60);
@@ -147,6 +157,7 @@
                 scroller.scrollLeft = Math.max(0, (minute - current.first) / (1440 - current.first) * width - scroller.clientWidth / 3);
             }
             update(minute, target || null);
+            gesture.transition(direction);
             gesture.preview(date, 'Drop to review move');
         } catch (error) {
             if (move === current && !current.request.signal.aborted) { dragError.textContent = error.message; dragError.hidden = false; gesture.hide(); }
@@ -157,9 +168,10 @@
         const rect = scroller.getBoundingClientRect();
         const label = timeline.querySelector('.staff-timeline-label').offsetWidth;
         const direction = event.clientX < rect.left + label + 24 ? -1 : event.clientX > rect.right - 28 ? 1 : 0;
-        if (move.edge === direction) return;
+        if (move.loading || (move.edge === direction && move.edgeTimer)) return;
         clearTimeout(move.edgeTimer);
         move.edge = direction;
+        timeline.style.setProperty('--pan-offset', window.matchMedia('(prefers-reduced-motion: reduce)').matches ? '0px' : `${-direction * 16}px`);
         if (direction) {
             const advance = () => {
                 if (!move || move.edge !== direction || move.pointer === undefined) return;
@@ -170,7 +182,7 @@
                     move.edgeTimer = setTimeout(advance, 70);
                 } else {
                     gesture.preview(gesture.adjacentDay(move.date, direction), 'Hold to switch day');
-                    move.edgeTimer = setTimeout(() => changeDay(direction), 650);
+                    move.edgeTimer = setTimeout(() => { move.edgeTimer = undefined; void changeDay(direction); }, 650);
                 }
             };
             move.edgeTimer = setTimeout(advance, 100);
@@ -197,11 +209,14 @@
         const canvasLeft = scroller ? scroller.getBoundingClientRect().left + timeline.querySelector('.staff-timeline-label').offsetWidth : -Infinity;
         const target = Array.from(timeline.querySelectorAll('.staff-timeline-track')).find(track => {
             const rect = track.getBoundingClientRect();
-            return event.clientX >= canvasLeft && event.clientY >= rect.top && event.clientY < rect.bottom && event.clientX >= rect.left && event.clientX < rect.right;
+            return event.clientY >= rect.top && event.clientY < rect.bottom
+                && (scroller || (event.clientX >= rect.left && event.clientX < rect.right));
         });
         if (move.originalRows && target) {
             const rect = target.getBoundingClientRect();
-            update(move.first + (event.clientX - rect.left) / rect.width * (1440 - move.first) - move.duration / 2, target);
+            const x = Math.max(canvasLeft, Math.min(scroller.getBoundingClientRect().right, event.clientX));
+            const minute = move.first + (x - rect.left) / rect.width * (1440 - move.first) - move.duration / 2;
+            update(Math.max(move.minimum, Math.min(1440 - move.duration, minute)), target);
         } else update(move.start + (event.clientX - move.origin + (scroller?.scrollLeft || 0) - move.scroll) / move.width * (1440 - first), target || null);
     }
     timeline.addEventListener('pointermove', event => {
@@ -244,7 +259,7 @@
         }
         confirm();
     });
-    document.addEventListener('keydown', event => { if (event.key === 'Escape' && move && !dialog.open) restore(); });
+    page.addEventListener('keydown', event => { if (event.key === 'Escape' && move && !dialog.open) restore(); });
     undo.addEventListener('click', () => { if (!saving) dialog.close(); });
     dialog.addEventListener('close', restore);
     dialog.addEventListener('cancel', event => { if (saving) event.preventDefault(); });
@@ -265,12 +280,16 @@
         error.hidden = false;
         error.focus();
         saving = submit.disabled = undo.disabled = false;
-        submit.textContent = 'Continue';
+        submit.innerHTML = submitContent;
     });
     for (const bar of timeline.querySelectorAll('[data-move-booking]')) {
         if (!bar.dataset.moveBooking) { bar.removeAttribute('data-move-booking'); continue; }
         bar.draggable = false;
         bar.setAttribute('aria-keyshortcuts', 'Alt+ArrowLeft Alt+ArrowRight Alt+ArrowUp Alt+ArrowDown');
         bar.title += '. Drag to another time or bay. Alt+Left/Right changes time, Alt+Up/Down changes bay.';
+
     }
+    }
+    if (typeof document !== 'undefined') document.addEventListener('staff:schedule-mounted', mount);
+    mount();
 })();

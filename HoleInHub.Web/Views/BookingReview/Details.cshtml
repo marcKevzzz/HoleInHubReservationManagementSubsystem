@@ -3,6 +3,7 @@
 @{
     Layout = "_StaffLayout";
     ViewData["Title"] = "Review booking";
+    var activityReturn = HoleInHub.Web.Navigation.ActivityNavigation.FromRequest(Context.Request);
     var booking = Model.Context.Booking;
     var now = Model.Queue.Now;
     var start = StaffReviewQueue.Local(booking.StartUtc);
@@ -28,17 +29,33 @@
 
 }
 <div class="staff-workspace staff-review review-detail">
+    @if (activityReturn is null || Model.FromQueue)
+    {
     <div class="review-top-nav">
-        @if (Model.FromQueue)
+        @if (activityReturn is null)
         {
-            <a class="flow-back" asp-route="staff-review-section" asp-route-section="@Model.Queue.Filter"
-               asp-route-date="@date" asp-route-day="@Model.Queue.Day" asp-route-sort="@Model.Queue.Sort">
-                <partial name="_BackArrow" /> Back to review queue
-            </a>
-        }
-        else
-        {
-            <a class="flow-back" asp-action="Index" asp-route-date="@date"><partial name="_BackArrow" /> Back to reservations</a>
+            if (ViewData["CustomerId"] is string customerId)
+            {
+                <a class="flow-back" asp-controller="Customers" asp-action="Details" asp-route-id="@customerId"
+                   asp-route-view="@ViewData["CustomerView"]" asp-route-page="@ViewData["CustomerPage"]"><partial name="_BackArrow" /> Back to customer</a>
+            }
+            else if (Model.FromQueue && Model.Queue.Filter == "cancellations")
+            {
+                <a class="flow-back" asp-action="Cancellations" asp-route-day="@Model.Queue.Day" asp-route-sort="@Model.Queue.Sort">
+                    <partial name="_BackArrow" /> Back to cancellations
+                </a>
+            }
+            else if (Model.FromQueue)
+            {
+                <a class="flow-back" asp-route="staff-review-section" asp-route-section="@Model.Queue.Filter"
+                   asp-route-date="@date" asp-route-day="@Model.Queue.Day" asp-route-sort="@Model.Queue.Sort">
+                    <partial name="_BackArrow" /> Back to review queue
+                </a>
+            }
+            else
+            {
+                <a class="flow-back" asp-action="Index" asp-route-date="@date"><partial name="_BackArrow" /> Back to reservations</a>
+            }
         }
         @if (Model.FromQueue)
         {
@@ -54,6 +71,7 @@
             </nav>
         }
     </div>
+    }
     <header class="staff-workspace-heading review-heading">
         <div>
             <h1>Review booking</h1>
@@ -63,10 +81,6 @@
             <partial name="_ReviewDecision" model="Model" />
         </div>
     </header>
-    @if (TempData["BookingMessage"] is string message)
-    {
-        <p class="notice" role="status">@message</p>
-    }
     <section class="review-booking-summary" aria-label="Reservation summary">
         <div class="review-guest">
             <h2>@booking.FirstName @booking.LastName</h2>

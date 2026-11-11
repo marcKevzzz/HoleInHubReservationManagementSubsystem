@@ -8,6 +8,7 @@
 @import "./venue.css";
 @import "./gallery.css";
 @import "./staff-workspace.css";
+@import "./toast-stack.css";
 @source "../Views";
 @source "../wwwroot/js";
 @theme { --color-account-placeholder:color-mix(in srgb, #60645d 88%, #fff); --color-error-line:color-mix(in srgb, #9b3027 65%, #fff); --color-control-line:#83877f; --color-error:#9b3027; --color-auth-shade:rgb(16 17 15 / 78%); --color-ink:#10110f; --color-paper:#fff; --color-green:#354f3b; --color-muted:#60645d; --color-line:#d5d7d1; --font-display:Oswald,"Arial Narrow",sans-serif; --font-body:Inter,Arial,sans-serif; }
@@ -1178,3 +1179,7 @@ button.flow-back{border:0;background:transparent;cursor:pointer}
     100%{transform:scaleX(1);transform-origin:left}
   }
 }
+
+/* Autofill must lift the label even when the browser retains placeholder state. */
+.auth-page .account-inner .auth-input-wrap:has(input:is(:autofill,:-webkit-autofill)) label {transform:translateY(0);font-size:12px}
+.auth-page .account-inner form {margin-top:24px}

@@ -18,6 +18,8 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IMongoDbContext, MongoDbContext>();
         services.AddScoped<HoleInHub.Data.Accounts.AccountPersistence>();
+        services.AddScoped<HoleInHub.Data.Activity.ActivityPersistence>();
+        services.AddScoped<HoleInHub.Data.Customers.CustomerProfilePersistence>();
         services.AddScoped<HoleInHub.Data.Accounts.StaffPinPersistence>();
         services.AddScoped<HoleInHub.Data.Services.ServiceCatalogPersistence>();
         services.AddScoped<HoleInHub.Data.Reservations.ReservationPersistence>();
@@ -47,6 +49,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_015_ScheduleChanges>();
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_016_StaffPinAttempts>();
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_017_StaffRoleAdministration>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_018_CustomerProfiles>();
         services.AddSingleton<MongoMigrationRunner>();
 
         return services;

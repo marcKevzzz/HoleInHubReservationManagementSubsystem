@@ -14,8 +14,8 @@
     }, true);
     function mountRows() {
         for (const row of document.querySelectorAll('.staff-workspace [role="row"], .staff-workspace tbody tr, .customer-bookings > li')) {
-            const link = row.querySelector('a[href]:not([href^="#"])');
-            if (row.classList.contains('staff-view-row')) continue;
+            const link = row.querySelector('a.customer-profile-link[href]') || row.querySelector('a[href]:not([href^="#"])');
+            if (row.classList.contains('staff-view-row') || row.classList.contains('people-empty-row')) continue;
             const cells = [...row.querySelectorAll(':scope > th, :scope > td')];
             if (!link && !cells.length) continue;
             row.classList.add('staff-view-row');
@@ -155,6 +155,7 @@
             document.body.append(dialog);
             dialog.showModal();
         } catch (error) {
+            if (window.HoleInHubToasts?.show({ kind: 'error', title: 'Could not open review', message: error.message })) return;
             const notice = document.createElement('p');
             notice.setAttribute('role', 'alert');
             notice.textContent = error.message;

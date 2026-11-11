@@ -76,7 +76,7 @@ test('block drawer keeps values on errors, prevents duplicate saves, and restore
     let release, requests = 0;
     const page = { querySelector(selector) { return nodes[selector] || null; } };
     vm.runInNewContext(fs.readFileSync(require.resolve('../HoleInHub.Web/wwwroot/js/staff-booking.js'), 'utf8'), {
-        document: { querySelector() { return page; } }, FormData: class {},
+        document: { addEventListener() {}, querySelector() { return page; } }, FormData: class {},
         fetch() { requests++; return new Promise(resolve => { release = resolve; }); },
     });
     const click = { preventDefault() {} };
@@ -117,7 +117,7 @@ test('Ctrl dragging over completed bars creates a booking; plain dragging does n
     const preview = { style: {}, setAttribute() {}, classList: { toggle() {}, add() {}, remove() {} }, remove() { this.removed = true; } };
     const nodes = { '[data-create-booking]': drawer, '[data-new-booking]': trigger, '.staff-timeline': timeline,
         '[data-drag-hint]': {}, '[data-drag-error]': {} };
-    const page = { dataset: { firstHour: '10', openingHour: '10' }, querySelector(selector) { return nodes[selector] || null; } };
+    const page = { addEventListener() {}, dataset: { firstHour: '10', openingHour: '10' }, querySelector(selector) { return nodes[selector] || null; } };
     vm.runInNewContext(fs.readFileSync(require.resolve('../HoleInHub.Web/wwwroot/js/staff-booking.js'), 'utf8'), {
         document: { querySelector() { return page; }, createElement() { return preview; }, addEventListener() {} }, setTimeout() {},
     });
@@ -139,6 +139,18 @@ test('Ctrl dragging over completed bars creates a booking; plain dragging does n
     timeline.handlers.pointerup(pointer(150));
     assert.equal(completed.clicks, 0);
     assert.equal(drawer.open, false);
+    page.dataset.customerProfileId = 'cp_demo';
+    form.elements.FirstName = { value: 'Demo' };
+    form.elements.LastName = { value: 'Customer' };
+    form.elements.Phone = { value: '09990001003' };
+    form.elements.CustomerProfileId = { value: 'cp_demo' };
+    timeline.handlers.pointerdown({ ...pointer(150), ctrlKey: false });
+    timeline.handlers.pointerup({ ...pointer(240), ctrlKey: false });
+    assert.equal(drawer.open, true);
+    assert.equal(form.elements.ResourceId.value, 'bay-2');
+    assert.equal(form.elements.CustomerProfileId.value, 'cp_demo');
+    assert.equal(form.elements.Phone.value, '09990001003');
+    assert.match(preview.textContent, /Demo Customer/);
 });
 
 test('overnight booking review starts at opening and carries remaining time across closing', () => {

@@ -4,17 +4,16 @@
 @{
     ViewData["Title"] = "Team & access";
     var isAdmin = User.IsInRole(StaffRoles.Admin);
-    var canEdit = ViewData["RoleEditing"] is true;
-    var scope = ViewData["SelectedRole"] as string ?? StaffRoles.Staff;
+    var scope = ViewData["SelectedRole"] as string ?? "all";
     var actorId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 }
 <section class="staff-workspace staff-customers leadership-page people-page">
     <header class="staff-workspace-heading">
         <h1>@ViewData["Title"]</h1>
     </header>
-    @if (TempData["RoleMessage"] is string message) { <p class="review-summary" role="status">@message</p> }
     <div class="people-toolbar staff-date-controls">
         <nav class="review-sort" aria-label="Staff role">
+            <a asp-action="People" asp-route-scope="all" aria-current="@(scope == "all" ? "page" : null)">All</a>
             @foreach (var role in StaffRoles.Workspace)
             {
                 <a asp-action="People" asp-route-scope="@role" aria-current="@(scope == role ? "page" : null)">@role</a>
@@ -23,37 +22,26 @@
     @if (!isAdmin) { <span class="people-readonly"><partial name="_StaffIcon" model='"roles"' /> Team directory · Read only</span> }
     <span class="people-page-count">Page @Model.Page · @Model.Entries.Count shown</span>
     </div>
-    @if (Model.Entries.Count == 0)
-    {
-        <partial name="_StaffEmptyState" model='("customers", "No accounts on this page", "Choose another page or account scope to see accounts.", Url.Action("People", new { scope }), "Back to first page")' />
-    }
-    else
-    {
     <div class="leadership-table people-directory" tabindex="0" role="region" aria-label="Account directory">
         <table>
-            <thead><tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Roles</th>@if (canEdit) { <th scope="col">Action</th> }</tr></thead>
+            <thead><tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Roles</th><th scope="col"><span class="sr-only">View account</span></th></tr></thead>
             <tbody>
+                @if (Model.Entries.Count == 0)
+                {
+                    <tr class="people-empty-row"><td colspan="4">No team members in this category.</td></tr>
+                }
                 @foreach (var entry in Model.Entries)
                 {
                     <tr>
-                        <th scope="row">@(string.IsNullOrWhiteSpace(entry.Name) ? "Name unavailable" : entry.Name)</th>
+                        <th scope="row">@(string.IsNullOrWhiteSpace(entry.Name) ? (entry.Roles.Contains(StaffRoles.Admin) ? "Administrator" : "Name not recorded") : entry.Name) @if (entry.Id == actorId) { <span class="people-self">You</span> }</th>
                         <td>@entry.Email</td><td><span class="people-role-list">@foreach (var role in entry.Roles.Where(StaffRoles.Workspace.Contains)) { <span class="people-pill">@role</span> }</span></td>
-                        @if (canEdit)
-                        {
-                            <td class="review-row-actions">
-                                @if (entry.Id != actorId)
-                                {
-                                    <a asp-action="EditUserRole" asp-route-id="@entry.Id"
-                                       aria-label="Edit staff access for @entry.Email" title="Edit staff access"><partial name="_StaffIcon" model='"roles"' /><span class="sr-only">Edit staff access</span></a>
-                                }
-                            </td>
-                        }
+                        <td class="review-row-actions"><a class="people-detail-link" asp-action="Person" asp-route-id="@entry.Id" asp-route-scope="@scope" asp-route-page="@Model.Page"
+                            aria-label="View account for @entry.Email" title="View account"><partial name="_StaffIcon" model='"arrow-right"' /></a></td>
                     </tr>
                 }
             </tbody>
         </table>
     </div>
-    }
     <nav class="customer-pagination" aria-label="Account pages">
         @if (Model.Page > 1) { <a class="button button-secondary" asp-action="People" asp-route-page="@(Model.Page - 1)" asp-route-scope="@scope">Previous</a> }
         @if (Model.HasMore) { <a class="button button-secondary" asp-action="People" asp-route-page="@(Model.Page + 1)" asp-route-scope="@scope">Next page</a> }

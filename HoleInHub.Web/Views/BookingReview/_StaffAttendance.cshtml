@@ -24,7 +24,9 @@
                     var early = checkout && now < booking.EndUtc;
                     <p>@(checkout ? "Confirm that the guest has finished and all booked bays are clear. Checking out releases all remaining bay capacity." : "Record the guest’s arrival. Late arrival does not extend the scheduled end.")</p>
                     @if (early) { <p><strong>@Math.Ceiling((booking.EndUtc - now).TotalMinutes) minutes remain</strong> in the scheduled session. A reason is required for early departure.</p> }
-                    <form asp-action="Attendance" asp-route-id="@booking.Id" asp-route-date="@date" method="post" class="staff-create-form">
+                    <form asp-action="Attendance" asp-route-id="@booking.Id" asp-route-date="@date"
+                          asp-route-fromQueue="@Model.FromQueue" asp-route-filter="@(Model.FromQueue ? Model.Queue.Filter : null)"
+                          asp-route-day="@Model.Queue.Day" asp-route-sort="@Model.Queue.Sort" method="post" class="staff-create-form">
                         <input type="hidden" name="Action" value="@attendance.Action" />
                         <input type="hidden" name="ExpectedRevision" value="@attendance.ExpectedRevision" />
                         <input type="hidden" name="CommandId" value="@attendance.CommandId" />

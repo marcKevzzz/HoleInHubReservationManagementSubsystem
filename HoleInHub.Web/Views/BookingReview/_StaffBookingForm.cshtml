@@ -1,6 +1,10 @@
 @using HoleInHub.Business.Accounts
 @model StaffBookingForm
 <form asp-action="Create" method="post" class="staff-create-form">
+    @if (Model.CustomerProfileId is not null)
+    {
+        <input asp-for="CustomerProfileId" type="hidden" />
+    }
     <input asp-for="IdempotencyKey" type="hidden" />
     <p data-booking-error class="staff-error" role="alert" tabindex="-1" hidden></p>
     <div asp-validation-summary="All" class="staff-error"></div>

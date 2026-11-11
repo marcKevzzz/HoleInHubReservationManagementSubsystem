@@ -30,7 +30,7 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
     private Task GuardCatalogAsync(IClientSessionHandle session, CancellationToken ct) =>
         context.Database.GetCollection<BsonDocument>("allocation_guards").UpdateOneAsync(session, new BsonDocument("_id", "catalog"),
             new BsonDocument("$inc", new BsonDocument("version", 1)), new UpdateOptions { IsUpsert = true }, ct);
-    public async Task<ReservationRecord> InsertAsync(ReservationRecord record, CancellationToken ct, string? encryptedReceipt = null)
+    public async Task<ReservationRecord> InsertAsync(ReservationRecord record, CancellationToken ct, string? encryptedReceipt = null, string? customerProfileId = null)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct); timeout.CancelAfter(TimeSpan.FromSeconds(15)); ct = timeout.Token;
         using var session = await context.Client.StartSessionAsync(cancellationToken: ct);
@@ -83,6 +83,16 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
                 record.CustomerAccountId = record.AccountId.StartsWith("guest:", StringComparison.Ordinal)
                     || record.AccountId.StartsWith("staff:", StringComparison.Ordinal) ? null : record.AccountId;
                 await Reservations.InsertOneAsync(s, record, cancellationToken: token);
+                var profiles = new HoleInHub.Data.Customers.CustomerProfilePersistence(context);
+                if (await profiles.InstalledAsync(token))
+                {
+                    await profiles.AttachAsync(s, record, customerProfileId, token);
+                }
+                else if (customerProfileId is not null)
+                {
+                    throw new HoleInHub.Data.Customers.CustomerProfileConflictException("Apply the customer-profile database update before selecting a profile.");
+                }
+
                 await NotifyAsync(s, record, "submitted", "Reservation request received", token, encryptedReceipt);
                 return record;
             }, new TransactionOptions(readConcern: ReadConcern.Snapshot, writeConcern: WriteConcern.WMajority), ct);
@@ -122,7 +132,11 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
                     .Set(x => x.CancellationRequested, false)
                     .Push(x => x.History, new HistoryRecord
                     {
-                        EventType = "ReservationExpired", ReservationStatus = "Expired", Status = "Expired", AtUtc = now, Actor = "System"
+                        EventType = "ReservationExpired",
+                        ReservationStatus = "Expired",
+                        Status = "Expired",
+                        AtUtc = now,
+                        Actor = "System"
                     });
                 var result = await Reservations.UpdateOneAsync(s, eligible & filters.Eq(x => x.Id, record.Id), update, cancellationToken: token);
                 if (result.ModifiedCount == 0) { return false; }
@@ -130,9 +144,13 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
                 {
                     await context.Database.GetCollection<OutboxRecord>("outbox").InsertOneAsync(s, new OutboxRecord
                     {
-                        Id = $"{record.Id}:expired:{recipient}", Recipient = recipient, Subject = "Reservation request expired",
+                        Id = $"{record.Id}:expired:{recipient}",
+                        Recipient = recipient,
+                        Subject = "Reservation request expired",
                         Body = $"Request {record.Reference} expired before confirmation. Its bay hold has been released.",
-                        DueUtc = now, ReservationId = record.Id, RequiredStatus = "Expired"
+                        DueUtc = now,
+                        ReservationId = record.Id,
+                        RequiredStatus = "Expired"
                     }, cancellationToken: token);
                 }
                 return true;
@@ -197,7 +215,10 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
                 var change = Builders<ReservationRecord>.Update.Inc(x => x.Revision, 1)
                     .Push(x => x.History, new HistoryRecord
                     {
-                        ReservationStatus = "Pending", Status = marker, AtUtc = now, Actor = "System",
+                        ReservationStatus = "Pending",
+                        Status = marker,
+                        AtUtc = now,
+                        Actor = "System",
                         Reason = "The review deadline passed and the bay hold was released."
                     });
                 var applied = await Reservations.UpdateOneAsync(transaction, eligible & filters.Eq(x => x.Id, record.Id), change, cancellationToken: token);
@@ -206,9 +227,13 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
                 var messages = staffEmails.Append(record.Email).Where(email => !string.IsNullOrWhiteSpace(email)).Distinct()
                     .Select(recipient => new OutboxRecord
                     {
-                        Id = $"{record.Id}:overdue:{recipient}", Recipient = recipient, Subject = $"Overdue review: {record.Reference}",
+                        Id = $"{record.Id}:overdue:{recipient}",
+                        Recipient = recipient,
+                        Subject = $"Overdue review: {record.Reference}",
                         Body = $"Request {record.Reference} is still awaiting staff review. Its bay hold has been released and confirmation depends on availability.",
-                        DueUtc = now, ReservationId = record.Id, RequiredStatus = "Pending"
+                        DueUtc = now,
+                        ReservationId = record.Id,
+                        RequiredStatus = "Pending"
                     }).ToArray();
                 if (messages.Length > 0)
                 {

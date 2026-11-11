@@ -1,7 +1,9 @@
 @using HoleInHub.Business.Accounts
 @using HoleInHub.Web.Accounts
+@using HoleInHub.Web.Navigation
 @inject HoleInHub.Business.Reservations.ReservationService Reservations
 @{
+    var activityReturn = ActivityNavigation.FromRequest(Context.Request);
     var date = Context.Request.Query["date"].ToString();
     var pendingReviews = ViewData["PendingReviews"] as long? ?? 0;
     var requestCounts = await Reservations.GetReviewCountsAsync(Context.RequestAborted);
@@ -19,6 +21,7 @@
     var links = new (string Group, string Controller, string Action, string Icon, string Label, bool Visible)[]
     {
         ("Overview", "Leadership", "Dashboard", "dashboard", "Dashboard", true),
+        ("Overview", "Activity", "Index", "history", "Activity", true),
         ("Reservations", "BookingReview", "Index", "calendar", "Schedule", true),
         ("Reservations", "BookingReview", "Queue", "queue", "Review queue", true),
         ("Reservations", "BookingReview", "Cancellations", "close", "Cancellations", true),
@@ -26,7 +29,6 @@
         ("People", "Leadership", "People", "roles", "Team & access", managesVenue),
         ("Venue management", "Leadership", "Reports", "reports", "Daily report", managesVenue),
         ("Venue management", "Leadership", "Settings", "sidebar", "Settings", managesVenue),
-        ("Administration", "Leadership", "AdminActivity", "queue", "Staff access log", isAdmin),
         ("Administration", "Leadership", "Resources", "resources", "Resources", isAdmin),
         ("Administration", "Leadership", "Services", "queue", "Services", isAdmin)
     };
@@ -93,7 +95,7 @@
                             var active = controller == link.Controller && (link.Controller switch
                             {
                                 "BookingReview" => link.Action == "Cancellations" ? isCancellations : !isQueue && !isCancellations,
-                                "Customers" => true,
+                                "Customers" or "Activity" => true,
                                 _ => action == link.Action
                             });
                             <a asp-controller="@link.Controller" asp-action="@link.Action" asp-route-date="@(isReservations ? date : null)"
@@ -123,6 +125,11 @@
         </div>
     </aside>
     <main id="main-content" tabindex="-1">
+        @if (activityReturn is not null && controller != "Activity")
+        {
+            <div class="staff-workspace"><a class="flow-back customer-back" href="@activityReturn"><partial name="_BackArrow" /> Back to activity</a></div>
+        }
+        <partial name="_ToastStack" />
         @RenderBody()
     </main>
     <partial name="_LogoutConfirmation" model='(isAdmin ? "You’ll need to sign in again to open your workspace." : "You’ll need to enter your PIN again to open your workspace.")' />
@@ -131,6 +138,7 @@
     <script src="~/js/button-motion.js" asp-append-version="true"></script>
     <script src="~/js/staff-sidebar.js" asp-append-version="true"></script>
     <script src="~/js/staff-date-filter.js" asp-append-version="true"></script>
+    <script src="~/js/toast-stack.js" asp-append-version="true"></script>
     <script src="~/js/staff-table.js" asp-append-version="true"></script>
     <script src="~/js/account-menu.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)

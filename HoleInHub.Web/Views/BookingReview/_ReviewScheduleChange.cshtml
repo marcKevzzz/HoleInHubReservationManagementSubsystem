@@ -20,7 +20,9 @@
                         <dt>Reason</dt><dd>@proposal.Reason</dd>
                     </dl>
                     <p>The current booking stays allocated until approval. Availability is checked when you confirm.</p>
-                    <form asp-action="DecideChange" asp-route-id="@booking.Id" asp-route-date="@date" method="post" class="staff-create-form">
+                    <form asp-action="DecideChange" asp-route-id="@booking.Id" asp-route-date="@date"
+                          asp-route-fromQueue="@Model.FromQueue" asp-route-day="@Model.Queue.Day" asp-route-sort="@Model.Queue.Sort"
+                          asp-route-returnToQueue="@(ViewData["QueueActions"] is true ? "true" : null)" method="post" class="staff-create-form">
                         <input type="hidden" name="proposalId" value="@proposal.Id" />
                         <input type="hidden" name="expectedRevision" value="@booking.Revision" />
                         <fieldset><legend>Assign bays</legend>

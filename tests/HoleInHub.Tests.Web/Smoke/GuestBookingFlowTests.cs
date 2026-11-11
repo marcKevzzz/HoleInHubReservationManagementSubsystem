@@ -312,9 +312,25 @@ public sealed class GuestBookingFlowTests
             Assert.Contains("Confirm approve booking", quickActions);
             Assert.Contains("Confirm reject booking", quickActions);
             Assert.Equal("Pending", (await service.GetStaffAsync(record.Id, default))!.Status);
-            var decided = await staffClient.PostAsync("/BookingReview/Decide/" + record.Id, new FormUrlEncodedContent(new Dictionary<string, string>
-            { ["__RequestVerificationToken"] = Csrf(review), ["expectedRevision"] = Regex.Match(review, "name=\"expectedRevision\"[^>]*value=\"([^\"]+)\"").Groups[1].Value, ["decision"] = decision, ["reason"] = decision == "reject" ? "Venue cannot accommodate this request." : "" }));
+            var decisionFields = new Dictionary<string, string>
+            {
+                ["__RequestVerificationToken"] = Csrf(review),
+                ["expectedRevision"] = Regex.Match(review, "name=\"expectedRevision\"[^>]*value=\"([^\"]+)\"").Groups[1].Value,
+                ["decision"] = decision,
+                ["reason"] = decision == "reject" ? "Venue cannot accommodate this request." : "",
+                ["fromQueue"] = "true"
+            };
+            var decided = await staffClient.PostAsync("/BookingReview/Decide/" + record.Id, new FormUrlEncodedContent(decisionFields));
             Assert.Equal(HttpStatusCode.Redirect, decided.StatusCode);
+            var destination = decided.Headers.Location!.ToString();
+            Assert.Contains("fromQueue=True", destination, StringComparison.OrdinalIgnoreCase);
+            var feedback = await staffClient.GetStringAsync(destination);
+            Assert.Contains("data-toast-seed data-kind=\"success\"", feedback);
+            Assert.Contains(decision == "approve" ? ">Booking approved<" : ">Booking rejected<", feedback);
+            Assert.DoesNotContain("data-toast-seed", await staffClient.GetStringAsync(destination));
+            var stale = await staffClient.PostAsync("/BookingReview/Decide/" + record.Id, new FormUrlEncodedContent(decisionFields));
+            Assert.Equal(HttpStatusCode.Redirect, stale.StatusCode);
+            Assert.Contains("data-toast-seed data-kind=\"warning\"", await staffClient.GetStringAsync(stale.Headers.Location!.ToString()));
             var updated = (await service.GetStaffAsync(record.Id, default))!;
             Assert.Equal(expected, updated.Status);
             Assert.Contains(expected, await guest.GetStringAsync(link));

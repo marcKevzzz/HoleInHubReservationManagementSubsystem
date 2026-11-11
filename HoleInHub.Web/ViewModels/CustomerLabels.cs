@@ -1,9 +1,13 @@
+using HoleInHub.Business.Accounts;
+using HoleInHub.Business.Customers;
+
 namespace HoleInHubReservationManagementSubsystem.ViewModels;
 
 public static class CustomerLabels
 {
     public static string Kind(string kind) => kind switch
     {
+        "Combined" => "Combined customer profile",
         "Account" => "Account customer",
         "Guest" => "Verified guest",
         _ => "Booking contact"
@@ -16,5 +20,21 @@ public static class CustomerLabels
             : digits.Length == 11 && digits.StartsWith('0') ? digits[1..] : null;
         return national is null ? value : $"+63 {national[..3]} {national[3..6]} {national[6..]}";
     }
+    public static string[] ContactEmails(string preferred, IEnumerable<CustomerContact> contacts) =>
+        new[] { preferred }.Concat(contacts.Select(contact => contact.Email))
+            .Where(value => !string.IsNullOrWhiteSpace(value)).Select(value => value.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+
+    public static string[] ContactPhones(string preferred, IEnumerable<CustomerContact> contacts) =>
+        new[] { preferred }.Concat(contacts.Select(contact => contact.Phone))
+            .Where(value => !string.IsNullOrWhiteSpace(value)).Select(value => Phone(value.Trim()))
+            .DistinctBy(ContactPhoneKey, StringComparer.Ordinal).ToArray();
+
+    private static string ContactPhoneKey(string value)
+    {
+        var digits = ContactRules.PhoneDigits(value);
+        return digits.Length > 0 ? digits : value;
+    }
+
     public static string Dial(string value) => new(value.Where(character => char.IsAsciiDigit(character) || character == '+').ToArray());
 }

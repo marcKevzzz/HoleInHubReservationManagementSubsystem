@@ -1,4 +1,5 @@
 (() => {
+    function mount() {
     const zoomWidth = (width, delta, minimum = 68) => Math.max(minimum, Math.min(minimum * 3, width * Math.exp(-delta * .002)));
     const adjacentDay = (day, direction) => {
         const date = new Date(day + 'T12:00:00Z');
@@ -15,8 +16,20 @@
     const hintLabel = hint.querySelector('[data-date-preview-label]');
     const zoom = page.querySelector('[data-timeline-zoom]');
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const baseWidth = timeline.querySelector('.staff-timeline-hours').getBoundingClientRect().width / (24 - Number(page.dataset.firstHour));
-    let pan, width = baseWidth;
+    const measuredWidth = timeline.querySelector('.staff-timeline-hours').getBoundingClientRect().width / (24 - Number(page.dataset.firstHour));
+    const baseWidth = Number(page.dataset.zoomBaseWidth) || measuredWidth;
+    page.dataset.zoomBaseWidth = baseWidth;
+    let pan, width = measuredWidth;
+    zoom.value = Math.round(width / baseWidth * 100) + '%';
+    const arrival = Number(sessionStorage.getItem('staff-day-direction'));
+    sessionStorage.removeItem('staff-day-direction');
+    function transition(direction) {
+        if (reduced) return;
+        for (const track of timeline.querySelectorAll('.staff-timeline-hours,.staff-timeline-track')) {
+            track.animate([{ opacity: .4, translate: `${direction * 20}px 0` }, { opacity: 1, translate: '0 0' }], { duration: 260, easing: 'ease-out' });
+        }
+    }
+    if (arrival) transition(arrival);
     const dayLabel = date => new Intl.DateTimeFormat('en', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })
         .format(new Date(date + 'T12:00:00Z'));
     function preview(date, message = 'Release to open') {
@@ -25,10 +38,17 @@
         hintLabel.textContent = `${message} · ${dayLabel(date)}`;
         hint.hidden = false;
     }
-    page.timelineGesture = { adjacentDay, dayLabel, preview, hide: () => { hint.hidden = true; },
+    function setDate(date) {
+        const input = page.querySelector('#staff-date');
+        const label = page.querySelector('[data-open-date] time');
+        if (input) input.value = date;
+        if (label) { label.dateTime = date; label.textContent = date.split('-').reverse().join('.'); }
+    }
+    page.timelineGesture = { adjacentDay, dayLabel, preview, transition, setDate, hide: () => { hint.hidden = true; },
         async load(date, signal) {
+            if (window.HoleInHubSchedule) return window.HoleInHubSchedule.load(date, signal);
             const url = new URL(window.location.href);
-            url.search = new URLSearchParams({ date });
+            url.searchParams.set('date', date);
             const response = await fetch(url, { signal, cache: 'no-store', redirect: 'error' });
             if (!response.ok) throw new Error('The next day could not be loaded. Try again.');
             const result = new DOMParser().parseFromString(await response.text(), 'text/html').querySelector('[data-staff-schedule]');
@@ -44,7 +64,7 @@
             const label = timeline.querySelector('.staff-timeline-label').offsetWidth;
             const x = Math.max(label, event.clientX - scroller.getBoundingClientRect().left);
             const minute = (scroller.scrollLeft + x - label) / width;
-            width = zoomWidth(width, event.deltaY, baseWidth);
+            width = zoomWidth(width, event.deltaY, baseWidth * .65);
             timeline.style.setProperty('--hour-width', width + 'px');
             scroller.scrollLeft = minute * width - x + label;
             zoom.value = Math.round(width / baseWidth * 100) + '%';
@@ -58,6 +78,7 @@
     }, { passive: false });
     scroller.addEventListener('pointerdown', event => {
         if (page.dataset.moving || event.pointerType !== 'mouse' || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey
+            || (page.dataset.customerProfileId && event.target.closest('[data-create-bay]'))
             || event.target.closest('a,button,input,select,.staff-timeline-label')) return;
         event.preventDefault();
         pan = { id: event.pointerId, x: event.clientX, y: event.clientY, left: scroller.scrollLeft, top: scroller.scrollTop };
@@ -86,11 +107,15 @@
         if (scroller.hasPointerCapture(event.pointerId)) scroller.releasePointerCapture(event.pointerId);
         if (date) {
             const url = new URL(window.location.href);
-            url.search = new URLSearchParams({ date });
-            window.location.assign(url);
+            url.searchParams.set('date', date);
+            if (window.HoleInHubSchedule) void window.HoleInHubSchedule.go(date);
+            else window.location.assign(url);
         }
     }
     scroller.addEventListener('pointerup', event => finish(event, true));
     for (const type of ['pointercancel', 'lostpointercapture']) scroller.addEventListener(type, event => finish(event, false));
-    document.addEventListener('keydown', event => { if (event.key === 'Escape' && pan) finish({ pointerId: pan.id }, false); });
+    page.addEventListener('keydown', event => { if (event.key === 'Escape' && pan) finish({ pointerId: pan.id }, false); })
+    }
+    if (typeof document !== 'undefined') document.addEventListener('staff:schedule-mounted', mount);
+    mount();
 })();
