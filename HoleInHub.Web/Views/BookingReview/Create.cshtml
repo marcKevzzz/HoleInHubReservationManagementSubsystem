@@ -14,7 +14,10 @@
     }
     <header class="staff-workspace-heading">
         <h1>New booking</h1>
-        <p>@(Model.CustomerProfileId is not null ? $"For {Model.FirstName} {Model.LastName}. Choose a bay and session below." : "Reserve one Regular or VIP bay and confirm it for the guest.")</p>
+        @if (Model.CustomerProfileId is not null)
+        {
+            <p>For @Model.FirstName @Model.LastName.</p>
+        }
     </header>
     <partial name="_StaffBookingForm" model="Model" />
 </div>

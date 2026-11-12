@@ -52,7 +52,7 @@ public sealed partial class ReservationPersistence
     }
 
     public async Task<(string Reference, DateTime StartUtc, DateTime EndUtc)> DecideScheduleChangeAsync(string id, string proposalId, long revision, bool approve,
-        string[] resources, string actor, string reason, DateTime now, CancellationToken ct, ScheduleChangeRecord? directMove = null)
+        string[] resources, string actor, string reason, DateTime now, CancellationToken ct, ScheduleChangeRecord? directMove = null, bool vipUpgrade = false)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeout.CancelAfter(TimeSpan.FromSeconds(15));
@@ -105,7 +105,10 @@ public sealed partial class ReservationPersistence
                 {
                     throw new AllocationConflictException("The booking is no longer eligible for this change. Decline the request or reload its latest details.");
                 }
-                var catalog = await Resources.Find(s, x => x.Active && x.Service == booking.Service).ToListAsync(token);
+                if (vipUpgrade && (directMove is null || booking.Service != "Regular" || booking.ResourceIds.Length != 1))
+                { throw new AllocationConflictException("Only a confirmed single-bay Regular move can upgrade to VIP."); }
+                var destinationService = vipUpgrade ? "VIP" : booking.Service;
+                var catalog = await Resources.Find(s, x => x.Active && x.Service == destinationService).ToListAsync(token);
                 if (resources.Length != booking.ResourceIds.Length || resources.Distinct().Count() != resources.Length
                     || resources.Any(resource => !catalog.Any(bay => bay.Id == resource)))
                 {
@@ -120,6 +123,7 @@ public sealed partial class ReservationPersistence
                     await guards.UpdateOneAsync(s, new BsonDocument("_id", key), new BsonDocument("$inc", new BsonDocument("version", 1)),
                         new UpdateOptions { IsUpsert = true }, token);
                 }
+                booking.Service = destinationService;
                 booking.StartUtc = proposal.StartUtc;
                 booking.EndUtc = proposal.EndUtc;
                 booking.ResourceIds = resources;
@@ -148,7 +152,7 @@ public sealed partial class ReservationPersistence
                 });
             if (approve)
             {
-                update = update.Set(x => x.StartUtc, booking.StartUtc).Set(x => x.EndUtc, booking.EndUtc)
+                update = update.Set(x => x.Service, booking.Service).Set(x => x.StartUtc, booking.StartUtc).Set(x => x.EndUtc, booking.EndUtc)
                     .Set(x => x.ResourceIds, booking.ResourceIds).Set(x => x.ResourceNames, booking.ResourceNames);
                 if (booking.Participants.Length > 0)
                 {

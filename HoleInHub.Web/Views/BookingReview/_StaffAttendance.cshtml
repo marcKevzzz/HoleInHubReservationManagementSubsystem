@@ -3,7 +3,6 @@
 @{
     var booking = Model.Context.Booking;
     var now = Model.Queue.Now;
-    var start = StaffReviewQueue.Local(booking.StartUtc);
     var checkout = Model.Context.CanCheckOut;
     var early = checkout && now < booking.EndUtc;
     var available = Model.Context.CanCheckIn || checkout;
@@ -14,7 +13,7 @@
     };
 }
 <section class="review-section review-attendance" aria-labelledby="attendance-heading">
-    <div class="attendance-heading"><h2 id="attendance-heading">Attendance</h2><span>@(checkout ? "Checked in" : booking.Status == "Confirmed" ? "Awaiting arrival" : booking.Status)</span></div>
+    <div class="attendance-heading"><h2 id="attendance-heading">Attendance</h2><span class="staff-status" data-status="@(checkout ? "Checked-In" : booking.Status)">@(checkout ? "Checked in" : booking.Status == "Confirmed" ? "Awaiting arrival" : booking.Status)</span></div>
     <div asp-validation-summary="All" class="staff-error" role="alert"></div>
     @if (available)
     {
@@ -41,7 +40,6 @@
     }
     else if (booking.Status == "Confirmed")
     {
-        <p class="attendance-note">@(now < booking.StartUtc ? $"Check-in opens {start:d MMM} at {start:h:mm tt}." : now >= booking.EndUtc ? "The session has ended. Check-in is closed." : "Resolve the booking’s pending requirements before check-in.")</p>
         <button class="button" type="button" disabled>Check-in unavailable</button>
     }
     else

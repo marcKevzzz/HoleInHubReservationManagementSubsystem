@@ -90,10 +90,6 @@
         <div id="staff-search-results" class="staff-search-results" data-staff-search-results aria-live="polite" role="region" aria-label="Booking search results">
             <partial name="_StaffSearchResults" model="Model.Lookup" />
         </div>
-        @if (Model.DateError is not null)
-        {
-            <p class="staff-error" role="status">@Model.DateError</p>
-        }
         @if (rows.Count == 0)
         {
             <p class="staff-empty">There are no bays to show for this day.</p>
@@ -103,8 +99,7 @@
             <div class="staff-schedule-timeline">
                 <output class="staff-zoom-feedback" data-timeline-zoom aria-label="Timeline zoom" role="status" hidden>100%</output>
                 <output class="staff-date-preview" data-date-preview aria-live="polite" hidden><span class="staff-date-preview-arrow"><partial name="_StaffIcon" model='"chevron-right"' /></span><span data-date-preview-label></span></output>
-                <p class="staff-error" data-drag-error role="status" hidden></p>
-                <p id="staff-timeline-help" class="sr-only">@(Model.BookingForm.CustomerProfileId is not null ? "Drag an open time to create a booking for this customer. Use the date controls to change days." : "Drag empty space to pan. Pull past either edge to change days. Ctrl and drag creates a booking.") Ctrl and scroll zooms; Shift and scroll moves horizontally; scroll moves vertically. Hold a reservation at the edge to preview another day, then drop to review the move.</p>
+                <p id="staff-timeline-help" class="sr-only">@(Model.BookingForm.CustomerProfileId is not null ? "Drag an open time to create a booking for this customer. Use the date controls to change days." : "Drag empty space to pan. Pull past either edge to change days. Ctrl and drag creates a booking.") Shift-click or Shift+Space to select bookings for a group move. Hold a booking to select it on touch screens. Ctrl-click bays, then drag to book one time across them. Ctrl and scroll zooms; Shift and scroll moves horizontally; scroll moves vertically. Hold a reservation at the edge to preview another day, then drop to review the move.</p>
                 <div class="staff-timeline-scroll" tabindex="0" role="region" aria-label="Bay timeline" aria-describedby="staff-timeline-help">
                     <div class="staff-timeline" style="@($"--hours:{timeline.Hours};--rows:{rows.Count}")">
                         <div class="staff-timeline-row staff-timeline-axis" aria-hidden="true">
@@ -202,17 +197,18 @@
     </section>
     @if (User.ManagesVenue() && Model.BlockForm is { Bays.Count: > 0 })
     {
-        <dialog class="staff-booking-drawer" data-create-block aria-labelledby="staff-block-title">
-            <form method="dialog"><button class="staff-icon-button" aria-label="Close block time"><partial name="_StaffIcon" model='"close"' /></button></form>
-            <h2 id="staff-block-title">Block time</h2>
+        <dialog class="staff-booking-drawer staff-side-panel" data-create-block aria-labelledby="staff-block-title">
+            <header><h2 class="staff-panel-heading" id="staff-block-title">Block time</h2><form method="dialog"><button class="staff-icon-button" aria-label="Close block time"><partial name="_StaffIcon" model='"close"' /></button></form></header>
+            <div class="staff-panel-body">
             <p class="staff-create-hint">Keep one bay free for maintenance or another staff activity.</p>
             <partial name="_StaffBlockForm" model="Model.BlockForm" />
+            </div>
         </dialog>
     }
     <dialog class="logout-confirmation" data-move-confirmation aria-labelledby="staff-move-title" aria-describedby="staff-move-description">
         <h2 id="staff-move-title" tabindex="-1" autofocus>Move booking?</h2>
         <p id="staff-move-description" data-move-description></p>
-        <form method="post" data-move-form>
+        <form method="post" data-move-form data-batch-url="@Url.Action("BatchMove")">
             @Html.AntiForgeryToken()
             <input type="hidden" name="revision" />
             <input type="hidden" name="commandId" />
@@ -220,33 +216,39 @@
             <input type="hidden" name="startTime" />
             <input type="hidden" name="resourceId" />
             <input type="hidden" name="sourceResourceId" />
-            <p class="staff-error" data-move-error role="alert" tabindex="-1" hidden></p>
+            <label class="staff-upgrade-consent" data-upgrade-consent hidden>
+                <input type="checkbox" name="confirmVipUpgrade" value="true" />
+                <span>The customer agreed to VIP pricing.</span>
+            </label>
+            <ul class="staff-batch-summary" data-batch-summary hidden></ul>
             <div class="logout-actions">
                 <button type="button" class="button button-tertiary" data-move-undo data-no-icon>Undo</button>
-                <button type="submit" class="button">Continue <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6" /></svg></button>
+                <button type="submit" class="button" data-no-icon><span data-move-submit-label>Confirm move</span> <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6" /></svg></button>
             </div>
         </form>
     </dialog>
-    <dialog class="staff-booking-drawer" data-booking-details aria-labelledby="staff-drawer-title">
-        <form method="dialog"><button class="staff-icon-button" aria-label="Close booking details"><partial name="_StaffIcon" model='"close"' /></button></form>
-        <h2 id="staff-drawer-title" data-drawer="guest"></h2>
+    <dialog class="staff-booking-drawer staff-side-panel" data-booking-details aria-labelledby="staff-drawer-title">
+        <header><h2 class="staff-panel-heading">Reservation details</h2><form method="dialog"><button class="staff-icon-button" aria-label="Close booking details"><partial name="_StaffIcon" model='"close"' /></button></form></header>
+        <div class="staff-panel-body">
+        <h2 class="staff-panel-title" id="staff-drawer-title" data-drawer="guest"></h2>
         <div class="staff-drawer-identity"><p data-drawer="reference"></p><span class="staff-status" data-drawer="state"></span></div>
         <dl class="staff-drawer-summary">
             <div><dt>When</dt><dd data-drawer="interval"></dd></div>
-            <div><dt>Bay</dt><dd data-drawer="location"></dd></div>
+            <div><dt data-drawer-bay-label>Bay</dt><dd data-drawer="location"></dd><dd class="staff-drawer-bay-note" data-drawer-linked-bays hidden>These bays are part of the same reservation.</dd></div>
             <div><dt>Guests</dt><dd data-drawer="party"></dd></div>
             <div><dt>Experience</dt><dd data-drawer="service"></dd></div>
         </dl>
         <section class="staff-drawer-actions" aria-label="Booking actions" data-drawer-actions></section>
         <a class="staff-drawer-full" data-drawer-link>View full booking & history <partial name="_StaffIcon" model='"arrow-up-right"' /></a>
+        </div>
     </dialog>
     @if (Model.BookingForm.Bays.Count > 0)
     {
-        <dialog class="staff-booking-drawer" data-create-booking aria-labelledby="staff-create-title">
-            <form method="dialog"><button class="staff-icon-button" aria-label="Close new booking"><partial name="_StaffIcon" model='"close"' /></button></form>
-            <h2 id="staff-create-title">New booking</h2>
-            <p class="staff-create-hint">Reserve one Regular or VIP bay and confirm it for the guest.</p>
+        <dialog class="staff-booking-drawer staff-side-panel" data-create-booking aria-labelledby="staff-create-title">
+            <header><h2 class="staff-panel-heading" id="staff-create-title">New booking</h2><form method="dialog"><button class="staff-icon-button" aria-label="Close new booking"><partial name="_StaffIcon" model='"close"' /></button></form></header>
+            <div class="staff-panel-body">
             <partial name="_StaffBookingForm" model="Model.BookingForm" />
+            </div>
         </dialog>
     }
 </div>

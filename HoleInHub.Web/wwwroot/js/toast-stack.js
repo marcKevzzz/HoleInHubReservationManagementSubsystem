@@ -25,6 +25,7 @@
     if (typeof document === 'undefined') return;
     const host = document.querySelector('[data-toast-stack]');
     if (!host) return;
+    const home = host.parentElement;
     const cards = host.querySelector('[data-toast-cards]');
     const toggle = host.querySelector('[data-toast-toggle]');
     const count = host.querySelector('[data-toast-count]');
@@ -82,8 +83,13 @@
         }
     }
 
-    function show({ kind = 'info', title, message, href, action, autoDismiss } = {}) {
+    function show({ kind = 'info', title, message, href, action, autoDismiss, durationMs, replaceKey } = {}) {
         if (!title) return false;
+        const modal = document.querySelector('dialog[open]');
+        if (modal && !modal.contains(host)) {
+            modal.append(host);
+            modal.addEventListener('close', () => home.append(host), { once: true });
+        }
         if (!['success', 'info', 'warning', 'error'].includes(kind)) kind = 'info';
         const card = document.createElement('article');
         card.className = 'toast-card';
@@ -117,9 +123,10 @@
             card.append(link);
         }
 
-        const item = { card, button };
+        const previous = replaceKey && items.find(item => item.replaceKey === replaceKey);
+        const item = { card, button, replaceKey };
         if (!url && (autoDismiss ?? (kind === 'success' || kind === 'info'))) {
-            item.timer = createDismissTimer(() => dismiss(item));
+            item.timer = createDismissTimer(() => dismiss(item), durationMs);
         }
         button.addEventListener('click', () => {
             if (heldButton === button) {
@@ -130,6 +137,7 @@
         });
         items.unshift(item);
         cards.prepend(card);
+        if (previous) dismiss(previous);
         if (hovered && items.length > 1) expanded = true;
         if (host.contains(document.activeElement) && items.length > 1) expanded = true;
         render();

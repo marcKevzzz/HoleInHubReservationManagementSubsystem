@@ -6,21 +6,15 @@
         <input asp-for="CustomerProfileId" type="hidden" />
     }
     <input asp-for="IdempotencyKey" type="hidden" />
-    <p data-booking-error class="staff-error" role="alert" tabindex="-1" hidden></p>
     <div asp-validation-summary="All" class="staff-error"></div>
     <fieldset>
         <legend>Schedule</legend>
-        <div>
-            <div class="auth-input-wrap auth-select-wrap">
-                <select asp-for="ResourceId" required>
-                    <option value="">Choose a bay</option>
-                    @foreach (var bay in Model.Bays)
-                    {
-                        <option value="@bay.Id">@bay.Name</option>
-                    }
-                </select>
-                <label asp-for="ResourceId">Bay</label>
-            </div>
+        <div class="staff-create-bays" role="group" aria-label="Bays">
+            @foreach (var bay in Model.Bays)
+            {
+                <label><input type="checkbox" class="sr-only" name="ResourceIds" value="@bay.Id" data-booking-bay
+                              data-bay-service="@bay.Service" checked="@(Model.ResourceIds.Contains(bay.Id) || Model.ResourceId == bay.Id)" />@bay.Name</label>
+            }
         </div>
         <div class="staff-create-fields">
             <div>
@@ -37,12 +31,16 @@
             </div>
         </div>
         <div>
-            <div class="auth-input-wrap">
-                <input asp-for="DurationMinutes" type="number" min="30" max="840" step="30" required placeholder=" " />
-                <label asp-for="DurationMinutes">Duration in minutes</label>
+            <div class="auth-input-wrap auth-select-wrap">
+                <select asp-for="DurationMinutes" required>
+                    @for (var minutes = 30; minutes <= 840; minutes += 30)
+                    {
+                        <option value="@minutes">@minutes min</option>
+                    }
+                </select>
+                <label asp-for="DurationMinutes">Duration</label>
             </div>
         </div>
-        <p class="staff-create-hint">Times are in Manila. Book in 30-minute increments.</p>
     </fieldset>
     <fieldset>
         <legend>Guest details</legend>
@@ -69,7 +67,7 @@
         <div class="staff-create-fields">
             <div>
                 <div class="auth-input-wrap">
-                    <input asp-for="Attendees" type="number" min="1" max="10" aria-describedby="staff-party-hint" required placeholder=" " />
+                    <input asp-for="Attendees" type="number" min="1" max="80" required placeholder=" " />
                     <label asp-for="Attendees">Party size</label>
                 </div>
             </div>
@@ -84,7 +82,6 @@
                 </div>
             </div>
         </div>
-        <p id="staff-party-hint" class="staff-create-hint">Include spectators. Up to 6 players per bay, with 8 guests total in Regular or 10 in VIP.</p>
     </fieldset>
     <button class="button" type="submit" disabled="@(Model.Bays.Count == 0)">Confirm booking</button>
 </form>

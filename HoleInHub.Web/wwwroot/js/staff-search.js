@@ -16,7 +16,7 @@
         if (!enhanced) return;
         const rect = form.getBoundingClientRect();
         const panel = document.querySelector('.staff-workspace')?.getBoundingClientRect?.() || { left: 0, width: window.innerWidth };
-        const width = Math.min(window.innerWidth - 32, panel.width * .9);
+        const width = Math.min(window.innerWidth - 32, panel.width * .95);
         const left = Math.max(16, Math.min(window.innerWidth - width - 16, panel.left + (panel.width - width) / 2));
         results.style.cssText = `left:${left}px;top:${rect.bottom + 12}px;width:${width}px;max-height:${Math.max(120, window.innerHeight - rect.bottom - 30)}px`;
     }
@@ -72,13 +72,11 @@
             const response = await fetch(url, { signal, redirect: 'error' });
             if (!response.ok) throw new Error('Search failed');
             const html = await response.text();
-            if (!signal.aborted) { results.innerHTML = html; reveal(); }
+            if (!signal.aborted) { results.innerHTML = html; if (!feedback()) reveal(); }
         } catch {
             if (!signal.aborted) {
-                const message = document.createElement('p');
-                message.textContent = 'Booking search is unavailable. Press Enter to try again.';
-                results.replaceChildren(message);
-                reveal();
+                window.HoleInHubToasts?.show({ autoDismiss: true, kind: 'error', title: 'Search unavailable', message: 'Press Enter to try again.' });
+                close();
             }
         } finally {
             if (!signal.aborted) results.removeAttribute('aria-busy');
@@ -108,7 +106,15 @@
         window.removeEventListener('resize', position);
         window.removeEventListener('scroll', onScroll, true);
     }, { once: true });
-    reveal();
+    function feedback() {
+        const notice = results.querySelector('[data-search-feedback]');
+        if (!notice) return false;
+        window.HoleInHubToasts?.show({ kind: 'info', title: 'Booking search', message: notice.dataset.message });
+        results.replaceChildren();
+        close();
+        return true;
+    }
+    if (!feedback()) reveal();
 
     }
     if (typeof document !== 'undefined') document.addEventListener('staff:schedule-mounted', mount);

@@ -21,12 +21,12 @@
         {
             <li><a asp-action="People"><strong>Team &amp; access</strong><span>See who can access the staff workspace.</span><partial name="_StaffIcon" model='"roles"' /></a></li>
             <li><a asp-action="Reports"><strong>Daily report</strong><span>See today’s bookings and attendance.</span><partial name="_StaffIcon" model='"reports"' /></a></li>
-            <li><a asp-action="Settings"><strong>Settings</strong><span>Check booking alerts and review coverage.</span><partial name="_StaffIcon" model='"sidebar"' /></a></li>
+            <li><a asp-controller="Settings" asp-action="Index"><strong>Settings</strong><span>Check booking alerts and review coverage.</span><partial name="_StaffIcon" model='"settings"' /></a></li>
         }
         @if (User.IsInRole(StaffRoles.Admin))
         {
             <li><a asp-action="Resources"><strong>Resources</strong><span>Add, retire, or restore bays.</span><partial name="_StaffIcon" model='"resources"' /></a></li>
-            <li><a asp-action="Services"><strong>Services</strong><span>Review the customer-facing service catalog.</span><partial name="_StaffIcon" model='"queue"' /></a></li>
+            <li><a asp-controller="ServiceManagement" asp-action="Index"><strong>Services</strong><span>Review the customer-facing service catalog.</span><partial name="_StaffIcon" model='"queue"' /></a></li>
         }
     </ul>
 </section>

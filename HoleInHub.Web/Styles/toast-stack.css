@@ -25,7 +25,7 @@
 .toast-action .staff-icon {width:15px;height:15px}
 .toast-dismiss .staff-icon {margin-block-start:1px;color:var(--toast-accent)}
 .toast-dismiss strong {display:block;font-size:.84rem;line-height:1.35;overflow-wrap:anywhere}
-.toast-message {display:block;font-size:.76rem;line-height:1.45;color:var(--color-muted);margin-block-start:3px;overflow-wrap:anywhere}
+.toast-card .toast-message {display:block;font-size:.76rem;line-height:1.45;color:var(--color-muted);margin-block-start:3px;overflow-wrap:anywhere}
 .toast-card:has(.toast-action) .toast-dismiss,.toast-seed:has(.toast-action) {padding-inline-end:44px}
 .toast-action {
     position:absolute;inset-block-start:3px;inset-inline-end:5px;display:grid;place-items:center;
@@ -36,8 +36,9 @@
     transform:translateY(calc(6px * var(--toast-depth))) scale(calc(1 - .04 * var(--toast-depth)));
 }
 .toast-stack.is-expanded .toast-cards {
-    display:grid;gap:6px;max-height:65dvh;overflow:auto;overscroll-behavior:contain;padding:3px;
+    display:grid;gap:6px;max-height:65dvh;overflow:auto;overscroll-behavior:contain;scrollbar-width:none;padding:3px;
 }
+.toast-stack.is-expanded .toast-cards::-webkit-scrollbar {display:none}
 .toast-stack-toggle {
     display:inline-flex;align-items:center;gap:4px;min-height:28px;margin-block-start:14px;padding:3px 10px;
     border:1px solid var(--color-line);border-radius:99px;background:var(--color-paper);

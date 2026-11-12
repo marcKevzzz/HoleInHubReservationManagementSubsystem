@@ -88,3 +88,20 @@ test('automatic button mounting waits for DOM readiness and preserves back-forwa
     windowEvents.pagehide({ persisted: false });
     assert.equal(mediaReverts, 1);
 });
+
+test('progress labels rebuild staggered markup and update the accessible name', () => {
+    const attributes = {};
+    const element = () => ({ dataset: {}, children: [], setAttribute() {}, append(child) { this.children.push(child); } });
+    const button = { textContent: 'Save', children: [], querySelector: () => null, matches: () => false,
+        setAttribute(name, value) { attributes[name] = value; }, getAttribute: name => attributes[name],
+        replaceChildren() { this.children = []; }, append(child) { this.children.push(child); }, hasAttribute: () => true };
+    const window = {};
+    vm.runInNewContext(source, { window, document: { readyState: 'loading', addEventListener() {}, createElement: element } });
+    for (const label of ['Adding…', 'Add customer']) {
+        window.HoleInHubButtons.setLabel(button, label);
+        assert.equal(attributes['aria-label'], label);
+        assert.equal(button.children.length, 1);
+        assert.equal(button.children[0].children.length, 2);
+        assert.equal(button.children[0].children[0].children.length, label.length);
+    }
+});

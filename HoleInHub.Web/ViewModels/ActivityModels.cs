@@ -24,5 +24,8 @@ public sealed class ActivityQuery
         ["asOf"] = reset ? null : AsOf?.ToString("O")
     });
 }
-public sealed record ActivityListModel(ActivityQuery Query, ActivityPage? Page, bool IncludeAccess, string? Error = null);
+public sealed record ActivityListModel(ActivityQuery Query, ActivityPage? Page, bool IncludeAccess, string? Error = null)
+{
+    public bool Embedded { get; init; }
+}
 public sealed record ActivityDetailModel(ActivityEntry Entry, string BackUrl, string? TargetUrl, string TargetAction);

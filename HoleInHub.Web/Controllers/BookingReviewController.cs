@@ -22,16 +22,35 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
 
     [HttpPost("/staff/reservations/{id}/move"), ValidateAntiForgeryToken]
     public async Task<IActionResult> Move(string id, long? revision, string commandId, DateOnly? date, TimeOnly? startTime,
-        string? resourceId, string? sourceResourceId, CancellationToken ct)
+        string? resourceId, string? sourceResourceId, CancellationToken ct, bool confirmVipUpgrade = false)
     {
         var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(actor)) { return Forbid(); }
         if (!ModelState.IsValid || revision is null || date is null || startTime is null) { return BadRequest(new { error = "Reload the schedule and choose a valid time." }); }
         try
         {
-            await reservations.MoveStaffBookingAsync(id, revision.Value, commandId, date.Value, startTime.Value, actor, ct, resourceId, sourceResourceId);
-            new ToastNotice("success", "Booking moved", date.Value.ToString("d MMM") + " at " + startTime.Value.ToString("h:mm tt"),
+            await reservations.MoveStaffBookingAsync(id, revision.Value, commandId, date.Value, startTime.Value, actor, ct, resourceId, sourceResourceId, confirmVipUpgrade);
+            new ToastNotice("success", confirmVipUpgrade ? "Booking upgraded to VIP" : "Booking moved", date.Value.ToString("d MMM") + " at " + startTime.Value.ToString("h:mm tt"),
                 Url.Action(nameof(Details), new { id, date = date.Value.ToString("yyyy-MM-dd") }), "View booking").Store(TempData);
+            return Json(new { redirect = Url.Action(nameof(Index), new { date = date.Value.ToString("yyyy-MM-dd") }) });
+        }
+        catch (ReservationValidationException error) { return Conflict(new { error = error.Message }); }
+    }
+
+    [HttpPost("/staff/reservations/batch-move"), ValidateAntiForgeryToken]
+    public async Task<IActionResult> BatchMove(List<StaffBatchMoveItem> bookings, string commandId, DateOnly? date,
+        int offsetMinutes, CancellationToken ct)
+    {
+        var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(actor)) { return Forbid(); }
+        if (!ModelState.IsValid || date is null)
+        {
+            return BadRequest(new { error = "Reload the schedule and choose a valid time." });
+        }
+        try
+        {
+            await reservations.MoveStaffBatchAsync(bookings, commandId, date.Value, offsetMinutes, actor, ct);
+            new ToastNotice("success", "Bookings moved", $"{bookings.Count} reservations moved together.").Store(TempData);
             return Json(new { redirect = Url.Action(nameof(Index), new { date = date.Value.ToString("yyyy-MM-dd") }) });
         }
         catch (ReservationValidationException error) { return Conflict(new { error = error.Message }); }
@@ -44,10 +63,10 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
         var validDate = TryScheduleDate(date, out var selected);
         var day = validDate ? selected : today;
         var dateError = date is not null && !validDate ? "Choose a valid date. Showing today’s schedule." : null;
+        if (dateError is not null) { new ToastNotice("warning", "Invalid date", dateError).Store(TempData); }
         var lookup = await LookupBookingsAsync(day, reference, ct);
 
         await reservations.ProcessPendingAsync(ct);
-        ViewData["PendingReviews"] = await reservations.GetPendingReviewCountAsync(ct);
         var bays = await reservations.GetStaffScheduleAsync(day, ct);
         var bookable = bays.Where(bay => bay.Active && bay.Service is ("Regular" or "VIP"))
             .Select(bay => new ResourceDto(bay.Id, bay.Name, bay.Service)).ToArray();
@@ -110,9 +129,10 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
         {
             try
             {
-                var request = new StaffBookingRequest(form.ResourceId, form.Date!.Value, form.StartTime!.Value,
+                var bays = form.ResourceIds.Length > 0 ? form.ResourceIds : [form.ResourceId ?? ""];
+                var request = new StaffBookingRequest(bays[0], form.Date!.Value, form.StartTime!.Value,
                     form.DurationMinutes, form.FirstName, form.LastName, form.Phone, form.Attendees, form.Source, form.IdempotencyKey)
-                { CustomerProfileId = form.CustomerProfileId };
+                { CustomerProfileId = form.CustomerProfileId, AdditionalResourceIds = bays.Length > 1 ? bays[1..] : null };
                 var saved = await reservations.CreateStaffBookingAsync(request, actor, ct);
                 var date = form.Date.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
                 new ToastNotice("success", "Booking confirmed", saved.Reference,
@@ -126,7 +146,7 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
             catch (ReservationValidationException invalid) { error = invalid.Message; }
         }
 
-        error ??= "Check the booking date, time, guest details, and party size.";
+        error ??= "Check the selected bays, date, time, guest details, and party size.";
         if (Request.Headers.Accept == "application/json")
         {
             return UnprocessableEntity(new { error });
@@ -254,7 +274,6 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
         }
         if (section is not null && !StaffReviewQueue.Sections.Any(page => page.Key == section)) { return NotFound(); }
         var queue = await LoadQueueAsync(section, day, sort, ct);
-        ViewData["PendingReviews"] = await reservations.GetPendingReviewCountAsync(ct);
         return View(queue);
     }
 
@@ -290,7 +309,6 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
         var position = ids.IndexOf(id);
         var startDay = DateOnly.FromDateTime(StaffReviewQueue.Local(context.Booking.StartUtc));
         var bays = await reservations.GetStaffScheduleAsync(startDay, ct);
-        ViewData["PendingReviews"] = await reservations.GetPendingReviewCountAsync(ct);
         return View(new StaffReviewDetail(context, queue, bays.Where(bay => context.Booking.ResourceIds.Contains(bay.Id)).ToArray(), fromQueue, date,
             position > 0 ? ids[position - 1] : null, position + 1 < ids.Count ? ids[position + 1] : null));
     }

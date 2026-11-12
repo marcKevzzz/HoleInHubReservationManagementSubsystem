@@ -86,7 +86,7 @@
         }
     }, { passive: false });
     scroller.addEventListener('pointerdown', event => {
-        if (page.dataset.moving || event.pointerType !== 'mouse' || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey
+        if (event.defaultPrevented || page.dataset.moving || event.pointerType !== 'mouse' || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey
             || (page.dataset.customerProfileId && event.target.closest('[data-create-bay]'))
             || event.target.closest('a,button,input,select,.staff-timeline-label')) return;
         event.preventDefault();

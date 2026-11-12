@@ -6,7 +6,7 @@ const vm = require('node:vm');
 function mount(popover = false) {
     const formEvents = {}, inputEvents = {}, timers = new Map(), requests = [];
     const input = { value: '', setAttribute() {}, addEventListener: (type, callback) => { inputEvents[type] = callback; } };
-    const results = { innerHTML: '', replaceChildren() { this.innerHTML = ''; }, setAttribute() {}, removeAttribute() {} };
+    const results = { querySelector: () => null, innerHTML: '', replaceChildren() { this.innerHTML = ''; }, setAttribute() {}, removeAttribute() {} };
     let open = false, shows = 0;
     if (popover) Object.assign(results, {
         style: {}, addEventListener() {}, matches() { return open; },

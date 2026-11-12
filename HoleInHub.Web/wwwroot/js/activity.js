@@ -89,7 +89,6 @@
     function setListPending(pending, tab) {
         if (pending) results().setAttribute('aria-busy', 'true');
         else results().removeAttribute('aria-busy');
-        categories?.classList.toggle('is-loading', pending);
         categories?.querySelector('[data-activity-pending]')?.removeAttribute('data-activity-pending');
         tab?.setAttribute('data-activity-pending', '');
     }
@@ -132,17 +131,7 @@
         announce('');
         detailRequest?.abort();
         const request = detailRequest = new AbortController();
-        const message = document.createElement('p');
-        message.className = 'activity-panel-feedback';
-        message.setAttribute('aria-label', 'Loading event');
-        message.classList.add('activity-loading');
-        message.setAttribute('role', 'status');
-        message.textContent = 'Loading activity…';
-        const skeleton = document.createElement('div');
-        skeleton.className = 'activity-panel-skeleton';
-        skeleton.setAttribute('aria-hidden', 'true');
-        for (let index = 0; index < 5; index++) skeleton.append(document.createElement('span'));
-        body.replaceChildren(message, skeleton);
+        const { message, skeleton } = window.HoleInHubPanels.loading(body, 'Loading activity…');
         body.scrollTop = 0;
         if (!panel.open) panel.showModal();
         body.setAttribute('aria-busy', 'true');
@@ -152,13 +141,14 @@
             const content = await fragment(url, 'panel', '[data-activity-event-content]', request);
             if (request !== detailRequest || !panel.open) return;
             body.replaceChildren(content);
-            content.querySelector('h2')?.focus();
+            window.HoleInHubButtons?.mount(content);
+            content.querySelector('h2')?.focus({ preventScroll: true });
             if (!reducedMotion.matches) {
                 content.animate([{ opacity: .6, transform: 'translateX(8px)' }, { opacity: 1, transform: 'translateX(0)' }], { duration: 180, easing: 'ease-out' });
             }
         } catch {
             if (request !== detailRequest || !panel.open) return;
-            message.classList.remove('activity-loading');
+            message.classList.remove('sr-only');
             message.removeAttribute('aria-label');
             skeleton.remove();
             message.textContent = 'Activity unavailable or your session expired. ';

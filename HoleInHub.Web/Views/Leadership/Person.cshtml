@@ -30,7 +30,7 @@
         </div>
         <div class="people-signin">
             <h2>Sign-in</h2>
-            <span>@(ViewData["UsesPin"] is true ? (ViewData["HasPin"] is true ? "PIN ready" : "PIN setup needed") : "Email and password")</span>
+            <span class="people-pill">@(ViewData["UsesPin"] is true ? (ViewData["HasPin"] is true ? "PIN ready" : "PIN setup needed") : "Email and password")</span>
             @if (ViewData["CanResetPin"] is true)
             {
                 <form id="staff-pin-reset-form" asp-action="ResetPin" asp-route-id="@account.Id" method="post" data-reason-form>
@@ -50,17 +50,13 @@
             }
         </div>
     </section>
-    @if (ownAccount)
-    {
-        <p class="people-account-note">@(User.IsInRole(StaffRoles.Admin) ? "Another administrator manages changes to your staff access." : "An administrator manages changes to your staff access.")</p>
-    }
 
     @if (ViewData["MemberActivity"] is ActivityListModel memberActivity)
     {
         <section class="member-activity activity-page" data-activity-page data-activity-return-url="@(Context.Request.Path + Context.Request.QueryString)" aria-labelledby="member-activity-heading">
             <header class="staff-workspace-heading"><h2 id="member-activity-heading">Activity</h2><a class="staff-hover-link" href="@memberActivity.Query.Url(reset: true)">View all activity</a></header>
             <p class="activity-feedback" data-activity-status role="status" hidden></p>
-            <partial name="~/Views/Activity/_Results.cshtml" model="memberActivity" />
+            <partial name="~/Views/Activity/_Results.cshtml" model="@(memberActivity with { Embedded = true })" />
             <partial name="~/Views/Activity/_Panel.cshtml" />
         </section>
     }

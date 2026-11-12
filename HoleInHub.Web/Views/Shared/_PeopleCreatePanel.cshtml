@@ -1,5 +1,5 @@
 @model string
-<dialog class="people-create-panel" data-people-create-panel aria-labelledby="people-create-title">
-    <header><h2 id="people-create-title">@Model</h2><button type="button" class="staff-icon-button" data-people-create-close aria-label="Close @Model.ToLowerInvariant()"><partial name="_StaffIcon" model='"close"' /></button></header>
-    <div class="people-create-body" data-people-create-body></div>
+<dialog class="people-create-panel staff-side-panel" data-people-create-panel aria-labelledby="people-create-title">
+    <header><h2 class="staff-panel-heading" id="people-create-title">@Model</h2><button type="button" class="staff-icon-button" data-people-create-close aria-label="Close @Model.ToLowerInvariant()"><partial name="_StaffIcon" model='"close"' /></button></header>
+    <div class="people-create-body staff-panel-body" data-people-create-body></div>
 </dialog>

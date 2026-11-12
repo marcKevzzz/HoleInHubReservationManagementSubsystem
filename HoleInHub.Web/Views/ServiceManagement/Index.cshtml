@@ -1,0 +1,44 @@
+@using HoleInHub.Business.Services
+@model IReadOnlyList<ServiceEdit>
+@{ Layout = "_StaffLayout"; ViewData["Title"] = "Services"; }
+<section class="staff-workspace service-admin">
+    <header class="staff-workspace-heading service-admin-heading">
+        <div><h1>Services</h1></div>
+        <div class="service-admin-actions"><a class="button" asp-action="Create">Add service</a></div>
+    </header>
+    @if (Model.Count == 0)
+    {
+        <partial name="_StaffEmptyState" model='("queue", "No services yet", "Add an offering for customers to explore.", (string?)null, (string?)null)' />
+    }
+    else
+    {
+        <form asp-action="Reorder" method="post" data-service-reorder hidden></form>
+        <div class="service-admin-list" data-service-list>
+        @{ var position = 0; }
+        @foreach (var item in Model)
+        {
+            <article class="service-admin-row" data-service-id="@item.Id" data-revision="@item.Revision">
+                <button class="service-row-grip" type="button" data-drag-handle aria-label="@($"Reorder {item.Title}")" title="Drag to reorder · Alt + Up or Down"><span data-service-position>@((++position).ToString("D2"))</span><partial name="_StaffIcon" model='"grip"' /></button>
+                <a class="service-admin-cover" asp-action="Edit" asp-route-id="@item.Id" aria-label="@($"Edit {item.Title}")"><img src="@item.Images.FirstOrDefault()" alt="" loading="lazy" width="240" height="180" /></a>
+                <div class="service-admin-copy"><div class="service-admin-title"><a class="staff-hover-link" asp-action="Edit" asp-route-id="@item.Id">@item.Title</a><span class="people-pill">@(item.Active ? "Active" : "Inactive")</span></div><p>@item.Summary</p><span class="service-admin-rate">@item.RateText</span><small>@(item.DepositType == "None" ? "No deposit" : ServiceCatalog.FormatDeposit(item.DepositType, item.DepositValue)) · @item.Images.Length @(item.Images.Length == 1 ? "image" : "images")</small></div>
+                <div class="service-admin-row-actions">
+                    <a class="service-icon-action" asp-action="Edit" asp-route-id="@item.Id" title="Edit service" aria-label="Edit service"><partial name="_StaffIcon" model='"edit"' /></a>
+                    <form asp-action="State" asp-route-id="@item.Id" method="post" data-service-state data-service-title="@item.Title" data-service-operation="@(item.Active ? "deactivate" : "activate")">
+                        <input type="hidden" name="revision" value="@item.Revision" /><input type="hidden" name="commandId" value="@Guid.NewGuid().ToString("N")" /><input type="hidden" name="operation" value="@(item.Active ? "deactivate" : "activate")" />
+                        <button class="service-icon-action" type="submit" title="@(item.Active ? "Deactivate" : "Activate")" aria-label="@(item.Active ? "Deactivate" : "Activate")"><partial name="_StaffIcon" model='@(item.Active ? "view-off" : "view")' /></button>
+                    </form>
+                    <form asp-action="State" asp-route-id="@item.Id" method="post" data-service-state data-service-title="@item.Title" data-service-operation="delete">
+                        <input type="hidden" name="revision" value="@item.Revision" /><input type="hidden" name="commandId" value="@Guid.NewGuid().ToString("N")" /><input type="hidden" name="operation" value="delete" />
+                        <button class="service-icon-action service-icon-danger" type="submit" title="Delete service" aria-label="Delete service"><partial name="_StaffIcon" model='"trash"' /></button>
+                    </form>
+                </div>
+            </article>
+        }
+        </div>
+    }
+    <dialog class="logout-confirmation" data-service-confirm aria-labelledby="service-confirm-title">
+        <h2 id="service-confirm-title"></h2><p data-service-confirm-description></p>
+        <div class="logout-actions"><button class="button button-tertiary" type="button" data-service-cancel autofocus>Cancel</button><button class="button" type="button" data-service-commit>Confirm</button></div>
+    </dialog>
+</section>
+@section Scripts { <script src="~/js/service-admin.js" asp-append-version="true"></script> }

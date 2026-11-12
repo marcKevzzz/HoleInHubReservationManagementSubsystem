@@ -2,7 +2,7 @@
 (() => {
     const active = new WeakMap();
     const mounted = new WeakMap();
-    const selector = '.button, .flow-back';
+    const selector = '.button, .flow-back, button.staff-hover-link';
 
     function prepare(button, left = false) {
         if (button.querySelector('[data-button-label]')) return;
@@ -27,7 +27,7 @@
             label.append(row);
         }
         button.append(label);
-        if (button.hasAttribute('data-no-icon')) return;
+        if (button.hasAttribute('data-no-icon') && !button.closest?.('.staff-shell')) return;
         const icon = document.createElement('span');
         icon.className = left ? 'button-icon button-icon-left' : 'button-icon';
         icon.setAttribute('aria-hidden', 'true');
@@ -128,7 +128,14 @@
         return dispose;
     }
 
-    window.HoleInHubButtons = { prepare, animate, mount };
+    function setLabel(button, text) {
+        active.get(button)?.();
+        button.textContent = text;
+        button.setAttribute('aria-label', text);
+        prepare(button, button.matches('.flow-back, [data-icon-left]'));
+        animate(button);
+    }
+    window.HoleInHubButtons = { prepare, animate, mount, setLabel };
     function start() {
         const dispose = mount(document);
         window.addEventListener('pagehide', event => { if (!event.persisted) dispose(); });

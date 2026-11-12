@@ -1,14 +1,14 @@
 @using HoleInHub.Business.Accounts
 @model TeamMemberForm
 <div data-people-create-content>
-<p class="people-account-note">They receive an email to verify their address and choose a password.</p>
+<div class="people-create-intro"><partial name="_StaffIcon" model='"roles"' /><p class="people-account-note">They receive an email to verify their address and choose a password.</p></div>
 <form asp-controller="TeamMembers" asp-action="Create" method="post" data-person-create-form class="staff-create-form people-create-form">
         <div asp-validation-summary="All" class="staff-error" role="alert"></div>
         <input asp-for="CommandId" type="hidden" />
-        <div class="people-form-names"><div><label asp-for="FirstName">First name</label><input asp-for="FirstName" autocomplete="given-name" required maxlength="100" /></div><div><label asp-for="LastName">Last name</label><input asp-for="LastName" autocomplete="family-name" required maxlength="100" /></div></div>
-        <div><label asp-for="Email">Work email</label><input asp-for="Email" type="email" autocomplete="email" required maxlength="254" /></div>
-        <div><label asp-for="Phone">Contact number</label><input asp-for="Phone" type="tel" inputmode="numeric" autocomplete="tel" pattern="[0-9]{7,15}" required maxlength="15" /></div>
-        <div><label asp-for="Role">Role</label><select asp-for="Role">@foreach (var role in StaffRoles.Workspace.Where(role => StaffRoles.CanCreate(User.IsInRole(StaffRoles.Admin) ? StaffRoles.Admin : StaffRoles.Manager, role))) { <option value="@role">@role</option> }</select></div>
+        <div class="people-form-names"><div class="auth-input-wrap"><input asp-for="FirstName" autocomplete="given-name" required maxlength="100" placeholder=" " /><label asp-for="FirstName">First name</label></div><div class="auth-input-wrap"><input asp-for="LastName" autocomplete="family-name" required maxlength="100" placeholder=" " /><label asp-for="LastName">Last name</label></div></div>
+        <div class="auth-input-wrap"><input asp-for="Email" type="email" autocomplete="email" required maxlength="254" placeholder=" " /><label asp-for="Email">Work email</label></div>
+        <div class="auth-input-wrap"><input asp-for="Phone" type="tel" inputmode="numeric" autocomplete="tel" pattern="[0-9]{7,15}" required maxlength="15" placeholder=" " /><label asp-for="Phone">Contact number</label></div>
+        <div class="people-access-field"><label asp-for="Role">Role</label><select asp-for="Role">@foreach (var role in StaffRoles.Workspace.Where(role => StaffRoles.CanCreate(User.IsInRole(StaffRoles.Admin) ? StaffRoles.Admin : StaffRoles.Manager, role))) { <option value="@role">@role</option> }</select></div>
         <button class="button" type="submit">Add team member</button>
     </form>
 </div>

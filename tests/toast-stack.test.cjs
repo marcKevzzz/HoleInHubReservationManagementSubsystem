@@ -33,22 +33,25 @@ test('toast stack keeps the newest card in front and expands, dismisses, and res
     const fs = require('node:fs');
     const makeNode = () => ({
         children: [], listeners: {}, attributes: {}, dataset: {}, style: { setProperty() {} },
-        classList: { toggle() {} }, append(...children) { children.forEach(child => { child.parent = this; this.children.push(child); }); },
+        classList: { toggle() {} }, append(...children) { children.forEach(child => { child.parent = this; child.parentElement = this; this.children.push(child); }); },
         prepend(child) { child.parent = this; this.children.unshift(child); },
         remove() { this.parent.children.splice(this.parent.children.indexOf(this), 1); },
         contains(node) { return this === node || this.children.some(child => child.contains(node)); },
         addEventListener(name, handler) { this.listeners[name] = handler; },
         setAttribute(name, value) { this.attributes[name] = value; },
     });
+    const home = makeNode();
+    let modal = null;
     const host = makeNode(), cards = makeNode(), toggle = makeNode(), count = makeNode();
     const status = makeNode(), alert = makeNode(), icon = { content: { cloneNode: makeNode } };
+    home.append(host);
     host.append(cards, toggle, count, status, alert);
     host.querySelector = selector => ({
         '[data-toast-cards]': cards, '[data-toast-toggle]': toggle, '[data-toast-count]': count,
         '[data-toast-status]': status, '[data-toast-alert]': alert, '[data-toast-action-icon]': icon
     }[selector] || (selector.startsWith('[data-toast-icon=') ? icon : null));
     const window = {};
-    const document = { querySelector: () => host, createElement: makeNode, addEventListener() {}, activeElement: null };
+    const document = { querySelector: selector => selector === 'dialog[open]' ? modal : host, createElement: makeNode, addEventListener() {}, activeElement: null };
     let nextId = 0;
     const pending = new Map();
     vm.runInNewContext(fs.readFileSync(require.resolve('../HoleInHub.Web/wwwroot/js/toast-stack.js'), 'utf8'), {
@@ -90,4 +93,22 @@ test('toast stack keeps the newest card in front and expands, dismisses, and res
     pending.get(1).callback();
     assert.equal(cards.children[0].children[0].attributes['aria-label'], 'Dismiss notification: Another error');
     assert.equal(pending.size, 0);
+    const selection = { kind: 'info', replaceKey: 'timeline-selection', durationMs: 2500 };
+    const countBeforeSelection = cards.children.length;
+    window.HoleInHubToasts.show({ ...selection, title: '1 bay selected' });
+    window.HoleInHubToasts.show({ ...selection, title: '2 bays selected' });
+    assert.equal(cards.children.length, countBeforeSelection + 1);
+    assert.equal(cards.children[0].children[0].attributes['aria-label'], 'Dismiss notification: 2 bays selected');
+    assert.equal(cards.children[1].children[0].attributes['aria-label'], 'Dismiss notification: Another error');
+    assert.equal(pending.size, 1);
+    const selectionTimer = [...pending.values()][0];
+    assert.equal(selectionTimer.delay, 2500);
+    selectionTimer.callback();
+    assert.equal(cards.children.length, countBeforeSelection);
+
+    modal = makeNode();
+    window.HoleInHubToasts.show({ kind: 'error', title: 'Move blocked' });
+    assert.equal(host.parentElement, modal, 'notifications must be inside the active modal to remain interactive');
+    modal.listeners.close();
+    assert.equal(host.parentElement, home, 'closing the modal restores the global notification host');
 });

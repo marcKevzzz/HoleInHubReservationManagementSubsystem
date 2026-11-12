@@ -1,0 +1,13 @@
+@model HoleInHub.Business.Settings.SettingsEdit
+@{ViewData["Title"]="Venue policies";}
+<section class="container venue-policies">
+    <h1>@(Model?.VenueName ?? "Venue policies")</h1>
+    @if(Model is null){<p>Venue policies are not published yet. Contact the front desk for current terms.</p>}
+    else{
+        <h2 id="booking">Booking &amp; cancellation</h2><p>@Model.BookingPolicy</p>
+        <h2 id="privacy">Privacy</h2><p>@Model.PrivacyPolicy</p>
+        <h2 id="rules">Venue rules</h2><p>@Model.VenueRules</p>
+        @if(!string.IsNullOrWhiteSpace(Model.ContactEmail)){<p>Email: <a href="mailto:@Model.ContactEmail">@Model.ContactEmail</a></p>}
+        @if(!string.IsNullOrWhiteSpace(Model.ContactPhone)){<p>Phone: @Model.ContactPhone</p>}
+    }
+</section>

@@ -7,6 +7,7 @@
 
     function mount(content) {
         body.replaceChildren(content);
+        window.HoleInHubButtons?.mount(content);
         content.querySelector('.validation-summary-errors')?.setAttribute('tabindex', '-1');
         (content.querySelector('.validation-summary-errors') || content.querySelector('input:not([type="hidden"])'))?.focus({ preventScroll: true });
     }
@@ -34,19 +35,15 @@
         source = link.href;
         request?.abort();
         const current = request = new AbortController();
-        const message = document.createElement('p');
-        message.className = 'activity-loading';
-        message.setAttribute('role', 'status');
-        message.textContent = 'Loading form…';
-        body.replaceChildren(message);
-        body.setAttribute('aria-busy', 'true');
+        const { message, skeleton } = window.HoleInHubPanels.loading(body, 'Loading form…');
         const timeout = setTimeout(() => current.abort(), 15000);
         try {
             const content = await read(await fetch(source, { headers: { 'X-People-Panel': 'true' }, signal: current.signal, cache: 'no-store', redirect: 'error' }));
             if (request === current && panel.open) mount(content);
         } catch {
             if (request !== current || !panel.open) return;
-            message.classList.remove('activity-loading');
+            skeleton.remove();
+            message.classList.remove('sr-only');
             message.textContent = 'Could not load the form. ';
             const fallback = document.createElement('a');
             fallback.href = source;
@@ -65,8 +62,9 @@
         const data = new FormData(form);
         const controls = [...form.elements].map(control => [control, control.disabled]);
         const button = form.querySelector('button[type="submit"]');
-        const label = button.textContent;
-        button.textContent = 'Adding…';
+        const label = button.getAttribute?.('aria-label') || button.textContent;
+        const setLabel = text => window.HoleInHubButtons ? window.HoleInHubButtons.setLabel(button, text) : button.textContent = text;
+        setLabel('Adding…');
         const submission = new AbortController();
         const timeout = setTimeout(() => submission.abort(), 20000);
         saving = true;
@@ -93,7 +91,7 @@
             form.prepend(error);
         } finally {
             clearTimeout(timeout);
-            button.textContent = label;
+            setLabel(label);
             saving = false;
             close.disabled = false;
             controls.forEach(([control, disabled]) => { control.disabled = disabled; });

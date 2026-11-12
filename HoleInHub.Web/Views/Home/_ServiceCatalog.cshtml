@@ -6,12 +6,25 @@
 @foreach (var item in Model)
 {
     <article class="service-entry">
-        <img src="@item.ImagePath" alt="@item.Title at Hole In Hub" loading="lazy" width="960" height="640" data-motion="reveal" />
+        <div class="service-gallery" data-service-gallery data-motion="reveal">
+            <div class="service-gallery-track" tabindex="0" role="region" aria-label="@($"{item.Title} photos")">
+                @foreach (var path in item.Images.Length > 0 ? item.Images : new[] { item.ImagePath })
+                {
+                    <img src="@path" alt="@item.Title at Hole In Hub" loading="lazy" width="960" height="640" />
+                }
+            </div>
+            @if (item.Images.Length > 1)
+            {
+                <div class="service-gallery-controls"><span>@item.Images.Length photos</span><div><button type="button" data-gallery-direction="-1" aria-label="@($"Previous photo of {item.Title}")"><partial name="_StaffIcon" model='"arrow-left"' /></button><button type="button" data-gallery-direction="1" aria-label="@($"Next photo of {item.Title}")"><partial name="_StaffIcon" model='"arrow-right"' /></button></div></div>
+            }
+        </div>
         <div class="service-entry-copy" data-motion="reveal">
             <h2>@item.Title</h2>
+            @if (item.MaxPax.HasValue) { <p class="service-entry-capacity">Up to @item.MaxPax guests</p> }
             <p class="service-entry-summary">@item.Summary</p>
             <p class="service-entry-rate">@item.RateText <span>Indicative rate</span></p>
             <p class="service-entry-details">@item.Details</p>
+            @if (!string.IsNullOrEmpty(item.DepositText)) { <p class="service-entry-deposit">@item.DepositText · arranged with the venue</p> }
             <a class="button" href="@item.ActionUrl">@item.ActionLabel <span aria-hidden="true">→</span></a>
         </div>
     </article>

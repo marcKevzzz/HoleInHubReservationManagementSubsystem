@@ -16,10 +16,10 @@ test('edge drag clips the floating booking and updates the preview date before c
     const bar = { style: style(), dataset: { moveBooking: '/move', startMinute: '720', duration: '90', revision: '1' }, classList: classes,
         closest: selector => selector === '[data-move-booking]' ? bar : source, setAttribute() {}, title: '', focus() {},
         cloneNode() { return { style: style(), classList: classes, removeAttribute() {}, setAttribute() {}, remove() {} }; } };
-    const submit = { innerHTML: 'Continue <svg></svg>' };
-    const form = node({ elements: Object.fromEntries(['revision','commandId','date','startTime','resourceId','sourceResourceId'].map(k => [k, {}])), querySelector: () => submit });
+    const submit = { querySelector: () => ({}) };
+    const form = node({ elements: Object.fromEntries(['revision','commandId','date','startTime','resourceId','sourceResourceId','confirmVipUpgrade'].map(k => [k, node({})])), querySelector: () => submit });
     const undo = node({}), description = {}, error = {}, dragError = {};
-    const dialog = node({ open: false, showModal() { this.open = true; }, querySelector: s => ({ '[data-move-form]': form, '[data-move-undo]': undo, '[data-move-description]': description, '[data-move-error]': error }[s]) });
+    const dialog = node({ open: false, showModal() { this.open = true; }, querySelector: s => ({ 'h2': {}, '[data-upgrade-consent]': {}, '[data-move-form]': form, '[data-move-undo]': undo, '[data-move-description]': description, '[data-move-error]': error }[s]) });
     let scroll = 0;
     const scroller = { get scrollLeft() { return scroll; }, set scrollLeft(_) { scroll = 0; }, getBoundingClientRect: () => ({ left: 0, right: 900, top: 50, bottom: 600 }) };
     let active = source;

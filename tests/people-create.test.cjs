@@ -46,6 +46,7 @@ test('creation drawer locks dismissal during save, reuses its command and naviga
             return new Promise(resolve => { resolveSave = resolve; });
         },
     };
+    vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../HoleInHub.Web/wwwroot/js/staff-panel.js'), 'utf8'), context);
     vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../HoleInHub.Web/wwwroot/js/people-create.js'), 'utf8'), context);
     await handlers.click({ target: { closest: () => link }, preventDefault() {} });
     assert.equal(panel.open, true);

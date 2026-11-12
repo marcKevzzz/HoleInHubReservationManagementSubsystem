@@ -15,7 +15,6 @@ public sealed class CustomersController(ReservationService reservations, Custome
     [HttpGet("")]
     public async Task<IActionResult> Index(string? search, int page = 1, CancellationToken ct = default)
     {
-        ViewData["PendingReviews"] = await reservations.GetPendingReviewCountAsync(ct);
         ViewData["CustomerMergeReady"] = await profiles.InstalledAsync(ct);
         var term = search?.Trim() ?? "";
         if (term.Length == 1)
@@ -60,7 +59,6 @@ public sealed class CustomersController(ReservationService reservations, Custome
     {
         var customer = await reservations.GetCustomerProfileAsync(id, view == "upcoming", page, ct);
         if (customer is null) { return NotFound(); }
-        ViewData["PendingReviews"] = await reservations.GetPendingReviewCountAsync(ct);
         ViewData["CustomerProfile"] = await profiles.GetAsync(id, ct);
         return View(customer);
     }

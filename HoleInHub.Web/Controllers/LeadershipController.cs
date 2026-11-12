@@ -7,14 +7,13 @@ using HoleInHub.Web.Accounts;
 using HoleInHubReservationManagementSubsystem.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 
 namespace HoleInHubReservationManagementSubsystem.Controllers;
 
 [Authorize(Policy = StaffAuthorization.Workspace)]
 [AutoValidateAntiforgeryToken, ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class LeadershipController(ReservationService reservations, AccountService accounts,
-    IServiceCatalog services, IOptions<ReservationPolicy> policy, TimeProvider clock, StaffPinAccess staffAccess, ActivityService activity, StaffPinService pins) : Controller
+    TimeProvider clock, StaffPinAccess staffAccess, ActivityService activity, StaffPinService pins) : Controller
 {
     private DateOnly Today => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(clock.GetUtcNow(), ReservationRules.Manila).DateTime);
 
@@ -226,12 +225,12 @@ public sealed class LeadershipController(ReservationService reservations, Accoun
         }
     }
 
-    [Authorize(Roles = StaffRoles.Admin), HttpGet("/admin/services")]
-    public async Task<IActionResult> Services(CancellationToken ct) => View(await services.GetActiveAsync(ct));
+    [Authorize(Roles = StaffRoles.Admin), HttpGet("/Leadership/Services")]
+    public IActionResult Services() => RedirectToAction("Index", "ServiceManagement");
 
     [Authorize(Roles = StaffRoles.Admin), HttpGet("/admin/settings")]
-    public IActionResult AdminSettings() => RedirectToAction(nameof(Settings));
+    public IActionResult AdminSettings() => RedirectToAction("Index", "Settings");
 
-    [Authorize(Roles = StaffRoles.VenueManagement), HttpGet("/staff/settings")]
-    public IActionResult Settings() => View(policy.Value);
+    [Authorize(Roles = StaffRoles.VenueManagement), HttpGet("/Leadership/Settings")]
+    public IActionResult Settings() => RedirectToAction("Index", "Settings");
 }
