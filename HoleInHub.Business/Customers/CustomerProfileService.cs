@@ -7,11 +7,33 @@ namespace HoleInHub.Business.Customers;
 public sealed class CustomerProfileService(CustomerProfilePersistence persistence, TimeProvider clock)
 {
     public const int MaximumMergeBookings = CustomerProfilePersistence.MaximumMergeBookings;
+    public async Task<string> CreateAsync(string commandId, string firstName, string lastName, string email, string phone, string actorId, CancellationToken ct)
+    {
+        if (!Guid.TryParseExact(commandId, "N", out _) || string.IsNullOrWhiteSpace(actorId)
+            || !HoleInHub.Business.Accounts.ContactRules.IsName(firstName) || !HoleInHub.Business.Accounts.ContactRules.IsName(lastName)
+            || !HoleInHub.Business.Accounts.ContactRules.IsPhone(phone)
+            || email.Length > 254 || email.Length > 0 && (!System.Net.Mail.MailAddress.TryCreate(email, out var address) || address.Address != email))
+        { throw new ReservationValidationException("Enter a valid name, contact number and optional email address."); }
+        if (!await persistence.InstalledAsync(ct)) { throw new ReservationValidationException("Apply the customer-profile database update before adding contacts."); }
+        var now = clock.GetUtcNow().UtcDateTime;
+        var id = "cp_" + Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes("manual:" + actorId + ":" + commandId)));
+        var profile = new CustomerProfileRecord
+        {
+            Id = id, FirstName = firstName.Trim(), LastName = lastName.Trim(), Email = email.Trim(), Phone = phone,
+            Kind = "Manual", CreatedBy = actorId, Sources = ["Manual"], CreatedUtc = now, UpdatedUtc = now,
+            LastChangeOperationId = "created:" + actorId,
+            Variants = [new(firstName.Trim(), lastName.Trim(), email.Trim(), phone, "", now)]
+        };
+        try { await persistence.CreateContactAsync(profile, ct); }
+        catch (CustomerProfileConflictException error) { throw new ReservationValidationException(error.Message); }
+        return id;
+    }
+
     public Task<bool> InstalledAsync(CancellationToken ct) => persistence.InstalledAsync(ct);
     private static CustomerProfile Map(CustomerProfileSnapshot snapshot)
     {
         var p = snapshot.Profile;
-        return new(p.Id, p.RepresentativeBookingId, p.FirstName, p.LastName, p.Email, p.Phone, p.Kind,
+        return new(p.Id, p.RepresentativeBookingId.Length == 0 ? p.Id : p.RepresentativeBookingId, p.FirstName, p.LastName, p.Email, p.Phone, p.Kind,
             p.Variants.Select(v => new CustomerContact(v.FirstName, v.LastName, v.Email, v.Phone, v.BookingId, v.RecordedUtc)).ToArray(),
             p.Sources, p.ContactRevision, p.MembershipRevision, snapshot.ReservationIds.Length);
     }
@@ -27,6 +49,7 @@ public sealed class CustomerProfileService(CustomerProfilePersistence persistenc
         var source = await persistence.ReadAsync(sourceKey, ct);
         var target = await persistence.ReadAsync(targetKey, ct);
         if (source is null || target is null) { return null; }
+        if (source.ReservationIds.Length == 0) { throw new ReservationValidationException("Choose a customer with reservations as the source of the merge."); }
         if (source.Profile.Id == target.Profile.Id) { throw new ReservationValidationException("These records already belong to the same customer profile."); }
         var bookings = await persistence.BookingsAsync(source.ReservationIds, ct);
         var sourceDates = await persistence.DateRangeAsync(source.ReservationIds, ct);

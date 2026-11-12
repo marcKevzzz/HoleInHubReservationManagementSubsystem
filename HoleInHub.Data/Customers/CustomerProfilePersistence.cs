@@ -90,6 +90,33 @@ public sealed partial class CustomerProfilePersistence(IMongoDbContext context)
         }
         await Memberships.InsertOneAsync(session, new() { Id = record.Id, ProfileId = profile.Id }, cancellationToken: ct);
     }
+    public async Task CreateContactAsync(CustomerProfileRecord profile, CancellationToken ct)
+    {
+        using var session = await context.Client.StartSessionAsync(cancellationToken: ct);
+        await session.WithTransactionAsync(async (s, token) =>
+        {
+            await GuardAsync(s, token);
+            var prior = await Profiles.Find(s, x => x.Id == profile.Id).FirstOrDefaultAsync(token);
+            if (prior is not null)
+            {
+                if (prior.FirstName != profile.FirstName || prior.LastName != profile.LastName || prior.Phone != profile.Phone || prior.Email != profile.Email)
+                {
+                    throw new CustomerProfileConflictException("This form already added different contact details. Open Add customer again.");
+                }
+                return true;
+            }
+            SetSearchNames(profile);
+            await Profiles.InsertOneAsync(s, profile, cancellationToken: token);
+            return true;
+        }, new TransactionOptions(ReadConcern.Snapshot, writeConcern: WriteConcern.WMajority), ct);
+    }
+
+    private static ReservationRecord ContactWithoutBooking(CustomerProfileRecord profile) => new()
+    {
+        Id = profile.Id, FirstName = profile.FirstName, LastName = profile.LastName, Phone = profile.Phone,
+        Email = profile.Email, CreatedUtc = profile.CreatedUtc, Reference = "No reservations yet"
+    };
+
     public async Task BackfillAsync(CancellationToken ct)
     {
         using var cursor = await Reservations.Find(_ => true).SortBy(x => x.CreatedUtc).ThenBy(x => x.Id).ToCursorAsync(ct);

@@ -64,7 +64,8 @@ public sealed class ActivityController(ActivityService activity, IDataProtection
         try { entry = await activity.GetAsync(key, Access, ct); } catch (UnauthorizedAccessException) { return StatusCode(StatusCodes.Status403Forbidden); } catch (ArgumentException) { return NotFound(); }
         if (entry is null) { return NotFound(); }
         string? target = null; var action = "Open record"; var id = entry.TargetId;
-        if (entry.TargetKind == "reservation" && await reservations.GetStaffReviewAsync(id, ct) is not null) { target = Url.Action("Details", "BookingReview", new { id, date = entry.TargetDate?.ToString("yyyy-MM-dd") }); action = "Open booking"; }
+        if (entry.TargetKind == "reservation" && await reservations.StaffRecordExistsAsync(id, ct)) { target = Url.Action("Details", "BookingReview", new { id, date = entry.TargetDate?.ToString("yyyy-MM-dd") }); action = "Open booking"; }
+        else if (entry.TargetKind == "customer" && await profiles.GetAsync(id, ct) is not null) { target = Url.Action("Details", "Customers", new { id }); action = "View customer"; }
         else if (entry.TargetKind == "customer-merge" && await profiles.GetAsync(id, ct) is not null) { target = Url.Action("MergeHistory", "Customers", new { id }); action = "View merge history"; }
         else if (entry.TargetKind == "account" && User.ManagesVenue() && await accounts.FindByIdAsync(id, ct) is not null) { target = Url.Action("Person", "Leadership", new { id }); action = "View team member"; }
         else if (entry.TargetKind == "schedule" && await reservations.GetScheduleBlockAsync(id, ct) is { } block)

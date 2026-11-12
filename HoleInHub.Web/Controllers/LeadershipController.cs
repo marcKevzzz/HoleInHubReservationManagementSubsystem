@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using HoleInHub.Business.Accounts;
+using HoleInHub.Business.Activity;
 using HoleInHub.Business.Reservations;
 using HoleInHub.Business.Services;
 using HoleInHub.Web.Accounts;
@@ -13,7 +14,7 @@ namespace HoleInHubReservationManagementSubsystem.Controllers;
 [Authorize(Policy = StaffAuthorization.Workspace)]
 [AutoValidateAntiforgeryToken, ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class LeadershipController(ReservationService reservations, AccountService accounts,
-    IServiceCatalog services, IOptions<ReservationPolicy> policy, TimeProvider clock, StaffPinAccess staffAccess) : Controller
+    IServiceCatalog services, IOptions<ReservationPolicy> policy, TimeProvider clock, StaffPinAccess staffAccess, ActivityService activity, StaffPinService pins) : Controller
 {
     private DateOnly Today => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(clock.GetUtcNow(), ReservationRules.Manila).DateTime);
 
@@ -42,6 +43,7 @@ public sealed class LeadershipController(ReservationService reservations, Accoun
     public async Task<IActionResult> People(int page, string? scope, CancellationToken ct)
     {
         var isAdmin = User.IsInRole(StaffRoles.Admin);
+        ViewData["TeamCreation"] = !staffAccess.IsPresentation;
         var role = StaffRoles.Workspace.Contains(scope) ? scope : null;
         ViewData["SelectedRole"] = role ?? "all";
         ViewData["RoleEditing"] = isAdmin && !staffAccess.IsPresentation;
@@ -57,10 +59,37 @@ public sealed class LeadershipController(ReservationService reservations, Accoun
         ViewData["DirectoryPage"] = Math.Clamp(page, 1, 1000);
         ViewData["RoleEditing"] = User.IsInRole(StaffRoles.Admin) && !staffAccess.IsPresentation
             && account.Id != User.FindFirstValue(ClaimTypes.NameIdentifier);
+        ViewData["CanInvite"] = !staffAccess.IsPresentation && account.Roles.Any(role =>
+            StaffRoles.CanCreate(User.IsInRole(StaffRoles.Admin) ? StaffRoles.Admin : StaffRoles.Manager, role));
+        var pinAccount = !account.Roles.Contains(StaffRoles.Admin) && account.Roles.Any(role => role is StaffRoles.Staff or StaffRoles.Manager);
+        ViewData["UsesPin"] = pinAccount;
+        var hasPin = pinAccount && await pins.ReadAsync(id, ct) is not null;
+        ViewData["HasPin"] = hasPin;
+        ViewData["CanResetPin"] = hasPin && User.IsInRole(StaffRoles.Admin) && !staffAccess.IsPresentation
+            && account.Id != User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var activityQuery = new ActivityQuery { Range = "month", From = Today.AddDays(-29), To = Today, Actor = account.Id };
+        var activityPage = await activity.QueryAsync(new(activityQuery.From.Value, activityQuery.To.Value, Actor: account.Id),
+            User.IsInRole(StaffRoles.Admin), User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "", ct);
+        ViewData["MemberActivity"] = new ActivityListModel(activityQuery, activityPage with { NextCursor = null }, User.IsInRole(StaffRoles.Admin));
         var roles = StaffRoles.Workspace.Intersect(account.Roles).ToArray();
         return View(new StaffRoleEditModel(new AccountDirectoryEntry(account.Id, account.Email,
             $"{account.FirstName} {account.LastName}".Trim(), account.Roles, account.EmailConfirmed),
             new StaffRoleForm { Version = account.Version, Role = roles.Length switch { 0 => StaffRoleForm.NoStaffAccess, 1 => roles[0], _ => "" } }));
+    }
+
+    [Authorize(Roles = StaffRoles.Admin), HttpPost("/admin/users/{id}/pin/reset")]
+    public async Task<IActionResult> ResetPin(string id, StaffPinResetForm form, CancellationToken ct)
+    {
+        if (staffAccess.IsPresentation) { return NotFound(); }
+        if (!ModelState.IsValid) { return BadRequest("Enter a reason and reload the account before resetting its PIN."); }
+        var result = await accounts.ResetStaffPinAsync(new(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "",
+            User.FindFirstValue(StaffPinAccess.SecurityStampClaim) ?? "", id, form.Version, form.CommandId, form.Reason), ct);
+        if (result == StaffRoleChangeResult.Forbidden) { return Forbid(StaffPinAccess.Scheme); }
+        if (result == StaffRoleChangeResult.NotFound) { return NotFound(); }
+        new ToastNotice(result == StaffRoleChangeResult.Applied ? "success" : "warning",
+            result == StaffRoleChangeResult.Applied ? "PIN reset" : "PIN could not be reset",
+            result == StaffRoleChangeResult.Applied ? "The team member must set up a new PIN." : "The account changed. Review the latest details and try again.").Store(TempData);
+        return RedirectToAction(nameof(Person), new { id });
     }
 
     [Authorize(Roles = StaffRoles.VenueManagement), HttpGet("/manager/reports")]

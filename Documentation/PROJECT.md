@@ -48,6 +48,14 @@ Multi-bay group appointments and consolidated POS billing are distinct: sequenti
 
 The owner approved these provisional online booking rules on 2026-11-03. Require 30-minute Regular lead time and 60-minute lead time for other online services; no maximum advance-booking limit. Owner update on 2026-11-07 allows submission at any time. Ordinary online Pending holds begin immediately. Their 30/60-minute review clock counts only configured staff coverage within venue operating hours, carries across closing, and must finish by the session start. Whole-shop retains its separate elapsed-time deposit deadline. Existing records retain their saved deadlines; no policy is inferred for staff-assisted bookings. Expiry timings still need operational validation with the client.
 
+### Browser language support
+
+The customer-facing web interface shall support English (`en`) and Korean (`ko`). On the first visit, it shall use the browser's preferred supported language, with English as the fallback. Customers shall be able to switch between **English** and **한국어**, and their choice shall take precedence over the browser preference on later visits.
+
+Both languages shall cover navigation, service and availability information, guest and account booking, email-code entry screens, validation and error messages, booking receipts and status pages, and customer change and cancellation requests. Pages shall expose the active language to assistive technology. Both language versions shall use the same availability, booking rules, and Asia/Manila schedule.
+
+Acceptance shall cover Korean- and English-preferred browsers, an unsupported browser language, persistence of a manual selection, and the same booking journey and error states in both languages on desktop and mobile. Confirm the Korean wording with a fluent reviewer. Staff screens and outbound email localization require separate scope decisions.
+
 ## Reservation lifecycle and access
 
 Submission, approval, arrival, completion, cancellation, expiry, and no-show are distinct events. Expired applies to unresolved ordinary online Pending requests when the session starts. No-show applies to confirmed unattended bookings after staff follow-up. Payment/deposit statuses remain separate from reservation status. A deposit or payment response alone does not establish attendance or completion.

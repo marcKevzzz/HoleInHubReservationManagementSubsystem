@@ -44,6 +44,7 @@
                 const html = await response.text();
                 if (!signal.aborted) {
                     actions.innerHTML = html;
+                    window.HoleInHubAttendance?.mount(actions);
                     actions.querySelector('#reject-reason-choice')?.addEventListener('change', event => {
                         event.target.form.elements.reason.required = event.target.value === 'Other';
                     });

@@ -101,7 +101,7 @@
         else
         {
             <div class="staff-schedule-timeline">
-                <div class="staff-timeline-tools"><output data-timeline-zoom aria-label="Timeline zoom">100%</output></div>
+                <output class="staff-zoom-feedback" data-timeline-zoom aria-label="Timeline zoom" role="status" hidden>100%</output>
                 <output class="staff-date-preview" data-date-preview aria-live="polite" hidden><span class="staff-date-preview-arrow"><partial name="_StaffIcon" model='"chevron-right"' /></span><span data-date-preview-label></span></output>
                 <p class="staff-error" data-drag-error role="status" hidden></p>
                 <p id="staff-timeline-help" class="sr-only">@(Model.BookingForm.CustomerProfileId is not null ? "Drag an open time to create a booking for this customer. Use the date controls to change days." : "Drag empty space to pan. Pull past either edge to change days. Ctrl and drag creates a booking.") Ctrl and scroll zooms; Shift and scroll moves horizontally; scroll moves vertically. Hold a reservation at the edge to preview another day, then drop to review the move.</p>

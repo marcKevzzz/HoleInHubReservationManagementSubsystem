@@ -192,6 +192,8 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
             ? TimeZoneInfo.ConvertTimeToUtc(day.Value.ToDateTime(TimeOnly.MinValue), ReservationRules.Manila) : null;
         return (await persistence.ExpiredRequestsAsync(start, start?.AddDays(1), ct)).Select(Map).ToArray();
     }
+    public Task<bool> StaffRecordExistsAsync(string id, CancellationToken ct) => persistence.ExistsAsync(id, ct);
+
     public async Task<ReservationDto?> GetStaffAsync(string id, CancellationToken ct)
     {
         await ProcessPendingAsync(ct);

@@ -31,6 +31,30 @@ public sealed class CustomersController(ReservationService reservations, Custome
         }
     }
 
+    [HttpGet("new")]
+    public IActionResult Create() => CreateView(new CustomerContactForm());
+
+    [HttpPost("new"), ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(CustomerContactForm form, CancellationToken ct)
+    {
+        if (ModelState.IsValid)
+        {
+            try
+            {
+                var id = await profiles.CreateAsync(form.CommandId, form.FirstName, form.LastName,
+                    form.Email?.Trim() ?? "", form.Phone.Trim(), User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "", ct);
+                new ToastNotice("success", "Customer added").Store(TempData);
+                if (Request.Headers["X-People-Panel"] == "true") { return Json(new { redirectUrl = Url.Action(nameof(Details), new { id }) }); }
+                return RedirectToAction(nameof(Details), new { id });
+            }
+            catch (ReservationValidationException error) { ModelState.AddModelError("", error.Message); }
+        }
+        return CreateView(form);
+    }
+
+    private IActionResult CreateView(CustomerContactForm form) => Request.Headers["X-People-Panel"] == "true"
+        ? PartialView("_CreateForm", form) : View("Create", form);
+
     [HttpGet("{id}")]
     public async Task<IActionResult> Details(string id, string? view, int page = 1, CancellationToken ct = default)
     {

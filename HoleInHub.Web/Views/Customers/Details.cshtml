@@ -24,7 +24,7 @@
         {
             <nav class="customer-profile-actions" aria-label="Customer record actions">
                 <a class="staff-icon-button customer-action customer-action-primary" aria-label="New booking" asp-controller="BookingReview" asp-action="Index" asp-route-customerProfileId="@profile.Id"><partial name="_StaffIcon" model='"plus"' /></a>
-                <a class="staff-icon-button customer-action" aria-label="Merge customer" asp-action="Merge" asp-route-id="@profile.Id"><partial name="_StaffIcon" model='"merge"' /></a>
+                @if (Model.Total > 0) { <a class="staff-icon-button customer-action" aria-label="Merge customer" asp-action="Merge" asp-route-id="@profile.Id"><partial name="_StaffIcon" model='"merge"' /></a> }
                 <a class="staff-icon-button customer-action" aria-label="Merge history" asp-action="MergeHistory" asp-route-id="@profile.Id"><partial name="_StaffIcon" model='"history"' /></a>
             </nav>
         }

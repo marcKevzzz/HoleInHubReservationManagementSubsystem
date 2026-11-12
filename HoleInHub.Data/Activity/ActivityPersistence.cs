@@ -42,6 +42,7 @@ public sealed class ActivityPersistence(IMongoDbContext context)
         yield return new("b", "schedule_blocks", "Schedule", "CreatedUtc", "CreatedBy");
         yield return new("u", "schedule_blocks", "Schedule", "ReleasedUtc", "ReleasedBy");
         yield return new("c", "customer_profile_operations", "Customers", "OccurredUtc", "ActorId");
+        yield return new("p", "customer_profiles", "Customers", "CreatedUtc", "CreatedBy");
         if (access) { yield return new("a", "staff_role_audit", "Access", "OccurredUtc", "ActorAccountId"); }
     }
 
@@ -118,6 +119,9 @@ public sealed class ActivityPersistence(IMongoDbContext context)
                     .Add("TargetStartUtc", "$StartUtc").Add("AfterStartUtc", "$StartUtc").Add("AfterEndUtc", "$EndUtc")
                     .Add("AfterResources", "$ResourceIds");
                 break;
+            case "p":
+                projection.Add("TargetKind", "customer").Add("EventType", "CustomerCreated").Add("TargetLabel", Name(""));
+                break;
             case "c":
                 projection["TargetId"] = "$TargetId";
                 projection.Add("TargetKind", "customer-merge").Add("EventType", Value("Kind")).Add("Reason", Value("Reason"))
@@ -133,7 +137,7 @@ public sealed class ActivityPersistence(IMongoDbContext context)
                 break;
         }
         stages.Add(new BsonDocument("$project", projection));
-        if (source.Code is "b" or "u") { stages.Add(new BsonDocument("$match", new BsonDocument("Actor", new BsonDocument("$ne", "")))); }
+        if (source.Code is "b" or "u" or "p") { stages.Add(new BsonDocument("$match", new BsonDocument("Actor", new BsonDocument("$ne", "")))); }
         return stages;
     }
 

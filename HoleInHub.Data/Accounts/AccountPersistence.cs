@@ -6,6 +6,8 @@ namespace HoleInHub.Data.Accounts;
 
 public sealed record AccountDirectoryRow(string Id, string Email, string FirstName, string LastName, string[] Roles, bool EmailConfirmed);
 
+public enum ManagedAccountResult { Created, Duplicate, Forbidden, Unavailable, Invalid }
+
 public enum StaffRoleWriteResult { Applied, Forbidden, Stale, Unavailable }
 
 public sealed class AccountPersistence(IMongoDbContext context)
@@ -70,6 +72,84 @@ public sealed class AccountPersistence(IMongoDbContext context)
             await RoleAudit.InsertOneAsync(transaction, audit, cancellationToken: token);
             return StaffRoleWriteResult.Applied;
         }, cancellationToken: ct);
+    }
+
+    public async Task<StaffRoleWriteResult> ResetStaffPinAsync(string actorStamp, string expectedVersion,
+        StaffRoleAuditRecord audit, CancellationToken ct)
+    {
+        using var session = await context.Client.StartSessionAsync(cancellationToken: ct);
+        return await session.WithTransactionAsync(async (transaction, token) =>
+        {
+            var guard = await context.Database.GetCollection<BsonDocument>(RoleGuards).UpdateOneAsync(transaction,
+                new BsonDocument("_id", RoleGuardId), new BsonDocument("$inc", new BsonDocument("version", 1L)), cancellationToken: token);
+            if (guard.MatchedCount == 0) { return StaffRoleWriteResult.Unavailable; }
+            var actorFilter = Builders<AccountRecord>.Filter.Where(x => x.Id == audit.ActorAccountId && x.EmailConfirmed
+                && x.SecurityStamp == actorStamp && (x.LockoutEndUtc == null || x.LockoutEndUtc <= audit.OccurredUtc))
+                & Builders<AccountRecord>.Filter.AnyEq(x => x.Roles, audit.ActorRole);
+            if (!await Accounts.Find(transaction, actorFilter).AnyAsync(token)) { return StaffRoleWriteResult.Forbidden; }
+            var prior = await RoleAudit.Find(transaction, x => x.Id == audit.Id).FirstOrDefaultAsync(token);
+            if (prior is not null)
+            {
+                return prior.EventType == audit.EventType && prior.ActorAccountId == audit.ActorAccountId
+                    && prior.TargetAccountId == audit.TargetAccountId && prior.Reason == audit.Reason
+                    ? StaffRoleWriteResult.Applied : StaffRoleWriteResult.Stale;
+            }
+            var changed = await Accounts.UpdateOneAsync(transaction, x => x.Id == audit.TargetAccountId && x.Version == expectedVersion,
+                Builders<AccountRecord>.Update.Set(x => x.Version, Guid.NewGuid().ToString("N"))
+                    .Set(x => x.SecurityStamp, Guid.NewGuid().ToString("N")), cancellationToken: token);
+            if (changed.MatchedCount == 0) { return StaffRoleWriteResult.Stale; }
+            await context.Database.GetCollection<StaffPinCredential>("staff_pin_credentials").DeleteOneAsync(transaction,
+                x => x.AccountId == audit.TargetAccountId, cancellationToken: token);
+            await RoleAudit.InsertOneAsync(transaction, audit, cancellationToken: token);
+            await Accounts.UpdateOneAsync(transaction, actorFilter,
+                Builders<AccountRecord>.Update.Set(x => x.Version, Guid.NewGuid().ToString("N")), cancellationToken: token);
+            return StaffRoleWriteResult.Applied;
+        }, new TransactionOptions(ReadConcern.Snapshot, writeConcern: WriteConcern.WMajority), ct);
+    }
+
+    public async Task<ManagedAccountResult> CreateManagedAsync(AccountRecord account, string actorId, string actorStamp,
+        string[] permittedActorRoles, string invitation, DateTime now, CancellationToken ct, string? resendId = null)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeout.CancelAfter(TimeSpan.FromSeconds(15));
+        using var session = await context.Client.StartSessionAsync(cancellationToken: timeout.Token);
+        try
+        {
+            return await session.WithTransactionAsync(async (transaction, token) =>
+            {
+                var guard = await context.Database.GetCollection<BsonDocument>(RoleGuards).UpdateOneAsync(transaction,
+                    new BsonDocument("_id", RoleGuardId), new BsonDocument("$inc", new BsonDocument("version", 1L)), cancellationToken: token);
+                if (guard.MatchedCount == 0) { return ManagedAccountResult.Unavailable; }
+                var actorFilter = Builders<AccountRecord>.Filter.Where(x => x.Id == actorId && x.EmailConfirmed
+                    && x.SecurityStamp == actorStamp && (x.LockoutEndUtc == null || x.LockoutEndUtc <= now))
+                    & Builders<AccountRecord>.Filter.AnyIn(x => x.Roles, permittedActorRoles);
+                var actor = await Accounts.Find(transaction, actorFilter).FirstOrDefaultAsync(token);
+                if (actor is null) { return ManagedAccountResult.Forbidden; }
+                var prior = await Accounts.Find(transaction, x => x.Id == account.Id).FirstOrDefaultAsync(token);
+                if (prior is not null && resendId is null)
+                {
+                    return prior.NormalizedEmail == account.NormalizedEmail && prior.Roles.SequenceEqual(account.Roles)
+                        && prior.FirstName == account.FirstName && prior.LastName == account.LastName && prior.Phone == account.Phone
+                        ? ManagedAccountResult.Created : ManagedAccountResult.Duplicate;
+                }
+                if (resendId is not null && (prior is null || prior.EmailConfirmed || prior.Version != account.Version
+                    || prior.SecurityStamp != account.SecurityStamp || !prior.Roles.SequenceEqual(account.Roles)))
+                { return ManagedAccountResult.Invalid; }
+                var messageId = resendId is null ? "team-invite:" + account.Id : "team-reinvite:" + resendId;
+                var messages = context.Database.GetCollection<HoleInHub.Data.Reservations.OutboxRecord>("outbox");
+                if (await messages.Find(transaction, x => x.Id == messageId).AnyAsync(token)) { return ManagedAccountResult.Created; }
+                if (prior is null) { await Accounts.InsertOneAsync(transaction, account, cancellationToken: token); }
+                await messages.InsertOneAsync(transaction,
+                    new() { Id = messageId, Recipient = account.Email, Subject = "Activate your Hole In Hub team account", Body = invitation, DueUtc = now }, cancellationToken: token);
+                await RoleAudit.InsertOneAsync(transaction, new(resendId ?? account.Id, resendId is null ? "TeamMemberCreated" : "TeamInvitationResent", now, actorId,
+                    actor.Roles.First(permittedActorRoles.Contains), account.Id, [], account.Roles, resendId is null ? "Team account created. Activation required." : "Activation email resent.", account.Id), cancellationToken: token);
+                await Accounts.UpdateOneAsync(transaction, actorFilter,
+                    Builders<AccountRecord>.Update.Set(x => x.Version, Guid.NewGuid().ToString("N")), cancellationToken: token);
+                return ManagedAccountResult.Created;
+            }, new TransactionOptions(ReadConcern.Snapshot, writeConcern: WriteConcern.WMajority), timeout.Token);
+        }
+        catch (MongoWriteException error) when (error.WriteError.Category == ServerErrorCategory.DuplicateKey)
+        { return ManagedAccountResult.Duplicate; }
     }
 
     public async Task<bool> CreateAsync(AccountRecord account, CancellationToken ct)

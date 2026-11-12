@@ -8,8 +8,9 @@
     var mergeReady = ViewData["CustomerMergeReady"] is true;
 }
 <div class="staff-workspace staff-customers people-page" data-customer-directory-page>
-    <header class="staff-workspace-heading">
+    <header class="staff-workspace-heading people-directory-heading">
         <h1>Customers</h1>
+        <a class="button" data-people-create asp-action="Create">Add customer</a>
     </header>
     <div class="people-toolbar">
         <form class="staff-lookup people-search" asp-action="Index" method="get" role="search" aria-label="Find a customer">
@@ -47,7 +48,7 @@
             @foreach (var customer in Model.Items)
             {
                 <div class="customer-directory-row customer-directory-item" role="row" data-customer-key="@customer.BookingId" data-customer-name="@CustomerLabels.Name(customer.FirstName,customer.LastName)" data-merge-url="@Url.Action("Merge",new { id=customer.BookingId })">
-                    <div role="cell" class="customer-identity-cell">@if (mergeReady) { <span class="customer-merge-grip" data-merge-handle hidden aria-hidden="true" title="Drag to another customer to review a merge"><partial name="_StaffIcon" model='"grip"' /></span> }<div><strong>@CustomerLabels.Name(customer.FirstName, customer.LastName)</strong><small>@CustomerLabels.Kind(customer.Kind)</small><small data-merge-row-feedback aria-hidden="true"></small></div></div>
+                    <div role="cell" class="customer-identity-cell">@if (mergeReady && customer.Kind != "Manual") { <span class="customer-merge-grip" data-merge-handle hidden aria-hidden="true" title="Drag to another customer to review a merge"><partial name="_StaffIcon" model='"grip"' /></span> }<div><strong>@CustomerLabels.Name(customer.FirstName, customer.LastName)</strong><small>@CustomerLabels.Kind(customer.Kind)</small><small data-merge-row-feedback aria-hidden="true"></small></div></div>
                     <div role="cell">
                         <span>@(string.IsNullOrWhiteSpace(customer.Phone) ? "Phone not recorded" : CustomerLabels.Phone(customer.Phone))</span>
                         <small>@(string.IsNullOrWhiteSpace(customer.Email) ? "Email not recorded" : customer.Email)</small>
@@ -75,6 +76,8 @@
         </dialog>
     }
 </div>
+<partial name="_PeopleCreatePanel" model='"Add customer"' />
+
 @section Scripts {
     <script src="~/js/customer-search.js" asp-append-version="true"></script>
     <script src="~/js/customer-merge.js" asp-append-version="true"></script>

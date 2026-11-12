@@ -5,6 +5,8 @@ namespace HoleInHub.Data.Reservations;
 
 public sealed partial class ReservationPersistence(IMongoDbContext context)
 {
+    public Task<bool> ExistsAsync(string id, CancellationToken ct) => Reservations.Find(x => x.Id == id).AnyAsync(ct);
+
     private IMongoCollection<ReservationRecord> Reservations => context.Database.GetCollection<ReservationRecord>("reservations");
     private IMongoCollection<ResourceRecord> Resources => context.Database.GetCollection<ResourceRecord>("resources");
     public async Task<IReadOnlyList<ResourceRecord>> CatalogAsync(CancellationToken ct) => await Resources.Find(x => x.Active).SortBy(x => x.Id).ToListAsync(ct);

@@ -8,8 +8,9 @@
     var actorId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 }
 <section class="staff-workspace staff-customers leadership-page people-page">
-    <header class="staff-workspace-heading">
+    <header class="staff-workspace-heading people-directory-heading">
         <h1>@ViewData["Title"]</h1>
+        @if (ViewData["TeamCreation"] is true) { <a class="button" data-people-create asp-controller="TeamMembers" asp-action="Create">Add team member</a> }
     </header>
     <div class="people-toolbar staff-date-controls">
         <nav class="review-sort" aria-label="Staff role">
@@ -47,3 +48,4 @@
         @if (Model.HasMore) { <a class="button button-secondary" asp-action="People" asp-route-page="@(Model.Page + 1)" asp-route-scope="@scope">Next page</a> }
     </nav>
 </section>
+<partial name="_PeopleCreatePanel" model='"Add team member"' />

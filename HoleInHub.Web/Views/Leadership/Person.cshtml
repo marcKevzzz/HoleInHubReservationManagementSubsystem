@@ -28,14 +28,45 @@
                 <h2>Staff role</h2><span class="people-role-list">@foreach (var role in account.Roles.Where(StaffRoles.Workspace.Contains)) { <span class="people-pill">@role</span> }</span>
             }
         </div>
+        <div class="people-signin">
+            <h2>Sign-in</h2>
+            <span>@(ViewData["UsesPin"] is true ? (ViewData["HasPin"] is true ? "PIN ready" : "PIN setup needed") : "Email and password")</span>
+            @if (ViewData["CanResetPin"] is true)
+            {
+                <form id="staff-pin-reset-form" asp-action="ResetPin" asp-route-id="@account.Id" method="post" data-reason-form>
+                    <input type="hidden" name="Version" value="@Model.Form.Version" />
+                    <input type="hidden" name="CommandId" value="@Guid.NewGuid().ToString("N")" />
+                    <noscript><label>Reason <textarea name="Reason" maxlength="500" required></textarea></label></noscript>
+                    <button class="staff-hover-link" type="submit" data-reason-fallback data-no-icon>Reset PIN</button>
+                    <partial name="_ReasonConfirmation" model='new ReasonConfirmationModel("staff-pin-reset", "staff-pin-reset-form", "Reset this PIN?", "Their sessions will end and they must set up a new PIN.", "Reason", "", "Reset PIN")' />
+                </form>
+            }
+            @if (!account.EmailConfirmed && ViewData["CanInvite"] is true)
+            {
+                <form asp-controller="TeamMembers" asp-action="Resend" asp-route-id="@account.Id" method="post">
+                    <input type="hidden" name="commandId" value="@Guid.NewGuid().ToString("N")" />
+                    <button class="button button-secondary" type="submit">Resend activation email</button>
+                </form>
+            }
+        </div>
     </section>
     @if (ownAccount)
     {
         <p class="people-account-note">@(User.IsInRole(StaffRoles.Admin) ? "Another administrator manages changes to your staff access." : "An administrator manages changes to your staff access.")</p>
     }
 
+    @if (ViewData["MemberActivity"] is ActivityListModel memberActivity)
+    {
+        <section class="member-activity activity-page" data-activity-page data-activity-return-url="@(Context.Request.Path + Context.Request.QueryString)" aria-labelledby="member-activity-heading">
+            <header class="staff-workspace-heading"><h2 id="member-activity-heading">Activity</h2><a class="staff-hover-link" href="@memberActivity.Query.Url(reset: true)">View all activity</a></header>
+            <p class="activity-feedback" data-activity-status role="status" hidden></p>
+            <partial name="~/Views/Activity/_Results.cshtml" model="memberActivity" />
+            <partial name="~/Views/Activity/_Panel.cshtml" />
+        </section>
+    }
 </section>
 
 @section Scripts {
+    <script src="~/js/activity.js" asp-append-version="true"></script>
     <script src="~/js/reason-confirmation.js" asp-append-version="true"></script>
 }
