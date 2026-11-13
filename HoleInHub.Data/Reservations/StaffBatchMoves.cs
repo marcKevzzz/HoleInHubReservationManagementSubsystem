@@ -57,18 +57,34 @@ public sealed partial class ReservationPersistence
 
                 var change = new ScheduleChangeRecord
                 {
-                    Id = commandId, PayloadHash = hash, Status = "Approved", RequestedUtc = now, DecidedUtc = now,
-                    StartUtc = start, EndUtc = end, Reason = "Moved with other bookings on the staff timeline.",
-                    BaseRevision = booking.Revision, OriginalStartUtc = booking.StartUtc, OriginalEndUtc = booking.EndUtc,
-                    OriginalResourceIds = booking.ResourceIds, ResourceIds = booking.ResourceIds, ResourceNames = booking.ResourceNames
+                    Id = commandId,
+                    PayloadHash = hash,
+                    Status = "Approved",
+                    RequestedUtc = now,
+                    DecidedUtc = now,
+                    StartUtc = start,
+                    EndUtc = end,
+                    Reason = "Moved with other bookings on the staff timeline.",
+                    BaseRevision = booking.Revision,
+                    OriginalStartUtc = booking.StartUtc,
+                    OriginalEndUtc = booking.EndUtc,
+                    OriginalResourceIds = booking.ResourceIds,
+                    ResourceIds = booking.ResourceIds,
+                    ResourceNames = booking.ResourceNames
                 };
                 var update = Builders<ReservationRecord>.Update.Set(x => x.ScheduleChange, change)
                     .Set(x => x.StartUtc, start).Set(x => x.EndUtc, end).Inc(x => x.Revision, 1)
                     .Push(x => x.History, new HistoryRecord
                     {
-                        EventType = "ScheduleChangeApproved", Status = "Schedule change approved",
-                        ReservationStatus = booking.Status, Actor = actor, AtUtc = now, Reason = change.Reason,
-                        ScheduleChange = change, CommandId = commandId, CommandHash = hash
+                        EventType = "ScheduleChangeApproved",
+                        Status = "Schedule change approved",
+                        ReservationStatus = booking.Status,
+                        Actor = actor,
+                        AtUtc = now,
+                        Reason = change.Reason,
+                        ScheduleChange = change,
+                        CommandId = commandId,
+                        CommandHash = hash
                     });
                 var result = await Reservations.UpdateOneAsync(s, Builders<ReservationRecord>.Filter.Eq(x => x.Id, booking.Id)
                     & AtRevision(booking.Revision), update, cancellationToken: token);

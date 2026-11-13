@@ -1,8 +1,8 @@
 # Staff sign-in setup
 
-## Current local diagnosis (12 November 2026)
+## Local access (13 November 2026)
 
-The development instance runs at `http://localhost:5275`. `/staff/sign-in` returns 503 because Staff PIN access is not configured. Admin uses the separate email/password sign-in at `/account/sign-in`.
+Admin uses the separate email/password sign-in at `/account/sign-in`. Staff and Manager use a six-digit PIN at `/staff/sign-in` on the configured HTTPS staff host and enrolled desktop. Email is requested only during PIN setup/reset.
 
 ## Normal Staff and Manager PIN access
 
@@ -20,8 +20,10 @@ The development instance runs at `http://localhost:5275`. `/staff/sign-in` retur
 Add indexed fingerprint keys for additional desktops. The deployment must include migrations 016 and 017 (current database migrations extend through 019).
 
 4. Restart the Web application so its PIN-access configuration reloads.
-5. On the enrolled desktop, open `https://<staff-host>/staff/pin/setup`, enter the verified work email and account password, and choose a six-digit PIN.
-6. Use `https://<staff-host>/staff/sign-in` with the work email and PIN.
+5. On the enrolled desktop, open `https://<staff-host>/staff/pin/setup` and enter the verified work email and account password. Enter the emailed six-digit code, then choose and confirm a six-digit PIN. Existing PINs keep working until the verified replacement is saved.
+6. Use `https://<staff-host>/staff/sign-in` with the PIN alone. Choose a different PIN from other employees; ambiguous existing PINs are rejected and must be reset. Admin accounts continue to use email/password.
+
+PIN setup codes use the existing encrypted email outbox. They expire after ten minutes, allow five verification attempts, and have a one-minute resend cooldown with at most five deliveries per email per hour. Development Mailpit captures these messages at `http://localhost:8025`; delivery to a real inbox requires the configured SMTP sender. Verification is bound to the browser, enrolled desktop, current account security stamp, and eligible role. Saving consumes the proof in the same transaction as the PIN change. Concurrent enrollment and role changes contend on the existing migration-017 staff administration guard; no additional migration is required.
 
 For local HTTPS, the existing `https` launch profile listens at `https://localhost:7077` and `http://localhost:5275`. Starting that profile alone does not enroll a desktop or enable PIN access.
 
@@ -33,7 +35,7 @@ The existing Development-only presentation mode permits a configured Staff demo 
 
 - **503 / Staff sign-in unavailable:** `StaffPin:Enabled` is false or missing.
 - **403 / Work desktop required:** HTTP, wrong staff hostname, missing/unapproved/expired desktop certificate, or a presentation restriction.
-- **PIN rejected:** Check verified email, Staff/Manager role, existing PIN, current security stamp and attempt lockout.
+- **PIN rejected:** Check Staff/Manager role, verified account, existing PIN, current security stamp, attempt lockout, and whether another employee has the same PIN.
 - **Admin account:** Use `/account/sign-in`; Admin accounts do not use the Staff PIN flow.
 
 See [registered-desktop implementation](specs/2026-11-07-rbac-staff-authentication.md#registered-desktop-pin) and [Microsoft certificate authentication](https://learn.microsoft.com/en-us/aspnet/core/security/authentication/certauth?view=aspnetcore-10.0).

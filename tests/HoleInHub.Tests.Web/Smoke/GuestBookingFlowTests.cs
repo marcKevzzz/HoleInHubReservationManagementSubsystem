@@ -68,15 +68,18 @@ public sealed class GuestBookingFlowTests
             ["Smtp:Host"] = ""
         })).ConfigureServices(services => services.AddSingleton<TimeProvider>(new BookingClock())));
     private static HttpClient Client(WebApplicationFactory<Program> factory) => factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost"), AllowAutoRedirect = false });
-    private static async Task SignInStaffAsync(HttpClient client, string email)
+    private static async Task SignInStaffAsync(HttpClient client, string email, IServiceProvider services)
     {
         client.DefaultRequestHeaders.Add("X-Test-Desktop", "approved");
         const string pin = "048217";
-        using var setup = await StaffPinAccessTests.SubmitAsync(client, "/staff/pin/setup",
-            new() { ["Email"] = email, ["Password"] = "TestingPassword123!", ["Pin"] = pin, ["ConfirmPin"] = pin });
-        Assert.Equal(HttpStatusCode.Redirect, setup.StatusCode);
+        var users = services.GetRequiredService<UserManager<AccountUser>>();
+        var staff = (await users.FindByEmailAsync(email))!;
+        var access = services.GetRequiredService<StaffPinAccess>();
+        var hasher = services.GetRequiredService<IPasswordHasher<AccountUser>>();
+        var pins = services.GetRequiredService<HoleInHub.Business.Accounts.StaffPinService>();
+        Assert.True(await pins.TrySaveAsync(staff.Id, hasher.HashPassword(staff, access.PinInput(staff, pin)), staff.SecurityStamp, default));
         using var signIn = await StaffPinAccessTests.SubmitAsync(client, "/staff/sign-in",
-            new() { ["Email"] = email, ["Pin"] = pin });
+            new() { ["Pin"] = pin });
         Assert.Equal(HttpStatusCode.Redirect, signIn.StatusCode);
     }
     private static string Csrf(string html) => WebUtility.HtmlDecode(Regex.Match(html, "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"").Groups[1].Value);
@@ -288,7 +291,7 @@ public sealed class GuestBookingFlowTests
             Assert.True((await users.CreateAsync(staff, "TestingPassword123!")).Succeeded);
             staff.Roles = ["Staff"]; Assert.True((await users.UpdateAsync(staff)).Succeeded);
             using var staffClient = Client(factory);
-            await SignInStaffAsync(staffClient, staff.Email);
+            await SignInStaffAsync(staffClient, staff.Email, scope.ServiceProvider);
             Assert.Equal(HttpStatusCode.Redirect, (await guest.GetAsync("/staff/review-queue")).StatusCode);
             var queuePage = await staffClient.GetStringAsync("/staff/review-queue/pending");
             Assert.Contains(record.Reference, queuePage);

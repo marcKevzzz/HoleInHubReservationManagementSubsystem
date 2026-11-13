@@ -1,0 +1,21 @@
+@model HoleInHub.Web.ViewModels.StaffPinRequestForm
+@{ ViewData["Title"] = "Set up or reset your PIN"; }
+<section class="account-page">
+    <div class="account-inner">
+        <a class="flow-back" asp-action="Index"><partial name="_BackArrow" /> Back to staff sign-in</a>
+        <h1>Set up or reset your PIN</h1>
+        <p class="staff-auth-intro">Enter your work account details. We’ll email you a six-digit code before you choose a PIN.</p>
+        <form asp-action="Setup" method="post">
+            <div asp-validation-summary="All" role="alert" class="validation-summary"></div>
+            <div class="field"><div class="auth-input-wrap">
+                <input asp-for="Email" type="email" autocomplete="username" maxlength="254" placeholder=" " required />
+                <label asp-for="Email"></label>
+            </div></div>
+            <div class="field"><div class="auth-input-wrap">
+                <input id="Password" name="Password" type="password" autocomplete="current-password" maxlength="256" placeholder=" " required />
+                <label asp-for="Password"></label>
+            </div></div>
+            <button class="button" type="submit" data-no-icon>Send verification code</button>
+        </form>
+    </div>
+</section>

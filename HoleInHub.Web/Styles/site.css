@@ -1062,6 +1062,7 @@ html:has(dialog:modal),body:has(dialog:modal){overflow:hidden}
 .staff-auth .button:hover,.staff-auth .button:focus-visible{background:var(--ink)}
 .staff-auth-help{margin:24px 0 0;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
 .staff-auth-help a{text-decoration:underline;text-underline-offset:3px;color:var(--green)}
+.staff-auth-links{display:flex;align-items:baseline;justify-content:space-between;gap:12px;font-size:13px}
 @media(max-width:800px){
   .staff-auth .auth-shell{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr}
   .staff-auth .auth-story{padding:20px 24px;background:var(--ink)}

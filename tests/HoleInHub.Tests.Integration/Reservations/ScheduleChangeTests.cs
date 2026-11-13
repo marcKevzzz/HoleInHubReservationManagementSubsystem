@@ -24,6 +24,7 @@ public sealed class ScheduleChangeTests(MongoDbFixture fixture) : IClassFixture<
         await new AccountsMigration().UpAsync(context.Database, default);
         await new Migration_005_GoogleAccounts().UpAsync(context.Database, default);
         await new Migration_006_SchemaHardening().UpAsync(context.Database, default);
+        await new Migration_010_StaffAssistedReservations().UpAsync(context.Database, default);
         await new Migration_013_ReservationAttendance().UpAsync(context.Database, default);
         await new Migration_015_ScheduleChanges().UpAsync(context.Database, default);
         var store = new ReservationPersistence(context);
@@ -169,34 +170,38 @@ public sealed class ScheduleChangeTests(MongoDbFixture fixture) : IClassFixture<
         Assert.Equal(0, unchanged.Revision);
     }
 
-    [Fact]
-    public async Task TimelineMoveIsAtomicIdempotentAndRejectsConflictsAndStaleUpdates()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    public async Task TimelineMoveIsAtomicIdempotentAndRejectsConflictsAndStaleUpdates(int daysAhead)
     {
         var (service, store, context) = await Setup();
         var original = await store.InsertAsync(Booking(), default);
+        var targetDay = new DateOnly(2026, 11, 4).AddDays(daysAhead);
+        var dayOffset = TimeSpan.FromDays(daysAhead);
         var occupied = Booking();
-        occupied.StartUtc = original.StartUtc.AddHours(2);
+        occupied.StartUtc = (original.StartUtc + dayOffset).AddHours(2);
         occupied.EndUtc = occupied.StartUtc.AddHours(1);
         await store.InsertAsync(occupied, default);
         var command = Guid.NewGuid().ToString("N");
         await Assert.ThrowsAsync<ReservationValidationException>(() => service.MoveStaffBookingAsync(original.Id, 0,
-            command, new(2026, 11, 4), new(14, 0), "staff", default));
+            command, targetDay, new(14, 0), "staff", default));
         var unchanged = (await store.ByIdAsync(original.Id, default))!;
         Assert.Equal(original.StartUtc, unchanged.StartUtc);
         Assert.Null(unchanged.ScheduleChange);
         Assert.Equal(0, unchanged.Revision);
-        await service.MoveStaffBookingAsync(original.Id, 0, command, new(2026, 11, 4), new(15, 0), "staff", default);
-        await service.MoveStaffBookingAsync(original.Id, 0, command, new(2026, 11, 4), new(15, 0), "staff", default);
+        await service.MoveStaffBookingAsync(original.Id, 0, command, targetDay, new(15, 0), "staff", default);
+        await service.MoveStaffBookingAsync(original.Id, 0, command, targetDay, new(15, 0), "staff", default);
         var moved = (await store.ByIdAsync(original.Id, default))!;
-        Assert.Equal(original.StartUtc.AddHours(3), moved.StartUtc);
-        Assert.Equal(original.EndUtc.AddHours(3), moved.EndUtc);
+        Assert.Equal((original.StartUtc + dayOffset).AddHours(3), moved.StartUtc);
+        Assert.Equal((original.EndUtc + dayOffset).AddHours(3), moved.EndUtc);
         Assert.Equal(1, moved.Revision);
         Assert.Equal("Approved", moved.ScheduleChange!.Status);
         Assert.Single(moved.History, entry => entry.CommandId == command);
         await Assert.ThrowsAsync<ReservationValidationException>(() => service.MoveStaffBookingAsync(original.Id, 0,
-            command, new(2026, 11, 4), new(16, 0), "staff", default));
+            command, targetDay, new(16, 0), "staff", default));
         await Assert.ThrowsAsync<ReservationValidationException>(() => service.MoveStaffBookingAsync(original.Id, 0,
-            Guid.NewGuid().ToString("N"), new(2026, 11, 4), new(16, 0), "staff", default));
+            Guid.NewGuid().ToString("N"), targetDay, new(16, 0), "staff", default));
         Assert.Equal(1, await context.Database.GetCollection<OutboxRecord>("outbox").CountDocumentsAsync(x => x.Subject == "Schedule change approved"));
     }
 

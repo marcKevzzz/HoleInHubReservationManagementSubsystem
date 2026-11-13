@@ -19,10 +19,11 @@ public sealed class EmailVerificationService(EmailVerificationPersistence persis
         }
 
         var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime;
+        var limitedDelivery = purpose == "GuestRecovery" || scope.StartsWith("staff-pin:", StringComparison.Ordinal);
         if (!await persistence.IssueAsync(new GuestVerificationRecord { Id = Hash(scope), Purpose = purpose, Email = email, CodeHash = codeHash, ProtectedContext = protectedContext, SentUtc = now, ExpiresUtc = now.AddMinutes(10) },
-            new OutboxRecord { Id = Guid.NewGuid().ToString("N"), Recipient = email, Subject = subject, Body = encryptedBody, DueUtc = now }, ct, purpose == "GuestRecovery" ? new EmailDeliveryQuota(Hash(email), 5, TimeSpan.FromHours(1), TimeSpan.FromMinutes(1)) : null))
+            new OutboxRecord { Id = Guid.NewGuid().ToString("N"), Recipient = email, Subject = subject, Body = encryptedBody, DueUtc = now }, ct, limitedDelivery ? new EmailDeliveryQuota(Hash(email), 5, TimeSpan.FromHours(1), TimeSpan.FromMinutes(1)) : null))
         {
-            throw new ReservationValidationException(purpose == "GuestRecovery" ? "Please wait before requesting another code. You can request up to five codes per hour." : "Wait one minute before requesting another code.");
+            throw new ReservationValidationException(limitedDelivery ? "Please wait before requesting another code. You can request up to five codes per hour." : "Wait one minute before requesting another code.");
         }
     }
     public async Task VerifyAsync(string scope, string email, string code, CancellationToken ct, string? purpose = null)

@@ -27,7 +27,7 @@
             <section class="service-editor-section service-detail-fields">
                 <h2>Service details</h2>
                 <div class="auth-input-wrap"><input asp-for="Title" required maxlength="120" placeholder=" " /><label asp-for="Title">Service name</label><span asp-validation-for="Title" data-error-for="Title"></span></div>
-                <div class="auth-input-wrap"><input asp-for="MaxPax" type="number" min="1" max="80" placeholder=" " /><label asp-for="MaxPax">Max pax</label><span asp-validation-for="MaxPax" data-error-for="MaxPax"></span></div>
+                <input asp-for="MaxPax" type="hidden" />
                 <div class="service-money-field"><div class="auth-input-wrap"><input asp-for="RateAmount" type="number" required min="0.01" max="1000000" step="0.01" placeholder=" " /><label asp-for="RateAmount">Displayed rate</label><span asp-validation-for="RateAmount" data-error-for="RateAmount"></span></div><select asp-for="RateUnit" aria-label="Rate unit"><option value="Peso">₱</option><option value="Percentage">%</option></select></div>
         <aside class="service-editor-options">
             <section class="service-editor-section">

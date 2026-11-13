@@ -4,17 +4,9 @@
     <div class="account-inner">
         <a class="flow-back" asp-action="Index"><partial name="_BackArrow" /> Back to staff sign-in</a>
         <h1>Set staff PIN</h1>
-        <p>Verify your work account with its password, then choose six digits.</p>
-        <form asp-action="Setup" method="post">
+        <p>Your email is verified. Choose a six-digit PIN.</p>
+        <form asp-action="NewPin" method="post">
             <div asp-validation-summary="All" role="alert" class="validation-summary"></div>
-            <div class="field"><div class="auth-input-wrap">
-                <input asp-for="Email" type="email" autocomplete="username" maxlength="254" placeholder=" " required />
-                <label asp-for="Email"></label>
-            </div></div>
-            <div class="field"><div class="auth-input-wrap">
-                <input id="Password" name="Password" type="password" autocomplete="current-password" maxlength="256" placeholder=" " required />
-                <label asp-for="Password"></label>
-            </div></div>
             <div class="field"><div class="auth-input-wrap">
                 <input id="Pin" name="Pin" type="password" inputmode="numeric" autocomplete="off" pattern="[0-9]{6}" maxlength="6" placeholder=" " required />
                 <label asp-for="Pin"></label>

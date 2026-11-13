@@ -1,6 +1,7 @@
 using HoleInHubReservationManagementSubsystem.ViewModels;
 using Xunit;
 namespace HoleInHub.Tests.Web;
+
 public sealed class ServiceEditorTests
 {
     [Fact]

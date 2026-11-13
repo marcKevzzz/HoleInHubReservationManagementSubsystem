@@ -1,0 +1,11 @@
+@model HoleInHub.Web.ViewModels.EmailCodeFormModel
+@{ ViewData["Title"] = "Verify your work email"; }
+<section class="account-page"><div class="account-inner">
+    <a class="flow-back" asp-action="Setup"><partial name="_BackArrow" /> Back to PIN setup</a>
+    <h1>Verify your work email</h1>
+    <p class="staff-auth-intro">Enter the six-digit code we sent before choosing your new PIN.</p>
+    <div asp-validation-summary="All" role="alert" class="validation-summary"></div>
+    @if (ViewData["VerificationMessage"] is string message) { <p role="status">@message</p> }
+    <partial name="_EmailCodeForm" model="Model" />
+</div></section>
+@section Scripts { <script src="~/js/booking-verification.js" asp-append-version="true"></script> }
