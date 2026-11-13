@@ -51,7 +51,8 @@ public sealed class ActivityAccessTests
         var context = factory.Services.GetRequiredService<IMongoDbContext>();
         try
         {
-            var booking = new ReservationRecord { Reference = "HIH-ACTIVITY", StartUtc = DateTime.UtcNow.AddDays(1), EndUtc = DateTime.UtcNow.AddDays(1).AddHours(1), History = [new HistoryRecord { AtUtc = DateTime.UtcNow.AddMinutes(-1), Actor = "test-user", Status = "Confirmed", Reason = "Operational reason" }] };
+            var occurredUtc = DateTime.UtcNow.AddMinutes(-1);
+            var booking = new ReservationRecord { Reference = "HIH-ACTIVITY", Status = "Confirmed", StartUtc = DateTime.UtcNow.AddDays(1), EndUtc = DateTime.UtcNow.AddDays(1).AddHours(1), History = [new HistoryRecord { AtUtc = occurredUtc, Actor = "test-user", Status = "Pending", Reason = "Initial request" }, new HistoryRecord { AtUtc = occurredUtc, Actor = "test-user", Status = "Confirmed", Reason = "Operational reason" }] };
             await context.Database.GetCollection<ReservationRecord>("reservations").InsertOneAsync(booking);
             var audit = new StaffRoleAuditRecord("role-event", "StaffRolesChanged", DateTime.UtcNow.AddSeconds(-30), "actor", "Admin", "target", ["Staff"], ["Manager"], "PRIVATE-ACCESS-REASON", "correlation");
             await context.Database.GetCollection<StaffRoleAuditRecord>("staff_role_audit").InsertOneAsync(audit);
@@ -71,7 +72,7 @@ public sealed class ActivityAccessTests
             var accessEntry = page.Entries.Single(e => e.Category == "Access");
             var secret = await client.GetAsync("/staff/activity/" + accessEntry.Key); Assert.Equal(role == "Admin" ? HttpStatusCode.OK : HttpStatusCode.NotFound, secret.StatusCode);
             if (role == "Admin") { Assert.Contains("PRIVATE-ACCESS-REASON", await secret.Content.ReadAsStringAsync()); }
-            var operational = page.Entries.Single(e => e.Category == "Reservations"); client.DefaultRequestHeaders.Add("X-Activity", "panel"); var panel = await client.GetStringAsync("/staff/activity/" + operational.Key + "?search=HIH"); Assert.Contains("data-activity-event-content", panel); Assert.DoesNotContain("<html", panel); Assert.Contains("Operational reason", panel); Assert.Contains("activityReturn", panel);
+            var operational = page.Entries.Single(e => e.Category == "Reservations" && e.TargetId == booking.Id && e.Reason == "Operational reason"); client.DefaultRequestHeaders.Add("X-Activity", "panel"); var panel = await client.GetStringAsync("/staff/activity/" + operational.Key + "?search=HIH"); Assert.Contains("data-activity-event-content", panel); Assert.DoesNotContain("<html", panel); Assert.Contains("Operational reason", panel); Assert.Contains("activityReturn", panel);
             var targetLink = Regex.Match(panel, "href=\"([^\"]+activityReturn[^\"]+)\"").Groups[1].Value;
             var targetQuery = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(new Uri(new Uri("https://localhost"), WebUtility.HtmlDecode(targetLink)).Query);
             var returnUrl = new Uri(new Uri("https://localhost"), targetQuery["activityReturn"].ToString());
@@ -88,6 +89,7 @@ public sealed class ActivityAccessTests
                 var rows = Enumerable.Range(1, 51).Select(number => new ReservationRecord
                 {
                     Reference = $"HIH-PAGING-{number:D2}",
+                    Status = "Confirmed",
                     History = [new HistoryRecord { AtUtc = DateTime.UtcNow.AddMinutes(-number), Status = "Confirmed", Actor = "test-user" }]
                 });
                 await context.Database.GetCollection<ReservationRecord>("reservations").InsertManyAsync(rows);

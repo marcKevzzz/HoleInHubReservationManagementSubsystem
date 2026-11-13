@@ -362,7 +362,8 @@ public sealed partial class StaffPinAccessTests
             using var drawerActions = await desktop.GetAsync($"/staff/reservations/{drawerBooking.Id}/actions?drawer=true");
             Assert.Equal(HttpStatusCode.OK, drawerActions.StatusCode);
             var drawerHtml = await drawerActions.Content.ReadAsStringAsync();
-            Assert.Contains("Check-in opens at", drawerHtml);
+            Assert.Contains("type=\"button\" disabled>Check-in unavailable</button>", drawerHtml);
+            Assert.DoesNotContain("data-attendance-form", drawerHtml);
             Assert.DoesNotContain("<html", drawerHtml);
             var searchHtml = await desktop.GetStringAsync("/staff/reservations/search?reference=HIH-DRAWER");
             Assert.Contains("Bay 1", searchHtml);
@@ -399,7 +400,11 @@ public sealed partial class StaffPinAccessTests
             {
                 using var availability = await desktop.GetAsync("/manager/availability?date=2026-11-10");
                 Assert.Equal("/staff?date=2026-11-10", availability.Headers.Location?.OriginalString);
-                Assert.DoesNotContain("Review days", await desktop.GetStringAsync("/staff/settings"));
+                var settings = await desktop.GetStringAsync("/staff/settings");
+                Assert.Contains("<fieldset disabled=\"disabled\">", settings);
+                Assert.Contains("name=\"ReviewDays\"", settings);
+                Assert.DoesNotContain("name=\"StaffEmails\"", settings);
+                Assert.DoesNotContain("form=\"settings-form\"", settings);
             }
             else
             {
@@ -480,7 +485,11 @@ public sealed partial class StaffPinAccessTests
             Assert.Equal("/staff/dashboard", legacyAdmin.Headers.Location?.OriginalString);
             using var legacyUsers = await admin.GetAsync("/admin/users?page=2");
             Assert.Equal("/staff/people?page=2", legacyUsers.Headers.Location?.OriginalString);
-            Assert.Contains("Review days", await admin.GetStringAsync("/staff/settings"));
+            var settings = await admin.GetStringAsync("/staff/settings");
+            Assert.Contains("name=\"ReviewDays\"", settings);
+            Assert.Contains("name=\"StaffEmails\"", settings);
+            Assert.Contains("form=\"settings-form\"", settings);
+            Assert.DoesNotContain("<fieldset disabled=\"disabled\">", settings);
             Assert.Equal(HttpStatusCode.OK, (await admin.GetAsync("/staff")).StatusCode);
             await SignInAsync(employee, staffAccount.Email, "281739");
             staffAccount = (await users.FindByIdAsync(staffAccount.Id))!;

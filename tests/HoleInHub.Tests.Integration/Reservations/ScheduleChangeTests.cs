@@ -24,6 +24,7 @@ public sealed class ScheduleChangeTests(MongoDbFixture fixture) : IClassFixture<
         await new AccountsMigration().UpAsync(context.Database, default);
         await new Migration_005_GoogleAccounts().UpAsync(context.Database, default);
         await new Migration_006_SchemaHardening().UpAsync(context.Database, default);
+        await new Migration_010_StaffAssistedReservations().UpAsync(context.Database, default);
         await new Migration_013_ReservationAttendance().UpAsync(context.Database, default);
         await new Migration_015_ScheduleChanges().UpAsync(context.Database, default);
         var store = new ReservationPersistence(context);

@@ -353,7 +353,10 @@ public sealed class StaffBlockHttpTests
             details = await staff.GetStringAsync("/BookingReview/Details/" + booking.Id);
             Assert.Contains(">Guest already checked in<", details);
             form["Action"] = "check-out"; form["CommandId"] = Value(details, "CommandId"); form["ExpectedRevision"] = "1";
-            Assert.Contains("Confirm check out", details);
+            Assert.Contains("name=\"Action\" value=\"check-out\"", details);
+            Assert.Contains("name=\"ConfirmAttendance\" value=\"true\" required", details);
+            Assert.Contains("Guest finished and all booked bays are clear.", details);
+            Assert.Contains(">Check out guest</button>", details);
             var noReason = await staff.PostAsync(path, new FormUrlEncodedContent(form));
             Assert.Equal(HttpStatusCode.OK, noReason.StatusCode);
             Assert.Contains("reason for early check-out", await noReason.Content.ReadAsStringAsync());
