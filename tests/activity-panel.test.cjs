@@ -43,3 +43,40 @@ test('activity closes only when both press and release are outside the panel', (
     handlers.click(outside);
     assert.equal(closes, 1);
 });
+
+test('dashboard deep link loads the Activity list and opens its side panel with reversible history', async () => {
+    const handlers = {}, windowHandlers = {}, requests = [], pushed = [];
+    let backs = 0;
+    const panel = {
+        open: false, showModal() { this.open = true; }, close() { this.open = false; },
+        addEventListener: (name, handler) => handlers[name] = handler,
+    };
+    const results = { dataset: { listUrl: '/staff/activity?range=week' }, removeAttribute() {} };
+    const body = { setAttribute() {}, removeAttribute() {}, replaceChildren() {} };
+    const status = {};
+    const page = {
+        dataset: {}, querySelector: selector => ({ '[data-activity-panel]': panel, '[data-activity-results]': results, '[data-activity-panel-body]': body, '[data-activity-status]': status })[selector] ?? null,
+        querySelectorAll: () => [], addEventListener() {},
+    };
+    const location = { href: 'http://localhost/staff/activity?open=event-123', origin: 'http://localhost', pathname: '/staff/activity', search: '?open=event-123' };
+    const history = { state: null, replaceState(state) { this.state = state; }, pushState(state, _title, url) { this.state = state; pushed.push(url); }, back() { backs++; } };
+    const context = {
+        document: { querySelector: () => page, documentElement: { classList: { add() {}, remove() {} } } },
+        window: { HoleInHubPanels: { loading: () => ({}) }, addEventListener: (name, handler) => windowHandlers[name] = handler, scrollTo() {} },
+        location, history, URL, AbortController, scrollY: 0, sessionStorage: { getItem: () => null, setItem() {} },
+        matchMedia: () => ({ matches: true }), setTimeout: () => 1, clearTimeout() {},
+        fetch: async (url, options) => { requests.push({ url, options }); return { ok: true, text: async () => 'event fragment' }; },
+        DOMParser: class { parseFromString() { return { querySelector: () => ({ querySelector: () => null }) }; } },
+    };
+    vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../HoleInHub.Web/wwwroot/js/activity.js'), 'utf8'), context);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(panel.open, true);
+    assert.equal(requests[0].url, '/staff/activity/event-123?range=week');
+    assert.equal(requests[0].options.headers['X-Activity'], 'panel');
+    assert.equal(pushed[0], '/staff/activity?range=week&open=event-123');
+    handlers.cancel({ preventDefault() {} });
+    assert.equal(backs, 1);
+    location.href = 'http://localhost/staff/activity?range=week'; location.search = '?range=week';
+    windowHandlers.popstate();
+    assert.equal(panel.open, false);
+});

@@ -1,0 +1,16 @@
+@using HoleInHub.Business.Reservations
+@model DashboardBookingsViewModel
+<div data-dashboard-bookings>
+    <h3>@Model.Title</h3><p class="dashboard-slice-context">@Model.Context.Data.From.ToString("d MMM yyyy") – @Model.Context.Data.To.ToString("d MMM yyyy") · Manila time · Page @Model.Page</p>
+    @if (Model.Slice.Bookings.Count == 0) { <p class="dashboard-empty">No matching reservations. The schedule may have changed since the dashboard was updated.</p> }
+    <ol class="dashboard-booking-list">
+    @foreach (var booking in Model.Slice.Bookings)
+    {
+        <li><div><a asp-controller="BookingReview" asp-action="Details" asp-route-id="@booking.Id" asp-route-returnDashboard="@Model.Context.DashboardUrl">@booking.Reference</a><strong>@booking.Guest</strong><span>@booking.Service · @string.Join(", ", booking.Bays)</span><span>@DashboardMetrics.Local(booking.StartUtc).ToString("d MMM, h:mm tt") – @DashboardMetrics.Local(booking.EndUtc).ToString("d MMM, h:mm tt")</span></div><span class="staff-status" data-status="@booking.Status">@booking.Status</span></li>
+    }
+    </ol>
+    <nav class="dashboard-pagination" aria-label="Matching reservation pages">
+        @if (Model.Page > 1) { <a href="@Model.Context.SliceUrl(Model.Kind, Model.Value, Model.Group, Model.Page - 1)" data-dashboard-slice>Previous</a> }
+        @if (Model.Slice.HasMore) { <a href="@Model.Context.SliceUrl(Model.Kind, Model.Value, Model.Group, Model.Page + 1)" data-dashboard-slice>Next</a> }
+    </nav>
+</div>

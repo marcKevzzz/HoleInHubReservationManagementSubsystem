@@ -1,0 +1,136 @@
+@using HoleInHub.Business.Reservations
+@using System.Text.Json
+@model DashboardViewModel
+@{
+    var data = Model.Data;
+    var trends = Model.Mode == "trends";
+    var localNow = DashboardMetrics.Local(data.GeneratedAtUtc);
+    var today = DateOnly.FromDateTime(localNow);
+    var hours = data.Hours.Where(x => x.Hour >= 10 || x.Regular + x.Vip + x.Other > 0).ToArray();
+    var booked = data.Services.Sum(x => x.Count);
+    var bayHours = data.Services.Sum(x => x.Hours);
+    var previous = data.Previous;
+    var comparisonPeriod = data.From == data.To ? "previous day" : $"previous {data.To.DayNumber - data.From.DayNumber + 1} days";
+    var unavailableBays = data.Bays.Where(x => x.State != "Available").ToArray();
+    var peak = trends ? data.Days.Max(x => (double)x.Booked) : hours.Max(x => x.Regular + x.Vip + x.Other);
+    var periodLabel = !trends ? data.From == today ? "Today" : data.From.ToString("d MMM yyyy")
+        : data.To == today && data.To.DayNumber - data.From.DayNumber == 6 ? "Last 7 days"
+        : data.To == today && data.To.DayNumber - data.From.DayNumber == 29 ? "Last 30 days" : $"{data.From:d MMM} – {data.To:d MMM yyyy}";
+    var attention = new[] { ("overdue", "overdue"), ("pending", "pending"), ("changes", "changes"), ("cancellations", "cancellations"), ("deposit", "deposit checks") }
+        .Where(item => data.Attention.GetValueOrDefault(item.Item1) > 0).ToArray();
+    var chartData = JsonSerializer.Serialize(new { days = data.Days, hours, services = data.Services });
+}
+<section class="staff-workspace dashboard-page" data-dashboard data-url="@Model.DashboardUrl" data-live="@((!trends && data.From == today).ToString().ToLowerInvariant())" data-slice-base="@Model.SliceUrl("all")">
+    <header class="staff-workspace-heading dashboard-heading">
+        <h1>Dashboard</h1>
+        <div class="dashboard-toolbar">
+            <details class="dashboard-period" data-dashboard-period>
+                <summary aria-label="@($"Change dashboard period: {periodLabel}")"><partial name="_StaffIcon" model='"calendar"' /><span>@periodLabel</span><partial name="_StaffIcon" model='"chevron-down"' /></summary>
+                <div class="dashboard-period-panel">
+                    <nav class="dashboard-presets" aria-label="Quick periods"><a href="/staff/dashboard" data-dashboard-nav>Today</a>@if (Model.CanManage) { <a href="/staff/dashboard?mode=trends&amp;preset=7" data-dashboard-nav>Last 7 days</a><a href="/staff/dashboard?mode=trends&amp;preset=30" data-dashboard-nav>Last 30 days</a> }</nav>
+                    <form method="get" action="/staff/dashboard" data-dashboard-filter>
+                        @if (Model.CanManage)
+                        {
+                            <label for="dashboard-mode">View</label><select id="dashboard-mode" name="mode" data-period-mode><option value="today" selected="@(!trends)">Single day</option><option value="trends" selected="@trends">Date range</option></select>
+                        }
+                        else { <input type="hidden" name="mode" value="today" /> }
+                        <div data-period-day><label for="dashboard-date">Date</label><input id="dashboard-date" type="date" name="date" value="@data.From.ToString("yyyy-MM-dd")" min="2000-01-01" max="2100-12-31" required /></div>
+                        @if (Model.CanManage)
+                        {
+                            <div data-period-range><label for="dashboard-from">From</label><input id="dashboard-from" type="date" name="from" value="@data.From.ToString("yyyy-MM-dd")" min="2000-01-01" max="2100-12-31" required /><label for="dashboard-to">To</label><input id="dashboard-to" type="date" name="to" value="@data.To.ToString("yyyy-MM-dd")" min="2000-01-01" max="2100-12-31" required /></div>
+                        }
+                        <button class="button" type="submit">Apply</button>
+                    </form>
+                </div>
+            </details>
+            <a class="button" asp-controller="BookingReview" asp-action="Index" asp-route-date="@data.From.ToString("yyyy-MM-dd")">Open schedule</a>
+        </div>
+    </header>
+    <span class="sr-only" data-dashboard-updated>Updated @localNow.ToString("h:mm tt") Manila time</span><span class="sr-only" data-dashboard-loading role="status"></span>
+    <div data-dashboard-skeleton hidden aria-hidden="true"><partial name="_DashboardSkeleton" model="@(!trends)" /></div>
+    <div data-dashboard-content>
+    <nav class="dashboard-attention" aria-label="Live review queues, all dates">
+        @if (attention.Length > 0)
+        {
+            <span class="dashboard-attention-label"><partial name="_StaffIcon" model='"inbox"' />Live review</span>
+            @foreach (var (key, label) in attention) { <a asp-route="staff-review-section" asp-route-section="@key" class="@(key == "overdue" ? "is-urgent" : null)"><span class="staff-hover-link"><strong>@data.Attention.GetValueOrDefault(key)</strong> @label</span></a> }
+        }
+        else { <span class="dashboard-all-clear"><partial name="_StaffIcon" model='"completed"' />No reviews waiting</span> }
+    </nav>
+    <dl class="dashboard-summary">
+        @if (trends)
+        {
+            <div><dt>Booked sessions</dt><dd>@booked</dd>@if (previous is not null) { <partial name="_DashboardTrend" model="@(new DashboardTrend(booked, previous.Booked, comparisonPeriod))" /> }</div>
+            <div><dt>Pending</dt><dd>@data.Days.Sum(x => x.Pending)</dd>@if (previous is not null) { <partial name="_DashboardTrend" model="@(new DashboardTrend(data.Days.Sum(x => x.Pending), previous.Pending, comparisonPeriod, false))" /> }</div>
+            <div><dt>Scheduled bay-hours</dt><dd>@bayHours.ToString("0.##")</dd>@if (previous is not null) { <partial name="_DashboardTrend" model="@(new DashboardTrend(bayHours, previous.BayHours, comparisonPeriod))" /> }</div>
+            <div><dt>Completed</dt><dd>@data.Completed</dd>@if (previous is not null) { <partial name="_DashboardTrend" model="@(new DashboardTrend(data.Completed, previous.Completed, comparisonPeriod))" /> }</div>
+        }
+        else
+        {
+            <div><dt>Scheduled</dt><dd><a href="@Model.SliceUrl("all")" data-dashboard-slice>@data.Scheduled</a></dd>@if (previous is not null) { <partial name="_DashboardTrend" model="@(new DashboardTrend(data.Scheduled, previous.Scheduled, comparisonPeriod))" /> }</div>
+            <div><dt>Arrivals due</dt><dd>@data.ArrivalsDue</dd><span class="dashboard-kpi-context @(data.FollowUpsDue > 0 ? "is-negative" : "is-neutral")">@(data.FollowUpsDue > 0 ? $"{data.FollowUpsDue} need follow-up" : data.ArrivalsDue > 0 ? "No follow-ups due" : "No arrivals waiting")</span></div>
+            <div><dt>Checked in</dt><dd>@data.CheckedIn</dd><span class="dashboard-kpi-context is-neutral">@(data.Scheduled > 0 ? $"{Math.Round(100m * data.CheckedIn / data.Scheduled):0}% of scheduled" : "No scheduled sessions")</span></div>
+            <div><dt>Completed</dt><dd>@data.Completed</dd>@if (previous is not null) { <partial name="_DashboardTrend" model="@(new DashboardTrend(data.Completed, previous.Completed, comparisonPeriod))" /> }</div>
+        }
+    </dl>
+    <div class="dashboard-main">
+        <section class="dashboard-chart" data-chart="@(trends ? "daily" : "hourly")">
+            <div class="dashboard-section-heading"><h2>@(trends ? "Booked sessions" : "Bay demand")</h2>@if (peak > 0) { <span>Peak @peak.ToString("0.##") @(trends ? "/ day" : "bay-hours")</span> }</div>
+            @if (peak == 0) { <p class="dashboard-empty">@(trends ? "No booked sessions" : "No booked bay-hours")</p> }
+            <div class="dashboard-chart-frame" data-chart-frame hidden><canvas role="img" aria-label="@(trends ? "Booked sessions by Manila start date. Select a point to inspect bookings." : "Scheduled bay-hours by Manila hour, summed across bay types. This is scheduled demand, not measured occupancy.")"></canvas></div>
+            <div class="dashboard-selection" data-chart-selection hidden><span></span><a class="staff-hover-link" data-selection-link data-dashboard-slice>View bookings</a><button type="button" data-clear-selection>Clear</button></div>
+            <ul class="dashboard-chart-access sr-only" aria-label="Chart values and booking links">
+            @if (trends) { @foreach (var day in data.Days) { <li><a href="@Model.SliceUrl("day", day.Date.ToString("yyyy-MM-dd"), "booked")" data-dashboard-slice>@day.Date.ToString("d MMM"): @day.Booked booked sessions</a></li> } }
+            else { @foreach (var hour in hours) { <li><a href="@Model.SliceUrl("hour", hour.Hour.ToString())" data-dashboard-slice>@hour.Hour:00: @((hour.Regular + hour.Vip + hour.Other).ToString("0.##")) scheduled bay-hours</a></li> } }
+            </ul>
+        </section>
+        <section class="dashboard-services">
+            <div class="dashboard-section-heading"><h2>Service</h2><span>@booked booked</span></div>
+            @if (booked == 0) { <p class="dashboard-empty">No booked services</p> }
+            <div class="dashboard-pie-frame" data-pie-frame hidden><canvas tabindex="-1" role="img" aria-label="Share of booked sessions by service. The labeled service list provides exact counts and percentages."></canvas></div>
+            <ol class="dashboard-service-ranking">
+            @foreach (var service in data.Services)
+            {
+                var share = Math.Round(100m * service.Count / booked, 1);
+                <li><a href="@Model.SliceUrl("service", service.Id)" data-dashboard-slice><span class="dashboard-service-name"><i data-service="@service.Id" aria-hidden="true"></i>@service.Label</span><span class="dashboard-service-value"><strong>@service.Count</strong><small>@share.ToString("0.#")%</small></span></a></li>
+            }
+            </ol>
+        </section>
+    </div>
+    @if (!trends)
+    {
+        <div class="dashboard-bottom">
+            <section class="dashboard-arrivals">
+                <div class="dashboard-section-heading"><h2>Next arrivals</h2><a class="staff-hover-link" asp-controller="BookingReview" asp-action="Index" asp-route-date="@data.From.ToString("yyyy-MM-dd")">View schedule</a></div>
+                @if (data.Arrivals.Count == 0)
+                {
+                    <div class="dashboard-empty-arrivals"><partial name="_StaffIcon" model='"user-clock"' /><h3>No arrivals due</h3><p>Upcoming arrivals will appear here.</p></div>
+                }
+                <ol>@foreach (var arrival in data.Arrivals.Take(3)) { <li><time>@DashboardMetrics.Local(arrival.StartUtc).ToString("h:mm tt")</time><div><a asp-controller="BookingReview" asp-action="Details" asp-route-id="@arrival.Id" asp-route-returnDashboard="@Model.DashboardUrl">@(string.IsNullOrWhiteSpace(arrival.Guest) ? arrival.Reference : arrival.Guest)</a><span>@arrival.Service · @string.Join(", ", arrival.Bays)</span>@if (arrival.FollowUp) { <strong class="dashboard-follow-up">Follow-up due</strong> }</div></li> }</ol>
+            </section>
+            @if (data.Bays.Count > 0)
+            {
+                <section class="dashboard-bays"><div class="dashboard-section-heading"><h2>Bays now</h2></div>
+                    <div class="dashboard-bay-insight" aria-label="@(data.Bays.Count - unavailableBays.Length) of @data.Bays.Count bays available"><strong>@(data.Bays.Count - unavailableBays.Length)<span> / @data.Bays.Count</span></strong><span>available</span></div>
+                    @if (unavailableBays.Length > 0) { <ul>@foreach (var bay in unavailableBays) { <li data-bay-state="@bay.State"><span>@bay.Name</span><span>@bay.State</span></li> }</ul> }
+                </section>
+            }
+        </div>
+    }
+    <section class="dashboard-activity">
+        <div class="dashboard-section-heading"><h2>Latest activity</h2><a class="staff-hover-link" href="/staff/activity">View all</a></div>
+        @if (Model.LatestActivity.Count == 0) { <p class="dashboard-empty">No activity yet</p> }
+        else
+        {
+            <div class="dashboard-table-wrap"><table aria-label="Five latest activities"><thead><tr><th scope="col">Time, Manila</th><th scope="col">Activity</th><th scope="col">Record</th><th scope="col">By</th><th scope="col"><span class="sr-only">Open activity</span></th></tr></thead><tbody>
+            @foreach (var entry in Model.LatestActivity)
+            {
+                <tr data-dashboard-activity-row><td><time datetime="@entry.OccurredUtc.ToString("O")">@DashboardMetrics.Local(entry.OccurredUtc).ToString("d MMM, h:mm tt")</time></td><td><a href="/staff/activity?open=@Uri.EscapeDataString(entry.Key)" data-dashboard-activity-link>@entry.Title</a></td><td>@entry.TargetLabel</td><td>@entry.Actor</td><td class="dashboard-activity-arrow"><partial name="_StaffIcon" model='"arrow-right"' /></td></tr>
+            }
+            </tbody></table></div>
+        }
+    </section>
+    </div>
+    <script type="application/json" data-dashboard-data>@Html.Raw(chartData)</script>
+    <dialog class="logout-confirmation dashboard-dialog" data-dashboard-dialog aria-labelledby="dashboard-dialog-title"><div class="dashboard-dialog-header"><h2 id="dashboard-dialog-title">Matching reservations</h2><button type="button" class="dashboard-close" data-dashboard-close aria-label="Close reservation list"><partial name="_StaffIcon" model='"close"' /></button></div><div data-dashboard-dialog-body></div></dialog>
+</section>

@@ -49,7 +49,7 @@
     function syncFilters() {
         if (!form) return;
         const url = new URL(listUrl, location.origin);
-        page.querySelector('.staff-workspace-heading [data-activity-refresh]').href = unpaged(url);
+
         for (const name of ['search', 'range', 'from', 'to', 'actor', 'category']) {
             const value = url.searchParams.get(name) ?? '';
             const field = form.elements.namedItem(name);
@@ -97,7 +97,8 @@
         listRequest = undefined;
         setListPending(false);
     }
-    async function loadList(url, { push = true, next = false, tab } = {}) {
+    async function loadList(url, { push = true, next = false, tab, automatic = false } = {}) {
+        const previousY = scrollY;
         clearTimeout(debounce);
         savePosition();
         listRequest?.abort();
@@ -107,16 +108,20 @@
         try {
             const updated = await fragment(url, 'list', '[data-activity-results]', request);
             if (request !== listRequest) return;
+            if (automatic && (panel.open || form?.contains(document.activeElement))) {
+                livePending = true; updateActivity(); return;
+            }
             if (next) remember('previous', updated.dataset.listUrl, listUrl);
             results().replaceWith(updated);
-            if (!reducedMotion.matches) updated.animate([{ opacity: .76 }, { opacity: 1 }], { duration: 150, easing: 'ease-out' });
+            if (!automatic && !reducedMotion.matches) updated.animate([{ opacity: .76 }, { opacity: 1 }], { duration: 150, easing: 'ease-out' });
             listUrl = updated.dataset.listUrl;
             syncFilters();
             if (push) history.pushState({ activityList: true }, '', listUrl);
+            else if (automatic) { history.replaceState({ activityList: true }, '', listUrl); window.scrollTo(0, previousY); }
             else restorePosition();
             announce('');
         } catch {
-            if (request === listRequest) announce('Could not load activity. Previous results remain. Use Refresh to retry.');
+            if (request === listRequest) announce('Could not load activity. Previous results remain. Updates will retry automatically.');
         } finally {
             if (request === listRequest) {
                 listRequest = undefined;
@@ -136,7 +141,11 @@
         if (!panel.open) panel.showModal();
         body.setAttribute('aria-busy', 'true');
         document.documentElement.classList.add('activity-panel-open');
-        if (push) history.pushState({ activityDetail: true }, '', url);
+        if (push) {
+            const selected = new URL(listUrl, location.origin);
+            selected.searchParams.set('open', decodeURIComponent(new URL(url, location.origin).pathname.split('/').pop()));
+            history.pushState({ activityDetail: true }, '', selected.pathname + selected.search);
+        }
         try {
             const content = await fragment(url, 'panel', '[data-activity-event-content]', request);
             if (request !== detailRequest || !panel.open) return;
@@ -181,7 +190,7 @@
             submit(link);
             return;
         }
-        if (link?.matches('[data-activity-next],[data-activity-previous],[data-activity-refresh], .staff-empty-state a')) {
+        if (link?.matches('[data-activity-next],[data-activity-previous],[data-activity-retry], .staff-empty-state a')) {
             event.preventDefault();
             void loadList(link.href, { next: link.hasAttribute('data-activity-next') });
             return;
@@ -242,7 +251,10 @@
         backdropPressed = false;
     });
     window.addEventListener('popstate', () => {
-        if (location.pathname === new URL(listUrl, location.origin).pathname) {
+        const selected = new URL(location.href).searchParams.get('open');
+        if (selected) {
+            void openDetail(detailUrl(selected), false);
+        } else if (location.pathname === new URL(listUrl, location.origin).pathname) {
             if (panel.open) closePanel();
             if (location.pathname + location.search !== listUrl) void loadList(location.href, { push: false });
             else restorePosition();
@@ -256,8 +268,30 @@
         trigger = event.target.querySelector('[data-activity-event]');
         void openDetail(trigger.href);
     });
-    const returnEvent = new URL(location.href).searchParams.get('focus');
+    let liveTimer, livePending = false;
+    function updateActivity() {
+        clearTimeout(liveTimer);
+        if (!livePending || document.hidden || !form) return;
+        liveTimer = setTimeout(async () => {
+            if (panel.open || listRequest || form.contains(document.activeElement)) { updateActivity(); return; }
+            // Older pages retain their stable paging snapshot; the newest page follows live events.
+            if (new URL(listUrl, location.origin).searchParams.has('cursor')) { livePending = false; return; }
+            livePending = false;
+            await loadList(unpaged(listUrl), { push: false, automatic: true });
+        }, 500);
+    }
+    if (form) window.HoleInHubLive?.subscribe(() => { livePending = true; updateActivity(); });
+    function detailUrl(key) {
+        const url = new URL(listUrl, location.origin);
+        url.pathname = '/staff/activity/' + encodeURIComponent(key);
+        return url.pathname + url.search;
+    }
+    window.addEventListener('pagehide', () => { clearTimeout(liveTimer); listRequest?.abort(); detailRequest?.abort(); });
+    const initialUrl = new URL(location.href);
+    const returnEvent = initialUrl.searchParams.get('focus');
+    const selectedEvent = initialUrl.searchParams.get('open');
     history.replaceState({ activityList: true }, '', listUrl);
     syncFilters();
     if (returnEvent) restorePosition(returnEvent);
+    if (selectedEvent && selectedEvent.length <= 1500) void openDetail(detailUrl(selectedEvent));
 })();

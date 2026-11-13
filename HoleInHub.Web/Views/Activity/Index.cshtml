@@ -1,7 +1,7 @@
 @model ActivityListModel
 @{ Layout="_StaffLayout"; ViewData["Title"]="Activity"; }
 <div class="staff-workspace people-page activity-page" data-activity-page>
-<header class="staff-workspace-heading"><h1>Activity</h1><a class="staff-icon-button" href="@Model.Query.Url(reset:true)" data-activity-refresh aria-label="Refresh activity" title="Refresh"><partial name="_StaffIcon" model='"refresh"' /></a></header>
+<header class="staff-workspace-heading"><h1>Activity</h1></header>
 <form class="activity-filters" method="get" action="/staff/activity" data-activity-filters>
 <div class="staff-lookup people-search"><div class="auth-input-wrap"><partial name="_StaffIcon" model='"search"' /><label for="activity-search" class="sr-only">Search activity</label><input id="activity-search" type="search" name="search" value="@Model.Query.Search" maxlength="100" placeholder="Search activity" /></div></div>
 <label class="activity-filter-field"><span>Date range</span><select name="range" aria-label="Date range"><option value="today" selected="@(Model.Query.Range=="today")">Today</option><option value="week" selected="@(Model.Query.Range=="week")">Last 7 days</option><option value="month" selected="@(Model.Query.Range=="month")">Last 30 days</option><option value="custom" selected="@(Model.Query.Range=="custom")">Custom dates</option></select></label>

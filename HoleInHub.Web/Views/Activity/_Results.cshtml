@@ -7,7 +7,7 @@
 <div data-activity-results data-list-url="@query.Url()">
     @if (Model.Error is not null)
     {
-        <p class="staff-error" role="alert">@Model.Error <a href="@query.Url(reset: true)" data-activity-refresh>Refresh activity</a></p>
+        <p class="staff-error" role="alert">@Model.Error <a href="@query.Url(reset: true)" data-activity-retry>Retry</a></p>
     }
     else if (Model.Page is { Entries.Count: 0 })
     {

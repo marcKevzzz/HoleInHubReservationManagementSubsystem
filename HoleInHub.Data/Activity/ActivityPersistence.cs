@@ -7,23 +7,24 @@ namespace HoleInHub.Data.Activity;
 
 public sealed class ActivityPersistence(IMongoDbContext context)
 {
-    public async Task<IReadOnlyList<ActivityRecord>> QueryAsync(ActivityQuery query, bool includeAccess, CancellationToken ct)
+    public async Task<IReadOnlyList<ActivityRecord>> QueryAsync(ActivityQuery query, bool includeAccess, CancellationToken ct, int limit = 50)
     {
+        if (limit is < 1 or > 50) { throw new ArgumentOutOfRangeException(nameof(limit)); }
         var sources = Sources(includeAccess).Where(source => query.Category is null || source.Category == query.Category).ToArray();
         if (sources.Length == 0) { return []; }
 
-        var stages = Pipeline(sources[0], query);
+        var stages = Pipeline(sources[0], query, limit + 1);
         foreach (var source in sources.Skip(1))
         {
             stages.Add(new BsonDocument("$unionWith", new BsonDocument
             {
                 { "coll", source.Collection },
-                { "pipeline", new BsonArray(Pipeline(source, query)) }
+                { "pipeline", new BsonArray(Pipeline(source, query, limit + 1)) }
             }));
         }
-        var rows = await ReadAsync(sources[0].Collection, stages, ct, batchSize: sources.Length * 51);
+        var rows = await ReadAsync(sources[0].Collection, stages, ct, batchSize: sources.Length * (limit + 1));
         return rows.OrderByDescending(row => row.OccurredUtc)
-            .ThenByDescending(row => row.Key, StringComparer.Ordinal).Take(51).ToArray();
+            .ThenByDescending(row => row.Key, StringComparer.Ordinal).Take(limit + 1).ToArray();
     }
 
     public async Task<ActivityRecord?> GetAsync(string identity, bool includeAccess, CancellationToken ct)
@@ -56,7 +57,7 @@ public sealed class ActivityPersistence(IMongoDbContext context)
 
     private static BsonDocument Range(DateTime from, DateTime to, DateTime asOf) =>
         new() { { "$gte", from }, { "$lt", to }, { "$lte", asOf } };
-    private static List<BsonDocument> Pipeline(Source source, ActivityQuery query)
+    private static List<BsonDocument> Pipeline(Source source, ActivityQuery query, int limit)
     {
         // Match parents before unwind, then match exact events; histories are append-only in current writers.
         var match = source.Code == "r"
@@ -82,7 +83,7 @@ public sealed class ActivityPersistence(IMongoDbContext context)
             })));
         }
         stages.Add(new BsonDocument("$sort", new BsonDocument { { "OccurredUtc", -1 }, { "Key", -1 } }));
-        stages.Add(new BsonDocument("$limit", 51));
+        stages.Add(new BsonDocument("$limit", limit));
         if (string.IsNullOrEmpty(query.Search)) { AddActorLabel(stages); }
         return stages;
     }

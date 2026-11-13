@@ -10,9 +10,11 @@
 @import "./staff-workspace.css";
 @import "./staff-components.css";
 @import "./service-admin.css";
+@import "./resource-admin.css";
 @import "./toast-stack.css";
 @import "./app-select.css";
 @import "./settings.css";
+@import "./dashboard.css";
 @source "../Views";
 @source "../wwwroot/js";
 @theme { --color-account-placeholder:color-mix(in srgb, #60645d 88%, #fff); --color-error-line:color-mix(in srgb, #9b3027 65%, #fff); --color-control-line:#83877f; --color-error:#9b3027; --color-auth-shade:rgb(16 17 15 / 78%); --color-ink:#10110f; --color-paper:#fff; --color-green:#354f3b; --color-muted:#60645d; --color-line:#d5d7d1; --font-display:Oswald,"Arial Narrow",sans-serif; --font-body:Inter,Arial,sans-serif; }
@@ -21,6 +23,18 @@
   --color-staff-surface:color-mix(in srgb,var(--color-green) 7%,var(--color-paper));
   --color-staff-now:#25665e;
   --color-staff-arrived:#dfefec;
+}
+
+@theme static {
+  --color-kpi-on-primary:color-mix(in srgb,var(--color-paper) 85%,var(--color-green));
+  --color-kpi-warning:color-mix(in srgb,var(--color-chart-pending) 12%,var(--color-paper));
+  --color-kpi-info:color-mix(in srgb,var(--color-chart-blue) 12%,var(--color-paper));
+  --color-chart-booked:#354f3b;
+  --color-chart-pending:#9a691c;
+  --color-chart-arrived:#25665e;
+  --color-chart-blue:#426b91;
+  --color-chart-purple:#795a91;
+  --color-chart-neutral:#696e66;
 }
 
 @font-face {

@@ -11,16 +11,16 @@
         <div class="staff-page-skeleton" data-skeleton-layout="@layout">
             <div class="staff-skeleton-heading">
                 <span class="staff-skeleton-fill staff-skeleton-title"></span>
-                @if (layout is "schedule" or "customers" or "team" or "services" || layout == "settings" && User.IsInRole(StaffRoles.Admin))
+                @if (layout == "dashboard")
+                {
+                    <div class="dashboard-skeleton-toolbar"><span class="staff-skeleton-fill staff-skeleton-date"></span><span class="staff-skeleton-fill staff-skeleton-action"></span></div>
+                }
+                else if (layout is "schedule" or "customers" or "team" or "services" || layout == "settings" && User.IsInRole(StaffRoles.Admin))
                 {
                     <span class="staff-skeleton-fill staff-skeleton-action"></span>
                 }
-                else if (layout == "activity")
-                {
-                    <span class="staff-skeleton-fill staff-skeleton-icon"></span>
-                }
             </div>
-            @if (layout is "dashboard" or "reports" or "resources" or "services")
+            @if (layout is "reports" or "resources" or "services")
             {
                 <span class="staff-skeleton-fill staff-skeleton-description"></span>
             }
@@ -78,13 +78,7 @@
             }
             else if (layout == "dashboard")
             {
-                <div class="staff-skeleton-dashboard-summary"><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill"></span></div>
-                <div class="staff-skeleton-dashboard-links">
-                    @for (var row = 0; row < (User.IsInRole(StaffRoles.Admin) ? 8 : User.ManagesVenue() ? 6 : 3); row++)
-                    {
-                        <div class="staff-skeleton-row"><div class="staff-skeleton-copy"><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill"></span></div><span class="staff-skeleton-fill staff-skeleton-icon"></span></div>
-                    }
-                </div>
+                <partial name="_DashboardSkeleton" model="@(true)" />
             }
             else if (layout == "settings")
             {

@@ -17,6 +17,7 @@ public static class ServiceCollectionExtensions
             configuration.GetSection(MongoDbOptions.SectionName));
 
         services.AddSingleton<IMongoDbContext, MongoDbContext>();
+        services.AddScoped<HoleInHub.Data.Activity.WorkspaceChangePersistence>();
         services.AddScoped<HoleInHub.Data.Accounts.AccountPersistence>();
         services.AddScoped<HoleInHub.Data.Activity.ActivityPersistence>();
         services.AddScoped<HoleInHub.Data.Customers.CustomerProfilePersistence>();

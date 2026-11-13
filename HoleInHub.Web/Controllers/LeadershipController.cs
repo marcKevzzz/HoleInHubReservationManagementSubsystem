@@ -12,17 +12,10 @@ namespace HoleInHubReservationManagementSubsystem.Controllers;
 
 [Authorize(Policy = StaffAuthorization.Workspace)]
 [AutoValidateAntiforgeryToken, ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class LeadershipController(ReservationService reservations, AccountService accounts,
+public sealed partial class LeadershipController(ReservationService reservations, AccountService accounts,
     TimeProvider clock, StaffPinAccess staffAccess, ActivityService activity, StaffPinService pins) : Controller
 {
     private DateOnly Today => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(clock.GetUtcNow(), ReservationRules.Manila).DateTime);
-
-    [HttpGet("/staff/dashboard")]
-    public async Task<IActionResult> Dashboard(CancellationToken ct)
-    {
-        ViewData["PendingReviews"] = await reservations.GetPendingReviewCountAsync(ct);
-        return View();
-    }
 
     [Authorize(Roles = StaffRoles.VenueManagement), HttpGet("/manager")]
     public IActionResult Manager() => RedirectToAction(nameof(Dashboard));
@@ -198,11 +191,15 @@ public sealed class LeadershipController(ReservationService reservations, Accoun
         try
         {
             await reservations.AddBayAsync(id ?? "", name ?? "", service ?? "", ct);
-            TempData["ResourceMessage"] = "Bay added.";
-            return RedirectToAction(nameof(Resources));
+            new ToastNotice("success", "Bay added", $"{name?.Trim()} is now in the inventory.").Store(TempData);
+            return ResourceSaved();
         }
         catch (ReservationValidationException ex)
         {
+            if (WantsResourceJson) { return Conflict(new { error = ex.Message }); }
+            ViewData["BayName"] = name;
+            ViewData["BayId"] = id;
+            ViewData["BayService"] = service;
             ModelState.AddModelError("", ex.Message);
             return View(nameof(Resources), await reservations.GetResourceDirectoryAsync(ct));
         }
@@ -214,17 +211,23 @@ public sealed class LeadershipController(ReservationService reservations, Accoun
         if (string.IsNullOrWhiteSpace(id) || id.Length > 80 || active is null) { return BadRequest(); }
         try
         {
-            if (!await reservations.SetBayActiveAsync(id, active.Value, ct)) { return NotFound(); }
-            TempData["ResourceMessage"] = active.Value ? "Bay restored to inventory." : "Bay retired from inventory.";
-            return RedirectToAction(nameof(Resources));
+            if (!await reservations.SetBayActiveAsync(id, active.Value, ct)) { return WantsResourceJson ? NotFound(new { error = "This bay no longer exists. Reload the inventory." }) : NotFound(); }
+            new ToastNotice("success", active.Value ? "Bay restored" : "Bay retired", active.Value ? "The bay is available for new reservations." : "The bay is no longer available for new reservations.").Store(TempData);
+            return ResourceSaved();
         }
         catch (ReservationValidationException ex)
         {
+            if (WantsResourceJson) { return Conflict(new { error = ex.Message }); }
             ModelState.AddModelError("", ex.Message);
             return View(nameof(Resources), await reservations.GetResourceDirectoryAsync(ct));
         }
     }
 
+    private bool WantsResourceJson => Request.Headers.Accept.ToString().Contains("application/json", StringComparison.OrdinalIgnoreCase);
+
+    private IActionResult ResourceSaved() => WantsResourceJson
+        ? Json(new { redirect = Url.Action(nameof(Resources)) })
+        : RedirectToAction(nameof(Resources));
     [Authorize(Roles = StaffRoles.Admin), HttpGet("/Leadership/Services")]
     public IActionResult Services() => RedirectToAction("Index", "ServiceManagement");
 
