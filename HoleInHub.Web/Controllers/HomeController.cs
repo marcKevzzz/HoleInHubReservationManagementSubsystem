@@ -14,7 +14,11 @@ public class HomeController(IServiceCatalog catalog, HoleInHub.Business.Settings
 
     public IActionResult About() => View();
     public IActionResult Gallery() => View();
-    public async Task<IActionResult> Contacts(CancellationToken ct) => View(settings is null ? null : await settings.GetAsync(ct));
+    public async Task<IActionResult> Contacts(CancellationToken ct)
+    {
+        try { return View(settings is null ? null : await settings.GetAsync(ct)); }
+        catch (Exception error) when (ServiceAvailability.Translate(error) is not null) { return View(); }
+    }
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public async Task<IActionResult> Services(CancellationToken ct)
     {
@@ -37,7 +41,11 @@ public class HomeController(IServiceCatalog catalog, HoleInHub.Business.Settings
 
     public async Task<IActionResult> Privacy(CancellationToken ct)
     {
-        if (settings is not null && (await settings.GetAsync(ct)).PoliciesPublished) { return Redirect("/policies#privacy"); }
+        try
+        {
+            if (settings is not null && (await settings.GetAsync(ct)).PoliciesPublished) { return Redirect("/policies#privacy"); }
+        }
+        catch (Exception error) when (ServiceAvailability.Translate(error) is not null) { return View(); }
         return View();
     }
 

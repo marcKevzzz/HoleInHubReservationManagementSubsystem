@@ -13,7 +13,7 @@ namespace HoleInHub.Tests.Web.Smoke;
 
 public sealed class ServiceUnavailableTests
 {
-    private sealed class OfflineContext : IMongoDbContext
+    internal sealed class OfflineContext : IMongoDbContext
     {
         public IMongoClient Client => throw new TimeoutException("private connection details");
         public IMongoDatabase Database => throw new TimeoutException("private connection details");
