@@ -113,8 +113,13 @@ public sealed partial class CustomerProfilePersistence(IMongoDbContext context)
 
     private static ReservationRecord ContactWithoutBooking(CustomerProfileRecord profile) => new()
     {
-        Id = profile.Id, FirstName = profile.FirstName, LastName = profile.LastName, Phone = profile.Phone,
-        Email = profile.Email, CreatedUtc = profile.CreatedUtc, Reference = "No reservations yet"
+        Id = profile.Id,
+        FirstName = profile.FirstName,
+        LastName = profile.LastName,
+        Phone = profile.Phone,
+        Email = profile.Email,
+        CreatedUtc = profile.CreatedUtc,
+        Reference = "No reservations yet"
     };
 
     public async Task BackfillAsync(CancellationToken ct)

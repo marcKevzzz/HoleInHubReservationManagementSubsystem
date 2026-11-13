@@ -19,8 +19,16 @@ public sealed class CustomerProfileService(CustomerProfilePersistence persistenc
         var id = "cp_" + Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes("manual:" + actorId + ":" + commandId)));
         var profile = new CustomerProfileRecord
         {
-            Id = id, FirstName = firstName.Trim(), LastName = lastName.Trim(), Email = email.Trim(), Phone = phone,
-            Kind = "Manual", CreatedBy = actorId, Sources = ["Manual"], CreatedUtc = now, UpdatedUtc = now,
+            Id = id,
+            FirstName = firstName.Trim(),
+            LastName = lastName.Trim(),
+            Email = email.Trim(),
+            Phone = phone,
+            Kind = "Manual",
+            CreatedBy = actorId,
+            Sources = ["Manual"],
+            CreatedUtc = now,
+            UpdatedUtc = now,
             LastChangeOperationId = "created:" + actorId,
             Variants = [new(firstName.Trim(), lastName.Trim(), email.Trim(), phone, "", now)]
         };

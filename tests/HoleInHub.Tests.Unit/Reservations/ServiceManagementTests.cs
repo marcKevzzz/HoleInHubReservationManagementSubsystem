@@ -1,6 +1,7 @@
 using HoleInHub.Business.Services;
 using Xunit;
 namespace HoleInHub.Tests.Unit.Services;
+
 public sealed class ServiceManagementTests
 {
     private static ServiceEdit Edit => new("service-test", 0, Guid.NewGuid().ToString("N"), true,

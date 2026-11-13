@@ -28,7 +28,8 @@ public sealed partial class ServiceCatalog
     private static ServiceEdit Edit(ServiceCatalogRecord record) => new(record.Id, record.Revision,
         Guid.NewGuid().ToString("N"), false, record.Title, record.Summary, record.RateText, record.Details,
         record.BookingService, record.Action, record.ActionLabel, record.Order, record.Active,
-        record.DepositType, record.DepositValue, ImagePaths(record)) { MaxPax = record.MaxPax };
+        record.DepositType, record.DepositValue, ImagePaths(record))
+    { MaxPax = record.MaxPax };
     public async Task<IReadOnlyList<ServiceEdit>> GetAllAsync(CancellationToken ct) =>
         (await persistence.GetAllAsync(ct)).Select(Edit).ToArray();
     public async Task<ServiceEdit?> GetAsync(string id, CancellationToken ct) =>
@@ -126,8 +127,12 @@ public sealed partial class ServiceCatalog
         var images = uploads.Select(bytes =>
         {
             var hash = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(edit.Id).Concat(bytes).ToArray());
-            return new ServiceImageRecord { Id = Convert.ToHexString(hash)[..32].ToLowerInvariant(),
-                ContentType = ImageType(bytes), Content = bytes };
+            return new ServiceImageRecord
+            {
+                Id = Convert.ToHexString(hash)[..32].ToLowerInvariant(),
+                ContentType = ImageType(bytes),
+                Content = bytes
+            };
         }).ToArray();
         var paths = edit.Images.Concat(images.Select(image => "/media/services/" + image.Id)).Distinct().ToArray();
         if (edit.ImageOrder.Length > 0)
@@ -144,12 +149,25 @@ public sealed partial class ServiceCatalog
         var commandHash = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(new { edit, paths, actor })));
         var record = new ServiceCatalogRecord
         {
-            MaxPax = edit.MaxPax, Id = edit.Id, Title = edit.Title.Trim(), Summary = edit.Summary.Trim(), Details = edit.Details.Trim(),
-            RateText = edit.RateText.Trim(), BookingService = edit.BookingService, Action = edit.Action,
-            ActionLabel = edit.ActionLabel.Trim(), Order = edit.Order, Active = edit.Active,
-            Images = paths, ImagePath = paths[0], DepositType = edit.DepositType,
-            DepositValue = edit.DepositType == "None" ? 0 : edit.DepositValue, CommandId = edit.CommandId, CommandHash = commandHash,
-            UpdatedBy = actor, UpdatedUtc = DateTime.UtcNow
+            MaxPax = edit.MaxPax,
+            Id = edit.Id,
+            Title = edit.Title.Trim(),
+            Summary = edit.Summary.Trim(),
+            Details = edit.Details.Trim(),
+            RateText = edit.RateText.Trim(),
+            BookingService = edit.BookingService,
+            Action = edit.Action,
+            ActionLabel = edit.ActionLabel.Trim(),
+            Order = edit.Order,
+            Active = edit.Active,
+            Images = paths,
+            ImagePath = paths[0],
+            DepositType = edit.DepositType,
+            DepositValue = edit.DepositType == "None" ? 0 : edit.DepositValue,
+            CommandId = edit.CommandId,
+            CommandHash = commandHash,
+            UpdatedBy = actor,
+            UpdatedUtc = DateTime.UtcNow
         };
         await persistence.SaveAsync(record, edit.Revision, edit.Create, images, ct);
     }

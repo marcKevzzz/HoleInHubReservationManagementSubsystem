@@ -1,7 +1,7 @@
+using HoleInHub.Data.Reservations;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
-using MongoDB.Bson;
-using HoleInHub.Data.Reservations;
 
 namespace HoleInHub.Data.Accounts;
 

@@ -55,7 +55,7 @@ public sealed class ServiceCatalogTests(MongoDbFixture fixture) : IClassFixture<
         Assert.Contains("30%", publicItem.DepositText);
         Assert.Equal("/Home/Contacts", publicItem.ActionUrl);
         await Assert.ThrowsAsync<InvalidOperationException>(() => catalog.SaveAsync(update with
-            { CommandId = Guid.NewGuid().ToString("N"), Title = "Stale" }, [], "admin", default));
+        { CommandId = Guid.NewGuid().ToString("N"), Title = "Stale" }, [], "admin", default));
         saved = (await catalog.GetAsync(id, default))!;
         await catalog.SetStateAsync(id, saved.Revision, Guid.NewGuid().ToString("N"), "delete", "admin", default);
         Assert.Null(await catalog.GetAsync(id, default));

@@ -35,15 +35,30 @@ public sealed class ServiceEditorForm
         var rate = !Create && original == RateAmount && RateUnit == (RateText.Contains('%') ? "Percentage" : "Peso")
             ? RateText : ServiceCatalog.FormatDeposit(RateUnit, RateAmount.Value).Replace(" deposit", "");
         return new(Id, Revision, CommandId, Create, Title, Summary, rate, string.IsNullOrWhiteSpace(Details) ? Summary : Details,
-        BookingService, Action, ActionLabel, Order, Active, DepositType, DepositValue, Images) { MaxPax = MaxPax, ImageOrder = ImageOrder };
+        BookingService, Action, ActionLabel, Order, Active, DepositType, DepositValue, Images)
+        { MaxPax = MaxPax, ImageOrder = ImageOrder };
     }
     private static decimal? ParseRate(string text) => decimal.TryParse(System.Text.RegularExpressions.Regex.Match(text, @"[0-9][0-9,]*(?:\.[0-9]+)?").Value.Replace(",", ""), System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var value) ? value : null;
     public static ServiceEditorForm From(ServiceEdit item) => new()
     {
-        MaxPax = item.MaxPax, RateAmount = ParseRate(item.RateText), RateUnit = item.RateText.Contains('%') ? "Percentage" : "Peso",
-        Id = item.Id, Revision = item.Revision, CommandId = item.CommandId, Create = false,
-        Title = item.Title, Summary = item.Summary, RateText = item.RateText, Details = item.Details,
-        BookingService = item.BookingService, Action = item.Action, ActionLabel = item.ActionLabel,
-        Order = item.Order, Active = item.Active, DepositType = item.DepositType, DepositValue = item.DepositValue, Images = item.Images
+        MaxPax = item.MaxPax,
+        RateAmount = ParseRate(item.RateText),
+        RateUnit = item.RateText.Contains('%') ? "Percentage" : "Peso",
+        Id = item.Id,
+        Revision = item.Revision,
+        CommandId = item.CommandId,
+        Create = false,
+        Title = item.Title,
+        Summary = item.Summary,
+        RateText = item.RateText,
+        Details = item.Details,
+        BookingService = item.BookingService,
+        Action = item.Action,
+        ActionLabel = item.ActionLabel,
+        Order = item.Order,
+        Active = item.Active,
+        DepositType = item.DepositType,
+        DepositValue = item.DepositValue,
+        Images = item.Images
     };
 }

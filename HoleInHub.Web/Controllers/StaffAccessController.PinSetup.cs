@@ -176,9 +176,14 @@ public sealed partial class StaffAccessController
         var now = clock.GetUtcNow().UtcDateTime;
         return new()
         {
-            Email = context.Email, ActionUrl = "/staff/pin/verify", SubmitLabel = "Verify email",
-            ExpiresUtc = challenge?.ExpiresUtc ?? now, ResendAfterUtc = challenge?.ResendAfterUtc ?? now,
-            ServerNowUtc = now, Expired = challenge is null || challenge.ExpiresUtc <= now, ResendWhenExpired = true
+            Email = context.Email,
+            ActionUrl = "/staff/pin/verify",
+            SubmitLabel = "Verify email",
+            ExpiresUtc = challenge?.ExpiresUtc ?? now,
+            ResendAfterUtc = challenge?.ResendAfterUtc ?? now,
+            ServerNowUtc = now,
+            Expired = challenge is null || challenge.ExpiresUtc <= now,
+            ResendWhenExpired = true
         };
     }
 }

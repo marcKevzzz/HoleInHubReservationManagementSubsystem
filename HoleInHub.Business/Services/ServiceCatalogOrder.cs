@@ -1,5 +1,6 @@
 using HoleInHub.Data.Services;
 namespace HoleInHub.Business.Services;
+
 public sealed record ServicePosition(string Id, long Revision);
 public sealed partial class ServiceCatalog
 {

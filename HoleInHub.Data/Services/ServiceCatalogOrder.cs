@@ -1,5 +1,6 @@
 using MongoDB.Driver;
 namespace HoleInHub.Data.Services;
+
 public sealed partial class ServiceCatalogPersistence
 {
     public async Task ReorderAsync(IReadOnlyList<ServiceCatalogRecord> rows, string actor, CancellationToken ct)

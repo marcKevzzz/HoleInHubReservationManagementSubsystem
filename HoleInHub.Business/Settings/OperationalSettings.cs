@@ -5,6 +5,7 @@ using HoleInHub.Business.Reservations;
 using HoleInHub.Data.Settings;
 using Microsoft.Extensions.Options;
 namespace HoleInHub.Business.Settings;
+
 public sealed class SettingsEdit
 {
     public long Revision { get; set; } = -1;
@@ -32,20 +33,44 @@ public sealed class OperationalSettings(SystemSettingsPersistence persistence, I
     {
         if (cached is not null) { return cached; }
         var row = await persistence.GetAsync(ct);
-        cached = row is null ? new SettingsEdit { OnlineEnabled = defaults.Value.Approved, DurationsApproved = defaults.Value.DurationsApproved,
-            ReviewStartMinutes = (int)defaults.Value.ReviewStart.TotalMinutes, ReviewEndMinutes = (int)defaults.Value.ReviewEnd.TotalMinutes,
-            ReviewDays = defaults.Value.ReviewDays, StaffEmails = defaults.Value.StaffEmails }
-            : new SettingsEdit { Revision = row.Revision, OnlineEnabled = row.OnlineEnabled, DurationsApproved = row.DurationsApproved,
-                ReviewStartMinutes = row.ReviewStartMinutes, ReviewEndMinutes = row.ReviewEndMinutes, ReviewDays = row.ReviewDays,
-                StaffEmails = row.StaffEmails, VenueName = row.VenueName, ContactEmail = row.ContactEmail, ContactPhone = row.ContactPhone,
-                BookingPolicy = row.BookingPolicy, PrivacyPolicy = row.PrivacyPolicy, VenueRules = row.VenueRules, PoliciesPublished = row.PoliciesPublished,
-                UpdatedBy = row.UpdatedBy, UpdatedUtc = row.UpdatedUtc };
+        cached = row is null ? new SettingsEdit
+        {
+            OnlineEnabled = defaults.Value.Approved,
+            DurationsApproved = defaults.Value.DurationsApproved,
+            ReviewStartMinutes = (int)defaults.Value.ReviewStart.TotalMinutes,
+            ReviewEndMinutes = (int)defaults.Value.ReviewEnd.TotalMinutes,
+            ReviewDays = defaults.Value.ReviewDays,
+            StaffEmails = defaults.Value.StaffEmails
+        }
+            : new SettingsEdit
+            {
+                Revision = row.Revision,
+                OnlineEnabled = row.OnlineEnabled,
+                DurationsApproved = row.DurationsApproved,
+                ReviewStartMinutes = row.ReviewStartMinutes,
+                ReviewEndMinutes = row.ReviewEndMinutes,
+                ReviewDays = row.ReviewDays,
+                StaffEmails = row.StaffEmails,
+                VenueName = row.VenueName,
+                ContactEmail = row.ContactEmail,
+                ContactPhone = row.ContactPhone,
+                BookingPolicy = row.BookingPolicy,
+                PrivacyPolicy = row.PrivacyPolicy,
+                VenueRules = row.VenueRules,
+                PoliciesPublished = row.PoliciesPublished,
+                UpdatedBy = row.UpdatedBy,
+                UpdatedUtc = row.UpdatedUtc
+            };
         return cached;
     }
     public static ReservationPolicy Apply(SettingsEdit edit, ReservationPolicy deployment) => new()
     {
-        Approved = edit.OnlineEnabled, DurationsApproved = edit.DurationsApproved, ReviewStart = TimeSpan.FromMinutes(edit.ReviewStartMinutes),
-        ReviewEnd = TimeSpan.FromMinutes(edit.ReviewEndMinutes), ReviewDays = edit.ReviewDays, StaffEmails = edit.StaffEmails,
+        Approved = edit.OnlineEnabled,
+        DurationsApproved = edit.DurationsApproved,
+        ReviewStart = TimeSpan.FromMinutes(edit.ReviewStartMinutes),
+        ReviewEnd = TimeSpan.FromMinutes(edit.ReviewEndMinutes),
+        ReviewDays = edit.ReviewDays,
+        StaffEmails = edit.StaffEmails,
         DemoPaymentsEnabled = deployment.DemoPaymentsEnabled
     };
     public async Task<ReservationPolicy> PolicyAsync(CancellationToken ct) => Apply(await GetAsync(ct), defaults.Value);
@@ -72,12 +97,26 @@ public sealed class OperationalSettings(SystemSettingsPersistence persistence, I
         Validate(edit);
         if (string.IsNullOrWhiteSpace(actor)) { throw new ArgumentException("Sign in before saving settings."); }
         var hash = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(new { edit, actor })));
-        await persistence.SaveAsync(new SystemSettingsRecord { CommandId = edit.CommandId, CommandHash = hash, OnlineEnabled = edit.OnlineEnabled,
-            DurationsApproved = edit.DurationsApproved, ReviewStartMinutes = edit.ReviewStartMinutes, ReviewEndMinutes = edit.ReviewEndMinutes,
-            ReviewDays = edit.ReviewDays.Order().ToArray(), StaffEmails = edit.StaffEmails.Distinct(StringComparer.OrdinalIgnoreCase).ToArray(),
-            VenueName = edit.VenueName.Trim(), ContactEmail = edit.ContactEmail.Trim(), ContactPhone = edit.ContactPhone.Trim(),
-            BookingPolicy = edit.BookingPolicy.Trim(), PrivacyPolicy = edit.PrivacyPolicy.Trim(), VenueRules = edit.VenueRules.Trim(), PoliciesPublished = edit.PoliciesPublished,
-            UpdatedBy = actor, UpdatedUtc = clock.GetUtcNow().UtcDateTime }, edit.Revision, ct);
+        await persistence.SaveAsync(new SystemSettingsRecord
+        {
+            CommandId = edit.CommandId,
+            CommandHash = hash,
+            OnlineEnabled = edit.OnlineEnabled,
+            DurationsApproved = edit.DurationsApproved,
+            ReviewStartMinutes = edit.ReviewStartMinutes,
+            ReviewEndMinutes = edit.ReviewEndMinutes,
+            ReviewDays = edit.ReviewDays.Order().ToArray(),
+            StaffEmails = edit.StaffEmails.Distinct(StringComparer.OrdinalIgnoreCase).ToArray(),
+            VenueName = edit.VenueName.Trim(),
+            ContactEmail = edit.ContactEmail.Trim(),
+            ContactPhone = edit.ContactPhone.Trim(),
+            BookingPolicy = edit.BookingPolicy.Trim(),
+            PrivacyPolicy = edit.PrivacyPolicy.Trim(),
+            VenueRules = edit.VenueRules.Trim(),
+            PoliciesPublished = edit.PoliciesPublished,
+            UpdatedBy = actor,
+            UpdatedUtc = clock.GetUtcNow().UtcDateTime
+        }, edit.Revision, ct);
         cached = null;
     }
 }

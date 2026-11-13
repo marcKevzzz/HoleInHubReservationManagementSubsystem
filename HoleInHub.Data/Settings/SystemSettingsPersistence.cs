@@ -2,6 +2,7 @@ using HoleInHub.Data.Context;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 namespace HoleInHub.Data.Settings;
+
 public sealed class SystemSettingsRecord
 {
     [BsonId] public string Id { get; set; } = "venue";
