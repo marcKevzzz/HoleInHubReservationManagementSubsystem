@@ -1,15 +1,52 @@
 (() => {
+    function confirmDecision(form, title, trigger, restore, context) {
+        const dialog = document.createElement('dialog');
+        dialog.className = 'staff-row-details staff-workspace review-confirmation';
+        const heading = document.createElement('h2');
+        heading.id = 'review-confirmation-title';
+        heading.textContent = title;
+        dialog.setAttribute('aria-labelledby', heading.id);
+        const cancel = document.createElement('button');
+        cancel.type = 'button';
+        cancel.className = 'button button-secondary';
+        cancel.textContent = 'Cancel';
+        cancel.autofocus = true;
+        cancel.addEventListener('click', () => dialog.close());
+        const footer = document.createElement('div');
+        footer.className = 'review-confirmation-actions';
+        footer.append(cancel);
+        for (const submit of form.querySelectorAll('button[type="submit"]')) footer.append(submit);
+        form.append(footer);
+        const choice = form.querySelector('[name="reasonChoice"]');
+        if (choice) {
+            const update = () => { form.elements.reason.required = choice.value === 'Other'; };
+            choice.addEventListener('change', update);
+            update();
+        }
+        dialog.append(heading);
+        if (context) dialog.append(context);
+        dialog.append(form);
+        dialog.addEventListener('close', () => {
+            restore?.();
+            dialog.remove();
+            trigger.focus({ preventScroll: true });
+        });
+        document.body.append(dialog);
+        window.HoleInHubButtons?.mount(dialog);
+        dialog.showModal();
+    }
     document.addEventListener('toggle', event => {
         const action = event.target;
         if (!action.matches?.('.review-header-action[open]')) return;
         const form = action.querySelector('form');
-        const bounds = action.querySelector('summary').getBoundingClientRect();
-        const width = Math.min(340, window.innerWidth - 24);
-        Object.assign(form.style, {
-            position: 'fixed', width: width + 'px', right: 'auto',
-            left: Math.max(12, Math.min(bounds.right - width, window.innerWidth - width - 12)) + 'px',
-            top: Math.min(bounds.bottom + 6, window.innerHeight - 100) + 'px',
-            maxHeight: Math.max(80, window.innerHeight - bounds.bottom - 18) + 'px', overflow: 'auto'
+        if (!form) return;
+        const summary = action.querySelector('summary');
+        action.open = false;
+        confirmDecision(form, summary.getAttribute('aria-label') || summary.textContent.trim(), summary, () => {
+            const footer = form.querySelector('.review-confirmation-actions');
+            for (const submit of footer.querySelectorAll('button[type="submit"]')) form.append(submit);
+            footer.remove();
+            action.append(form);
         });
     }, true);
     function mountRows() {
@@ -128,32 +165,27 @@
         try {
             const response = await fetch(button.dataset.actionsUrl, { cache: 'no-store' });
             if (!response.ok || response.redirected) throw new Error('Reload the page and sign in again if required.');
-            const dialog = document.createElement('dialog');
-            dialog.className = 'staff-row-details staff-workspace review-detail review-action-dialog';
-            dialog.setAttribute('aria-label', 'Review reservation action');
             const content = document.createElement('div');
             content.innerHTML = await response.text();
-            const close = document.createElement('button');
-            close.type = 'button';
-            close.className = 'button button-secondary';
-            close.textContent = 'Close';
-            dialog.append(close, content);
-            close.addEventListener('click', () => dialog.close());
-            dialog.addEventListener('close', () => { dialog.remove(); button.focus(); });
             const command = button.dataset.queueDecision.replace('-change', '');
             const actionButton = content.querySelector('button[value="' + command + '"]');
-            const action = actionButton?.closest('details');
-            if (action) action.open = true;
-            if (!actionButton) {
-                const message = document.createElement('p');
-                message.textContent = 'This action is currently unavailable. Review the latest booking details.';
-                content.prepend(message);
+            if (!actionButton) throw new Error('This action is currently unavailable. Review the latest booking details.');
+            const form = actionButton.closest('form');
+            const context = document.createElement('div');
+            const section = form.closest('section');
+            const facts = section?.querySelector('.review-facts');
+            if (facts) context.append(facts);
+            for (const submit of form.querySelectorAll('button[type="submit"]')) {
+                if (submit !== actionButton) submit.remove();
             }
-            content.querySelector('#reject-reason-choice')?.addEventListener('change', change => {
-                change.target.form.elements.reason.required = change.target.value === 'Other';
-            });
-            document.body.append(dialog);
-            dialog.showModal();
+            for (const details of form.querySelectorAll('details')) {
+                details.open = true;
+                details.querySelector('summary')?.remove();
+            }
+            const notes = form.querySelector('[name="reason"]');
+            if (command === 'decline' && notes) notes.required = true;
+            confirmDecision(form, button.getAttribute('aria-label'), button, null, context);
+
         } catch (error) {
             if (window.HoleInHubToasts?.show({ kind: 'error', title: 'Could not open review', message: error.message })) return;
             const notice = document.createElement('p');

@@ -1,0 +1,128 @@
+@using HoleInHub.Business.Accounts
+@using HoleInHub.Web.Accounts
+@{
+    var layouts = new List<string> { "dashboard", "activity", "schedule", "queue", "cancellations", "customers" };
+    if (User.ManagesVenue()) { layouts.AddRange(["team", "reports", "settings"]); }
+    if (User.IsInRole(StaffRoles.Admin)) { layouts.AddRange(["resources", "services"]); }
+}
+@foreach (var layout in layouts)
+{
+    <template data-staff-nav-template="@layout">
+        <div class="staff-page-skeleton" data-skeleton-layout="@layout">
+            <div class="staff-skeleton-heading">
+                <span class="staff-skeleton-fill staff-skeleton-title"></span>
+                @if (layout is "schedule" or "customers" or "team" or "services" || layout == "settings" && User.IsInRole(StaffRoles.Admin))
+                {
+                    <span class="staff-skeleton-fill staff-skeleton-action"></span>
+                }
+                else if (layout == "activity")
+                {
+                    <span class="staff-skeleton-fill staff-skeleton-icon"></span>
+                }
+            </div>
+            @if (layout is "dashboard" or "reports" or "resources" or "services")
+            {
+                <span class="staff-skeleton-fill staff-skeleton-description"></span>
+            }
+            @if (layout == "schedule")
+            {
+                <div class="staff-skeleton-tools">
+                    <span class="staff-skeleton-fill staff-skeleton-date"></span>
+                    <span class="staff-skeleton-fill staff-skeleton-search"></span>
+                    <span class="staff-skeleton-fill staff-skeleton-switch"></span>
+                </div>
+                <div class="staff-skeleton-timeline">
+                    <div class="staff-skeleton-time-axis"><span></span><div>@for (var hour = 0; hour < 14; hour++) { <i class="staff-skeleton-fill"></i> }</div></div>
+                    @for (var bay = 0; bay < 7; bay++)
+                    {
+                        <div class="staff-skeleton-bay"><span class="staff-skeleton-bay-label"><i class="staff-skeleton-fill"></i></span><div><i class="staff-skeleton-fill staff-skeleton-booking" style="--booking-start:@(12 + bay % 3 * 22)%;--booking-width:@(12 + bay % 2 * 8)%"></i></div></div>
+                    }
+                </div>
+            }
+            else if (layout == "activity")
+            {
+                <div class="staff-skeleton-tools">
+                    <span class="staff-skeleton-fill staff-skeleton-search"></span>
+                    <span class="staff-skeleton-fill staff-skeleton-control"></span>
+                    <span class="staff-skeleton-fill staff-skeleton-control"></span>
+                </div>
+                <div class="staff-skeleton-tabs">@for (var tab = 0; tab < 5; tab++) { <span class="staff-skeleton-fill"></span> }</div>
+                <span class="staff-skeleton-fill staff-skeleton-section-title"></span>
+                <div class="staff-skeleton-rows staff-skeleton-activity">
+                    @for (var row = 0; row < 6; row++)
+                    {
+                        <div class="staff-skeleton-row"><span class="staff-skeleton-fill"></span><div class="staff-skeleton-copy"><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill"></span></div><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill staff-skeleton-icon"></span></div>
+                    }
+                </div>
+            }
+            else if (layout is "queue" or "cancellations" or "customers" or "team")
+            {
+                <div class="staff-skeleton-tools">
+                    @if (layout == "customers") { <span class="staff-skeleton-fill staff-skeleton-search"></span> }
+                    else { <div class="staff-skeleton-tabs">@for (var tab = 0; tab < (layout == "team" ? 4 : 2); tab++) { <span class="staff-skeleton-fill"></span> }</div> }
+                    <span class="staff-skeleton-fill @(layout is "queue" or "cancellations" ? "staff-skeleton-date" : "staff-skeleton-count")"></span>
+                </div>
+                <div class="staff-skeleton-rows staff-skeleton-directory" data-skeleton-directory="@layout">
+                    @if (layout != "customers") { <div class="staff-skeleton-table-heading">@for (var cell = 0; cell < (layout == "team" ? 3 : 5); cell++) { <span class="staff-skeleton-fill"></span> }</div> }
+                    @for (var row = 0; row < (layout == "team" ? 4 : 6); row++)
+                    {
+                        <div class="staff-skeleton-row">
+                            @for (var cell = 0; cell < (layout is "queue" or "cancellations" ? 4 : layout == "team" ? 2 : 3); cell++)
+                            {
+                                <div class="staff-skeleton-copy"><span class="staff-skeleton-fill"></span>@if (layout != "team") { <span class="staff-skeleton-fill"></span> }</div>
+                            }
+                            <span class="staff-skeleton-fill @(layout == "team" ? "staff-skeleton-pill" : "staff-skeleton-icon")"></span>
+                        </div>
+                    }
+                </div>
+            }
+            else if (layout == "dashboard")
+            {
+                <div class="staff-skeleton-dashboard-summary"><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill"></span></div>
+                <div class="staff-skeleton-dashboard-links">
+                    @for (var row = 0; row < (User.IsInRole(StaffRoles.Admin) ? 8 : User.ManagesVenue() ? 6 : 3); row++)
+                    {
+                        <div class="staff-skeleton-row"><div class="staff-skeleton-copy"><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill"></span></div><span class="staff-skeleton-fill staff-skeleton-icon"></span></div>
+                    }
+                </div>
+            }
+            else if (layout == "settings")
+            {
+                <div class="settings-layout settings-skeleton"><div class="settings-skeleton-nav">@for(var item=0;item<6;item++){<span class="staff-skeleton-fill"></span>}</div><div><span class="staff-skeleton-fill staff-skeleton-section-title"></span>@for(var field=0;field<4;field++){<div class="settings-skeleton-field"><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill"></span></div>}<span class="staff-skeleton-fill staff-skeleton-section-title"></span></div></div>
+            }
+            else if (layout == "reports")
+            {
+                <section class="staff-skeleton-facts">
+                    <span class="staff-skeleton-fill staff-skeleton-section-title"></span>
+                    @for (var row = 0; row < 5; row++)
+                    {
+                        <div><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill"></span></div>
+                    }
+                </section>
+            }
+            else if (layout == "resources")
+            {
+                <section class="staff-skeleton-resource-form">
+                    <span class="staff-skeleton-fill staff-skeleton-section-title"></span>
+                    <div>@for (var field = 0; field < 3; field++) { <span class="staff-skeleton-fill"></span> }<span class="staff-skeleton-fill staff-skeleton-action"></span></div>
+                </section>
+                <div class="staff-skeleton-rows staff-skeleton-resource-table">
+                    <div class="staff-skeleton-table-heading">@for (var cell = 0; cell < 4; cell++) { <span class="staff-skeleton-fill"></span> }</div>
+                    @for (var row = 0; row < 7; row++)
+                    {
+                        <div class="staff-skeleton-row"><div class="staff-skeleton-copy"><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill"></span></div><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill staff-skeleton-pill"></span><span class="staff-skeleton-fill staff-skeleton-action"></span></div>
+                    }
+                </div>
+            }
+            else if (layout == "services")
+            {
+                <div class="staff-skeleton-rows staff-skeleton-services">
+                    @for (var row = 0; row < 6; row++)
+                    {
+                        <div class="staff-skeleton-row"><span class="staff-skeleton-fill service-skeleton-cover"></span><div class="staff-skeleton-copy"><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill"></span></div><span class="staff-skeleton-fill"></span></div>
+                    }
+                </div>
+            }
+        </div>
+    </template>
+}

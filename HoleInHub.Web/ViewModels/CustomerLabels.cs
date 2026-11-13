@@ -8,6 +8,7 @@ public static class CustomerLabels
     public static string Kind(string kind) => kind switch
     {
         "Combined" => "Combined customer profile",
+        "Manual" => "Customer contact",
         "Account" => "Account customer",
         "Guest" => "Verified guest",
         _ => "Booking contact"

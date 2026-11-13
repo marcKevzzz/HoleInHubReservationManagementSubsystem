@@ -8,8 +8,11 @@
     var party = entry.Attendees > 0 ? $"{entry.Attendees} pax" : "Party size unavailable";
     var status = entry.Status == "Checked-In" ? "Checked in" : entry.Status;
     var service = ReservationLabels.Service(entry.Service!);
+    var multiBay = entry.BayCount > 1 && entry.Service != "WholeShop";
     var searchMatch = Model.Css.Contains("staff-search-match");
+    var bookingDay = searchMatch ? DateOnly.FromDateTime(entry.Start) : Model.Day;
     var description = $"{Model.Location}, {name}, {party}, booking {entry.Reference}, {time}, {status}"
+        + (multiBay ? $", {entry.BayCount} bays in the same reservation: {entry.Location}" : "")
         + (entry.CheckedOut is DateTime departure ? $", checked out {TimeLabel(departure)}" : "");
     var icon = entry.Status switch
     {
@@ -21,13 +24,13 @@
     };
 }
 <a class="@Model.Css" style="@Model.Style" data-status="@entry.Status" data-holds-capacity="@entry.HoldsCapacity.ToString().ToLowerInvariant()"
-   title="@description" aria-label="@description" data-staff-booking
-   data-actions-url="@Url.Action("Actions", new { id = entry.ReservationId, date = Model.Day.ToString("yyyy-MM-dd") })"
-   data-guest="@name" data-party="@party" data-reference="@entry.Reference" data-interval="@time"
-   data-state="@status" data-service="@service" data-location="@Model.Location"
-   data-move-booking="@(Model.Style is not null && entry.CanMove && entry.Start.Date == Model.Day.ToDateTime(TimeOnly.MinValue).Date && entry.End.Date == entry.Start.Date ? Url.Action("Move", new { id = entry.ReservationId }) : null)"
-   data-revision="@entry.Revision" data-start-minute="@entry.Start.TimeOfDay.TotalMinutes" data-duration="@((entry.End - entry.Start).TotalMinutes)"
-   asp-action="Details" asp-route-id="@entry.ReservationId" asp-route-date="@Model.Day.ToString("yyyy-MM-dd")">
+   title="@description" aria-label="@description" data-staff-booking data-booking-id="@entry.ReservationId" data-multi-bay="@(multiBay ? "true" : null)"
+   data-actions-url="@Url.Action("Actions", new { id = entry.ReservationId, date = bookingDay.ToString("yyyy-MM-dd") })"
+   data-search-day="@(searchMatch ? bookingDay.ToString("yyyy-MM-dd") : null)" data-guest="@name" data-party="@party" data-reference="@entry.Reference" data-interval="@time"
+   data-state="@status" data-service="@service" data-location="@Model.Location" data-booked-bays="@entry.Location"
+   data-move-booking="@(Model.Style is not null && entry.CanMove && entry.Start.Date == Model.Day.ToDateTime(TimeOnly.MinValue).Date && entry.End <= entry.Start.Date.AddDays(1) ? Url.Action("Move", new { id = entry.ReservationId }) : null)"
+   data-bay-count="@entry.BayCount" data-revision="@entry.Revision" data-start-minute="@entry.Start.TimeOfDay.TotalMinutes" data-duration="@((entry.End - entry.Start).TotalMinutes)"
+   asp-action="Details" asp-route-id="@entry.ReservationId" asp-route-date="@bookingDay.ToString("yyyy-MM-dd")">
     <strong>@name</strong>
     @if (searchMatch)
     {
@@ -41,9 +44,13 @@
     <small>
         @entry.Reference
         @if (searchMatch) { <span class="staff-status" data-status="@entry.Status">@status</span> }
-        @if (entry.Status == "Completed")
+        @if (!searchMatch && entry.Status == "Completed")
         {
             <span>· Completed@(entry.CheckedOut is DateTime completedAt ? $" · Checked out {TimeLabel(completedAt)}" : "")</span>
         }
     </small>
+    @if (searchMatch)
+    {
+        <span class="staff-search-arrow" aria-hidden="true"><partial name="_StaffIcon" model='"arrow-right"' /></span>
+    }
 </a>

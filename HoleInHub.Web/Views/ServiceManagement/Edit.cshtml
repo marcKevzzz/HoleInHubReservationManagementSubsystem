@@ -1,0 +1,50 @@
+@using HoleInHub.Business.Services
+@model ServiceEditorForm
+@{ Layout = "_StaffLayout"; ViewData["Title"] = Model.Create ? "Add service" : "Edit service"; }
+<section class="staff-workspace service-admin service-editor">
+    <a class="flow-back" asp-action="Index"><partial name="_BackArrow" /> Back to services</a>
+    <header class="staff-workspace-heading service-admin-heading">
+        <h1>@ViewData["Title"]</h1>
+        <div class="service-admin-actions"><label class="service-switch"><span>Active</span><input form="service-editor-form" id="Active" name="Active" type="checkbox" value="true" checked="@Model.Active" role="switch" /><span class="service-switch-track" aria-hidden="true"></span></label><a class="button button-secondary" asp-action="Index">Cancel</a><button class="button" type="submit" form="service-editor-form">Save service</button></div>
+    </header>
+    <form id="service-editor-form" asp-action="Save" method="post" enctype="multipart/form-data" data-service-editor class="service-editor-grid">
+        <input type="hidden" name="Active" value="false" /><input asp-for="Id" type="hidden" /><input asp-for="Revision" type="hidden" /><input asp-for="CommandId" type="hidden" /><input asp-for="Create" type="hidden" />
+        <input asp-for="Details" type="hidden" /><input asp-for="RateText" type="hidden" /><input asp-for="Action" type="hidden" /><input asp-for="ActionLabel" type="hidden" /><input asp-for="Order" type="hidden" />
+        <p class="service-field-error service-save-error" data-save-error role="alert"></p>
+        <div asp-validation-summary="All" class="staff-error" role="alert"></div>
+        <div class="service-editor-main service-composition">
+            <section class="service-editor-section service-image-section">
+                <h2>Images</h2>
+                <div class="service-editor-gallery" data-service-gallery>
+                    @foreach (var image in Model.Images)
+                    {
+                        <figure data-service-image data-path="@image"><img src="@image" alt="Service image" /><input type="hidden" name="Images" value="@image" /></figure>
+                    }
+                </div>
+                <label class="service-upload" data-image-add title="Add up to 8 images · JPEG, PNG or WebP · 4 MB each"><input asp-for="Uploads" type="file" multiple accept="image/jpeg,image/png,image/webp" data-service-uploads /><span><partial name="_StaffIcon" model='"plus"' /><span class="sr-only">Add images</span></span></label>
+                <p class="service-field-error" data-images-error role="alert"></p>
+            </section>
+            <section class="service-editor-section service-detail-fields">
+                <h2>Service details</h2>
+                <div class="auth-input-wrap"><input asp-for="Title" required maxlength="120" placeholder=" " /><label asp-for="Title">Service name</label><span asp-validation-for="Title" data-error-for="Title"></span></div>
+                <div class="auth-input-wrap"><input asp-for="MaxPax" type="number" min="1" max="80" placeholder=" " /><label asp-for="MaxPax">Max pax</label><span asp-validation-for="MaxPax" data-error-for="MaxPax"></span></div>
+                <div class="service-money-field"><div class="auth-input-wrap"><input asp-for="RateAmount" type="number" required min="0.01" max="1000000" step="0.01" placeholder=" " /><label asp-for="RateAmount">Displayed rate</label><span asp-validation-for="RateAmount" data-error-for="RateAmount"></span></div><select asp-for="RateUnit" aria-label="Rate unit"><option value="Peso">₱</option><option value="Percentage">%</option></select></div>
+        <aside class="service-editor-options">
+            <section class="service-editor-section">
+
+                <div class="service-editor-field"><label asp-for="BookingService">Booking type</label><select asp-for="BookingService">@foreach (var type in ServiceCatalog.BookingTypes) { <option value="@type">@ReservationLabels.Service(type)</option> }</select></div>
+            </section>
+            <section class="service-editor-section">
+                <label class="service-switch"><span>Deposit</span><input type="checkbox" role="switch" data-deposit-enabled checked="@(Model.DepositType != "None")" /><span class="service-switch-track" aria-hidden="true"></span></label>
+                <input asp-for="DepositType" type="hidden" data-deposit-type />
+                <div class="service-money-field" data-deposit-value><div class="auth-input-wrap"><input asp-for="DepositValue" type="number" min="0.01" max="1000000" step="0.01" placeholder=" " /><label asp-for="DepositValue">Deposit amount</label><span asp-validation-for="DepositValue" data-error-for="DepositValue"></span></div><select data-deposit-unit aria-label="Deposit unit"><option value="Peso" selected="@(Model.DepositType != "Percentage")">₱</option><option value="Percentage" selected="@(Model.DepositType == "Percentage")">%</option></select></div>
+            </section>
+        </aside>
+            </section>
+        </div>
+
+        <section class="service-description"><div class="auth-input-wrap"><textarea asp-for="Summary" required maxlength="500" rows="2" placeholder=" "></textarea><label asp-for="Summary">Short description</label><span asp-validation-for="Summary" data-error-for="Summary"></span></div></section>
+    </form>
+    <dialog class="service-image-viewer" data-image-viewer aria-label="Service images"><button type="button" class="service-viewer-close" data-viewer-close aria-label="Close images"><partial name="_StaffIcon" model='"close"' /></button><div data-viewer-content></div></dialog>
+</section>
+@section Scripts { <script src="~/js/service-admin.js" asp-append-version="true"></script> }

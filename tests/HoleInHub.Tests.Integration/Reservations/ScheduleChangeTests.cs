@@ -62,6 +62,114 @@ public sealed class ScheduleChangeTests(MongoDbFixture fixture) : IClassFixture<
         new(booking.Id, booking.Revision, Guid.NewGuid().ToString("N"), new(2026, 11, 5), new(14, 0), 90, "Move our visit.");
 
     [Fact]
+    public async Task StaffCreationUsesOneIntervalForEveryBayAndRollsBackIfAnyBayIsBusy()
+    {
+        var (service, store, _) = await Setup();
+        var occupied = await store.InsertAsync(Booking("bay-3"), default);
+        var request = new StaffBookingRequest("bay-2", new(2026, 11, 4), new(12, 0), 60,
+            "Alex", "Santos", "09175550123", 12, "Walk-in", Guid.NewGuid().ToString("N"))
+        { AdditionalResourceIds = ["bay-3"] };
+
+        await Assert.ThrowsAsync<ReservationValidationException>(() => service.CreateStaffBookingAsync(request, "staff", default));
+        Assert.DoesNotContain("bay-2", await store.OccupiedAsync(occupied.StartUtc, occupied.EndUtc, default));
+        await Assert.ThrowsAsync<ReservationValidationException>(() =>
+            service.CreateStaffBookingAsync(request with { AdditionalResourceIds = ["vip-7"] }, "staff", default));
+
+        var open = request with { StartTime = new(13, 0) };
+        var saved = await service.CreateStaffBookingAsync(open, "staff", default);
+        var retry = await service.CreateStaffBookingAsync(open with { ResourceId = "bay-3", AdditionalResourceIds = ["bay-2"] }, "staff", default);
+        Assert.Equal(saved.Id, retry.Id);
+        Assert.Equal(["bay-2", "bay-3"], saved.ResourceIds);
+        Assert.Equal(occupied.EndUtc, saved.StartUtc);
+        Assert.Equal(saved.StartUtc.AddHours(1), saved.EndUtc);
+    }
+
+    [Fact]
+    public async Task BatchMoveRollsBackOnConflictOrStaleRevisionAndRetriesWithoutMovingTwice()
+    {
+        var (service, store, _) = await Setup();
+        var first = await store.InsertAsync(Booking(), default);
+        var next = Booking();
+        next.StartUtc = first.EndUtc;
+        next.EndUtc = next.StartUtc.AddHours(1);
+        var second = await store.InsertAsync(next, default);
+        var blocker = Booking();
+        blocker.StartUtc = second.EndUtc.AddHours(1);
+        blocker.EndUtc = blocker.StartUtc.AddHours(1);
+        await store.InsertAsync(blocker, default);
+
+        StaffBatchMoveItem[] selected = [new(first.Id, 0), new(second.Id, 0)];
+        var command = Guid.NewGuid().ToString("N");
+        var day = new DateOnly(2026, 11, 4);
+        await Assert.ThrowsAsync<ReservationValidationException>(() =>
+            service.MoveStaffBatchAsync(selected, command, day, 120, "staff", default));
+        await Assert.ThrowsAsync<ReservationValidationException>(() =>
+            service.MoveStaffBatchAsync([selected[0], new(second.Id, 1)], command, day, 60, "staff", default));
+
+        foreach (var original in new[] { first, second })
+        {
+            var saved = (await store.ByIdAsync(original.Id, default))!;
+            Assert.Equal(original.StartUtc, saved.StartUtc);
+            Assert.Equal(0, saved.Revision);
+            Assert.DoesNotContain(saved.History, entry => entry.CommandId == command);
+        }
+
+        await service.MoveStaffBatchAsync(selected, command, day, 60, "staff", default);
+        await service.MoveStaffBatchAsync(selected.Reverse().ToArray(), command, day, 60, "staff", default);
+        await Assert.ThrowsAsync<ReservationValidationException>(() =>
+            service.MoveStaffBatchAsync(selected, command, day, 30, "staff", default));
+
+        foreach (var original in new[] { first, second })
+        {
+            var saved = (await store.ByIdAsync(original.Id, default))!;
+            Assert.Equal(original.StartUtc.AddHours(1), saved.StartUtc);
+            Assert.Equal(original.EndUtc.AddHours(1), saved.EndUtc);
+            Assert.Equal(original.ResourceIds, saved.ResourceIds);
+            Assert.Equal(1, saved.Revision);
+            Assert.Single(saved.History, entry => entry.CommandId == command);
+        }
+    }
+
+    [Fact]
+    public async Task VipUpgradeRequiresAgreementAndAtomicallyChangesServiceWithAnIdempotentAudit()
+    {
+        var (service, store, _) = await Setup();
+        var original = await store.InsertAsync(Booking(), default);
+        var command = Guid.NewGuid().ToString("N");
+        await Assert.ThrowsAsync<ReservationValidationException>(() => service.MoveStaffBookingAsync(original.Id, 0, command,
+            new(2026, 11, 4), new(12, 0), "staff", default, "vip-7", "bay-2"));
+        Assert.Equal("Regular", (await store.ByIdAsync(original.Id, default))!.Service);
+        await service.MoveStaffBookingAsync(original.Id, 0, command, new(2026, 11, 4), new(12, 0), "staff", default, "vip-7", "bay-2", true);
+        await service.MoveStaffBookingAsync(original.Id, 0, command, new(2026, 11, 4), new(12, 0), "staff", default, "vip-7", "bay-2", true);
+        var upgraded = (await store.ByIdAsync(original.Id, default))!;
+        Assert.Equal("VIP", upgraded.Service);
+        Assert.Equal(["vip-7"], upgraded.ResourceIds);
+        Assert.Equal(original.StartUtc, upgraded.StartUtc);
+        Assert.Equal(original.EndUtc, upgraded.EndUtc);
+        Assert.Equal(1, upgraded.Revision);
+        Assert.Contains("VIP pricing", Assert.Single(upgraded.History, entry => entry.CommandId == command).Reason);
+        var occupied = await store.OccupiedAsync(original.StartUtc, original.EndUtc, default);
+        Assert.Contains("vip-7", occupied);
+        Assert.DoesNotContain("bay-2", occupied);
+    }
+
+    [Fact]
+    public async Task ConflictingVipUpgradePreservesRegularServiceAndOriginalAllocation()
+    {
+        var (service, store, _) = await Setup();
+        var original = await store.InsertAsync(Booking(), default);
+        var vip = Booking("vip-7");
+        vip.Service = "VIP";
+        await store.InsertAsync(vip, default);
+        await Assert.ThrowsAsync<ReservationValidationException>(() => service.MoveStaffBookingAsync(original.Id, 0,
+            Guid.NewGuid().ToString("N"), new(2026, 11, 4), new(12, 0), "staff", default, "vip-7", "bay-2", true));
+        var unchanged = (await store.ByIdAsync(original.Id, default))!;
+        Assert.Equal("Regular", unchanged.Service);
+        Assert.Equal(original.ResourceIds, unchanged.ResourceIds);
+        Assert.Equal(0, unchanged.Revision);
+    }
+
+    [Fact]
     public async Task TimelineMoveIsAtomicIdempotentAndRejectsConflictsAndStaleUpdates()
     {
         var (service, store, context) = await Setup();

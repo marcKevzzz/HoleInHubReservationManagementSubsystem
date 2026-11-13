@@ -1,0 +1,12 @@
+@model CustomerContactForm
+<div data-people-create-content>
+<div class="people-create-intro"><partial name="_StaffIcon" model='"customers"' /><p class="people-account-note">Save contact details for future bookings.</p></div>
+<form asp-controller="Customers" asp-action="Create" method="post" data-person-create-form class="staff-create-form people-create-form">
+        <div asp-validation-summary="All" class="staff-error" role="alert"></div>
+        <input asp-for="CommandId" type="hidden" />
+        <div class="people-form-names"><div class="auth-input-wrap"><input asp-for="FirstName" autocomplete="given-name" required maxlength="100" placeholder=" " /><label asp-for="FirstName">First name</label></div><div class="auth-input-wrap"><input asp-for="LastName" autocomplete="family-name" required maxlength="100" placeholder=" " /><label asp-for="LastName">Last name</label></div></div>
+        <div class="auth-input-wrap"><input asp-for="Phone" type="tel" inputmode="numeric" autocomplete="tel" pattern="[0-9]{7,15}" required maxlength="15" placeholder=" " /><label asp-for="Phone">Contact number</label></div>
+        <div class="auth-input-wrap"><input asp-for="Email" type="email" autocomplete="email" maxlength="254" placeholder=" " /><label asp-for="Email">Email (optional)</label></div>
+        <button class="button" type="submit">Add customer</button>
+    </form>
+</div>

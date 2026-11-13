@@ -38,14 +38,31 @@
         if (page?.dataset.date !== date || !page.querySelector('.staff-timeline')) throw new Error('Schedule unavailable. Please reload and sign in again.');
         return page;
     }
-    function prefetch() {
+    const dateLink = target => target.closest('[data-staff-schedule] .staff-date-controls nav a');
+    let prefetchTimer;
+    function queuePrefetch(event) {
+        const link = dateLink(event.target);
+        if (!link || link.contains(event.relatedTarget) || event.pointerType === 'touch') return;
+        const date = new URL(link.href).searchParams.get('date');
         const page = document.querySelector('[data-staff-schedule]');
-        for (const direction of [-1, 1]) {
-            const day = page.timelineGesture.adjacentDay(page.dataset.date, direction);
-            void load(day).catch(() => {});
-        }
+        if (!date || date === page.dataset.date || page.dataset.moving) return;
+        clearTimeout(prefetchTimer);
+        prefetchTimer = setTimeout(() => {
+            if (page.isConnected && !page.dataset.moving && !page.querySelector('dialog[open]')) {
+                void read(date).catch(() => {});
+            }
+        }, 150);
+    }
+    document.addEventListener('pointerover', queuePrefetch);
+    document.addEventListener('focusin', queuePrefetch);
+    for (const type of ['pointerout', 'focusout']) {
+        document.addEventListener(type, event => {
+            const link = dateLink(event.target);
+            if (link && !link.contains(event.relatedTarget)) clearTimeout(prefetchTimer);
+        });
     }
     async function go(date, push = true) {
+        clearTimeout(prefetchTimer);
         const page = document.querySelector('[data-staff-schedule]');
         if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || page.dataset.moving || page.querySelector('dialog[open]')) return;
         const id = ++requestId;
@@ -87,19 +104,17 @@
             if (focusLabel && focused !== document.body) {
                 [...incoming.querySelectorAll('[aria-label]')].find(item => item.getAttribute('aria-label') === focusLabel)?.focus({ preventScroll: true });
             }
-            prefetch();
+            return incoming;
         } catch (error) {
             if (id !== requestId) return;
             page.removeAttribute('aria-busy');
             page.timelineGesture.hide();
-            const message = page.querySelector('[data-drag-error]');
-            message.textContent = error.message;
-            message.hidden = false;
+            window.HoleInHubToasts?.show({ autoDismiss: true, kind: 'error', title: 'Schedule unavailable', message: error.message });
         }
     }
     window.HoleInHubSchedule = { go, load };
     document.addEventListener('click', event => {
-        const link = event.target.closest('[data-staff-schedule] .staff-date-controls nav a');
+        const link = dateLink(event.target);
         if (!link || event.button || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
         const date = new URL(link.href).searchParams.get('date');
         if (!date) return;
@@ -117,6 +132,8 @@
         if (date) void go(date, false);
         else window.location.reload();
     });
-    window.addEventListener('pagehide', () => disposeButtons?.());
-    prefetch();
+    window.addEventListener('pagehide', () => {
+        clearTimeout(prefetchTimer);
+        disposeButtons?.();
+    });
 })();

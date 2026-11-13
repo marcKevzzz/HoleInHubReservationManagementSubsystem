@@ -1,0 +1,29 @@
+.app-select-native {position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important;padding:0!important;border:0!important;clip-path:inset(50%)}
+.app-select {position:relative;min-width:0;width:100%;font:inherit;isolation:isolate}
+.app-select[hidden] {display:none}
+.app-select-trigger {display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:44px;padding:10px 4px;background:transparent;border:0;border-bottom:1px solid var(--color-control-line);border-radius:0;color:var(--color-ink);font:inherit;text-align:left;cursor:pointer}
+.app-select-trigger>span:first-child {overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app-select-trigger:disabled {opacity:.5;cursor:default}
+.app-select-trigger::after {content:none!important}
+.app-select-trigger:focus-visible {outline:2px solid var(--color-green);outline-offset:3px}
+.app-select-caret {display:block;width:7px;height:7px;flex-shrink:0;margin:0 4px 4px 0;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg)}
+.app-select[data-open=true] .app-select-caret {transform:translateY(3px) rotate(225deg)}
+.app-select-menu {position:fixed;z-index:10000;padding:4px;background:var(--color-paper);border:1px solid var(--color-line);box-shadow:0 8px 20px rgb(16 17 15 / 10%);overflow:auto;overscroll-behavior:contain;opacity:0;visibility:hidden;transform:translateY(-5px);pointer-events:none;max-width:calc(100vw - 16px)}
+.app-select[data-open=true]>.app-select-menu {opacity:1;visibility:visible;transform:translateY(0);pointer-events:auto}
+.app-select-menu>button {display:block;width:100%;padding:9px 12px;border:0;border-radius:0;background:transparent;color:var(--color-ink);font:400 .875rem/1.4 var(--body,Inter,sans-serif);text-align:left;cursor:pointer}
+.app-select-menu>button::after {content:none!important}
+.app-select-menu>button:is(:hover,:focus-visible) {background:var(--color-staff-surface);outline:0}
+.app-select-menu>button[aria-selected=true] {background:var(--color-green);color:var(--color-paper)}
+.app-select-menu>button:disabled {opacity:.5;cursor:default}
+.service-money-field>.app-select {height:58px}
+.service-money-field>.app-select .app-select-trigger {justify-content:center;gap:10px;height:58px;padding:14px 0 0;min-height:0;border:0;font-size:.875rem}
+.staff-side-panel .auth-input-wrap>.app-select .app-select-trigger {padding:24px 0 8px;min-height:58px}
+@media(prefers-reduced-motion:no-preference) {.app-select-menu {transition:opacity .18s var(--ease,ease),transform .18s var(--ease,ease),visibility .18s}.app-select-caret {transition:transform .2s var(--ease,ease)}}
+.app-select-menu[popover] {margin:0;inset:auto}
+/* Enhanced selects own their label spacing, caret and underline. */
+.auth-select-wrap:has(>select.app-select-native)::before,
+.auth-input-wrap:has(>select.app-select-native)::after {content:none!important}
+.auth-input-wrap:has(>select.app-select-native)>.app-select>.app-select-trigger {height:58px;min-height:58px;padding:26px 4px 8px 0}
+.auth-input-wrap:has(>select.app-select-native)>label {position:absolute;top:4px;left:0;transform:none!important;font-size:.75rem;line-height:1.4;pointer-events:none}
+.app-select-trigger,.app-select-menu {box-sizing:border-box;min-width:0}
+.app-select-menu>button {white-space:normal;overflow-wrap:anywhere}

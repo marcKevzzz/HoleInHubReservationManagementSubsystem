@@ -12,7 +12,7 @@ public sealed record ScheduleChangeDto(string Id, string Status, DateTime Reques
 public sealed partial class ReservationService
 {
     public async Task MoveStaffBookingAsync(string id, long revision, string commandId, DateOnly date, TimeOnly time,
-        string actor, CancellationToken ct, string? resourceId = null, string? sourceResourceId = null)
+        string actor, CancellationToken ct, string? resourceId = null, string? sourceResourceId = null, bool confirmVipUpgrade = false)
     {
         if (revision < 0 || !Guid.TryParseExact(commandId, "N", out _) || string.IsNullOrWhiteSpace(actor))
         {
@@ -24,6 +24,7 @@ public sealed partial class ReservationService
         var payload = resourceId is null && sourceResourceId is null
             ? JsonSerializer.SerializeToUtf8Bytes(new { id, revision, commandId, date, time, actor })
             : JsonSerializer.SerializeToUtf8Bytes(new { id, revision, commandId, date, time, actor, resourceId, sourceResourceId });
+        if (confirmVipUpgrade) { payload = JsonSerializer.SerializeToUtf8Bytes(new { payload = Convert.ToBase64String(payload), confirmVipUpgrade }); }
         var hash = Convert.ToHexString(SHA256.HashData(payload));
         var prior = saved.History.FirstOrDefault(entry => entry.CommandId == commandId);
         if (prior is not null)
@@ -36,6 +37,9 @@ public sealed partial class ReservationService
         {
             throw new ReservationValidationException("Choose a bay from this booking and an active bay of the same type.");
         }
+        var target = resourceId is null ? null : (await GetCatalogAsync(ct)).FirstOrDefault(bay => bay.Id == resourceId);
+        var upgrading = target?.Service == "VIP" && booking.Service == "Regular";
+        ValidateTimelineServiceChange(booking.Service, target?.Service ?? booking.Service, booking.ResourceIds.Length, confirmVipUpgrade);
         var resources = booking.ResourceIds.Select(resource => resource == sourceResourceId ? resourceId! : resource).ToArray();
         var duration = (int)(booking.EndUtc - booking.StartUtc).TotalMinutes;
         var (start, end) = ReservationRules.PreviewInterval(date, time, duration, booking.Service);
@@ -44,9 +48,18 @@ public sealed partial class ReservationService
         try
         {
             await persistence.DecideScheduleChangeAsync(id, commandId, revision, true, resources, actor,
-                "Moved on the staff timeline.", now.UtcDateTime, ct, proposal);
+                upgrading ? $"Regular to VIP upgrade: {sourceResourceId} to {resourceId}. Staff confirmed customer agreement to VIP pricing." : "Moved on the staff timeline.",
+                now.UtcDateTime, ct, proposal, upgrading);
         }
         catch (AllocationConflictException error) { throw new ReservationValidationException(error.Message); }
+    }
+
+    public static void ValidateTimelineServiceChange(string source, string destination, int bays, bool confirmed)
+    {
+        if (source == destination) { return; }
+        if (source != "Regular" || destination != "VIP" || bays != 1)
+        { throw new ReservationValidationException("Only single-bay Regular reservations can be upgraded to VIP."); }
+        if (!confirmed) { throw new ReservationValidationException("Confirm the customer's agreement to VIP pricing before upgrading."); }
     }
 
     public static bool CanRequestScheduleChange(ReservationDto booking, DateTime now) =>
@@ -79,7 +92,8 @@ public sealed partial class ReservationService
             throw new ReservationValidationException("Choose a different start time or duration.");
         }
         var now = (clock ?? TimeProvider.System).GetUtcNow();
-        policy.Value.ValidateCoverage(now);
+        await LoadOperationalPolicyAsync(ct);
+        effectivePolicy.ValidateCoverage(now);
         GetReviewDeadline(booking.Service, start, now);
         var proposal = new ScheduleChangeRecord
         {

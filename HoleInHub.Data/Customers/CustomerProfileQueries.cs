@@ -32,6 +32,7 @@ public sealed partial class CustomerProfilePersistence
         foreach (var profile in profiles.Take(25))
         {
             var record = records.FirstOrDefault(r => r.Id == profile.RepresentativeBookingId);
+            if (record is null && profile.RepresentativeBookingId.Length == 0) { record = ContactWithoutBooking(profile); }
             if (record is null) { continue; }
             SetDisplayContact(record, profile);
             items.Add(new(record, profile.Kind));
@@ -54,6 +55,7 @@ public sealed partial class CustomerProfilePersistence
         var completed = await Reservations.CountDocumentsAsync(filter & Builders<ReservationRecord>.Filter.Eq(x => x.Status, "Completed"), cancellationToken: ct);
         var cancelled = await Reservations.CountDocumentsAsync(filter & Builders<ReservationRecord>.Filter.Eq(x => x.Status, "Cancelled"), cancellationToken: ct);
         var representative = await Reservations.Find(x => x.Id == snapshot.Profile.RepresentativeBookingId).FirstOrDefaultAsync(ct);
+        if (representative is null && snapshot.Profile.RepresentativeBookingId.Length == 0) { representative = ContactWithoutBooking(snapshot.Profile); }
         if (representative is null) { return null; }
         SetDisplayContact(representative, snapshot.Profile);
         var records = await Reservations.Find(upcomingOnly ? upcoming : filter).Sort(upcomingOnly

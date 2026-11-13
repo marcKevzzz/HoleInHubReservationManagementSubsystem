@@ -6,7 +6,12 @@
         date.setUTCDate(date.getUTCDate() + direction);
         return date.toISOString().slice(0, 10);
     };
-    if (typeof module !== 'undefined' && module.exports) module.exports = { zoomWidth, adjacentDay };
+    const panDayDirection = (overscroll, dx, dy, viewport) => {
+        const threshold = Math.max(180, Math.min(320, viewport * .45));
+        if (Math.abs(dx) < Math.abs(dy) * 2 || Math.abs(overscroll) < threshold) return 0;
+        return Math.sign(overscroll);
+    };
+    if (typeof module !== 'undefined' && module.exports) module.exports = { zoomWidth, adjacentDay, panDayDirection };
     if (typeof document === 'undefined') return;
     const page = document.querySelector('[data-staff-schedule]');
     const scroller = page?.querySelector('.staff-timeline-scroll');
@@ -19,7 +24,7 @@
     const measuredWidth = timeline.querySelector('.staff-timeline-hours').getBoundingClientRect().width / (24 - Number(page.dataset.firstHour));
     const baseWidth = Number(page.dataset.zoomBaseWidth) || measuredWidth;
     page.dataset.zoomBaseWidth = baseWidth;
-    let pan, width = measuredWidth;
+    let pan, zoomTimer, width = measuredWidth;
     zoom.value = Math.round(width / baseWidth * 100) + '%';
     const arrival = Number(sessionStorage.getItem('staff-day-direction'));
     sessionStorage.removeItem('staff-day-direction');
@@ -30,6 +35,7 @@
         }
     }
     if (arrival) transition(arrival);
+    page.addEventListener('staff:schedule-unmount', () => clearTimeout(zoomTimer), { once: true });
     const dayLabel = date => new Intl.DateTimeFormat('en', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })
         .format(new Date(date + 'T12:00:00Z'));
     function preview(date, message = 'Release to open') {
@@ -68,6 +74,9 @@
             timeline.style.setProperty('--hour-width', width + 'px');
             scroller.scrollLeft = minute * width - x + label;
             zoom.value = Math.round(width / baseWidth * 100) + '%';
+            zoom.hidden = false;
+            clearTimeout(zoomTimer);
+            zoomTimer = setTimeout(() => { zoom.hidden = true; }, 1000);
         } else if (event.shiftKey) {
             event.preventDefault();
             scroller.scrollLeft += event.deltaX || event.deltaY;
@@ -77,7 +86,7 @@
         }
     }, { passive: false });
     scroller.addEventListener('pointerdown', event => {
-        if (page.dataset.moving || event.pointerType !== 'mouse' || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey
+        if (event.defaultPrevented || page.dataset.moving || event.pointerType !== 'mouse' || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey
             || (page.dataset.customerProfileId && event.target.closest('[data-create-bay]'))
             || event.target.closest('a,button,input,select,.staff-timeline-label')) return;
         event.preventDefault();
@@ -91,7 +100,7 @@
         scroller.scrollLeft = pan.left - dx;
         scroller.scrollTop = pan.top - (event.clientY - pan.y);
         const overscroll = pan.left - dx - scroller.scrollLeft;
-        const direction = overscroll > 65 ? 1 : overscroll < -65 ? -1 : 0;
+        const direction = panDayDirection(overscroll, dx, event.clientY - pan.y, scroller.clientWidth);
         pan.date = direction ? adjacentDay(page.dataset.date, direction) : undefined;
         timeline.style.setProperty('--pan-offset', reduced ? '0px' : `${-Math.sign(overscroll) * Math.min(36, Math.abs(overscroll) * .25)}px`);
         if (pan.date) preview(pan.date);

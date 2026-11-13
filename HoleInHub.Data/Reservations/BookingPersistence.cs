@@ -11,9 +11,10 @@ public sealed partial class ReservationPersistence
     public Task<ReservationRecord?> ByAccessAsync(string id, string hash, CancellationToken ct) => Reservations.Find(x => (id == "" || x.Id == id) && x.AccessTokenHash == hash).FirstOrDefaultAsync(ct)!;
     public async Task<IReadOnlyDictionary<string, long>> ReviewCountsAsync(DateTime now, CancellationToken ct)
     {
-        var keys = new[] { "pending", "overdue", "changes", "cancellations", "deposit" };
+        var keys = new[] { "pending", "overdue", "changes", "cancellations", "deposit", "awaiting" };
         var counts = await Task.WhenAll(keys.Select(key =>
-            Reservations.CountDocumentsAsync(ReviewSelection(key, now), cancellationToken: ct)));
+            key == "awaiting" ? PendingReviewCountAsync(now, ct)
+                : Reservations.CountDocumentsAsync(ReviewSelection(key, now), cancellationToken: ct)));
         return keys.Select((key, index) => (key, count: counts[index])).ToDictionary(item => item.key, item => item.count);
     }
 
@@ -131,14 +132,15 @@ public sealed partial class ReservationPersistence
     public async Task<(List<ResourceRecord> Resources, List<ReservationRecord> Bookings, List<ScheduleBlock> Blocks)>
         ReadScheduleAsync(DateTime startUtc, DateTime endUtc, CancellationToken ct, DateTime now)
     {
-        var resources = await Resources.Find(_ => true).SortBy(x => x.Id).ToListAsync(ct);
+        var resources = Resources.Find(_ => true).SortBy(x => x.Id).ToListAsync(ct);
         var filters = Builders<ReservationRecord>.Filter;
-        var bookings = await Reservations.Find(filters.Where(x => x.StartUtc < endUtc && x.EndUtc > startUtc) &
+        var bookings = Reservations.Find(filters.Where(x => x.StartUtc < endUtc && x.EndUtc > startUtc) &
             (HoldingCapacity(now) | filters.Eq(x => x.Status, "Completed")))
             .SortBy(x => x.StartUtc).ToListAsync(ct);
-        var blocks = await context.Database.GetCollection<ScheduleBlock>("schedule_blocks")
+        var blocks = context.Database.GetCollection<ScheduleBlock>("schedule_blocks")
             .Find(x => x.ReleasedUtc == null && x.StartUtc < endUtc && x.EndUtc > startUtc).ToListAsync(ct);
-        return (resources, bookings, blocks);
+        await Task.WhenAll(resources, bookings, blocks);
+        return (await resources, await bookings, await blocks);
     }
 
     private Task NotifyAsync(IClientSessionHandle session, ReservationRecord record, string eventName, string subject, CancellationToken ct, string? encryptedBody = null) =>

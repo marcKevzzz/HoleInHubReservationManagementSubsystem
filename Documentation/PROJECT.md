@@ -38,6 +38,7 @@ Multi-bay group appointments and consolidated POS billing are distinct: sequenti
 | Multi-bay | One reservation; all requested resources allocated together or the entire attempt rejected |
 | Changes | Staff review customer requests; reassignment, extension, and rescheduling recheck conflicts; rejected/failed changes preserve the original booking |
 | First change-request release | Owner-approved 7 November 2026. Confirmed Regular/VIP customers may propose a new schedule or duration at least one hour before the current start. The proposed start must allow the full 30/60-minute operating-hours review window. One open proposal, same service, bay count and guest count. Staff may select replacement bays during approval. Approval must precede both session starts and recheck revision and availability. Original allocations remain until successful approval. |
+| Staff timeline VIP upgrade | Owner-approved 12 November 2026. Staff may upgrade an upcoming Confirmed single-bay Regular reservation to an available VIP bay after explicitly acknowledging customer agreement to VIP pricing. Preserve duration and guest count, recheck revision and allocation conflicts atomically, update the service and bay together, and record the upgrade in history. Multi-bay cross-service moves and VIP downgrades remain unavailable. |
 | Attendance | Authorized staff record arrival, cancellation, completion, and no-show outcomes; no hardware occupancy detection |
 | Grace period | Confirmed allocations protected for one hour after start, capped at scheduled end; flag unattended bookings at the earlier deadline |
 | No-show | Staff follow up and may mark No-show, releasing remaining allocations; no automatic no-show decision |
@@ -47,6 +48,14 @@ Multi-bay group appointments and consolidated POS billing are distinct: sequenti
 | Reporting | Reservation counts, service usage, peak periods, cancellations, no-shows, customer trends, and reserved-time resource utilization |
 
 The owner approved these provisional online booking rules on 2026-11-03. Require 30-minute Regular lead time and 60-minute lead time for other online services; no maximum advance-booking limit. Owner update on 2026-11-07 allows submission at any time. Ordinary online Pending holds begin immediately. Their 30/60-minute review clock counts only configured staff coverage within venue operating hours, carries across closing, and must finish by the session start. Whole-shop retains its separate elapsed-time deposit deadline. Existing records retain their saved deadlines; no policy is inferred for staff-assisted bookings. Expiry timings still need operational validation with the client.
+
+### Browser language support
+
+The customer-facing web interface shall support English (`en`) and Korean (`ko`). On the first visit, it shall use the browser's preferred supported language, with English as the fallback. Customers shall be able to switch between **English** and **한국어**, and their choice shall take precedence over the browser preference on later visits.
+
+Both languages shall cover navigation, service and availability information, guest and account booking, email-code entry screens, validation and error messages, booking receipts and status pages, and customer change and cancellation requests. Pages shall expose the active language to assistive technology. Both language versions shall use the same availability, booking rules, and Asia/Manila schedule.
+
+Acceptance shall cover Korean- and English-preferred browsers, an unsupported browser language, persistence of a manual selection, and the same booking journey and error states in both languages on desktop and mobile. Confirm the Korean wording with a fluent reviewer. Staff screens and outbound email localization require separate scope decisions.
 
 ## Reservation lifecycle and access
 

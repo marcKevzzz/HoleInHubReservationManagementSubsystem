@@ -1,7 +1,6 @@
 @model StaffBlockForm
 <form asp-action="CreateBlock" method="post" class="staff-create-form">
     <input asp-for="IdempotencyKey" id="block-key" type="hidden" />
-    <p data-booking-error class="staff-error" role="alert" tabindex="-1" hidden></p>
     <div asp-validation-summary="All" class="staff-error"></div>
     <fieldset>
         <legend>Block a bay</legend>

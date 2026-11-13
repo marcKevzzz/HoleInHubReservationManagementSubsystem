@@ -1,14 +1,13 @@
 @using HoleInHub.Business.Accounts
 @using HoleInHub.Web.Accounts
 @using HoleInHub.Web.Navigation
-@inject HoleInHub.Business.Reservations.ReservationService Reservations
 @{
     var activityReturn = ActivityNavigation.FromRequest(Context.Request);
     var date = Context.Request.Query["date"].ToString();
     var pendingReviews = ViewData["PendingReviews"] as long? ?? 0;
-    var requestCounts = await Reservations.GetReviewCountsAsync(Context.RequestAborted);
     var controller = ViewContext.RouteData.Values["controller"]?.ToString();
     var action = ViewData["LeadershipPage"] as string ?? ViewContext.RouteData.Values["action"]?.ToString();
+    var isTeamPage = Context.Request.Path.StartsWithSegments("/staff/people");
     var isQueue = controller == "BookingReview" && (action == "Queue"
         || bool.TryParse(Context.Request.Query["fromQueue"], out var fromQueue) && fromQueue);
     var queueSection = StaffReviewQueue.SectionKey(ViewContext.RouteData.Values["section"]?.ToString() ?? Context.Request.Query["filter"].ToString());
@@ -21,16 +20,16 @@
     var links = new (string Group, string Controller, string Action, string Icon, string Label, bool Visible)[]
     {
         ("Overview", "Leadership", "Dashboard", "dashboard", "Dashboard", true),
-        ("Overview", "Activity", "Index", "history", "Activity", true),
         ("Reservations", "BookingReview", "Index", "calendar", "Schedule", true),
         ("Reservations", "BookingReview", "Queue", "queue", "Review queue", true),
         ("Reservations", "BookingReview", "Cancellations", "close", "Cancellations", true),
         ("People", "Customers", "Index", "customers", "Customers", true),
         ("People", "Leadership", "People", "roles", "Team & access", managesVenue),
-        ("Venue management", "Leadership", "Reports", "reports", "Daily report", managesVenue),
-        ("Venue management", "Leadership", "Settings", "sidebar", "Settings", managesVenue),
         ("Administration", "Leadership", "Resources", "resources", "Resources", isAdmin),
-        ("Administration", "Leadership", "Services", "queue", "Services", isAdmin)
+        ("Administration", "ServiceManagement", "Index", "queue", "Services", isAdmin),
+        ("Administration", "Activity", "Index", "history", "Activity", true),
+        ("Venue management", "Leadership", "Reports", "reports", "Daily report", managesVenue),
+        ("Venue management", "Settings", "Index", "settings", "Settings", managesVenue)
     };
 }
 <!DOCTYPE html>
@@ -39,11 +38,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@ViewData["Title"] | Hole In Hub</title>
+    <script src="~/js/staff-sidebar-start.js" asp-append-version="true"></script>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body class="staff-shell">
     <a class="skip-link" href="#main-content">Skip to main content</a>
-    <aside class="staff-rail">
+    <aside class="staff-rail" aria-label="Staff navigation">
         <div class="staff-rail-header">
             <a class="staff-brand" asp-controller="@(managesVenue ? "Leadership" : "BookingReview")"
                asp-action="@(managesVenue ? "Dashboard" : "Index")" aria-label="Hole In Hub staff workspace">
@@ -66,25 +66,20 @@
                             {
                                 <details class="staff-review-nav" open="@isQueue" data-current-branch="@(isQueue ? "true" : null)"
                                          data-counts-url="@Url.Action("Counts", "BookingReview")">
-                                    <summary aria-label="@(pendingReviews > 0 ? $"Review queue, {pendingReviews} awaiting review" : "Review queue")" title="Review queue">
+                                    <summary aria-label="@(pendingReviews > 0 ? $"Review queue, {pendingReviews} awaiting review" : "Review queue")" data-rail-tooltip="Review queue" aria-controls="staff-review-pages">
                                         <partial name="_StaffIcon" model='"queue"' /><span class="staff-nav-label">Review queue</span>
-                                        @if (pendingReviews > 0)
-                                        {
-                                            <span class="staff-nav-count" aria-hidden="true">@(pendingReviews > 99 ? "99+" : pendingReviews.ToString())</span>
-                                        }
+                                        <span class="staff-nav-count" data-request-count="awaiting" aria-hidden="true" hidden="@(pendingReviews == 0)">@(pendingReviews > 99 ? "99+" : pendingReviews.ToString())</span>
                                     </summary>
-                                    <div class="staff-review-pages"><div class="staff-review-page-links">
+                                    <div class="staff-review-pages" id="staff-review-pages"><p class="staff-review-popup-title" hidden>Review queue</p><div class="staff-review-page-links">
                                         @foreach (var queuePage in StaffReviewQueue.Sections.Where(page => page.Key != "cancellations"))
                                         {
-                                            var count = requestCounts.GetValueOrDefault(queuePage.Key);
-                                            <a asp-route="staff-review-section" asp-route-section="@queuePage.Key" asp-route-date="@date"
+                                            <a data-nav-layout="queue" asp-route="staff-review-section" asp-route-section="@queuePage.Key" asp-route-date="@date"
                                                asp-route-day="@queueDay" asp-route-sort="@queueSort"
                                                aria-current="@(isQueue && queueSection == queuePage.Key ? "page" : null)">
                                                 @queuePage.Label
                                                 @if (queuePage.Key != "expired")
                                                 {
-                                                    <span class="staff-nav-count" data-request-count="@queuePage.Key" hidden="@(count == 0)"
-                                                          aria-label="@($"{count} requests")">@count</span>
+                                                    <span class="staff-nav-count" data-request-count="@queuePage.Key" hidden></span>
                                                 }
                                             </a>
                                         }
@@ -92,31 +87,37 @@
                                 </details>
                                 continue;
                             }
-                            var active = controller == link.Controller && (link.Controller switch
+                            var active = link.Action == "People" && isTeamPage || controller == link.Controller && (link.Controller switch
                             {
                                 "BookingReview" => link.Action == "Cancellations" ? isCancellations : !isQueue && !isCancellations,
-                                "Customers" or "Activity" => true,
+                                "Customers" or "Activity" or "ServiceManagement" => true,
                                 _ => action == link.Action
                             });
-                            <a asp-controller="@link.Controller" asp-action="@link.Action" asp-route-date="@(isReservations ? date : null)"
+                            var skeletonLayout = link.Action switch
+                            {
+                                "Dashboard" => "dashboard", "Queue" => "queue", "Cancellations" => "cancellations",
+                                "People" => "team", "Reports" => "reports", "Settings" => "settings",
+                                "Resources" => "resources", "Services" => "services",
+                                _ => link.Controller == "Settings" ? "settings" : link.Controller == "ServiceManagement" ? "services" : link.Controller == "Activity" ? "activity" : link.Controller == "Customers" ? "customers" : "schedule"
+                            };
+                            <a data-nav-layout="@skeletonLayout" asp-controller="@link.Controller" asp-action="@link.Action" asp-route-date="@(isReservations ? date : null)"
                                aria-label="@link.Label"
-                               title="@link.Label" aria-current="@(active ? "page" : null)">
+                               data-rail-tooltip="@link.Label" aria-current="@(active ? "page" : null)">
                                 <partial name="_StaffIcon" model="@link.Icon" /><span class="staff-nav-label">@link.Label</span>
                                 @if (link.Action == "Cancellations")
                                 {
-                                    var count = requestCounts.GetValueOrDefault("cancellations");
-                                    <span class="staff-nav-count" data-request-count="cancellations" hidden="@(count == 0)" aria-label="@($"{count} requests")">@count</span>
+                                    <span class="staff-nav-count" data-request-count="cancellations" hidden></span>
                                 }
                             </a>
                         }
                     </nav>
                 }
                 <div class="staff-rail-footer">
-                    <a href="/" aria-label="Public website" title="Public website">
+                    <a href="/" aria-label="Public website" data-rail-tooltip="Public website">
                         <partial name="_StaffIcon" model=' "website" ' /><span class="staff-nav-label">Public website</span>
                     </a>
                     <form id="account-logout-form" asp-controller="StaffAccess" asp-action="SignOutStaff" method="post">
-                        <button type="submit" aria-label="Log out" title="Log out">
+                        <button type="submit" aria-label="Log out" data-rail-tooltip="Log out">
                             <partial name="_StaffIcon" model=' "logout" ' /><span class="staff-nav-label">Log out</span>
                         </button>
                     </form>
@@ -124,7 +125,11 @@
             </div>
         </div>
     </aside>
+    <span class="staff-rail-tooltip" data-staff-tooltip hidden aria-hidden="true"></span>
+    <p class="sr-only" data-staff-nav-status role="status"></p>
     <main id="main-content" tabindex="-1">
+        <div class="staff-nav-loading" data-staff-nav-loading hidden aria-hidden="true"></div>
+        <partial name="_StaffNavigationSkeletons" />
         @if (activityReturn is not null && controller != "Activity")
         {
             <div class="staff-workspace"><a class="flow-back customer-back" href="@activityReturn"><partial name="_BackArrow" /> Back to activity</a></div>
@@ -133,14 +138,17 @@
         @RenderBody()
     </main>
     <partial name="_LogoutConfirmation" model='(isAdmin ? "You’ll need to sign in again to open your workspace." : "You’ll need to enter your PIN again to open your workspace.")' />
+    <script src="~/js/staff-sidebar.js" asp-append-version="true"></script>
     <script src="~/js/vendor/gsap.min.js" asp-append-version="true"></script>
     <script src="~/js/ui-motion.js" asp-append-version="true"></script>
     <script src="~/js/button-motion.js" asp-append-version="true"></script>
-    <script src="~/js/staff-sidebar.js" asp-append-version="true"></script>
+    <script src="~/js/staff-panel.js" asp-append-version="true"></script>
     <script src="~/js/staff-date-filter.js" asp-append-version="true"></script>
     <script src="~/js/toast-stack.js" asp-append-version="true"></script>
+    <script src="~/js/staff-attendance.js" asp-append-version="true"></script>
+    <script src="~/js/people-create.js" asp-append-version="true"></script>
     <script src="~/js/staff-table.js" asp-append-version="true"></script>
     <script src="~/js/account-menu.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+    <script src="~/js/app-select.js" asp-append-version="true"></script>@await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

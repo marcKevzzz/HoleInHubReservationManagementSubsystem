@@ -1,0 +1,44 @@
+@using HoleInHub.Business.Accounts
+@model SettingsForm
+@{ Layout="_StaffLayout";ViewData["Title"]="Settings";var admin=User.IsInRole(StaffRoles.Admin);string Time(int minutes)=>minutes==1440?"24:00":TimeSpan.FromMinutes(minutes).ToString(@"hh\:mm"); }
+<section class="staff-workspace settings-page">
+    <header class="staff-workspace-heading service-admin-heading"><h1>Settings</h1><div class="service-admin-actions">@if(admin){<button class="button" type="submit" form="settings-form">Save changes</button>}</div></header>
+    <form id="settings-form" asp-action="Save" method="post" data-settings-form>
+        <input asp-for="Revision" type="hidden"/><input asp-for="CommandId" type="hidden"/>
+        <div asp-validation-summary="All" class="staff-error" role="alert"></div>
+        <div class="settings-layout">
+            <nav class="settings-nav" aria-label="Settings sections"><a href="#operations">Operations</a><a href="#review">Review coverage</a><a href="#venue">Venue details</a><a href="#policies">Policies</a><a href="#rules">Reservation rules</a><a href="#security">Security &amp; HTTPS</a></nav>
+            <div class="settings-content">
+                @if(!admin){<p class="settings-note">An administrator can change these settings.</p>}
+                <fieldset disabled="@(!admin)">
+                    <section id="operations" class="settings-section"><h2>Operations</h2>
+                        <label class="service-switch"><span>Online reservation requests</span><input asp-for="OnlineEnabled" role="switch"/><span class="service-switch-track" aria-hidden="true"></span></label>
+                        <p class="settings-note">Pausing requests keeps existing bookings and staff operations available.</p>
+                        <label class="service-switch"><span>Duration policy approved</span><input asp-for="DurationsApproved" role="switch"/><span class="service-switch-track" aria-hidden="true"></span></label>
+                        <dl class="settings-facts"><dt>Approval mode</dt><dd>Staff review <span class="people-pill">Current</span></dd><dt>Automatic approval</dt><dd>Planned</dd><dt>Staff-assisted booking toggle</dt><dd>Planned · staff booking currently remains available</dd></dl>
+                    </section>
+                    <section id="review" class="settings-section"><h2>Review coverage</h2><p class="settings-note">Asia/Manila. Review time runs within venue operating hours.</p>
+                        <div class="settings-two"><div class="settings-field"><label asp-for="ReviewStartMinutes">Starts</label><select asp-for="ReviewStartMinutes">@for(var minute=0;minute<1440;minute+=30){<option value="@minute">@Time(minute)</option>}@if(Model.ReviewStartMinutes%30!=0){<option value="@Model.ReviewStartMinutes">@Time(Model.ReviewStartMinutes)</option>}</select></div>
+                        <div class="settings-field"><label asp-for="ReviewEndMinutes">Ends</label><select asp-for="ReviewEndMinutes"><option value="0">Choose time</option>@for(var minute=30;minute<=1440;minute+=30){<option value="@minute">@Time(minute)</option>}@if(Model.ReviewEndMinutes%30!=0){<option value="@Model.ReviewEndMinutes">@Time(Model.ReviewEndMinutes)</option>}</select></div></div>
+                        <fieldset class="settings-days"><legend>Staffed days</legend>@foreach(var day in new[]{1,2,3,4,5,6,0}){<label><input type="checkbox" name="ReviewDays" value="@day" checked="@Model.ReviewDays.Contains(day)"/><span>@(((DayOfWeek)day).ToString()[..3])</span></label>}</fieldset>
+                        @if(admin){<div class="settings-field"><label asp-for="StaffEmails">Alert recipients</label><textarea asp-for="StaffEmails" rows="3" maxlength="6000" placeholder="One email address per line"></textarea><span asp-validation-for="StaffEmails"></span></div>}
+                        else {<p class="settings-note">Alert recipients are managed by Admin.</p>}
+                    </section>
+                    <section id="venue" class="settings-section"><h2>Venue details</h2><div class="settings-field"><label asp-for="VenueName">Venue name</label><input asp-for="VenueName" maxlength="120" required/><span asp-validation-for="VenueName"></span></div><div class="settings-two"><div class="settings-field"><label asp-for="ContactEmail">Contact email</label><input asp-for="ContactEmail" type="email" maxlength="254"/><span asp-validation-for="ContactEmail"></span></div><div class="settings-field"><label asp-for="ContactPhone">Contact number</label><input asp-for="ContactPhone" type="tel" maxlength="40"/></div></div></section>
+                    <section id="policies" class="settings-section"><div class="settings-section-heading"><h2>Policies</h2><a href="/policies" class="staff-hover-link" target="_blank" rel="noopener">View published policies <partial name="_StaffIcon" model='"arrow-up-right"'/></a></div>
+                        <p class="settings-note">Published text informs customers; it does not replace the reservation rules below.</p>
+                        <label class="service-switch"><span>Publish policies</span><input asp-for="PoliciesPublished" role="switch"/><span class="service-switch-track" aria-hidden="true"></span></label>
+                        <div class="settings-field"><label asp-for="BookingPolicy">Booking &amp; cancellation policy</label><textarea asp-for="BookingPolicy" rows="6" maxlength="12000"></textarea></div>
+                        <div class="settings-field"><label asp-for="PrivacyPolicy">Privacy policy</label><textarea asp-for="PrivacyPolicy" rows="6" maxlength="12000"></textarea></div>
+                        <div class="settings-field"><label asp-for="VenueRules">Venue rules</label><textarea asp-for="VenueRules" rows="5" maxlength="12000"></textarea></div>
+                    </section>
+                </fieldset>
+                <section id="rules" class="settings-section"><h2>Reservation rules</h2><p class="settings-note">These rules are enforced by the application and require a coordinated code change.</p><dl class="settings-facts"><dt>Venue hours</dt><dd>Monday 11:00–24:00; Tuesday–Sunday 10:00–24:00</dd><dt>Session duration</dt><dd>30-minute minimum and increments</dd><dt>Review deadlines</dt><dd>Regular 30 minutes; VIP and coaching 60 minutes</dd><dt>Review alerts</dt><dd>Regular at 15/25 minutes; VIP and coaching at 30/50 minutes</dd><dt>Customer cancellation</dt><dd>At least one hour before the session</dd><dt>Bay capacity</dt><dd>6 players; 8 total guests in Regular, 10 in VIP</dd><dt>Whole-shop deposit</dt><dd>50% · simulated checkout only</dd></dl></section>
+                <section id="security" class="settings-section"><h2>Security &amp; HTTPS</h2><dl class="settings-facts"><dt>This connection</dt><dd>@(Context.Request.IsHttps?"HTTPS":"HTTP · this connection is not encrypted")</dd><dt>TLS certificate</dt><dd>Managed by the hosting server or reverse proxy</dd><dt>Private keys</dt><dd>Deployment secret store · never stored in venue settings</dd><dt>Production transport</dt><dd>HTTPS redirection and HSTS are configured in the application</dd></dl><p class="settings-note">Certificate installation and renewal take place in hosting. Use Kestrel certificate configuration for direct hosting, or your proxy's certificate manager.</p><a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/servers/kestrel/endpoints?view=aspnetcore-10.0#configure-https-in-appsettingsjson" target="_blank" rel="noopener" class="staff-hover-link">Certificate setup documentation <partial name="_StaffIcon" model='"arrow-up-right"'/></a></section>
+                @if(Model.UpdatedUtc.HasValue){<p class="settings-note">Last saved @TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(Model.UpdatedUtc.Value,DateTimeKind.Utc),HoleInHub.Business.Reservations.ReservationRules.Manila).ToString("dd MMM yyyy, h:mm tt") · Manila</p>}
+            </div>
+        </div>
+    </form>
+    <dialog class="logout-confirmation" data-settings-confirm aria-labelledby="settings-confirm-title"><h2 id="settings-confirm-title">Save settings?</h2><p>New reservation requests will use this review coverage. Existing booking deadlines stay unchanged.</p><div class="logout-actions"><button type="button" class="button button-secondary" data-settings-cancel autofocus>Cancel</button><button type="button" class="button" data-settings-save>Save changes</button></div></dialog>
+</section>
+@section Scripts {<script src="~/js/settings.js" asp-append-version="true"></script>}

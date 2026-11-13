@@ -9,13 +9,21 @@ public sealed class ActivityPersistence(IMongoDbContext context)
 {
     public async Task<IReadOnlyList<ActivityRecord>> QueryAsync(ActivityQuery query, bool includeAccess, CancellationToken ct)
     {
-        var rows = new List<ActivityRecord>();
-        foreach (var source in Sources(includeAccess).Where(x => query.Category is null || x.Category == query.Category))
+        var sources = Sources(includeAccess).Where(source => query.Category is null || source.Category == query.Category).ToArray();
+        if (sources.Length == 0) { return []; }
+
+        var stages = Pipeline(sources[0], query);
+        foreach (var source in sources.Skip(1))
         {
-            var pipeline = Pipeline(source, query);
-            rows.AddRange(await ReadAsync(source.Collection, pipeline, ct));
+            stages.Add(new BsonDocument("$unionWith", new BsonDocument
+            {
+                { "coll", source.Collection },
+                { "pipeline", new BsonArray(Pipeline(source, query)) }
+            }));
         }
-        return rows.OrderByDescending(x => x.OccurredUtc).ThenByDescending(x => x.Key, StringComparer.Ordinal).Take(51).ToArray();
+        var rows = await ReadAsync(sources[0].Collection, stages, ct, batchSize: sources.Length * 51);
+        return rows.OrderByDescending(row => row.OccurredUtc)
+            .ThenByDescending(row => row.Key, StringComparer.Ordinal).Take(51).ToArray();
     }
 
     public async Task<ActivityRecord?> GetAsync(string identity, bool includeAccess, CancellationToken ct)
@@ -31,9 +39,9 @@ public sealed class ActivityPersistence(IMongoDbContext context)
         return (await ReadAsync(source.Collection, stages, ct)).FirstOrDefault();
     }
 
-    private Task<List<ActivityRecord>> ReadAsync(string collection, List<BsonDocument> stages, CancellationToken ct) =>
+    private Task<List<ActivityRecord>> ReadAsync(string collection, List<BsonDocument> stages, CancellationToken ct, int? batchSize = null) =>
         context.Database.GetCollection<BsonDocument>(collection).Aggregate<ActivityRecord>(stages,
-            new AggregateOptions { MaxTime = TimeSpan.FromSeconds(15) }).ToListAsync(ct);
+            new AggregateOptions { MaxTime = TimeSpan.FromSeconds(15), BatchSize = batchSize }).ToListAsync(ct);
 
     private sealed record Source(string Code, string Collection, string Category, string Time, string Actor);
     private static IEnumerable<Source> Sources(bool access)
@@ -42,6 +50,7 @@ public sealed class ActivityPersistence(IMongoDbContext context)
         yield return new("b", "schedule_blocks", "Schedule", "CreatedUtc", "CreatedBy");
         yield return new("u", "schedule_blocks", "Schedule", "ReleasedUtc", "ReleasedBy");
         yield return new("c", "customer_profile_operations", "Customers", "OccurredUtc", "ActorId");
+        yield return new("p", "customer_profiles", "Customers", "CreatedUtc", "CreatedBy");
         if (access) { yield return new("a", "staff_role_audit", "Access", "OccurredUtc", "ActorAccountId"); }
     }
 
@@ -118,6 +127,9 @@ public sealed class ActivityPersistence(IMongoDbContext context)
                     .Add("TargetStartUtc", "$StartUtc").Add("AfterStartUtc", "$StartUtc").Add("AfterEndUtc", "$EndUtc")
                     .Add("AfterResources", "$ResourceIds");
                 break;
+            case "p":
+                projection.Add("TargetKind", "customer").Add("EventType", "CustomerCreated").Add("TargetLabel", Name(""));
+                break;
             case "c":
                 projection["TargetId"] = "$TargetId";
                 projection.Add("TargetKind", "customer-merge").Add("EventType", Value("Kind")).Add("Reason", Value("Reason"))
@@ -133,7 +145,7 @@ public sealed class ActivityPersistence(IMongoDbContext context)
                 break;
         }
         stages.Add(new BsonDocument("$project", projection));
-        if (source.Code is "b" or "u") { stages.Add(new BsonDocument("$match", new BsonDocument("Actor", new BsonDocument("$ne", "")))); }
+        if (source.Code is "b" or "u" or "p") { stages.Add(new BsonDocument("$match", new BsonDocument("Actor", new BsonDocument("$ne", "")))); }
         return stages;
     }
 

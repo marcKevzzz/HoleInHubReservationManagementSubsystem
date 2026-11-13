@@ -15,7 +15,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IHealthService, HealthService>();
         services.AddScoped<HoleInHub.Business.Activity.ActivityService>();
         services.AddScoped<HoleInHub.Business.Customers.CustomerProfileService>();
-        services.AddScoped<IServiceCatalog, ServiceCatalog>();
+        services.AddScoped<HoleInHub.Business.Settings.OperationalSettings>();
+        services.AddScoped<ServiceCatalog>();
+        services.AddScoped<IServiceCatalog>(provider => provider.GetRequiredService<ServiceCatalog>());
         services.AddSingleton(TimeProvider.System);
         services.Configure<HoleInHub.Business.Reservations.ReservationPolicy>(configuration.GetSection("ReservationPolicy"));
         services.AddScoped<HoleInHub.Business.Reservations.ReservationService>();

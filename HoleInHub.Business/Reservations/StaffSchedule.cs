@@ -3,7 +3,7 @@ namespace HoleInHub.Business.Reservations;
 public sealed record StaffScheduleBay(string Name, bool Active, IReadOnlyList<StaffScheduleEntry> Entries, string Service = "Regular", string Id = "");
 public sealed record StaffScheduleEntry(DateTime Start, DateTime End, string Status,
     string? ReservationId = null, string? Reference = null, string? Service = null, string? Guest = null, int Attendees = 0, string? Reason = null, string? BlockId = null, DateTime? CheckedOut = null,
-    long Revision = 0, bool CanMove = false, string Location = "")
+    long Revision = 0, bool CanMove = false, string Location = "", int BayCount = 1)
 {
     public bool HoldsCapacity => Status is "Pending" or "Confirmed" or "Checked-In" or "Blocked";
 }
@@ -45,5 +45,5 @@ public sealed partial class ReservationService
             booking.Service, $"{booking.FirstName} {booking.LastName}".Trim(), booking.Attendees,
             CheckedOut: booking.CheckedOutUtc.HasValue ? Local(booking.CheckedOutUtc.Value) : null,
             Revision: booking.Revision, CanMove: CanMoveStaffBooking(Map(booking), (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime),
-            Location: string.Join(", ", booking.ResourceIds.Select(id => booking.ResourceNames.GetValueOrDefault(id, id))));
+            Location: string.Join(", ", booking.ResourceIds.Select(id => booking.ResourceNames.GetValueOrDefault(id, id))), BayCount: booking.ResourceIds.Length);
 }

@@ -5,8 +5,14 @@ using HoleInHub.Data.Reservations;
 using Microsoft.Extensions.Options;
 namespace HoleInHub.Business.Reservations;
 
-public sealed partial class ReservationService(ReservationPersistence persistence, OutboxPersistence outbox, IOptions<ReservationPolicy> policy, TimeProvider? clock = null)
+public sealed partial class ReservationService(ReservationPersistence persistence, OutboxPersistence outbox, IOptions<ReservationPolicy> policy, TimeProvider? clock = null, HoleInHub.Business.Settings.OperationalSettings? settings = null)
 {
+    private ReservationPolicy? runtimePolicy;
+    private ReservationPolicy effectivePolicy => runtimePolicy ?? policy.Value;
+    private async Task LoadOperationalPolicyAsync(CancellationToken ct)
+    {
+        if (settings is not null) { runtimePolicy = await settings.PolicyAsync(ct); }
+    }
     public async Task<IReadOnlyList<ResourceDto>> GetCatalogAsync(CancellationToken ct) => (await persistence.CatalogAsync(ct)).Select(x => new ResourceDto(x.Id, x.Name, x.Service)).ToArray();
     public async Task<IReadOnlyList<AvailabilityDto>> GetAvailabilityAsync(DateOnly date, TimeOnly startTime, int durationMinutes, string service, CancellationToken ct) { var (start, end) = ReservationRules.PreviewInterval(date, startTime, durationMinutes, service); BookingRules.ValidateLeadTime(service, start, (clock ?? TimeProvider.System).GetUtcNow()); await ProcessPendingAsync(ct); var occupied = await persistence.OccupiedAsync(start, end, ct, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime); return (await GetCatalogAsync(ct)).Where(x => service == "WholeShop" || x.Service == (service == "VIP" ? "VIP" : "Regular")).Select(x => new AvailabilityDto(x, !occupied.Contains(x.Id))).ToArray(); }
     public async Task<ReservationDto> SubmitAsync(SubmitReservationRequest request, string accountId, string verifiedEmail, CancellationToken ct, string? guestSessionHash = null, string? accessTokenHash = null, bool demoAllowed = false, string? encryptedReceipt = null)
@@ -16,17 +22,18 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
             throw new ReservationValidationException("Verify your email before submitting a request.");
         }
 
+        await LoadOperationalPolicyAsync(ct);
         ValidateDetails(request, demoAllowed);
         var hash = Fingerprint(request, verifiedEmail);
         var prior = await persistence.ByKeyAsync(accountId, request.IdempotencyKey, ct); if (prior != null) { if (prior.SubmissionHash != hash) { throw new ReservationValidationException("This submission key was already used for another request. Reload the form."); } return Map(prior); }
-        var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime; policy.Value.ValidateCoverage(new DateTimeOffset(now), BookingRules.ReviewMinutes(request.Service)); var (start, end) = ReservationRules.PreviewInterval(request.Date, request.StartTime, request.DurationMinutes, request.Service); BookingRules.ValidateWindow(request.Service, start, new DateTimeOffset(now)); if (start <= now)
+        var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime; effectivePolicy.ValidateCoverage(new DateTimeOffset(now), BookingRules.ReviewMinutes(request.Service)); var (start, end) = ReservationRules.PreviewInterval(request.Date, request.StartTime, request.DurationMinutes, request.Service); BookingRules.ValidateWindow(request.Service, start, new DateTimeOffset(now)); if (start <= now)
         {
             throw new ReservationValidationException("Choose a future reservation time.");
         }
 
         await ProcessPendingAsync(ct);
         var reviewDeadline = GetReviewDeadline(request.Service, start, new DateTimeOffset(now));
-        var reviewStart = request.Service == "WholeShop" ? (DateTime?)null : ReviewClock.AddMinutes(new DateTimeOffset(now), 0, policy.Value);
+        var reviewStart = request.Service == "WholeShop" ? (DateTime?)null : ReviewClock.AddMinutes(new DateTimeOffset(now), 0, effectivePolicy);
         var alertMinutes = request.Service == "Regular" ? new[] { 15, 25 } : new[] { 30, 50 };
         var record = new ReservationRecord
         {
@@ -46,7 +53,7 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
             CreatedUtc = now,
             ReviewDeadlineUtc = reviewDeadline,
             ReviewStartsUtc = reviewStart,
-            ReviewAlertsUtc = reviewStart.HasValue ? alertMinutes.Select(minutes => ReviewClock.AddMinutes(new DateTimeOffset(now), minutes, policy.Value)).ToArray() : null,
+            ReviewAlertsUtc = reviewStart.HasValue ? alertMinutes.Select(minutes => ReviewClock.AddMinutes(new DateTimeOffset(now), minutes, effectivePolicy)).ToArray() : null,
             ResourceIds = request.ResourceIds,
             FirstName = request.FirstName.Trim(),
             LastName = request.LastName.Trim(),
@@ -82,7 +89,7 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
             throw new ReservationValidationException("Choose a listed experience.");
         }
 
-        if (request.Service == "WholeShop" && (!demoAllowed || !policy.Value.DemoPaymentsEnabled))
+        if (request.Service == "WholeShop" && (!demoAllowed || !effectivePolicy.DemoPaymentsEnabled))
         {
             throw new ReservationValidationException("Whole-shop online checkout is not enabled. Please contact the venue.");
         }
@@ -109,9 +116,10 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
     }
     public async Task ValidateSubmissionAsync(SubmitReservationRequest request, bool demoAllowed, CancellationToken ct)
     {
+        await LoadOperationalPolicyAsync(ct);
         ValidateDetails(request, demoAllowed);
         var now = (clock ?? TimeProvider.System).GetUtcNow();
-        policy.Value.ValidateCoverage(now, BookingRules.ReviewMinutes(request.Service));
+        effectivePolicy.ValidateCoverage(now, BookingRules.ReviewMinutes(request.Service));
         var (start, _) = ReservationRules.PreviewInterval(request.Date, request.StartTime, request.DurationMinutes, request.Service);
         BookingRules.ValidateWindow(request.Service, start, now);
         GetReviewDeadline(request.Service, start, now);
@@ -131,9 +139,10 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
     public async Task<ReservationDto?> GetOwnedAsync(string accountId, string id, CancellationToken ct) { var record = await persistence.OwnedAsync(accountId, id, ct); return record == null ? null : Map(record); }
     public async Task ProcessPendingAsync(CancellationToken ct)
     {
+        await LoadOperationalPolicyAsync(ct);
         var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime;
-        await persistence.ExpireAsync(now, policy.Value.StaffEmails, ct);
-        await persistence.MarkOverdueAsync(now, policy.Value.StaffEmails, ct);
+        await persistence.ExpireAsync(now, effectivePolicy.StaffEmails, ct);
+        await persistence.MarkOverdueAsync(now, effectivePolicy.StaffEmails, ct);
         foreach (var record in await persistence.PendingAsync(now, ct))
         {
             var alerts = record.ReviewAlertsUtc ?? ((record.ReviewDeadlineUtc - record.CreatedUtc).TotalMinutes > 30 ? new[] { 30, 50 } : new[] { 15, 25 }).Select(minutes => record.CreatedUtc.AddMinutes(minutes)).ToArray();
@@ -143,7 +152,7 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
                     : record.Service == "Regular" ? new[] { 15, 25 }[index] : new[] { 30, 50 }[index];
                 if (alerts[index] <= now && record.ReviewDeadlineUtc > now && (index == alerts.Length - 1 || now < alerts[index + 1]))
                 {
-                    foreach (var recipient in policy.Value.StaffEmails)
+                    foreach (var recipient in effectivePolicy.StaffEmails)
                     {
                         await outbox.EnqueueAsync(new OutboxRecord { Id = $"{record.Id}:review{minutes}:{recipient}", Recipient = recipient, Subject = $"Pending request: {record.Reference}", Body = $"Request {record.Reference} is awaiting review. Review deadline: {record.ReviewDeadlineUtc:O}.", DueUtc = now, ReservationId = record.Id, RequiredStatus = "Pending" }, ct);
                     }
@@ -154,7 +163,7 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
     private DateTime GetReviewDeadline(string service, DateTime start, DateTimeOffset now)
     {
         var deadline = service == "WholeShop" ? now.UtcDateTime.AddMinutes(BookingRules.ReviewMinutes(service))
-            : ReviewClock.AddMinutes(now, BookingRules.ReviewMinutes(service), policy.Value);
+            : ReviewClock.AddMinutes(now, BookingRules.ReviewMinutes(service), effectivePolicy);
         if (start < deadline)
         {
             throw new ReservationValidationException("Choose a session after the staff review window finishes.");
@@ -163,7 +172,7 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
     }
     public RentalQuoteDto GetDemoQuote(DateOnly date, TimeOnly time, int duration, bool demoAllowed)
     {
-        if (!demoAllowed || !policy.Value.DemoPaymentsEnabled) { throw new ReservationValidationException("Checkout is unavailable."); }
+        if (!demoAllowed || !effectivePolicy.DemoPaymentsEnabled) { throw new ReservationValidationException("Checkout is unavailable."); }
         ReservationRules.PreviewInterval(date, time, duration, "WholeShop");
         var total = BookingRules.DemoRentalTotal(date, duration);
         return new RentalQuoteDto(total, total / 2);
@@ -192,6 +201,8 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
             ? TimeZoneInfo.ConvertTimeToUtc(day.Value.ToDateTime(TimeOnly.MinValue), ReservationRules.Manila) : null;
         return (await persistence.ExpiredRequestsAsync(start, start?.AddDays(1), ct)).Select(Map).ToArray();
     }
+    public Task<bool> StaffRecordExistsAsync(string id, CancellationToken ct) => persistence.ExistsAsync(id, ct);
+
     public async Task<ReservationDto?> GetStaffAsync(string id, CancellationToken ct)
     {
         await ProcessPendingAsync(ct);
@@ -214,13 +225,14 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         }
         try
         {
-            return await persistence.TransitionAsync(id, action, actor, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime, policy.Value.StaffEmails, ct, reason?.Trim() ?? "", expectedRevision, rebookUrl);
+            await LoadOperationalPolicyAsync(ct);
+            return await persistence.TransitionAsync(id, action, actor, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime, effectivePolicy.StaffEmails, ct, reason?.Trim() ?? "", expectedRevision, rebookUrl);
         }
         catch (AllocationConflictException error) { throw new ReservationValidationException(error.Message); }
     }
     public async Task<bool> DemoPaymentAsync(string id, string outcome, bool demoAllowed, CancellationToken ct)
     {
-        if (!demoAllowed || !policy.Value.DemoPaymentsEnabled || outcome is not ("success" or "failure" or "cancel"))
+        if (!demoAllowed || !effectivePolicy.DemoPaymentsEnabled || outcome is not ("success" or "failure" or "cancel"))
         {
             throw new ReservationValidationException("Checkout is unavailable.");
         }

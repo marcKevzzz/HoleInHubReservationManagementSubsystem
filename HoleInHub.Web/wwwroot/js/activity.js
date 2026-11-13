@@ -10,7 +10,7 @@
     const categories = page.querySelector('.activity-categories');
     const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
     const results = () => page.querySelector('[data-activity-results]');
-    let listUrl = results().dataset.listUrl;
+    let listUrl = page.dataset.activityReturnUrl || results().dataset.listUrl;
     let listRequest, detailRequest, debounce, trigger;
 
     function remember(kind, url, value) {
@@ -47,6 +47,7 @@
         for (const input of dates.querySelectorAll('input')) input.required = custom;
     }
     function syncFilters() {
+        if (!form) return;
         const url = new URL(listUrl, location.origin);
         page.querySelector('.staff-workspace-heading [data-activity-refresh]').href = unpaged(url);
         for (const name of ['search', 'range', 'from', 'to', 'actor', 'category']) {
@@ -88,8 +89,7 @@
     function setListPending(pending, tab) {
         if (pending) results().setAttribute('aria-busy', 'true');
         else results().removeAttribute('aria-busy');
-        categories.classList.toggle('is-loading', pending);
-        categories.querySelector('[data-activity-pending]')?.removeAttribute('data-activity-pending');
+        categories?.querySelector('[data-activity-pending]')?.removeAttribute('data-activity-pending');
         tab?.setAttribute('data-activity-pending', '');
     }
     function cancelList() {
@@ -131,12 +131,8 @@
         announce('');
         detailRequest?.abort();
         const request = detailRequest = new AbortController();
-        const message = document.createElement('p');
-        message.className = 'activity-panel-feedback';
-        message.setAttribute('aria-label', 'Loading event');
-        message.classList.add('activity-loading');
-        message.setAttribute('role', 'status');
-        body.replaceChildren(message);
+        const { message, skeleton } = window.HoleInHubPanels.loading(body, 'Loading activity…');
+        body.scrollTop = 0;
         if (!panel.open) panel.showModal();
         body.setAttribute('aria-busy', 'true');
         document.documentElement.classList.add('activity-panel-open');
@@ -145,14 +141,16 @@
             const content = await fragment(url, 'panel', '[data-activity-event-content]', request);
             if (request !== detailRequest || !panel.open) return;
             body.replaceChildren(content);
-            content.querySelector('h2')?.focus();
+            window.HoleInHubButtons?.mount(content);
+            content.querySelector('h2')?.focus({ preventScroll: true });
             if (!reducedMotion.matches) {
                 content.animate([{ opacity: .6, transform: 'translateX(8px)' }, { opacity: 1, transform: 'translateX(0)' }], { duration: 180, easing: 'ease-out' });
             }
         } catch {
             if (request !== detailRequest || !panel.open) return;
-            message.classList.remove('activity-loading');
+            message.classList.remove('sr-only');
             message.removeAttribute('aria-label');
+            skeleton.remove();
             message.textContent = 'Activity unavailable or your session expired. ';
             const link = document.createElement('a');
             link.href = url;
@@ -166,6 +164,7 @@
         detailRequest?.abort();
         detailRequest = undefined;
         panel.close();
+        body.removeAttribute('aria-busy');
         document.documentElement.classList.remove('activity-panel-open');
         restorePosition();
         if (trigger?.isConnected) trigger.focus({ preventScroll: true });
@@ -188,7 +187,7 @@
             return;
         }
         const actor = event.target.closest('[data-activity-actor]');
-        if (actor) {
+        if (actor && form) {
             event.preventDefault();
             remember('actor', actor.dataset.activityActor, actor.textContent.trim());
             void loadList(actor.href);
@@ -212,28 +211,38 @@
         if (tab) url.searchParams.set('category', new URL(tab.href).searchParams.get('category'));
         void loadList(url, { tab });
     }
-    form.addEventListener('submit', event => { event.preventDefault(); submit(); });
+    form?.addEventListener('submit', event => { event.preventDefault(); submit(); });
     function scheduleSearch(event) {
         if (event.target.type !== 'search' || event.isComposing) return;
         cancelList();
         clearTimeout(debounce);
         debounce = setTimeout(submit, 350);
     }
-    form.addEventListener('input', scheduleSearch);
-    form.addEventListener('compositionend', scheduleSearch);
-    form.addEventListener('keydown', event => {
+    form?.addEventListener('input', scheduleSearch);
+    form?.addEventListener('compositionend', scheduleSearch);
+    form?.addEventListener('keydown', event => {
         if (event.key !== 'Enter' || event.isComposing || event.target.type !== 'search') return;
         event.preventDefault();
         submit();
     });
-    form.addEventListener('change', event => {
+    form?.addEventListener('change', event => {
         if (event.target.type === 'search') return;
         showDates();
         if (event.target.name !== 'range' || form.elements.range.value !== 'custom') submit();
     });
     panel.addEventListener('cancel', event => { event.preventDefault(); dismiss(); });
+    let backdropPressed = false;
+    function outsidePanel(event) {
+        const rect = panel.getBoundingClientRect();
+        return event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom;
+    }
+    panel.addEventListener('pointerdown', event => { backdropPressed = event.target === panel && outsidePanel(event); });
+    panel.addEventListener('click', event => {
+        if (backdropPressed && event.target === panel && outsidePanel(event)) dismiss();
+        backdropPressed = false;
+    });
     window.addEventListener('popstate', () => {
-        if (location.pathname === '/staff/activity') {
+        if (location.pathname === new URL(listUrl, location.origin).pathname) {
             if (panel.open) closePanel();
             if (location.pathname + location.search !== listUrl) void loadList(location.href, { push: false });
             else restorePosition();
@@ -250,5 +259,5 @@
     const returnEvent = new URL(location.href).searchParams.get('focus');
     history.replaceState({ activityList: true }, '', listUrl);
     syncFilters();
-    restorePosition(returnEvent);
+    if (returnEvent) restorePosition(returnEvent);
 })();

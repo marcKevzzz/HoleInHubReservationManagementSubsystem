@@ -14,6 +14,11 @@ public sealed record AccountDetails(string Id, string Email, string NormalizedEm
 public sealed record StaffRoleChange(string ActorId, string ActorStamp, string TargetId, string ExpectedVersion,
     string? RequestedRole, string? Reason, string CorrelationId);
 
+public sealed record StaffPinReset(string ActorId, string ActorStamp, string TargetId, string ExpectedVersion,
+    string CommandId, string Reason);
+
+public enum TeamCreationResult { Created, Duplicate, Forbidden, Unavailable, Invalid }
+
 public enum StaffRoleChangeResult { Applied, Unchanged, Invalid, Forbidden, NotFound, Stale, Unavailable }
 
 public sealed class AccountService(AccountPersistence persistence, TimeProvider clock)
@@ -81,6 +86,51 @@ public sealed class AccountService(AccountPersistence persistence, TimeProvider 
             StaffRoleWriteResult.Forbidden => StaffRoleChangeResult.Forbidden,
             StaffRoleWriteResult.Stale => StaffRoleChangeResult.Stale,
             _ => StaffRoleChangeResult.Unavailable
+        };
+    }
+
+    public async Task<StaffRoleChangeResult> ResetStaffPinAsync(StaffPinReset command, CancellationToken ct)
+    {
+        if (command.ActorId == command.TargetId || string.IsNullOrWhiteSpace(command.ActorId) || string.IsNullOrWhiteSpace(command.ActorStamp))
+        { return StaffRoleChangeResult.Forbidden; }
+        if (!Guid.TryParseExact(command.CommandId, "N", out _) || string.IsNullOrWhiteSpace(command.ExpectedVersion)
+            || string.IsNullOrWhiteSpace(command.Reason) || command.Reason.Trim().Length > 500)
+        { return StaffRoleChangeResult.Invalid; }
+        var target = await persistence.FindByIdAsync(command.TargetId, ct);
+        if (target is null) { return StaffRoleChangeResult.NotFound; }
+        if (!target.EmailConfirmed || target.Roles.Contains(StaffRoles.Admin) || !target.Roles.Any(role => role is StaffRoles.Staff or StaffRoles.Manager))
+        { return StaffRoleChangeResult.Invalid; }
+        var audit = new StaffRoleAuditRecord(command.CommandId, "StaffPinReset", clock.GetUtcNow().UtcDateTime,
+            command.ActorId, StaffRoles.Admin, target.Id, target.Roles, target.Roles, command.Reason.Trim(), command.CommandId);
+        return await persistence.ResetStaffPinAsync(command.ActorStamp, command.ExpectedVersion, audit, ct) switch
+        {
+            StaffRoleWriteResult.Applied => StaffRoleChangeResult.Applied,
+            StaffRoleWriteResult.Forbidden => StaffRoleChangeResult.Forbidden,
+            StaffRoleWriteResult.Stale => StaffRoleChangeResult.Stale,
+            _ => StaffRoleChangeResult.Unavailable
+        };
+    }
+
+    public async Task<TeamCreationResult> CreateTeamMemberAsync(AccountDetails account, string role,
+        string actorId, string actorStamp, string protectedInvitation, CancellationToken ct, string? resendId = null)
+    {
+        if (!StaffRoles.Workspace.Contains(role) || !ContactRules.IsName(account.FirstName) || !ContactRules.IsName(account.LastName)
+            || !ContactRules.IsPhone(account.Phone) || account.Email.Length is < 3 or > 254
+            || !System.Net.Mail.MailAddress.TryCreate(account.Email, out var email) || email.Address != account.Email
+            || !protectedInvitation.StartsWith("protected:", StringComparison.Ordinal)
+            || account.EmailConfirmed || account.PasswordHash.Length == 0 || !Guid.TryParseExact(account.Id, "N", out _))
+        { return TeamCreationResult.Invalid; }
+        if (resendId is not null && !Guid.TryParseExact(resendId, "N", out _)) { return TeamCreationResult.Invalid; }
+        var actorRoles = role == StaffRoles.Admin ? new[] { StaffRoles.Admin } : [StaffRoles.Admin, StaffRoles.Manager];
+        var result = await persistence.CreateManagedAsync(ToRecord(account with { Roles = [role] }), actorId, actorStamp,
+            actorRoles, protectedInvitation, clock.GetUtcNow().UtcDateTime, ct, resendId);
+        return result switch
+        {
+            ManagedAccountResult.Created => TeamCreationResult.Created,
+            ManagedAccountResult.Duplicate => TeamCreationResult.Duplicate,
+            ManagedAccountResult.Forbidden => TeamCreationResult.Forbidden,
+            ManagedAccountResult.Unavailable => TeamCreationResult.Unavailable,
+            _ => TeamCreationResult.Invalid
         };
     }
 

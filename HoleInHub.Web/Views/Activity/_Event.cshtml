@@ -5,5 +5,5 @@
 @if(e.Changes.Count>0){<div class="activity-changes"><div><span></span><span>Before</span><span>After</span></div>@foreach(var change in e.Changes){<div><strong>@change.Field</strong><span>@(change.Before??"—")</span><span>@(change.After??"—")</span></div>}</div>}
 @if(!string.IsNullOrWhiteSpace(e.Reason)){<section class="activity-reason"><h3>Reason</h3><p>@e.Reason</p></section>}
 <details class="review-disclosure"><summary>Details</summary><p class="activity-reference">Event reference: @e.Key</p></details>
-@if(Model.TargetUrl is not null){<a class="button activity-onward" href="@Model.TargetUrl">@Model.TargetAction <partial name="_StaffIcon" model='"arrow-up-right"' /></a>}else{<p class="activity-unavailable">The related record is unavailable.</p>}
+@if(Model.TargetUrl is not null){<a class="button activity-onward" href="@Model.TargetUrl">@Model.TargetAction <partial name="_StaffIcon" model='"arrow-right"' /></a>}else{<p class="activity-unavailable">The related record is unavailable.</p>}
 </article>

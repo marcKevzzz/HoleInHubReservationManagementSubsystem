@@ -13,6 +13,7 @@ public sealed class CustomerProfileRecord
     public string Email { get; set; } = "";
     public string Phone { get; set; } = "";
     public string Kind { get; set; } = "";
+    public string CreatedBy { get; set; } = "";
     public string RepresentativeBookingId { get; set; } = "";
     public CustomerContactVariant[] Variants { get; set; } = [];
     public string[] Sources { get; set; } = [];

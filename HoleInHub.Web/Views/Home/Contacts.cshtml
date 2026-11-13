@@ -1,4 +1,5 @@
-@{ ViewData["Title"] = "Contact & location"; }
+@model HoleInHub.Business.Settings.SettingsEdit
+@{ ViewData["Title"] = "Contact & location"; var phone=string.IsNullOrWhiteSpace(Model?.ContactPhone)?"+63 969 265 4976":Model.ContactPhone;var email=string.IsNullOrWhiteSpace(Model?.ContactEmail)?"holeinhub@gmail.com":Model.ContactEmail; }
 <div class="page-content venue-page">
     <header class="venue-heading">
         <h1 data-venue-title>CONTACT &amp; LOCATION</h1>
@@ -22,8 +23,8 @@
             <section aria-labelledby="venue-inquiries-title">
                 <h2 id="venue-inquiries-title">Get in touch</h2>
                 <ul>
-                    <li><a class="prototype-link" href="tel:+639692654976">+63 969 265 4976</a></li>
-                    <li><a class="prototype-link" href="mailto:holeinhub@gmail.com">holeinhub@gmail.com</a></li>
+                    <li><a class="prototype-link" href="tel:@phone.Replace(" ", "")">@phone</a></li>
+                    <li><a class="prototype-link" href="mailto:@email">@email</a></li>
                     <li><a class="prototype-link" href="https://www.facebook.com/profile.php?id=61589175118662" rel="noreferrer">Facebook</a></li>
                 </ul>
             </section>

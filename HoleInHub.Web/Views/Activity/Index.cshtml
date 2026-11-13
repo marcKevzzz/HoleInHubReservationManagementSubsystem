@@ -13,6 +13,6 @@
 <nav class="activity-categories" aria-label="Activity categories">@foreach(var category in new[]{"All","Reservations","Customers","Schedule","Access"}.Where(c=>c!="Access"||Model.IncludeAccess)) {var values=new ActivityQuery{Range=Model.Query.Range,From=Model.Query.From,To=Model.Query.To,Search=Model.Query.Search,Actor=Model.Query.Actor,Category=category};<a href="@values.Url(reset:true)" aria-current="@(Model.Query.Category.Equals(category,StringComparison.OrdinalIgnoreCase)?"page":null)" data-activity-filter>@category</a>}</nav>
 <p class="activity-feedback" data-activity-status role="status" hidden></p>
 <partial name="_Results" model="Model" />
-<dialog class="activity-panel" data-activity-panel aria-label="Activity details"><header><span>Activity details</span><button type="button" class="staff-icon-button" aria-label="Close activity details" data-activity-close><partial name="_StaffIcon" model='"close"' /></button></header><div data-activity-panel-body></div></dialog>
+<partial name="_Panel" />
 </div>
 @section Scripts {<script src="~/js/activity.js" asp-append-version="true"></script>}

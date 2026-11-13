@@ -3,6 +3,13 @@
     if (!page) return;
     const catalog = page.querySelector('[data-services-catalog]');
     const status = page.querySelector('[data-services-status]');
+    catalog.addEventListener('click', event => {
+        const button = event.target.closest('[data-gallery-direction]');
+        if (!button) return;
+        const track = button.closest('[data-service-gallery]').querySelector('.service-gallery-track');
+        track.scrollBy({ left: track.clientWidth * Number(button.dataset.galleryDirection),
+            behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+    });
     let refreshing = false;
     let lastHtml = null;
     let disposeButtons = () => {};
