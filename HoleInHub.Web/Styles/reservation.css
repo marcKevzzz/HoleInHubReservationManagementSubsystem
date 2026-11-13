@@ -10,6 +10,7 @@
 .reservation-studio .reservation-summary>img{height:210px;max-height:210px;min-height:0;aspect-ratio:auto;object-position:center 60%}
 .reservation-studio .reservation-summary{position:relative;top:auto}
 .reservation-studio .actions #step-next{margin-left:auto}
+.reservation-studio .actions .flow-back{margin:0;flex:none;align-self:center}
 .reservation-studio .resource-option input{width:1px;height:1px;padding:0;margin:-1px;clip-path:inset(50%);overflow:hidden;white-space:nowrap}
 .reservation-studio .resource-option:has(input:focus-visible){outline:2px solid var(--green);outline-offset:4px}
 .reservation-studio .service-option:has(input:checked){background:var(--green);color:var(--paper)}

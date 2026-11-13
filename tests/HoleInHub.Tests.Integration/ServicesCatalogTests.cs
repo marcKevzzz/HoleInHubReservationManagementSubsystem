@@ -11,6 +11,26 @@ namespace HoleInHub.Tests.Integration.Services;
 public sealed class ServiceCatalogTests(MongoDbFixture fixture) : IClassFixture<MongoDbFixture>
 {
     [Fact]
+    public async Task ReorderingLegacyServicesWithoutRevisionPersistsOrderAndRejectsStaleEdits()
+    {
+        Assert.True(fixture.IsServerAvailable, "Start the isolated local MongoDB replica set.");
+        var context = fixture.CreateDbContext();
+        await new Migration_008_ServiceCatalog().UpAsync(context.Database, default);
+        var collection = context.Database.GetCollection<ServiceCatalogRecord>("service_catalog");
+        await collection.UpdateManyAsync(FilterDefinition<ServiceCatalogRecord>.Empty,
+            Builders<ServiceCatalogRecord>.Update.Unset(item => item.Revision));
+        var catalog = new ServiceCatalog(new ServiceCatalogPersistence(context));
+        var original = await catalog.GetAllAsync(default);
+        var reordered = original.Reverse().Select(item => new ServicePosition(item.Id, item.Revision)).ToArray();
+        await catalog.ReorderAsync(reordered, "admin", default);
+        var saved = await catalog.GetAllAsync(default);
+        Assert.Equal(reordered.Select(item => item.Id), saved.Select(item => item.Id));
+        Assert.All(saved, item => Assert.Equal(1, item.Revision));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => catalog.ReorderAsync(
+            original.Select(item => new ServicePosition(item.Id, item.Revision)).ToArray(), "admin", default));
+    }
+
+    [Fact]
     public async Task CatalogEditsPublishImagesAndDepositsAndRejectStaleChanges()
     {
         Assert.True(fixture.IsServerAvailable, "Start the local MongoDB replica set.");

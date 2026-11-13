@@ -411,6 +411,10 @@ a.staff-timeline-bar{cursor:pointer}a.staff-timeline-bar:hover{filter:brightness
 .staff-date-controls [hidden] {display:none}
 .staff-lookup {width:min(100%,220px);margin-inline-start:auto}
 .staff-lookup .auth-input-wrap {display:flex;align-items:center;color:var(--color-muted);background:transparent}
+.staff-shell .staff-lookup input[type=search]:focus-visible {outline:none}
+@media(forced-colors:active){
+  .staff-lookup input[type=search]:focus-visible {border-bottom:2px solid Highlight}
+}
 .staff-lookup .staff-icon {position:absolute;left:9px;width:15px;height:15px;pointer-events:none}
 .staff-lookup input:not([type=hidden]) {width:100%;min-width:0;padding:5px 8px 5px 30px;border:0;border-bottom:1px solid var(--color-control-line);border-radius:0;background:transparent;font-size:.85rem}
 .staff-lookup input::placeholder {color:var(--color-muted);opacity:1}
@@ -695,7 +699,7 @@ a.staff-timeline-bar{cursor:pointer}a.staff-timeline-bar:hover{filter:brightness
 .staff-timeline-axis {z-index:20}
 .staff-timeline-track {min-height:calc(var(--lanes) * 64px)}
 .staff-timeline :is(.staff-timeline-hours,.staff-timeline-track) {translate:var(--pan-offset,0px) 0}
-.staff-timeline-bar {top:calc(var(--lane) * 100% / var(--lanes) + 2px);height:calc(100% / var(--lanes) - 4px);border-radius:5px;padding-inline:8px}
+.staff-timeline-bar {top:calc(var(--lane) * 100% / var(--lanes));height:calc(100% / var(--lanes));border:0;border-radius:0;padding-inline:8px}
 .staff-timeline-bar strong {font-size:.95rem;line-height:1.2}
 .staff-drag-preview.is-selected {inset-block:2px;border-radius:5px;padding:8px;font-size:.85rem;font-weight:600;outline:2px solid var(--color-paper);outline-offset:-3px}
 .staff-booking-drawer[data-create-booking]::backdrop {background:color-mix(in srgb,var(--color-ink) 24%,transparent)}
@@ -1256,11 +1260,10 @@ html.people-create-open {overflow:hidden;scrollbar-gutter:stable}
 .staff-shell .staff-timeline-bar:focus-visible>strong {text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:2px}
 .staff-timeline-bar:is(.is-reservation-group,.is-booking-open,.is-batch-selected,.is-search-target) {
   background:color-mix(in srgb,var(--color-green) 17%,var(--color-paper));
-  box-shadow:inset 0 0 0 1px var(--color-green);
+  box-shadow:none;
   color:var(--color-ink);
   z-index:4;
 }
-.staff-timeline-bar.is-batch-selected {box-shadow:inset 0 0 0 2px var(--color-green)}
 .staff-batch-summary:not([hidden]) {display:grid;gap:10px;list-style:none;margin:0 0 20px;padding:0;max-height:240px;overflow:auto}
 .staff-batch-summary li {display:grid;gap:2px;padding:8px 0;border-top:1px solid var(--color-line);font-size:.82rem}
 .staff-batch-summary li span {color:var(--color-muted)}

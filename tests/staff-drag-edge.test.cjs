@@ -3,7 +3,8 @@ const assert = require('node:assert/strict');
 const vm = require('node:vm');
 const fs = require('node:fs');
 
-test('edge drag clips the floating booking and updates the preview date before confirmation', async () => {
+for (const key of [null, 'PageUp', 'PageDown']) {
+test(key ? `Alt+${key} previews the destination day and opens move confirmation` : 'edge drag clips the floating booking and updates the preview date before confirmation', async () => {
     const classes = { add() {}, remove() {}, toggle() {} };
     const node = extra => ({ handlers: {}, classList: classes, addEventListener(k, fn) { this.handlers[k] = fn; }, removeEventListener() {}, ...extra });
     const style = () => ({ values: {}, setProperty(k, v) { this.values[k] = v; }, getPropertyValue(k) { return this.values[k] || ''; }, removeProperty(k) { delete this.values[k]; } });
@@ -26,7 +27,8 @@ test('edge drag clips the floating booking and updates the preview date before c
     const timeline = node({ style: style(), childNodes: [source], querySelector: () => ({ offsetWidth: 72 }),
         querySelectorAll: s => s === '[data-move-booking]' ? [bar] : [active],
         replaceChildren(...nodes) { active = nodes[0]; }, setPointerCapture() {}, releasePointerCapture() {} });
-    const gesture = { adjacentDay: () => '2099-11-13', dayLabel: d => d, preview() {}, hide() {}, setDate: d => { displayedDate = d; }, transition: d => { transition = d; },
+    const targetDate = key === 'PageUp' ? '2099-11-11' : '2099-11-13';
+    const gesture = { adjacentDay: (_, direction) => direction < 0 ? '2099-11-11' : '2099-11-13', dayLabel: d => d, preview() {}, hide() {}, setDate: d => { displayedDate = d; }, transition: d => { transition = d; },
         load: async () => ({ dataset: { firstHour: '10', openingHour: '10' }, querySelector: () => ({ childNodes: [destination] }) }) };
     let ghost;
     const page = { addEventListener() {}, dataset: { date: '2099-11-12', today: '2099-11-11', firstHour: '10', openingHour: '10' }, timelineGesture: gesture,
@@ -37,6 +39,17 @@ test('edge drag clips the floating booking and updates the preview date before c
         setTimeout(fn) { timers.set(++timerId, fn); return timerId; }, clearTimeout(id) { timers.delete(id); },
     });
     const pointer = x => ({ target: bar, button: 0, pointerId: 1, clientX: x, clientY: 130, preventDefault() {} });
+    if (key) {
+        timeline.handlers.keydown({ target: bar, altKey: true, key, preventDefault() {} });
+        await new Promise(resolve => setImmediate(resolve));
+        assert.equal(form.elements.date.value, targetDate);
+        assert.equal(displayedDate, targetDate);
+        assert.equal(dialog.open, true);
+        dialog.handlers.close();
+        assert.equal(displayedDate, '2099-11-12');
+        assert.equal(page.dataset.previewDate, undefined);
+        return;
+    }
     timeline.handlers.pointerdown(pointer(220));
     timeline.handlers.pointermove(pointer(895));
     assert.match(ghost.style.clipPath, /^inset\(0px [1-9][\d.]*px /, 'right edge must be clipped');
@@ -52,3 +65,4 @@ test('edge drag clips the floating booking and updates the preview date before c
     assert.equal(displayedDate, '2099-11-12');
     assert.equal(page.dataset.previewDate, undefined);
 });
+}

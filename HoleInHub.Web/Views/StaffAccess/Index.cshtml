@@ -8,21 +8,12 @@
 <section class="account-page">
     <div class="account-inner">
         <h1>@heading</h1>
-        <p class="staff-auth-intro">@(presentation ? "Enter your PIN to open the workspace." : "Use your work email and PIN to open the staff workspace.")</p>
+        <p class="staff-auth-intro">Enter your PIN to open the staff workspace.</p>
         @if (TempData["StaffPinMessage"] is string message)
         {
             <p role="status">@message</p>
         }
         <form asp-action="Index" method="post" data-staff-pin>
-            @if (!presentation)
-            {
-                <div class="field">
-                    <div class="auth-input-wrap">
-                        <input asp-for="Email" type="email" autocomplete="username" maxlength="254" placeholder=" " required />
-                        <label asp-for="Email"></label>
-                    </div>
-                </div>
-            }
             <div class="field staff-pin-field">
                 <div id="staff-pin-error" data-pin-error asp-validation-summary="All" role="alert" class="validation-summary"></div>
                 <div class="staff-pin-entry" data-pin-entry>
@@ -39,17 +30,17 @@
             </div>
             <button class="button" type="submit" data-no-icon>Sign in</button>
         </form>
-        <p class="staff-auth-help">
+        <div class="staff-auth-help staff-auth-links">
             @if (presentation)
             {
                 <text>Need access? Contact your administrator.</text>
             }
             else
             {
-                <a asp-action="Setup">Set up or reset your PIN</a>
+                <a asp-action="Setup" class="focus-visible:ring-2">Set up or reset your PIN</a>
             }
-        </p>
-        <p class="staff-auth-help"><a asp-controller="Account" asp-action="SignIn" class="focus-visible:ring-2">Admin email sign-in</a></p>
+            <a asp-controller="Account" asp-action="SignIn" class="focus-visible:ring-2">Admin email sign-in</a>
+        </div>
     </div>
 </section>
 

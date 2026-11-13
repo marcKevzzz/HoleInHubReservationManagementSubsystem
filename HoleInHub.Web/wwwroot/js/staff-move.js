@@ -193,9 +193,9 @@
         if (target) {
             const rect = target.getBoundingClientRect();
             ghost.style.left = rect.left + rect.width * left / 100 + 'px';
-            ghost.style.top = rect.top + 3 + 'px';
+            ghost.style.top = rect.top + 'px';
             ghost.style.width = rect.width * duration / (1440 - move.first) + 'px';
-            ghost.style.height = Math.max(48, rect.height / Number(target.style.getPropertyValue('--lanes') || 1) - 4) + 'px';
+            ghost.style.height = Math.max(48, rect.height / Number(target.style.getPropertyValue('--lanes') || 1)) + 'px';
             const viewport = scroller.getBoundingClientRect();
             const canvasLeft = viewport.left + timeline.querySelector('.staff-timeline-label').offsetWidth;
             const ghostLeft = parseFloat(ghost.style.left);
@@ -443,10 +443,20 @@
     }
     timeline.addEventListener('keydown', event => {
         const bar = event.target.closest('[data-move-booking]');
-        if (!bar || move || !event.altKey || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+        if (!bar || move || !event.altKey || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown'].includes(event.key)) return;
         event.preventDefault();
         begin(bar);
         move.keyboard = true;
+        if (event.key === 'PageUp' || event.key === 'PageDown') {
+            if (!gesture || move.batch) { restore(); return; }
+            const current = move;
+            void changeDay(event.key === 'PageUp' ? -1 : 1).then(() => {
+                if (move !== current) return;
+                if (move.range) confirm();
+                else restore();
+            });
+            return;
+        }
         if (move.batch) {
             if (event.key === 'ArrowUp' || event.key === 'ArrowDown') { restore(); return; }
             lift();
@@ -515,8 +525,8 @@
     for (const bar of timeline.querySelectorAll('[data-move-booking]')) {
         if (!bar.dataset.moveBooking) { bar.removeAttribute('data-move-booking'); continue; }
         bar.draggable = false;
-        bar.setAttribute('aria-keyshortcuts', 'Alt+ArrowLeft Alt+ArrowRight Alt+ArrowUp Alt+ArrowDown');
-        bar.title += '. Drag to another time or bay. Alt+Left/Right changes time, Alt+Up/Down changes bay.';
+        bar.setAttribute('aria-keyshortcuts', 'Alt+ArrowLeft Alt+ArrowRight Alt+ArrowUp Alt+ArrowDown Alt+PageUp Alt+PageDown');
+        bar.title += '. Drag to another time or bay. Alt+Left/Right changes time, Alt+Up/Down changes bay, Alt+Page Up/Down changes day.';
 
     }
     }

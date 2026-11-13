@@ -1,5 +1,13 @@
 (() => {
     const notify = (message, title = 'Could not save') => window.HoleInHubToasts?.show({ kind: 'error', autoDismiss: true, title, message });
+    function shake(component) {
+        if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? true) return;
+        const target = component?.closest?.('.auth-input-wrap') || component;
+        target?.animate?.([
+            {transform:'translateX(0)'},{transform:'translateX(-5px)'},{transform:'translateX(5px)'},
+            {transform:'translateX(-3px)'},{transform:'translateX(0)'},
+        ],{duration:280,easing:'ease-out'});
+    }
     const dialog = document.querySelector('[data-service-confirm]');
     let pending, saving = false;
     async function save(form, buttons) {
@@ -11,11 +19,13 @@
             const response = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } });
             const result = await response.json();
             if (response.ok && result.redirect) { window.location.assign(result.redirect); return; }
-            if (result.fields) Object.entries(result.fields).forEach(([name, message]) => { const field = form.elements.namedItem(name); if (field instanceof HTMLElement) fieldError(field, message || 'Check this value.'); });
+            if (result.fields && Object.keys(result.fields).length) Object.entries(result.fields).forEach(([name, message]) => { const field = form.elements.namedItem(name); if (field instanceof HTMLElement) { fieldError(field, message || 'Check this value.'); shake(field); } });
+            else shake(form.closest?.('.service-admin-row') || form);
             const summary = form.querySelector('[data-save-error]');
             if (summary) summary.textContent = result.error || 'Check the form and try again.';
             notify(result.error || 'Check the form and try again.');
         } catch {
+            shake(form.closest?.('.service-admin-row') || form);
             notify('The save could not be verified. Retry with the same details to check whether it saved.');
         }
         saving = false;
@@ -72,7 +82,7 @@
                 if (!response.ok) throw new Error(result.error);
                 result.rows.forEach(item => { const current = rows().find(row => row.dataset.serviceId === item.id); if (!current) return; current.dataset.revision = String(item.revision); current.querySelectorAll('[name=revision]').forEach(input => input.value = item.revision); });
                 window.HoleInHubToasts?.show({kind:'success',title:'Service order saved',autoDismiss:true});
-            } catch { before.forEach(row => list.append(row)); number(); notify('Reload services to verify the saved order before trying again.', 'Order could not be verified'); }
+            } catch { before.forEach(row => list.append(row)); number(); shake(row); notify('Reload services to verify the saved order before trying again.', 'Order could not be verified'); }
             finally { busy = false; list.removeAttribute('aria-busy'); controls.forEach(control => { if ('disabled' in control) control.disabled = false; }); row.querySelector('.service-row-grip').focus({preventScroll:true}); }
         }
         const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -260,6 +270,7 @@
         if (items.length + files.length > 8 || files.some(file => !['image/jpeg','image/png','image/webp'].includes(file.type) || file.size > 4194304)
             || files.concat(items.filter(item => item.file).map(item => item.file)).reduce((sum, file) => sum + file.size, 0) > 20971520) {
             imageError.textContent = 'Use up to 8 JPEG, PNG or WebP images, 4 MB each and 20 MB total.'; notify(imageError.textContent, 'Images not added');
+            shake(gallery);
         } else { items.push(...files.map(file => ({ file, src: URL.createObjectURL(file) }))); imageError.textContent = ''; }
         render();
     });
@@ -273,11 +284,12 @@
     form.addEventListener('input', event => { if (event.target.name) fieldError(event.target, event.target.validity.valid ? '' : event.target.validationMessage); });
     form.addEventListener('invalid', event => {
         event.preventDefault(); fieldError(event.target, event.target.validationMessage);
+        shake(event.target);
         if (event.target === form.querySelector(':invalid')) { notify('Check the highlighted fields.'); event.target.focus(); }
     }, true);
     form.addEventListener('submit', event => {
         event.preventDefault();
-        if (!items.length) { imageError.textContent = 'Add at least one image.'; notify(imageError.textContent); input.focus(); return; }
+        if (!items.length) { imageError.textContent = 'Add at least one image.'; notify(imageError.textContent); shake(gallery); input.focus(); return; }
         void save(form, [...document.querySelectorAll('[form="service-editor-form"][type=submit]')]);
     });
     window.addEventListener('pagehide', () => items.filter(item => item.file).forEach(item => URL.revokeObjectURL(item.src)));

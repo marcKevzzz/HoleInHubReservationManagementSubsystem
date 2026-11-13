@@ -26,7 +26,7 @@ using Xunit;
 
 namespace HoleInHub.Tests.Web.Smoke;
 
-public sealed class StaffPinAccessTests
+public sealed partial class StaffPinAccessTests
 {
     internal sealed class DesktopTlsFixture(X509Certificate2 certificate) : IStartupFilter
     {
@@ -320,23 +320,13 @@ public sealed class StaffPinAccessTests
             employee.Roles = [role];
             Assert.True((await users.UpdateAsync(employee)).Succeeded);
             var credentials = new Dictionary<string, string> { ["Pin"] = pin };
-            if (presentation)
-            {
-                var access = scope.ServiceProvider.GetRequiredService<StaffPinAccess>();
-                var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<AccountUser>>();
-                var pins = scope.ServiceProvider.GetRequiredService<StaffPinService>();
-                Assert.True(await pins.TrySaveAsync(employee.Id, hasher.HashPassword(employee, access.PinInput(employee, pin)),
-                    employee.SecurityStamp, default));
-                using var wrong = await SubmitAsync(desktop, "/staff/sign-in", new() { ["Pin"] = "048216" });
-                Assert.Contains("That PIN didn", await wrong.Content.ReadAsStringAsync());
-            }
-            else
-            {
-                using var setup = await SubmitAsync(desktop, "/staff/pin/setup",
-                    new() { ["Email"] = employee.Email, ["Password"] = password, ["Pin"] = pin, ["ConfirmPin"] = pin });
-                Assert.Equal(HttpStatusCode.Redirect, setup.StatusCode);
-                credentials["Email"] = employee.Email;
-            }
+            var access = scope.ServiceProvider.GetRequiredService<StaffPinAccess>();
+            var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<AccountUser>>();
+            var pins = scope.ServiceProvider.GetRequiredService<StaffPinService>();
+            Assert.True(await pins.TrySaveAsync(employee.Id, hasher.HashPassword(employee, access.PinInput(employee, pin)),
+                employee.SecurityStamp, default));
+            using var wrong = await SubmitAsync(desktop, "/staff/sign-in", new() { ["Pin"] = "048216" });
+            Assert.Contains("That PIN didn", await wrong.Content.ReadAsStringAsync());
             var first = await SubmitAsync(desktop, "/staff/sign-in", credentials);
             Assert.Equal(HttpStatusCode.Redirect, first.StatusCode);
             Assert.Equal(role == "Manager" ? "/staff/dashboard" : "/staff", first.Headers.Location?.OriginalString);
@@ -614,8 +604,11 @@ public sealed class StaffPinAccessTests
 
         async Task SignInAsync(HttpClient client, string email, string pin)
         {
-            Assert.Equal(HttpStatusCode.Redirect, (await SubmitAsync(client, "/staff/pin/setup",
-                new() { ["Email"] = email, ["Password"] = password, ["Pin"] = pin, ["ConfirmPin"] = pin })).StatusCode);
+            var target = (await users.FindByEmailAsync(email))!;
+            var staffPins = scope.ServiceProvider.GetRequiredService<StaffPinService>();
+            var staffAccess = scope.ServiceProvider.GetRequiredService<StaffPinAccess>();
+            var pinHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<AccountUser>>();
+            Assert.True(await staffPins.TrySaveAsync(target.Id, pinHasher.HashPassword(target, staffAccess.PinInput(target, pin)), target.SecurityStamp, default));
             Assert.Equal(HttpStatusCode.Redirect, (await SubmitAsync(client, "/staff/sign-in",
                 new() { ["Email"] = email, ["Pin"] = pin })).StatusCode);
         }

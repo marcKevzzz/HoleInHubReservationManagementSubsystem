@@ -14,7 +14,7 @@ class Element {
     addEventListener(name,fn){this.events[name]=fn;}
     querySelector(selector){return this.map?.[selector];}
 }
-function setup(count, enhance=false, motion){
+function setup(count, enhance=false, motion, reduced=false){
     const gallery=new Element(), add=new Element(), uploads=new Element(), error=new Element();
     gallery.querySelectorAll=()=>Array.from({length:count},(_,i)=>({dataset:{path:'/media/image'+i},querySelector:()=>({src:'/media/image'+i})}));
     const deposit=new Element(), enabled=new Element(), unit=new Element(), wrap=new Element(), amount=new Element();unit.value='Peso';wrap.map={input:amount};
@@ -23,8 +23,8 @@ function setup(count, enhance=false, motion){
     if(enhance){unit.options=rateUnit.options=[{value:'Peso',textContent:'₱'},{value:'Percentage',textContent:'%'}];form.querySelectorAll=()=>[unit,rateUnit];}
     form.map={'[data-deposit-type]':deposit,'[data-deposit-enabled]':enabled,'[data-deposit-unit]':unit,'[data-deposit-value]':wrap,'[name=RateAmount]':rate,'[name=RateUnit]':rateUnit,'[data-service-gallery]':gallery,'[data-image-add]':add,'[data-service-uploads]':uploads,'[data-images-error]':error};
     class Transfer{constructor(){this.files=[];this.items={add:file=>this.files.push(file)};}}
-    vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../HoleInHub.Web/wwwroot/js/service-admin.js'),'utf8'),{document:{addEventListener(){},querySelector:s=>s==='[data-service-editor]'?form:s==='[data-image-viewer]'?viewer:null,createElement:()=>new Element()},window:{gsap:motion,matchMedia:()=>({matches:false}),addEventListener(){}},DataTransfer:Transfer,URL:{revokeObjectURL(){},createObjectURL:()=>'/blob/new'},Event:class {constructor(type){this.type=type;}},HTMLElement:Element});
-    return {gallery,viewer,enabled,unit,amount,amountWrap:wrap,deposit,uploads,error};
+    vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../HoleInHub.Web/wwwroot/js/service-admin.js'),'utf8'),{document:{addEventListener(){},querySelector:s=>s==='[data-service-editor]'?form:s==='[data-image-viewer]'?viewer:null,createElement:()=>new Element()},window:{gsap:motion,matchMedia:()=>({matches:reduced}),addEventListener(){}},DataTransfer:Transfer,URL:{revokeObjectURL(){},createObjectURL:()=>'/blob/new'},Event:class {constructor(type){this.type=type;}},HTMLElement:Element});
+    return {gallery,viewer,enabled,unit,amount,amountWrap:wrap,deposit,uploads,error,form,rate};
 }
 test('gallery caps previews, exposes overflow, and persists a reordered primary',()=>{
     const ui=setup(6);
@@ -44,22 +44,28 @@ test('deposit switch sets unit and validation; invalid uploads keep the gallery'
     ui.uploads.files=[{type:'image/svg+xml',size:10}];ui.uploads.events.change();
     assert.match(ui.error.textContent,/JPEG/);assert.equal(ui.gallery.children.filter(x=>x.name==='Images').length,1);
 });
-test('keyboard service reorder saves positions and refreshes revisions',async()=>{
+for (const failed of [false,true]) {
+test(failed?'failed service reorder restores the list and shakes the affected row':'keyboard service reorder saves positions and refreshes revisions',async()=>{
     const list=new Element(), form=new Element();form.action='/admin/services/reorder';
+    let shakes=0;
     const make=id=>{const row=new Element();row.dataset={serviceId:id,revision:'1'};row.offsetWidth=400;row.classList={add(){},remove(){}};row.position=new Element();row.revision=new Element();row.handle={focus(){},closest:()=>row};row.querySelector=s=>s==='[data-service-position]'?row.position:row.handle;row.querySelectorAll=()=>[row.revision];return row;};
     const first=make('Regular'),second=make('VIP');list.children=[first,second];
+    first.animate=()=>{shakes++;};
     list.querySelectorAll=s=>s==='[data-service-id]'?list.children:[];
     list.insertBefore=(row,before)=>{list.children=list.children.filter(x=>x!==row);const index=list.children.indexOf(before);list.children.splice(index<0?list.children.length:index,0,row);};
+    list.append=row=>{list.children=list.children.filter(x=>x!==row);list.children.push(row);};
     list.removeAttribute=()=>{};
     const sent=[];
     class Form{set(name,value){sent.push(JSON.parse(value));}}
-    vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../HoleInHub.Web/wwwroot/js/service-admin.js'),'utf8'),{document:{addEventListener(){},querySelector:s=>s==='[data-service-list]'?list:s==='[data-service-reorder]'?form:null},window:{addEventListener(){},HoleInHubToasts:{show(){}}},FormData:Form,fetch:async()=>({ok:true,json:async()=>({rows:[{id:'VIP',revision:2},{id:'Regular',revision:2}]})})});
+    vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../HoleInHub.Web/wwwroot/js/service-admin.js'),'utf8'),{document:{addEventListener(){},querySelector:s=>s==='[data-service-list]'?list:s==='[data-service-reorder]'?form:null},window:{addEventListener(){},matchMedia:()=>({matches:false}),HoleInHubToasts:{show(){}}},FormData:Form,fetch:async()=>({ok:!failed,json:async()=>({rows:[{id:'VIP',revision:2},{id:'Regular',revision:2}]})})});
     list.events.keydown({altKey:true,key:'ArrowDown',preventDefault(){},target:{closest:()=>first.handle}});
     await new Promise(resolve=>setImmediate(resolve));
-    assert.deepEqual(list.children.map(row=>row.dataset.serviceId),['VIP','Regular']);
+    assert.deepEqual(list.children.map(row=>row.dataset.serviceId),failed?['Regular','VIP']:['VIP','Regular']);
     assert.deepEqual(sent[0].map(row=>row.id),['VIP','Regular']);
-    assert.equal(first.dataset.revision,'2');assert.equal(second.position.textContent,'01');
+    assert.equal(first.dataset.revision,failed?'1':'2');assert.equal(second.position.textContent,failed?'02':'01');
+    assert.equal(shakes,failed?1:0);
 });
+}
 
 test('pointer drag previews order and numbers before release, and cancellation restores them',()=>{
     const list=new Element(), post=new Element();let scheduled,ghostPreview;
@@ -93,3 +99,18 @@ test('deposit expands and collapses with easing and hides only after the closing
     assert.equal(ui.amountWrap.hidden,false);assert.equal(animations[1].options.height,0);
     animations[1].options.onComplete();assert.equal(ui.amountWrap.hidden,true);
 });
+
+for (const reduced of [false,true]) {
+test(`invalid service fields and images respect reduced motion (${reduced})`,()=>{
+    const ui=setup(1,false,undefined,reduced);
+    let fieldShakes=0, galleryShakes=0;
+    ui.rate.animate=()=>{fieldShakes++;};
+    ui.rate.name='RateAmount';ui.rate.validationMessage='Enter a rate.';
+    ui.form.querySelector=()=>ui.rate;
+    ui.form.events.invalid({target:ui.rate,preventDefault(){}});
+    assert.equal(fieldShakes,reduced?0:1);
+    ui.gallery.animate=()=>{galleryShakes++;};
+    ui.uploads.files=[{type:'image/svg+xml',size:10}];ui.uploads.events.change();
+    assert.equal(galleryShakes,reduced?0:1);
+});
+}
