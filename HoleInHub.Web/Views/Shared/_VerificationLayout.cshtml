@@ -1,19 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>@ViewData["Title"] | Hole In Hub</title>
+    <title>@T(ViewData["Title"]?.ToString() ?? "") | Hole In Hub</title>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body class="verification-shell">
-    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <partial name="_CustomerLanguage" />
+    <a class="skip-link" href="#main-content">@T("Skip to main content")</a>
     <div class="smooth-wrapper"><div class="smooth-content">
-    <a class="verification-brand" href="/" aria-label="Hole In Hub home"><img src="~/media/brand/wordmark-hq.webp" alt="Hole In Hub Golf &amp; Lounge" /></a>
+    <a class="verification-brand" href="/" aria-label="@T("Hole In Hub home")"><img src="~/media/brand/wordmark-hq.webp" alt="Hole In Hub Golf &amp; Lounge" /></a>
+    <partial name="_LanguageSwitch" />
     <main id="main-content" tabindex="-1">@RenderBody()</main>
     </div></div>
     <script src="~/js/vendor/gsap.min.js" asp-append-version="true"></script>
-    <script src="~/js/button-motion.js" asp-append-version="true"></script>
+    <script src="~/js/mobile-viewport.js" asp-append-version="true"></script><script src="~/js/button-motion.js" asp-append-version="true"></script>
     <partial name="_ScrollMotion" />
     <script src="~/js/app-select.js" asp-append-version="true"></script>@await RenderSectionAsync("Scripts", required: false)
 </body>

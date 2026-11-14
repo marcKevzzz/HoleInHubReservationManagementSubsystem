@@ -1,0 +1,40 @@
+@model (string Key, ServiceAvailabilityRow Rule)
+@{
+    var prefix = $"Availability[{Model.Key}]";
+    var id = $"availability-{Model.Key}";
+}
+<fieldset class="service-rule-grid" data-availability-row>
+    <legend class="sr-only">Availability rule</legend>
+    <input type="hidden" name="Availability.Index" value="@Model.Key" />
+    <div class="auth-input-wrap">
+        <select id="@(id)-weekday" name="@(prefix).Weekday" data-native-select>
+            <option value="" selected="@(Model.Rule.Weekday is null)">Choose a day</option>
+            @foreach (var day in Enum.GetValues<DayOfWeek>())
+            {
+                <option value="@((int)day)" selected="@(Model.Rule.Weekday == (int)day)">@day</option>
+            }
+        </select>
+        <label for="@(id)-weekday">Weekday</label>
+    </div>
+    <div class="auth-input-wrap">
+        <input id="@(id)-date" type="date" name="@(prefix).Date" value="@Model.Rule.Date" />
+        <label for="@(id)-date">Specific date</label>
+    </div>
+    <div class="auth-input-wrap">
+        <input id="@(id)-start" type="time" step="1800" name="@(prefix).Start" value="@Model.Rule.Start" />
+        <label for="@(id)-start">Starts</label>
+    </div>
+    <div class="auth-input-wrap">
+        <input id="@(id)-end" name="@(prefix).End" value="@Model.Rule.End" placeholder=" " aria-label="Ends, 24-hour time including 24:00 for midnight" />
+        <label for="@(id)-end">Ends (24-hour time)</label>
+    </div>
+    <div class="auth-input-wrap">
+        <select id="@(id)-mode" name="@(prefix).Mode" data-native-select>
+            <option value="window" selected="@(Model.Rule.Mode == "window")">Bookable hours</option>
+            <option value="fixed" selected="@(Model.Rule.Mode == "fixed")">Fixed session</option>
+            <option value="closed" selected="@(Model.Rule.Mode == "closed")">Closed on this date</option>
+        </select>
+        <label for="@(id)-mode">Booking format</label>
+    </div>
+    <button type="button" class="service-rule-delete" data-remove-availability aria-label="Delete availability rule" title="Delete availability rule"><partial name="_StaffIcon" model='"trash"' /></button>
+</fieldset>

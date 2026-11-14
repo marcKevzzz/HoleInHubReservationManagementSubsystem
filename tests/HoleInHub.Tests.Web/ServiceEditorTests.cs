@@ -14,15 +14,23 @@ public sealed class ServiceEditorTests
         Assert.Equal(8, command.MaxPax);
     }
     [Fact]
-    public void NewRatesSupportBothUnitsAndRejectPercentAbove100()
+    public void RatesUsePhpAndNewBookingTypesRequireAName()
     {
         var form = new ServiceEditorForm { RateAmount = 25, RateUnit = "Percentage", Summary = "Summary", ImageOrder = ["upload:1", "upload:0"] };
-        Assert.Equal("25%", form.Command().RateText);
-        Assert.Equal("Summary", form.Command().Details);
-        Assert.Equal(form.ImageOrder, form.Command().ImageOrder);
-        form.RateAmount = 101;
         Assert.Throws<ArgumentException>(() => form.Command());
         form.RateUnit = "Peso";
+        Assert.Contains("25", form.Command().RateText);
+        Assert.Equal("Summary", form.Command().Details);
+        Assert.Equal(form.ImageOrder, form.Command().ImageOrder);
+        form.RateAmount = 1000001;
+        Assert.Throws<ArgumentException>(() => form.Command());
+        form.RateAmount = 101;
         Assert.Contains("101", form.Command().RateText);
+        form.BookingTypeName = "__new";
+        Assert.Throws<ArgumentException>(() => form.Command());
+        form.NewBookingTypeName = " Weekend promo ";
+        var command = form.Command();
+        Assert.Equal("Weekend promo", command.BookingTypeName);
+        Assert.Equal("Book", command.Action);
     }
 }

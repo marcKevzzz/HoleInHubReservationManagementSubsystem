@@ -122,6 +122,24 @@ public sealed class AllocationTests(MongoDbFixture fixture) : IClassFixture<Mong
     }
 
     [Fact]
+    public async Task EditingBayPreservesIdRejectsStaleEditsAndProtectsFutureAllocations()
+    {
+        var (store, _) = await Setup();
+        var now = DateTime.UtcNow;
+        Assert.True(await store.EditResourceAsync(new() { Id = "bay-1", Name = "Practice bay", Service = "Regular" }, 0, now, default));
+        var renamed = (await store.ReadResourceDirectoryAsync(default)).Single(x => x.Id == "bay-1");
+        Assert.Equal("Practice bay", renamed.Name);
+        await Assert.ThrowsAsync<AllocationConflictException>(() => store.EditResourceAsync(new() { Id = "bay-1", Name = "Stale", Service = "Regular" }, 0, now, default));
+        var request = Request(["bay-1"]);
+        request.StartUtc = now.AddDays(1);
+        request.EndUtc = request.StartUtc.AddHours(1);
+        await store.InsertAsync(request, default);
+        await Assert.ThrowsAsync<AllocationConflictException>(() => store.EditResourceAsync(new() { Id = "bay-1", Name = "VIP practice", Service = "VIP" }, 1, now, default));
+        Assert.True(await store.EditResourceAsync(new() { Id = "bay-1", Name = "Practice room", Service = "Regular", MaxPlayers = 4 }, 1, now, default));
+        Assert.True(await store.EditResourceAsync(new() { Id = "bay-2", Name = "VIP room", Service = "VIP" }, 0, now, default));
+        Assert.False(await store.EditResourceAsync(new() { Id = "missing", Name = "Missing", Service = "VIP" }, 0, now, default));
+    }
+    [Fact]
     public async Task MultiBayFailureDoesNotPartiallyHold()
     {
         var (store, _) = await Setup(); await store.InsertAsync(Request(["bay-1"]), default); await Assert.ThrowsAsync<AllocationConflictException>(() => store.InsertAsync(Request(["bay-1", "bay-2"]), default)); await store.InsertAsync(Request(["bay-2"]), default);

@@ -41,7 +41,7 @@
     {
         <nav class="customer-pagination" aria-label="Staff access log pages">
             @if (Model.Page > 1) { <a class="button button-secondary" asp-action="AdminActivity" asp-route-page="@(Model.Page - 1)">Previous</a> }
-            @if (Model.HasMore) { <a class="button button-secondary" asp-action="AdminActivity" asp-route-page="@(Model.Page + 1)">Next page</a> }
+            @if (Model.HasMore) { <a rel="next" class="button button-secondary" asp-action="AdminActivity" asp-route-page="@(Model.Page + 1)">Next page</a> }
         </nav>
     }
 </section>

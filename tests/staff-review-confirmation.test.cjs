@@ -9,6 +9,7 @@ test('review confirmation protects focus, preserves the form, and requires Other
         return { tag, children: [], attributes: {}, events: {},
             append(...items) { for (const item of items) { item.parent?.children.splice(item.parent.children.indexOf(item), 1); item.parent = this; this.children.push(item); } },
             setAttribute(k, v) { this.attributes[k] = v; },
+            closest() { return null; },
             addEventListener(k, fn) { this.events[k] = fn; },
             remove() { this.parent?.children.splice(this.parent.children.indexOf(this), 1); },
             showModal() { this.shown = true; }, close() { this.events.close(); },
@@ -30,6 +31,9 @@ test('review confirmation protects focus, preserves the form, and requires Other
     listeners.toggle({ target: action });
     const dialog = document.body.children[0];
     assert.equal(dialog.shown, true);
+    assert.match(dialog.className, /staff-detail-panel/);
+    assert.equal(dialog.children[0].tag, 'header');
+    assert.equal(dialog.children[0].children[1].attributes['aria-label'], 'Close panel');
     assert.equal(action.open, false);
     assert.equal(dialog.attributes['aria-labelledby'], 'review-confirmation-title');
     assert.equal(form.elements.reason.required, true);

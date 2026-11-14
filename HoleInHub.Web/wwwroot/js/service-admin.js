@@ -19,10 +19,32 @@
             const response = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } });
             const result = await response.json();
             if (response.ok && result.redirect) { window.location.assign(result.redirect); return; }
-            if (result.fields && Object.keys(result.fields).length) Object.entries(result.fields).forEach(([name, message]) => { const field = form.elements.namedItem(name); if (field instanceof HTMLElement) { fieldError(field, message || 'Check this value.'); shake(field); } });
+            if (form.elements.ImpactAcknowledgement) {
+                form.elements.ImpactAcknowledgement.value = result.acknowledgement || '';
+            }
+            if (result.fields && Object.keys(result.fields).length) {
+                for (const [name, message] of Object.entries(result.fields)) {
+                    const field = form.elements.namedItem(name);
+                    if (!(field instanceof HTMLElement)) continue;
+                    openSections(field);
+                    fieldError(field, message || 'Check this value.');
+                    shake(field);
+                }
+            }
             else shake(form.closest?.('.service-admin-row') || form);
             const summary = form.querySelector('[data-save-error]');
-            if (summary) summary.textContent = result.error || 'Check the form and try again.';
+            if (summary) {
+                summary.textContent = result.error || 'Check the form and try again.';
+                for (const [name, message] of Object.entries(result.fields || {})) {
+                    const field = form.elements.namedItem(name);
+                    if (!(field instanceof HTMLElement) || !field.id) continue;
+                    const link = document.createElement('a');
+                    link.className = 'block underline';
+                    link.href = `#${field.id}`;
+                    link.textContent = message;
+                    summary.append(link);
+                }
+            }
             notify(result.error || 'Check the form and try again.');
         } catch {
             shake(form.closest?.('.service-admin-row') || form);
@@ -42,6 +64,7 @@
                 if (saving) return;
                 pending = form;
                 const operation = form.dataset.serviceOperation;
+                commit.dataset.danger = String(operation !== 'activate');
                 const verb = operation === 'activate' ? 'Activate' : operation === 'delete' ? 'Delete' : 'Deactivate';
                 dialog.querySelector('h2').textContent = verb + ' ' + form.dataset.serviceTitle + '?';
                 dialog.querySelector('[data-service-confirm-description]').textContent = operation === 'activate'
@@ -147,6 +170,41 @@
     }
     const form = document.querySelector('[data-service-editor]');
     if (!form) return;
+    function openSections(element) {
+        for (let section = element.closest('details'); section; section = section.parentElement.closest('details')) {
+            section.open = true;
+        }
+    }
+    function revealSection(hash) {
+        if (!hash) return;
+        const target = document.getElementById(hash.slice(1));
+        if (target && form.contains(target)) openSections(target);
+    }
+    form.addEventListener('click', event => {
+        const link = event.target.closest('a[href^="#"]');
+        if (link) revealSection(link.hash);
+    });
+    revealSection(window.location?.hash);
+
+    const typePicker = form.querySelector('[data-booking-type]');
+    const newType = form.querySelector('[data-new-booking-type]');
+    if (typePicker && newType) {
+        const input = newType.querySelector('input');
+        function syncType(animate = false) {
+            const show = typePicker.value === '__new';
+            const motion = window.gsap;
+            motion?.killTweensOf(newType);
+            newType.hidden = !show;
+            input.disabled = !show;
+            input.required = show;
+            if (show && animate && motion && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                motion.fromTo(newType, {height:0,opacity:0}, {height:'auto',opacity:1,duration:.25,ease:'power2.out',clearProps:'height,opacity,overflow'});
+            } else motion?.set(newType, {clearProps:'height,opacity,overflow'});
+            if (show && animate) input.focus();
+        }
+        typePicker.addEventListener('change', () => syncType(true));
+        syncType();
+    }
 
     const depositType = form.querySelector('[data-deposit-type]');
     const enabled = form.querySelector('[data-deposit-enabled]');
@@ -179,10 +237,6 @@
     enabled.addEventListener('change', syncDeposit);
     unit.addEventListener('change', syncDeposit);
     syncDeposit();
-    const rate = form.querySelector('[name=RateAmount]');
-    const rateUnit = form.querySelector('[name=RateUnit]');
-    const syncRate = () => { rate.max = rateUnit.value === 'Percentage' ? '100' : '1000000'; };
-    rateUnit.addEventListener('change', syncRate); syncRate();
 
     const gallery = form.querySelector('[data-service-gallery]');
     const add = form.querySelector('[data-image-add]');
@@ -190,6 +244,20 @@
     const imageError = form.querySelector('[data-images-error]');
     const viewer = document.querySelector('[data-image-viewer]');
     const viewerContent = viewer.querySelector('[data-viewer-content]');
+    const details = form.querySelector('.service-detail-fields');
+    if (details && typeof ResizeObserver === 'function') {
+        const observer = new ResizeObserver(() => {
+            if (window.innerWidth <= 760) { gallery.style.removeProperty('--service-gallery-height'); return; }
+            const optionalHeight = [amountWrap, newType].reduce((sum, element) => {
+                if (!element || element.hidden) return sum;
+                const gap = element.parentElement ? parseFloat(getComputedStyle(element.parentElement).rowGap) || 0 : 0;
+                return sum + element.getBoundingClientRect().height + gap;
+            }, 0);
+            const height = details.getBoundingClientRect().bottom - gallery.getBoundingClientRect().top - optionalHeight;
+            gallery.style.setProperty('--service-gallery-height', Math.max(280, height) + 'px');
+        });
+        observer.observe(details);
+    }
     const icon = name => name === 'delete' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 10v7m4-7v7"/></svg>' : '';
     let items = [...gallery.querySelectorAll('[data-service-image]')].map(row => ({ path: row.dataset.path, src: row.querySelector('img').src }));
     let dragged = -1;
@@ -281,9 +349,14 @@
         field.setAttribute('aria-invalid', message ? 'true' : 'false');
         if (target) { target.id = 'error-' + field.name; field.setAttribute('aria-describedby', target.id); }
     }
-    form.addEventListener('input', event => { if (event.target.name) fieldError(event.target, event.target.validity.valid ? '' : event.target.validationMessage); });
+    form.addEventListener('input', event => {
+        const field = event.target;
+        if (field.form === form && field.name) fieldError(field, field.validity.valid ? '' : field.validationMessage);
+    });
     form.addEventListener('invalid', event => {
+        if (event.target.form !== form) return;
         event.preventDefault(); fieldError(event.target, event.target.validationMessage);
+        openSections(event.target);
         shake(event.target);
         if (event.target === form.querySelector(':invalid')) { notify('Check the highlighted fields.'); event.target.focus(); }
     }, true);

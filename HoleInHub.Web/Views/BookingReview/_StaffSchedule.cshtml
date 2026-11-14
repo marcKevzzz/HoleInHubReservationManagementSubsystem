@@ -23,20 +23,20 @@
         <div class="staff-schedule-actions">
             @if (Model.BookingForm.Bays.Count > 0)
             {
-                <a class="button staff-new-booking" asp-action="Create" asp-route-date="@selectedDate" asp-route-customerProfileId="@Model.BookingForm.CustomerProfileId" data-new-booking>New booking</a>
+                <a class="button staff-new-booking" asp-action="Create" asp-route-date="@selectedDate" asp-route-customerProfileId="@Model.BookingForm.CustomerProfileId" data-new-booking data-action-icon="plus">New booking</a>
             }
             @if (User.ManagesVenue() && Model.BlockForm is { Bays.Count: > 0 })
             {
-                <a class="button button-secondary" asp-action="CreateBlock" asp-route-date="@selectedDate" data-new-block>Block time</a>
+                <a class="button button-secondary" asp-action="CreateBlock" asp-route-date="@selectedDate" data-new-block aria-keyshortcuts="Shift+B" title="Block time · Shift+B in the timeline">Block time</a>
+                <a class="button button-secondary" asp-action="CreateBlock" asp-route-date="@selectedDate" asp-route-wholeDay="true" data-new-block-day aria-keyshortcuts="Shift+D" title="Block day · Shift+D in the timeline">Block day</a>
             }
         </div>
     </header>
     @if (Model.BookingForm.CustomerProfileId is not null)
     {
-        <section class="staff-customer-booking-context" aria-label="Booking customer">
-            <div><strong>New booking for @Model.BookingForm.FirstName @Model.BookingForm.LastName</strong><p>Drag an open time on any bay, then review the prefilled details. You can also use New booking to choose a slot.</p></div>
-            <a class="staff-link" asp-controller="Customers" asp-action="Details" asp-route-id="@Model.BookingForm.CustomerProfileId">Back to customer</a>
-        </section>
+        <template data-customer-booking-notice data-title="New booking for @Model.BookingForm.FirstName @Model.BookingForm.LastName"
+                  data-href="@Url.Action("Details", "Customers", new { id = Model.BookingForm.CustomerProfileId })"></template>
+        <noscript><p>New booking for @Model.BookingForm.FirstName @Model.BookingForm.LastName. Choose New booking to select a slot.</p></noscript>
     }
     <section class="staff-schedule" aria-label="Bay schedule">
         <div class="staff-date-controls">
@@ -99,7 +99,7 @@
             <div class="staff-schedule-timeline">
                 <output class="staff-zoom-feedback" data-timeline-zoom aria-label="Timeline zoom" role="status" hidden>100%</output>
                 <output class="staff-date-preview" data-date-preview aria-live="polite" hidden><span class="staff-date-preview-arrow"><partial name="_StaffIcon" model='"chevron-right"' /></span><span data-date-preview-label></span></output>
-                <p id="staff-timeline-help" class="sr-only">@(Model.BookingForm.CustomerProfileId is not null ? "Drag an open time to create a booking for this customer. Use the date controls to change days." : "Drag empty space to pan. Pull past either edge to change days. Ctrl and drag creates a booking.") Shift-click or Shift+Space to select bookings for a group move. Hold a booking to select it on touch screens. Ctrl-click bays, then drag to book one time across them. Ctrl and scroll zooms; Shift and scroll moves horizontally; scroll moves vertically. Hold a reservation at the edge to preview another day, then drop to review the move.</p>
+                <p id="staff-timeline-help" class="sr-only">@(Model.BookingForm.CustomerProfileId is not null ? "Drag an open time to create a booking for this customer. Use the date controls to change days." : "Drag empty space to pan. Pull past either edge to change days. Ctrl and drag creates a booking.") Shift-click or Shift+Space to select bookings for a group move. Hold a booking to select it on touch screens. Ctrl-click bays, then drag to book one time across them. Ctrl and scroll zooms; Shift and scroll moves horizontally; scroll moves vertically. Hold a reservation at the edge to preview another day, then drop to review the move. @if (User.ManagesVenue()) { <text>Shift+B opens Block time. Shift+D opens Block day. Neither shortcut saves automatically.</text> }</p>
                 <div class="staff-timeline-scroll" tabindex="0" role="region" aria-label="Bay timeline" aria-describedby="staff-timeline-help">
                     <div class="staff-timeline" style="@($"--hours:{timeline.Hours};--rows:{rows.Count}")">
                         <div class="staff-timeline-row staff-timeline-axis" aria-hidden="true">
@@ -223,14 +223,14 @@
             <ul class="staff-batch-summary" data-batch-summary hidden></ul>
             <div class="logout-actions">
                 <button type="button" class="button button-tertiary" data-move-undo data-no-icon>Undo</button>
-                <button type="submit" class="button" data-no-icon><span data-move-submit-label>Confirm move</span> <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6" /></svg></button>
+                <button type="submit" class="button" data-no-icon><span data-move-submit-label>Confirm move</span></button>
             </div>
         </form>
     </dialog>
     <dialog class="staff-booking-drawer staff-side-panel" data-booking-details aria-labelledby="staff-drawer-title">
         <header><h2 class="staff-panel-heading">Reservation details</h2><form method="dialog"><button class="staff-icon-button" aria-label="Close booking details"><partial name="_StaffIcon" model='"close"' /></button></form></header>
         <div class="staff-panel-body">
-        <h2 class="staff-panel-title" id="staff-drawer-title" data-drawer="guest"></h2>
+        <h2 class="staff-panel-title" id="staff-drawer-title"><a class="staff-booking-name" data-drawer-link aria-label="Open full booking and history"><span data-drawer="guest"></span><partial name="_StaffIcon" model='"arrow-up-right"' /></a></h2>
         <div class="staff-drawer-identity"><p data-drawer="reference"></p><span class="staff-status" data-drawer="state"></span></div>
         <dl class="staff-drawer-summary">
             <div><dt>When</dt><dd data-drawer="interval"></dd></div>
@@ -239,7 +239,6 @@
             <div><dt>Experience</dt><dd data-drawer="service"></dd></div>
         </dl>
         <section class="staff-drawer-actions" aria-label="Booking actions" data-drawer-actions></section>
-        <a class="staff-drawer-full" data-drawer-link>View full booking & history <partial name="_StaffIcon" model='"arrow-up-right"' /></a>
         </div>
     </dialog>
     @if (Model.BookingForm.Bays.Count > 0)

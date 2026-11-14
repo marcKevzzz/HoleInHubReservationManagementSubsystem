@@ -4,9 +4,9 @@ const { zoomWidth, adjacentDay, panDayDirection } = require('../HoleInHub.Web/ww
 
 test('cursor zoom stays within usable limits and reverses a wheel step', () => {
     assert.equal(zoomWidth(68, 10000), 68);
-    assert.equal(zoomWidth(68, -10000), 204);
+    assert.equal(zoomWidth(68, -10000), 340);
     assert.equal(zoomWidth(100, 10000, 100), 100);
-    assert.equal(zoomWidth(100, -10000, 100), 300);
+    assert.equal(zoomWidth(100, -10000, 100), 500);
     assert.ok(zoomWidth(68, -100) > 68);
     assert.ok(Math.abs(zoomWidth(zoomWidth(68, -100), 100) - 68) < .0001);
 });

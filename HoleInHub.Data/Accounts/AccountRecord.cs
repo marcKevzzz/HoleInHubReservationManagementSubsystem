@@ -15,6 +15,7 @@ public sealed class AccountRecord
     public string SecurityStamp { get; set; } = Guid.NewGuid().ToString("N");
     public string Version { get; set; } = Guid.NewGuid().ToString("N");
     public bool EmailConfirmed { get; set; }
+    [BsonIgnoreIfNull] public DateTime? NotificationsReadThroughUtc { get; set; }
     public int AccessFailedCount { get; set; }
     public DateTime? LockoutEndUtc { get; set; }
     public string[] Roles { get; set; } = ["Customer"];

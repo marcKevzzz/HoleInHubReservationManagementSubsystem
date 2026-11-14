@@ -168,7 +168,10 @@
             if (reason) form.querySelector('[name="Form.Reason"]').value = reason;
             window.HoleInHubCustomerMerge.mount(panel);
             footer.append(form.querySelector('[data-review-actions]'), form.querySelector('[data-confirm-actions]'));
-        } else window.HoleInHubCustomerSearch.mount(panel);
+        } else {
+            window.HoleInHubCustomerMerge.mount(panel);
+            window.HoleInHubCustomerSearch.mount(panel);
+        }
         footer.hidden = !form;
         if (window.HoleInHubButtons) {
             const buttons = dialog.querySelectorAll('[data-merge-switch], [data-merge-cancel], [data-merge-review], [data-merge-back]');

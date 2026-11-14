@@ -52,7 +52,9 @@ public sealed partial class ReservationPersistence
     }
 
     public async Task<(string Reference, DateTime StartUtc, DateTime EndUtc)> DecideScheduleChangeAsync(string id, string proposalId, long revision, bool approve,
-        string[] resources, string actor, string reason, DateTime now, CancellationToken ct, ScheduleChangeRecord? directMove = null, bool vipUpgrade = false)
+        string[] resources, string actor, string reason, DateTime now, CancellationToken ct, ScheduleChangeRecord? directMove = null,
+        bool vipUpgrade = false, Action<ReservationRecord, IReadOnlyList<ResourceRecord>>? validateCapacity = null,
+        Action<ReservationRecord, HoleInHub.Data.Services.ServiceCatalogRecord?>? validateSession = null)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeout.CancelAfter(TimeSpan.FromSeconds(15));
@@ -124,10 +126,27 @@ public sealed partial class ReservationPersistence
                         new UpdateOptions { IsUpsert = true }, token);
                 }
                 booking.Service = destinationService;
+                if (vipUpgrade) { booking.ServiceEntryId = null; }
                 booking.StartUtc = proposal.StartUtc;
                 booking.EndUtc = proposal.EndUtc;
+                if (validateSession is not null)
+                {
+                    var service = await ReadAllocationServiceAsync(s, booking, token);
+                    validateSession(booking, service);
+                }
                 booking.ResourceIds = resources;
-                booking.ResourceNames = catalog.Where(bay => resources.Contains(bay.Id)).ToDictionary(bay => bay.Id, bay => bay.Name);
+                var selected = catalog.Where(bay => resources.Contains(bay.Id)).ToArray();
+                booking.ResourceNames = selected.ToDictionary(bay => bay.Id, bay => bay.Name);
+                if (booking.Participants.Length > 0)
+                {
+                    foreach (var participant in booking.Participants)
+                    {
+                        var index = Array.IndexOf(proposal.OriginalResourceIds, participant.ResourceId);
+                        if (index < 0) { throw new AllocationConflictException("The recorded guest breakdown no longer matches the original bays."); }
+                        participant.ResourceId = resources[index];
+                    }
+                }
+                validateCapacity?.Invoke(booking, selected);
                 if (await HasReviewConflictAsync(booking, token, s, now))
                 {
                     throw new AllocationConflictException("The proposed bays are unavailable. The original booking is unchanged.");
@@ -152,14 +171,11 @@ public sealed partial class ReservationPersistence
                 });
             if (approve)
             {
-                update = update.Set(x => x.Service, booking.Service).Set(x => x.StartUtc, booking.StartUtc).Set(x => x.EndUtc, booking.EndUtc)
+                update = update.Set(x => x.Service, booking.Service).Set(x => x.ServiceEntryId, booking.ServiceEntryId)
+                    .Set(x => x.StartUtc, booking.StartUtc).Set(x => x.EndUtc, booking.EndUtc)
                     .Set(x => x.ResourceIds, booking.ResourceIds).Set(x => x.ResourceNames, booking.ResourceNames);
                 if (booking.Participants.Length > 0)
                 {
-                    foreach (var participant in booking.Participants)
-                    {
-                        participant.ResourceId = resources[Array.IndexOf(proposal.OriginalResourceIds, participant.ResourceId)];
-                    }
                     update = update.Set(x => x.Participants, booking.Participants);
                 }
             }

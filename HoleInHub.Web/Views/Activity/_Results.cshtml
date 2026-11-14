@@ -4,7 +4,7 @@
     DateOnly? previousDay = null;
     var query = Model.Query;
 }
-<div data-activity-results data-list-url="@query.Url()">
+<div data-activity-results data-list-url="@query.Url()" data-page-summary="Page @query.Page · @(Model.Page?.Entries.Count ?? 0) shown">
     @if (Model.Error is not null)
     {
         <p class="staff-error" role="alert">@Model.Error <a href="@query.Url(reset: true)" data-activity-retry>Retry</a></p>
@@ -12,7 +12,7 @@
     else if (Model.Page is { Entries.Count: 0 })
     {
         var filtered = !Model.Embedded && (!string.IsNullOrEmpty(query.Search) || query.Category != "All" || query.Actor != "everyone");
-        <partial name="_StaffEmptyState" model='("inbox", Model.Embedded ? "No activity yet" : filtered ? "No matching activity" : "No activity in this date range",
+        <partial name="_StaffEmptyState" model='("history", Model.Embedded ? "No activity yet" : filtered ? "No matching activity" : "No activity in this date range",
             Model.Embedded ? "Recorded actions will appear here." : filtered ? "Try a different search or clear the filters." : "Recorded events will appear here.", filtered ? "/staff/activity" : null, filtered ? "Clear filters" : null)' />
     }
     else if (Model.Page is { } page)
@@ -62,7 +62,7 @@
                 }
                 @if (page.NextCursor is not null)
                 {
-                    <a class="button button-secondary" href="@query.Url(cursor: page.NextCursor)" data-activity-next>Next <partial name="_StaffIcon" model='"arrow-right"' /></a>
+                    <a rel="next" class="button button-secondary" href="@query.Url(cursor: page.NextCursor)" data-activity-next>Next <partial name="_StaffIcon" model='"arrow-right"' /></a>
                 }
             </nav>
         }

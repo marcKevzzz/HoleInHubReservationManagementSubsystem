@@ -12,29 +12,35 @@
                 var proposedStart = StaffReviewQueue.Local(proposal.StartUtc);
                 var proposedEnd = StaffReviewQueue.Local(proposal.EndUtc);
                 var options = ViewData["ChangeBays"] as IReadOnlyList<ResourceDto> ?? [];
-                <section class="review-section review-decision">
+                var canApprove = booking.Status == "Confirmed" && !booking.CancellationRequested && now < booking.StartUtc && now < proposal.StartUtc;
+                <section class="review-section review-decision schedule-change-review">
                     <h2>Requested schedule change</h2>
                     <dl class="review-facts">
                         <dt>Current</dt><dd>@start.ToString("d MMM, h:mm tt")–@end.ToString("h:mm tt")<br />@StaffReviewQueue.Bays(booking)</dd>
                         <dt>Proposed</dt><dd>@proposedStart.ToString("d MMM yyyy, h:mm tt")–@proposedEnd.ToString("h:mm tt")<small>Manila time</small></dd>
                         <dt>Reason</dt><dd>@proposal.Reason</dd>
                     </dl>
-                    <p>The current booking stays allocated until approval. Availability is checked when you confirm.</p>
                     <form asp-action="DecideChange" asp-route-id="@booking.Id" asp-route-date="@date"
                           asp-route-fromQueue="@Model.FromQueue" asp-route-day="@Model.Queue.Day" asp-route-sort="@Model.Queue.Sort"
                           asp-route-returnToQueue="@(ViewData["QueueActions"] is true ? "true" : null)" method="post" class="staff-create-form">
                         <input type="hidden" name="proposalId" value="@proposal.Id" />
                         <input type="hidden" name="expectedRevision" value="@booking.Revision" />
-                        <fieldset><legend>Assign bays</legend>
-                            <p>Select @booking.ResourceIds.Length @(booking.ResourceIds.Length == 1 ? "bay" : "bays") for the new session.</p>
+                        @if (canApprove)
+                        {
+                        <fieldset class="change-bays"><legend>Assign @booking.ResourceIds.Length @(booking.ResourceIds.Length == 1 ? "bay" : "bays")</legend>
+                            <div class="change-bay-grid">
                             @foreach (var bay in options)
                             {
                                 <label class="change-bay-option"><input type="checkbox" name="resources" value="@bay.Id" checked="@booking.ResourceIds.Contains(bay.Id)" />@bay.Name</label>
                             }
+                            </div>
                         </fieldset>
-                        <label for="change-decision-reason">Decision notes (required to decline)</label>
-                        <textarea id="change-decision-reason" name="reason" maxlength="500" rows="3"></textarea>
-                        @if (booking.Status == "Confirmed" && !booking.CancellationRequested && now < booking.StartUtc && now < proposal.StartUtc)
+                        <p class="attendance-note">Availability is checked when you approve.</p>
+                        }
+                        <div class="auth-input-wrap change-decision-notes">
+                        <textarea id="change-decision-reason" name="reason" maxlength="500" rows="2" placeholder=" "></textarea>
+                        <label for="change-decision-reason">Decision notes (required to decline)</label></div>
+                        @if (canApprove)
                         {
                             <details class="review-action"><summary class="button">Approve change</summary>
                                 <p>This replaces the original schedule. @(Model.Context.HasEmail ? "The customer will be notified by email." : "Contact the guest by phone.")</p>

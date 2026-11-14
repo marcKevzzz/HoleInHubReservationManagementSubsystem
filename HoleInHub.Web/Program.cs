@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Localization;
+using System.Globalization;
 using HoleInHub.Business.Extensions;
 using HoleInHub.Business.Services;
 using HoleInHub.Web.Accounts;
@@ -8,7 +10,17 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHoleInHubBusiness(builder.Configuration);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews(options => options.Filters.Add<HoleInHubReservationManagementSubsystem.Filters.ServiceUnavailableFilter>());
+builder.Services.AddControllersWithViews(options => { options.Filters.Add<HoleInHubReservationManagementSubsystem.Filters.ServiceUnavailableFilter>(); options.Filters.Add<HoleInHubReservationManagementSubsystem.Filters.CustomerLanguageFilter>(); });
+builder.Services.AddLocalization();
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var cultures = new[] { new CultureInfo("en"), new CultureInfo("ko") };
+    options.DefaultRequestCulture = new RequestCulture("en");
+    options.SupportedCultures = cultures;
+    options.SupportedUICultures = cultures;
+    options.RequestCultureProviders = [new CookieRequestCultureProvider(), new AcceptLanguageHeaderRequestCultureProvider()];
+    options.ApplyCurrentCultureToResponseHeaders = true;
+});
 builder.Services.AddHealthChecks();
 builder.Services.AddCustomerAccounts(builder.Configuration, builder.Environment);
 builder.Services.AddScoped<GuestReservationSession>();
@@ -61,6 +73,17 @@ app.Use(async (context, next) =>
 });
 
 app.UseRouting();
+app.UseRequestLocalization();
+// Keep staff formatting independent of UI language for date and time inputs.
+app.Use(async (context, next) =>
+{
+    var controller = context.GetRouteValue("controller")?.ToString();
+    if (controller is not ("Home" or "Account" or "AccountHub" or "Reservations" or "GuestReservations" or "Language"))
+    {
+        CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("en");
+    }
+    await next(context);
+});
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();

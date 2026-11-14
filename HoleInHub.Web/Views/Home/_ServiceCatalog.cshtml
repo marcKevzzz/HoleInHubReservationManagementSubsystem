@@ -1,7 +1,7 @@
 @model IReadOnlyList<HoleInHub.Business.Services.ServiceCatalogItem>
 @if (Model.Count == 0)
 {
-    <p class="services-empty">There are no services to display right now. Contact the venue to plan your visit.</p>
+    <p class="services-empty">@T("There are no services to display right now. Contact the venue to plan your visit.")</p>
 }
 @foreach (var item in Model)
 {
@@ -10,7 +10,7 @@
             <div class="service-gallery-track" tabindex="0" role="region" aria-label="@($"{item.Title} photos")">
                 @foreach (var path in item.Images.Length > 0 ? item.Images : new[] { item.ImagePath })
                 {
-                    <img src="@path" alt="@item.Title at Hole In Hub" loading="lazy" width="960" height="640" />
+                    <img src="@path" alt="@T(item.Title) at Hole In Hub" loading="lazy" width="960" height="640" />
                 }
             </div>
             @if (item.Images.Length > 1)
@@ -19,13 +19,13 @@
             }
         </div>
         <div class="service-entry-copy" data-motion="reveal">
-            <h2>@item.Title</h2>
+            <h2>@T(item.Title)</h2>
             @if (item.MaxPax.HasValue) { <p class="service-entry-capacity">Up to @item.MaxPax guests</p> }
-            <p class="service-entry-summary">@item.Summary</p>
-            <p class="service-entry-rate">@item.RateText <span>Indicative rate</span></p>
-            <p class="service-entry-details">@item.Details</p>
+            <p class="service-entry-summary">@T(item.Summary)</p>
+            <p class="service-entry-rate">@item.RateText <span>@T("Indicative rate")</span></p>
+            <p class="service-entry-details">@T(item.Details)</p>
             @if (!string.IsNullOrEmpty(item.DepositText)) { <p class="service-entry-deposit">@item.DepositText · arranged with the venue</p> }
-            <a class="button" href="@item.ActionUrl">@item.ActionLabel <span aria-hidden="true">→</span></a>
+            <a class="button" href="@item.ActionUrl">@T(item.ActionLabel) <span aria-hidden="true">→</span></a>
         </div>
     </article>
 }

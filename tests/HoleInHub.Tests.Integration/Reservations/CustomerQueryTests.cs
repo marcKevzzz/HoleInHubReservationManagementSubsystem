@@ -80,9 +80,9 @@ public sealed class CustomerQueryTests(MongoDbFixture fixture) : IClassFixture<M
         var first = (await service.GetCustomerProfileAsync(rows[0].Id, false, 1, default))!;
         var second = (await service.GetCustomerProfileAsync(rows[0].Id, false, 2, default))!;
         Assert.Equal(27, first.Total);
-        Assert.Equal(25, first.Bookings.Count);
+        Assert.Equal(20, first.Bookings.Count);
         Assert.True(first.HasMore);
-        Assert.Equal(2, second.Bookings.Count);
+        Assert.Equal(7, second.Bookings.Count);
         Assert.False(second.HasMore);
         Assert.Empty(first.Bookings.Select(x => x.Id).Intersect(second.Bookings.Select(x => x.Id)));
     }
@@ -94,16 +94,16 @@ public sealed class CustomerQueryTests(MongoDbFixture fixture) : IClassFixture<M
         var rows = Enumerable.Range(0, 27).Select(index => Contact("account-" + index, "María")).ToArray();
         await context.Database.GetCollection<ReservationRecord>("reservations").InsertManyAsync(rows);
         var first = await service.SearchCustomersAsync("María", 1, default);
-        Assert.Equal(25, first.Items.Count);
+        Assert.Equal(20, first.Items.Count);
         Assert.True(first.HasMore);
         var second = await service.SearchCustomersAsync("María", 2, default);
-        Assert.Equal(2, second.Items.Count);
+        Assert.Equal(7, second.Items.Count);
         Assert.False(second.HasMore);
         Assert.Empty(first.Items.Select(x => x.BookingId).Intersect(second.Items.Select(x => x.BookingId)));
         Assert.Empty((await service.SearchCustomersAsync(".*", 1, default)).Items);
-        Assert.Equal(25, (await service.SearchCustomersAsync("+63 (917) 555-0123", 1, default)).Items.Count);
+        Assert.Equal(20, (await service.SearchCustomersAsync("+63 (917) 555-0123", 1, default)).Items.Count);
         Assert.Single((await service.SearchCustomersAsync(rows[0].Reference.ToLowerInvariant(), 1, default)).Items);
-        Assert.Equal(25, (await service.SearchCustomersAsync("SHARED@example.test", 1, default)).Items.Count);
+        Assert.Equal(20, (await service.SearchCustomersAsync("SHARED@example.test", 1, default)).Items.Count);
         await Assert.ThrowsAsync<ReservationValidationException>(() => service.SearchCustomersAsync("x", 1, default));
     }
 }

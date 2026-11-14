@@ -20,7 +20,7 @@
 .service-editor-grid>.validation-summary-errors {grid-column:1/-1}
 .service-editor-main,.service-editor-options {display:grid;gap:32px;min-width:0}
 .service-editor-section {display:grid;gap:20px;border-top:1px solid var(--color-line);padding-top:20px;min-width:0}
-.staff-shell .service-editor-section h2 {margin:0;font:500 1.05rem/1.4 var(--body);letter-spacing:0;text-transform:none}
+.staff-shell .service-editor-section h2,.staff-shell .service-configuration-grid h3 {margin:0;font:500 1.05rem/1.4 var(--body);letter-spacing:0;text-transform:none}
 .service-editor-section-heading {display:flex;justify-content:space-between;align-items:center;gap:12px}
 .service-editor-section-heading>span {font-size:.73rem;color:var(--color-muted)}
 .staff-shell .service-editor-field>label {display:block;font-size:.8rem;font-weight:400;margin-bottom:8px}
@@ -109,7 +109,7 @@
 .service-editor .service-editor-options {gap:0;margin-top:8px;grid-template-columns:1fr}
 .service-editor .service-editor-options>.service-editor-section {border:0;padding:0;gap:12px;margin-bottom:16px}
 .service-editor .service-description {margin-top:24px}
-.service-editor .service-description textarea {min-height:76px}
+.service-editor .service-description textarea {min-height:104px}
 .service-editor .auth-input-wrap::after,.service-editor [data-error-for]::after {content:none!important}
 .service-editor [data-error-for],.service-editor [data-error-for]:empty {display:block;min-height:18px;margin:3px 0 0}
 .service-editor .auth-input-wrap :is(input,textarea) {background-image:linear-gradient(var(--color-green),var(--color-green));background-size:0 1.5px;background-position:left bottom;background-repeat:no-repeat}
@@ -149,7 +149,7 @@
 .service-editor .service-composition>.service-editor-section {border-top:0;padding-top:16px}
 .service-editor .service-image-section {align-self:stretch;grid-template-rows:auto minmax(320px,1fr) auto;gap:16px}
 .service-editor .service-image-section>.service-editor-gallery {height:100%;min-height:320px}
-.service-editor .service-detail-fields>h2 {margin-bottom:8px}
+.service-editor .service-detail-fields>h2 {margin-bottom:24px}
 .service-editor .service-admin-actions>.service-switch {gap:12px;white-space:nowrap;margin-right:8px}
 .service-row-grip {flex-direction:column;gap:8px;align-self:center}
 .service-row-grip svg {width:18px;height:20px}
@@ -190,6 +190,48 @@
 .service-row-floating>* {min-width:0}
 /* Keep the photo composition independent of optional deposit fields. */
 .service-editor .service-image-section {align-self:start;grid-template-rows:auto auto auto}
-.service-editor .service-image-section>.service-editor-gallery {height:clamp(320px,30vw,420px);min-height:0}
-@media(max-width:760px) {.service-editor .service-image-section {min-height:0}.service-editor .service-image-section>.service-editor-gallery {height:320px}}
+.service-editor .service-image-section>.service-editor-gallery {height:var(--service-gallery-height,clamp(280px,26vw,360px));min-height:0}
+.service-description-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:36px}
+.service-editor [data-new-booking-type][hidden] {display:none}
+.service-editor .service-detail-fields {align-self:start;grid-auto-rows:max-content}
+.service-editor .service-editor-section-heading>label {font:400 .8rem/1.5 var(--body)}
+@media(max-width:760px) {.service-description-grid {grid-template-columns:1fr;gap:0}.service-editor .service-composition {grid-template-columns:1fr}.service-editor .service-image-section {min-height:0}.service-editor .service-image-section>.service-editor-gallery {height:280px}}
 @media(max-width:760px) {.service-row-floating .service-row-grip {width:36px;height:60px}}
+.service-configuration-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:24px 36px;margin-top:24px}
+.service-configuration-section {min-width:0;border-top:1px solid var(--color-line)}
+.service-configuration-content {display:grid;gap:16px;padding-block:8px 12px}
+.service-configuration-content>.service-editor-note {margin:0}
+.service-configuration-section>summary {font-size:1.05rem}
+.service-disclosure {padding:0}
+.service-disclosure>summary {display:flex;align-items:center;gap:10px;padding:10px 0;min-height:44px;list-style:none;cursor:pointer;font-weight:500}
+.service-disclosure>summary::-webkit-details-marker {display:none}
+.service-disclosure>summary::after {content:"";width:12px;height:12px;flex:none;margin-left:auto;background:linear-gradient(currentColor,currentColor) center/12px 1px no-repeat,linear-gradient(currentColor,currentColor) center/1px 12px no-repeat}
+.service-disclosure[open]>summary::after {background-size:12px 1px,0 0}
+.service-price-rule {border-top:1px solid var(--color-line)}
+.service-price-rule>summary {font-size:.875rem;min-height:36px;padding:5px 0}
+.service-rule-summary {color:var(--color-muted);font-size:.75rem;font-weight:400;overflow-wrap:anywhere}
+.service-configuration-grid [data-price-rows] {margin-top:8px}
+.service-configuration-grid [data-availability-rows]:empty {display:none}
+.service-rule-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 16px;align-items:start;min-width:0}
+fieldset.service-rule-grid {border:0;border-bottom:1px solid var(--color-line);margin:0;padding:10px 0}
+.service-price-rule>fieldset {border-bottom:0;padding-top:0}
+.service-rule-grid>div,.service-rule-grid .auth-input-wrap {min-width:0}
+.staff-shell .service-editor .service-rule-grid .auth-input-wrap :is(input,select) {width:100%;min-width:0;min-height:46px;padding:18px 0 5px}
+.staff-shell .service-editor .service-rule-grid .auth-input-wrap label {inset:0 auto auto 0;transform:translateY(15px)}
+.staff-shell .service-editor .service-rule-grid .auth-input-wrap :is(select,input[type=date],input[type=time],input:not(:placeholder-shown),:focus)+label {transform:none;font-size:.75rem}
+.staff-shell .service-editor .service-rule-grid .auth-input-wrap :is(input,select):focus-visible {outline:0;box-shadow:inset 0 -1px var(--color-green);border-bottom-color:var(--color-green)}
+.service-editor .service-rule-grid [data-error-for]:empty {display:none}
+.service-configuration-grid .button {justify-self:start}
+.service-configuration-grid [data-add-price] {margin-top:10px}
+.service-rule-grid .service-rule-delete {display:grid;place-items:center;grid-column:2;justify-self:end;align-self:end;width:34px;height:34px;padding:7px;border:0;background:transparent;color:var(--color-ink);cursor:pointer}
+.service-rule-grid .service-rule-delete:hover {color:var(--color-error);background:var(--color-paper)}
+.service-rule-actions {grid-column:2;align-self:end;display:flex;align-items:center;justify-content:flex-end;gap:8px}
+.staff-shell .service-rule-grid .service-midnight {display:flex;align-items:center;gap:6px;margin:0 auto 0 0;min-height:24px;font:400 .8rem/1.4 var(--body);cursor:pointer}
+.service-rule-actions .service-rule-delete {flex:none}
+.service-midnight input {width:16px;height:16px;margin:0;flex:none;accent-color:var(--color-green)}
+.service-configuration-grid [data-price-format][hidden] {display:none}
+.service-configuration-grid [aria-invalid=true] {border-color:var(--color-error)}
+@media(prefers-reduced-motion:no-preference) {
+    .service-disclosure::details-content {overflow:clip;overflow-clip-margin:3px}
+}
+@media(max-width:900px) {.service-configuration-grid {grid-template-columns:1fr}}

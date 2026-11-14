@@ -58,9 +58,25 @@
                         <form asp-action="Decide" asp-route-id="@booking.Id" asp-route-date="@date" asp-route-fromQueue="@fromQueue"
                               asp-route-filter="@(Model.FromQueue ? Model.Queue.Filter : null)" asp-route-day="@Model.Queue.Day"
                               asp-route-sort="@(Model.FromQueue ? Model.Queue.Sort : null)"
-                              asp-route-returnToQueue="@(ViewData["QueueActions"] is true && Model.Queue.Filter == "cancellations" ? "true" : null)" method="post">
+                              asp-route-returnToQueue="@(ViewData["QueueActions"] is true && Model.Queue.Filter is ("cancellations" or "cancellation-requests") ? "true" : null)" method="post">
                             <input type="hidden" name="expectedRevision" value="@booking.Revision" />
                             <p>@action.Consequence @(Model.Context.HasEmail ? "The customer will be notified by email." : "Contact the guest by phone to share the outcome.")</p>
+                            @if (action.Key == "approve" && booking.Participants.Length == 0 && (booking.Attendees != 1 || booking.ResourceIds.Length != 1))
+                            {
+                                <fieldset>
+                                    <legend>Confirm the breakdown for @booking.Attendees guests</legend>
+                                    @for (var i = 0; i < Model.Context.Bays.Count; i++)
+                                    {
+                                        var bay = Model.Context.Bays[i];
+                                        <input type="hidden" name="participants[@i].ResourceId" value="@bay.Id" />
+                                        <label for="review-players-@i">@bay.Name players</label>
+                                        <input id="review-players-@i" name="participants[@i].Players" type="number" min="0" max="@bay.MaxPlayers" required />
+                                        <label for="review-nonplayers-@i">@bay.Name non-players</label>
+                                        <input id="review-nonplayers-@i" name="participants[@i].NonPlayers" type="number" min="0" max="@(bay.MaxNonPlayers ?? bay.MaxTotalGuests)" required />
+                                        <small>Up to @bay.MaxTotalGuests total guests.</small>
+                                    }
+                                </fieldset>
+                            }
                             @if (action.Key == "reject")
                             {
                                 <label for="reject-reason-choice">Reason</label>

@@ -31,6 +31,10 @@
         <div class="people-signin">
             <h2>Sign-in</h2>
             <span class="people-pill">@(ViewData["UsesPin"] is true ? (ViewData["HasPin"] is true ? "PIN ready" : "PIN setup needed") : "Email and password")</span>
+            @if (ViewData["UsesPin"] is true && ViewData["HasPin"] is not true)
+            {
+                <small>On an authorized staff desktop, open staff sign-in and choose “Set up or reset your PIN.”</small>
+            }
             @if (ViewData["CanResetPin"] is true)
             {
                 <form id="staff-pin-reset-form" asp-action="ResetPin" asp-route-id="@account.Id" method="post" data-reason-form>
@@ -38,7 +42,7 @@
                     <input type="hidden" name="CommandId" value="@Guid.NewGuid().ToString("N")" />
                     <noscript><label>Reason <textarea name="Reason" maxlength="500" required></textarea></label></noscript>
                     <button class="staff-hover-link" type="submit" data-reason-fallback data-no-icon>Reset PIN</button>
-                    <partial name="_ReasonConfirmation" model='new ReasonConfirmationModel("staff-pin-reset", "staff-pin-reset-form", "Reset this PIN?", "Their sessions will end and they must set up a new PIN.", "Reason", "", "Reset PIN")' />
+                    <partial name="_ReasonConfirmation" model='new ReasonConfirmationModel("staff-pin-reset", "staff-pin-reset-form", "Reset this PIN?", "Their old PIN and staff sessions will be revoked. We’ll email setup instructions. They must verify their work email and choose a new PIN on an authorized staff desktop.", "Reason", "", "Reset PIN")' />
                 </form>
             }
             @if (!account.EmailConfirmed && ViewData["CanInvite"] is true)

@@ -25,11 +25,11 @@ public sealed partial class CustomerProfilePersistence
             filter &= search;
         }
         var profiles = await Profiles.Find(filter, new FindOptions { MaxTime = TimeSpan.FromSeconds(5) }).SortByDescending(x => x.UpdatedUtc).ThenBy(x => x.Id)
-            .Skip((page - 1) * 25).Limit(26).ToListAsync(ct);
-        var ids = profiles.Take(25).Select(x => x.RepresentativeBookingId).ToArray();
+            .Skip((page - 1) * 20).Limit(21).ToListAsync(ct);
+        var ids = profiles.Take(20).Select(x => x.RepresentativeBookingId).ToArray();
         var records = await Reservations.Find(Builders<ReservationRecord>.Filter.In(x => x.Id, ids)).ToListAsync(ct);
         var items = new List<CustomerContactRecord>();
-        foreach (var profile in profiles.Take(25))
+        foreach (var profile in profiles.Take(20))
         {
             var record = records.FirstOrDefault(r => r.Id == profile.RepresentativeBookingId);
             if (record is null && profile.RepresentativeBookingId.Length == 0) { record = ContactWithoutBooking(profile); }
@@ -37,7 +37,7 @@ public sealed partial class CustomerProfilePersistence
             SetDisplayContact(record, profile);
             items.Add(new(record, profile.Kind));
         }
-        return new(items, profiles.Count > 25);
+        return new(items, profiles.Count > 20);
     }
     private static void SetDisplayContact(ReservationRecord record, CustomerProfileRecord profile)
     {
@@ -61,8 +61,8 @@ public sealed partial class CustomerProfilePersistence
         var records = await Reservations.Find(upcomingOnly ? upcoming : filter).Sort(upcomingOnly
                 ? Builders<ReservationRecord>.Sort.Ascending(x => x.StartUtc).Ascending(x => x.Id)
                 : Builders<ReservationRecord>.Sort.Descending(x => x.StartUtc).Descending(x => x.Id))
-            .Skip((page - 1) * 25).Limit(26).ToListAsync(ct);
-        return new(new(representative, snapshot.Profile.Kind), records.Take(25).ToArray(), total, upcomingCount, completed, cancelled, records.Count > 25);
+            .Skip((page - 1) * 20).Limit(21).ToListAsync(ct);
+        return new(new(representative, snapshot.Profile.Kind), records.Take(20).ToArray(), total, upcomingCount, completed, cancelled, records.Count > 20);
     }
     public Task<List<ReservationRecord>> BookingsAsync(string[] ids, CancellationToken ct) => Reservations
         .Find(Builders<ReservationRecord>.Filter.In(x => x.Id, ids)).SortByDescending(x => x.StartUtc).ThenBy(x => x.Id).Limit(MaximumMergeBookings).ToListAsync(ct);

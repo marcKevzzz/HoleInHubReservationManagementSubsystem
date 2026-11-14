@@ -1,10 +1,36 @@
 namespace HoleInHub.Business.Reservations;
 
-public sealed class SubmitReservationRequest { public string? Email { get; set; } public BayParticipants[] Participants { get; set; } = []; public string Service { get; set; } = "Regular"; public DateOnly Date { get; set; } public TimeOnly StartTime { get; set; } public int DurationMinutes { get; set; } = 60; public string[] ResourceIds { get; set; } = []; public string FirstName { get; set; } = ""; public string LastName { get; set; } = ""; public string Phone { get; set; } = ""; public int Attendees { get; set; } = 1; public string? Notes { get; set; } public bool PrivacyAccepted { get; set; } public string IdempotencyKey { get; set; } = ""; }
-public sealed record ResourceDto(string Id, string Name, string Service);
+public sealed class SubmitReservationRequest
+{
+    public string? Email { get; set; }
+    public BayParticipants[] Participants { get; set; } = [];
+    public string Service { get; set; } = "Regular";
+    public DateOnly Date { get; set; }
+    public TimeOnly StartTime { get; set; }
+    public int DurationMinutes { get; set; } = 60;
+    public string[] ResourceIds { get; set; } = [];
+    public string FirstName { get; set; } = "";
+    public string LastName { get; set; } = "";
+    public string Phone { get; set; } = "";
+    public int Attendees { get; set; } = 1;
+    public string? Notes { get; set; }
+    public bool PrivacyAccepted { get; set; }
+    public string IdempotencyKey { get; set; } = "";
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? ServiceEntryId { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? QuoteKey { get; set; }
+}
+public sealed record ResourceDto(string Id, string Name, string Service)
+{
+    public int MaxPlayers { get; init; } = 6;
+    public int MaxTotalGuests { get; init; } = Service == "VIP" ? 10 : 8;
+    public int? MaxNonPlayers { get; init; }
+}
 public sealed record AvailabilityDto(ResourceDto Resource, bool Available);
 public sealed record ReservationDto(string Id, string Reference, string Service, string Status, DateTime StartUtc, DateTime EndUtc, DateTime ReviewDeadlineUtc, string[] ResourceIds, string FirstName, string LastName, string Phone, int Attendees, IReadOnlyList<ReservationHistoryDto> History, string Notes = "")
 {
+    public string? ServiceEntryId { get; init; }
     public bool IsUpcoming(DateTime nowUtc) => EndUtc > nowUtc && Status is "Pending" or "Confirmed" or "Checked-In";
     public long Revision { get; init; }
     public DateTime? CheckedInUtc { get; init; }
@@ -101,36 +127,38 @@ public static class BookingRules
             throw new ReservationValidationException($"Choose a start after the full {ReviewMinutes(service)}-minute review window. Staff review runs during operating hours.");
         }
     }
-    public static void ValidateGuests(string service, string[] resources, int guests)
+    public static void ValidateGuests(string service, IReadOnlyList<ResourceDto> bays, int guests)
     {
-        var capacity = resources.Sum(id => id.StartsWith("vip-", StringComparison.Ordinal) ? 10 : 8);
+        var capacity = bays.Sum(bay => (long)bay.MaxTotalGuests);
         if (service == "KpgaGroup") { capacity = Math.Min(capacity, 8); }
         if (guests < 1 || guests > capacity)
         {
             throw new ReservationValidationException($"Enter between 1 and {capacity} guests, including non-players, for your selected bays.");
         }
     }
-    public static void ValidateParticipants(string service, string[] resources, BayParticipants[] participants)
+    public static void ValidateParticipants(string service, IReadOnlyList<ResourceDto> bays, BayParticipants[] participants, bool allowEmptyBays = false)
     {
-        if (participants.Length != resources.Length || participants.Select(x => x.ResourceId).Distinct().Count() != resources.Length || participants.Any(x => !resources.Contains(x.ResourceId)))
+        if (participants.Length != bays.Count || participants.Select(x => x.ResourceId).Distinct().Count() != bays.Count ||
+            bays.Any(bay => !participants.Any(p => p.ResourceId == bay.Id)))
         {
             throw new ReservationValidationException("Enter players and non-players for each selected bay.");
         }
 
-        foreach (var p in participants)
+        foreach (var bay in bays)
         {
-            var limit = p.ResourceId.StartsWith("vip-", StringComparison.Ordinal) ? 10 : 8;
-            if (p.Players is < 0 or > 6 || p.NonPlayers < 0 || p.NonPlayers > limit || p.Players + p.NonPlayers > limit || (service != "WholeShop" && p.Players < 1))
+            var p = participants.Single(p => p.ResourceId == bay.Id);
+            var nonPlayerLimit = Math.Min(bay.MaxNonPlayers ?? bay.MaxTotalGuests, bay.MaxTotalGuests - Math.Max(0, p.Players));
+            if (p.Players < (allowEmptyBays || service == "WholeShop" ? 0 : 1) || p.Players > bay.MaxPlayers || p.NonPlayers < 0 || p.NonPlayers > nonPlayerLimit)
             {
-                throw new ReservationValidationException($"Each bay allows six players; total occupancy is {limit} including non-players.");
+                throw new ReservationValidationException($"{bay.Name} allows up to {bay.MaxPlayers} players and {bay.MaxTotalGuests} total guests, with up to {Math.Max(0, nonPlayerLimit)} non-players at the entered player count.");
             }
         }
-        if (participants.Sum(x => x.Players) < 1)
+        if (!participants.Any(x => x.Players > 0))
         {
             throw new ReservationValidationException("Include at least one player.");
         }
 
-        if (service == "KpgaGroup" && participants.Sum(x => x.Players + x.NonPlayers) > 8)
+        if (service == "KpgaGroup" && participants.Sum(x => (long)x.Players + x.NonPlayers) > 8)
         {
             throw new ReservationValidationException("The lesson program allows up to eight participants.");
         }

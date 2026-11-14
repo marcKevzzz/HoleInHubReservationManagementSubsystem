@@ -11,6 +11,6 @@
     </ol>
     <nav class="dashboard-pagination" aria-label="Matching reservation pages">
         @if (Model.Page > 1) { <a href="@Model.Context.SliceUrl(Model.Kind, Model.Value, Model.Group, Model.Page - 1)" data-dashboard-slice>Previous</a> }
-        @if (Model.Slice.HasMore) { <a href="@Model.Context.SliceUrl(Model.Kind, Model.Value, Model.Group, Model.Page + 1)" data-dashboard-slice>Next</a> }
+        @if (Model.Slice.HasMore) { <a rel="next" href="@Model.Context.SliceUrl(Model.Kind, Model.Value, Model.Group, Model.Page + 1)" data-dashboard-slice>Next</a> }
     </nav>
 </div>

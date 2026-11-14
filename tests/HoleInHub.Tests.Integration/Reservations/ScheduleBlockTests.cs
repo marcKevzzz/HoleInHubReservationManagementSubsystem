@@ -45,6 +45,26 @@ public sealed class ScheduleBlockTests(MongoDbFixture fixture) : IClassFixture<M
         new(store, new OutboxPersistence(context), Options.Create(new ReservationPolicy()), clock ?? new Clock());
 
     [Fact]
+    public async Task WholeDayVenueBlockCoversEveryBayAndReleasesAsOneAuditedBlock()
+    {
+        var (store, context) = await Setup();
+        var service = Service(store, context);
+        var request = Request("venue-day") with { ResourceId = "*", WholeDay = true };
+        var id = await service.CreateScheduleBlockAsync(request, "admin", default);
+        var block = (await store.BlockByIdAsync(id, default))!;
+        Assert.Empty(block.ResourceIds);
+        Assert.Equal(new DateTime(2026, 11, 10, 2, 0, 0, DateTimeKind.Utc), block.StartUtc);
+        Assert.Equal(new DateTime(2026, 11, 10, 16, 0, 0, DateTimeKind.Utc), block.EndUtc);
+        Assert.Equal(id, await service.CreateScheduleBlockAsync(request, "admin", default));
+        await Assert.ThrowsAsync<AllocationConflictException>(() => store.InsertAsync(Booking("Confirmed"), default));
+        var vip = Booking("Confirmed", "VIP");
+        vip.ResourceIds = ["vip-7"];
+        await Assert.ThrowsAsync<AllocationConflictException>(() => store.InsertAsync(vip, default));
+        Assert.True(await service.ReleaseScheduleBlockAsync(id, "Venue reopened", "admin", default));
+        await store.InsertAsync(Booking("Confirmed"), default);
+        Assert.NotNull((await store.BlockByIdAsync(id, default))!.ReleasedUtc);
+    }
+    [Fact]
     public async Task SavesAuditAndUtcReplaysAfterTimePassesAndRejectsChangedPayload()
     {
         var (store, context) = await Setup();
@@ -117,11 +137,13 @@ public sealed class ScheduleBlockTests(MongoDbFixture fixture) : IClassFixture<M
         await Assert.ThrowsAsync<ReservationValidationException>(() => service.CreateScheduleBlockAsync(Request(), "admin", default));
     }
 
-    [Fact]
-    public async Task ConcurrentBlockAndBookingHaveOneWinner()
+    [Theory]
+    [InlineData("bay-1")]
+    [InlineData("*")]
+    public async Task ConcurrentBlockAndBookingHaveOneWinner(string resource)
     {
         var (store, context) = await Setup();
-        async Task<bool> Block() { try { await Service(store, context).CreateScheduleBlockAsync(Request(), "admin", default); return true; } catch (ReservationValidationException) { return false; } }
+        async Task<bool> Block() { try { await Service(store, context).CreateScheduleBlockAsync(Request() with { ResourceId = resource }, "admin", default); return true; } catch (ReservationValidationException) { return false; } }
         async Task<bool> Book() { try { await store.InsertAsync(Booking("Confirmed"), default); return true; } catch (AllocationConflictException) { return false; } }
         Assert.Single(await Task.WhenAll(Block(), Book()), x => x);
     }

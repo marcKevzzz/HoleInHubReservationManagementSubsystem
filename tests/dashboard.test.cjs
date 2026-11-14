@@ -33,9 +33,10 @@ function setup(fetch,configure){
   const document={hidden:false,activeElement:null,querySelector:()=>ui.page,addEventListener:(name,fn)=>events[name]=fn,createElement:()=>new Element(),createTextNode:text=>text};
   const extra=configure?.(ui) || {};
   const windowEvents={},live=[],timers=new Map();let timerId=0;
-  const window={matchMedia:()=>({matches:true,addEventListener(){}}),addEventListener:(name,fn)=>windowEvents[name]=fn,HoleInHubToasts:{show:notice=>notices.push(notice)},HoleInHubButtons:{mount(){}},HoleInHubLive:{subscribe:fn=>live.push(fn)}};
+  const media={matches:extra.reduced??true,addEventListener:(name,fn)=>windowEvents[name]=fn};
+  const window={matchMedia:()=>media,gsap:extra.gsap,addEventListener:(name,fn)=>windowEvents[name]=fn,HoleInHubToasts:{show:notice=>notices.push(notice)},HoleInHubButtons:{mount(){}},HoleInHubLive:{subscribe:fn=>live.push(fn)}};
   window.Chart=extra.Chart;
-  class Parser {parseFromString(){const next=makePage();return {querySelector:selector=>selector==='[data-dashboard]'?next.page:null};}}
+  class Parser {parseFromString(){const next=makePage();extra.onReplace?.(next);return {querySelector:selector=>selector==='[data-dashboard]'?next.page:null};}}
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../HoleInHub.Web/wwwroot/js/dashboard.js'),'utf8'),{document,window,location:{origin:'http://localhost',href:'http://localhost/staff/dashboard'},history:{pushState:(_a,_b,url)=>pushes.push(url)},fetch,AbortController,URL,URLSearchParams,Intl,Map,Chart:extra.Chart,getComputedStyle:()=>({getPropertyValue:()=>"#354f3b"}),DOMParser:Parser,CSS:{escape:x=>x},setTimeout:(fn,ms)=>{timers.set(++timerId,{fn,ms});return timerId;},clearTimeout:id=>timers.delete(id),setInterval:fn=>{intervals.push(fn);return intervals.length;},clearInterval(){}});
   function click(action,link){const target={closest:selector=>selector==='[data-dashboard-nav],[data-dashboard-slice]'?link:selector===action?{}:null};events.click({target,button:0,preventDefault(){},defaultPrevented:false});}
   return {...ui,document,events,windowEvents,intervals,notices,pushes,click,live,navigate:(url='http://localhost/staff/dashboard')=>{const link={href:url,hasAttribute:()=>false};ui.page.contains=node=>node===link||node===ui.page;click(null,link);},tick:(ms=500)=>{const entry=[...timers].find(([_id,t])=>t.ms===ms);if(entry){timers.delete(entry[0]);entry[1].fn();}}};
@@ -86,6 +87,30 @@ test('page exit aborts in-flight refresh',()=>{
   ui.navigate();ui.windowEvents.pagehide();assert.equal(signal.aborted,true);
 });
 
+test('dashboard entrance plays for initial and manual loads, and stops for reduced motion',async()=>{
+  const entrances=[];
+  const configure=({page})=>{
+    const stat=new Element();
+    page.querySelectorAll=selector=>selector.includes('.dashboard-summary')?[stat]:[];
+  };
+  const ui=setup(async()=>({ok:true,text:async()=> 'dashboard'}),initial=>{
+    configure(initial);
+    return {reduced:false,onReplace:configure,gsap:{fromTo(targets){
+      const tween={targets,revert(){this.reverted=true;}};
+      entrances.push(tween);
+      return tween;
+    }}};
+  });
+  assert.equal(entrances.length,1);
+  ui.live[0]();ui.tick();await settle();
+  assert.equal(entrances.length,1);
+  assert.equal(entrances[0].reverted,true);
+  ui.windowEvents.popstate();await settle();
+  assert.equal(entrances.length,2);
+  ui.windowEvents.change({matches:true});
+  assert.equal(entrances[1].reverted,true);
+});
+
 test('hourly insight uses one line and sums allocated hours without a service chart',()=>{
   const configs=[];
   const ui=setup(()=>{},({page})=>{
@@ -102,6 +127,7 @@ test('hourly insight uses one line and sums allocated hours without a service ch
   assert.equal(configs[0].data.datasets.length,1);
   assert.equal(configs[0].data.datasets[0].data[0],3.5);
   assert.equal(configs[0].options.plugins.legend.display,false);
+  assert.equal(configs[0].options.animation,false);
   assert.equal(configs[0].data.datasets[0].stepped,false);
   assert.equal(configs[0].data.datasets[0].cubicInterpolationMode,'monotone');
   configs[0].options.onClick(null,[{index:0}]);
@@ -160,9 +186,10 @@ test('donut values show total and readable slice shares while retaining small sl
     const frame=new Element();frame.map.canvas=new Element();page.map['[data-pie-frame]']=frame;
     page.map['[data-dashboard-data]']={textContent:JSON.stringify({services:[{Id:'Regular',Label:'Regular',Count:8},{Id:'VIP',Label:'VIP',Count:1},{Id:'WholeShop',Label:'Whole shop',Count:11}]})};
     class Chart {constructor(_canvas,options){config=options;}destroy(){}update(){}}
-    return {Chart};
+    return {Chart,reduced:false};
   });
   assert.equal(config.type,'doughnut');
+  assert.ok(config.options.animation.duration > 0);
   const labels=[];
   const arc={x:100,y:100,startAngle:0,endAngle:1,innerRadius:50,outerRadius:90};
   config.plugins[0].afterDatasetsDraw({ctx:{save(){},restore(){},fillText:value=>labels.push(value)},getDatasetMeta:()=>({data:[arc,arc,arc]})});

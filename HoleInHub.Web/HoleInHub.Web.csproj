@@ -13,6 +13,7 @@
     <ProjectReference Include="..\HoleInHub.Business\HoleInHub.Business.csproj" />
     <Content Remove="node_modules\**" />
     <None Remove="node_modules\**" />
+    <EmbeddedResource Include="Localization/customer-translations.txt" LogicalName="CustomerTranslations" />
   </ItemGroup>
 
   <ItemGroup>

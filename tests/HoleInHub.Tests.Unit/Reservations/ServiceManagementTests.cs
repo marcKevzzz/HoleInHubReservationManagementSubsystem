@@ -21,6 +21,14 @@ public sealed class ServiceManagementTests
         Assert.Throws<ArgumentException>(() => ServiceCatalog.Validate(Edit with { DepositType = "Other" }));
     }
     [Fact]
+    public void NamedBookingTypesRetainSupportedAllocationRules()
+    {
+        ServiceCatalog.Validate(Edit with { BookingTypeName = "Weekend package" });
+        Assert.Throws<ArgumentException>(() => ServiceCatalog.Validate(Edit with { BookingTypeName = new string('x', 81) }));
+        Assert.Throws<ArgumentException>(() => ServiceCatalog.Validate(Edit with { BookingTypeName = "Promo\nPackage" }));
+        Assert.Throws<ArgumentException>(() => ServiceCatalog.Validate(Edit with { BookingTypeName = "Package", BookingService = "Unknown" }));
+    }
+    [Fact]
     public void ServiceOrderRejectsDuplicatesAndInvalidRevisions()
     {
         ServiceCatalog.ValidateOrder([new("VIP", 3), new("Regular", 1)]);

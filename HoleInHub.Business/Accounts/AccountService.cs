@@ -25,7 +25,7 @@ public sealed class AccountService(AccountPersistence persistence, TimeProvider 
 {
     public async Task<AccountDirectory> GetDirectoryAsync(bool employeesOnly, int page, CancellationToken ct, string? role = null)
     {
-        const int pageSize = 50;
+        const int pageSize = 20;
         page = Math.Clamp(page, 1, 1000);
         if (role is not null && !StaffRoles.Workspace.Contains(role)) { throw new ArgumentException("Choose a staff role.", nameof(role)); }
         IReadOnlyList<string>? roles = role is not null ? [role] : employeesOnly ? StaffRoles.Workspace : null;
@@ -35,7 +35,7 @@ public sealed class AccountService(AccountPersistence persistence, TimeProvider 
     }
     public async Task<RoleActivityPage> GetRoleActivityAsync(int page, CancellationToken ct)
     {
-        const int pageSize = 50;
+        const int pageSize = 20;
         page = Math.Clamp(page, 1, 1000);
         var rows = await persistence.ReadRoleActivityAsync((page - 1) * pageSize, pageSize + 1, ct);
         if (rows.Count == 0) { return new([], page, false); }
@@ -102,7 +102,15 @@ public sealed class AccountService(AccountPersistence persistence, TimeProvider 
         { return StaffRoleChangeResult.Invalid; }
         var audit = new StaffRoleAuditRecord(command.CommandId, "StaffPinReset", clock.GetUtcNow().UtcDateTime,
             command.ActorId, StaffRoles.Admin, target.Id, target.Roles, target.Roles, command.Reason.Trim(), command.CommandId);
-        return await persistence.ResetStaffPinAsync(command.ActorStamp, command.ExpectedVersion, audit, ct) switch
+        var notice = new HoleInHub.Data.Reservations.OutboxRecord
+        {
+            Id = audit.Id + ":pin-reset",
+            Recipient = target.Email,
+            Subject = "Your Hole In Hub staff PIN was reset",
+            Body = "An administrator reset your staff PIN. Your old PIN and staff sessions no longer work. On an authorized staff desktop, open staff sign-in and choose Set up or reset your PIN. Enter your work email and password, verify the emailed code, then choose and confirm a new six-digit PIN. Your administrator never needs your PIN or verification code. If you did not expect this change, contact your administrator.",
+            DueUtc = audit.OccurredUtc
+        };
+        return await persistence.ResetStaffPinAsync(command.ActorStamp, command.ExpectedVersion, audit, notice, ct) switch
         {
             StaffRoleWriteResult.Applied => StaffRoleChangeResult.Applied,
             StaffRoleWriteResult.Forbidden => StaffRoleChangeResult.Forbidden,

@@ -390,7 +390,7 @@ public sealed partial class StaffPinAccessTests
                 Assert.Equal(HttpStatusCode.Forbidden, (await desktop.GetAsync("/staff/reservations/blocks/new")).StatusCode);
             }
             var dashboard = await desktop.GetStringAsync("/staff/dashboard");
-            Assert.Contains("pending review", dashboard);
+            Assert.Contains("aria-label=\"Live review queues, all dates\"", dashboard);
             Assert.Contains("aria-current=\"page\"", dashboard);
             Assert.Contains("aria-label=\"Reservations\"", dashboard);
             Assert.Equal(role != "Staff", dashboard.Contains("Team &amp; access"));

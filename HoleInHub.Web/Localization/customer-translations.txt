@@ -1,0 +1,569 @@
+Language|언어
+Home|홈
+About|소개
+Gallery|갤러리
+Services|서비스
+Contacts|문의
+Privacy|개인정보 처리방침
+Venue policies|이용 정책
+Get in touch|문의하기
+Your account|내 계정
+My reservations|내 예약
+My profile|내 프로필
+Transactions|결제 내역
+Account|계정
+Log out|로그아웃
+Log out?|로그아웃하시겠습니까?
+Close logout confirmation|로그아웃 확인 닫기
+Your next round|다음 라운드
+Find my booking|내 예약 찾기
+Skip to main content|본문으로 이동
+Open navigation|메뉴 열기
+Main navigation|주 메뉴
+Footer navigation|하단 메뉴
+Hole In Hub home|Hole In Hub 홈
+Sign in|로그인
+sign in|로그인
+Create account|계정 만들기
+Create an account|계정 만들기
+Create your account|계정 만들기
+Continue with Google|Google로 계속하기
+RESERVE A BAY|베이 예약
+RESERVE A BAY →|베이 예약 →
+Reserve a bay|베이 예약
+MENU|메뉴
+Back|뒤로
+Next|다음
+Previous|이전
+Cancel|취소
+CONTINUE|계속
+Contact|연락처
+Email address|이메일 주소
+Email address *|이메일 주소 *
+Email|이메일
+Password|비밀번호
+Confirm password|비밀번호 확인
+First name|이름
+Last name|성
+Contact number|연락처
+Mobile number|휴대전화 번호
+WELCOME BACK|다시 오신 것을 환영합니다
+Welcome back|다시 오신 것을 환영합니다
+YOUR NEXT ROUND.|다음 라운드를 준비하세요.
+YOUR ROUND STARTS HERE|여기서 라운드를 시작하세요
+YOUR NEXT|다음
+ROUND STARTS HERE.|라운드가 시작됩니다.
+A little practice. A little play.|연습도 즐거움도 함께.
+Make time for both at Hole In Hub.|Hole In Hub에서 두 가지를 모두 즐기세요.
+GOLF & LOUNGE|골프 & 라운지
+New to Hole In Hub?|Hole In Hub가 처음이신가요?
+Already have an account?|이미 계정이 있으신가요?
+Forgot password?|비밀번호를 잊으셨나요?
+Forgot your password?|비밀번호를 잊으셨나요?
+Request a password reset|비밀번호 재설정 요청
+Enter your account email. If it’s verified, we’ll send you a link to reset your password.|계정 이메일을 입력해 주세요. 인증된 계정이면 비밀번호 재설정 링크를 보내드립니다.
+Send reset link|재설정 링크 보내기
+Remember your password?|비밀번호가 기억나셨나요?
+Back to sign in|로그인으로 돌아가기
+Back to home|홈으로 돌아가기
+Reset password|비밀번호 재설정
+Choose a new password|새 비밀번호 설정
+Choose a new password to get back to your account.|계정에 다시 접속할 새 비밀번호를 설정해 주세요.
+Activate account|계정 활성화
+Activate your account|계정을 활성화하세요
+Choose a password to verify your email and activate your account.|이메일을 인증하고 계정을 활성화할 비밀번호를 설정해 주세요.
+Complete your account|계정 설정 완료
+CHECK YOUR EMAIL|이메일을 확인해 주세요
+ONE LAST STEP|마지막 단계
+Sign in to verify your account.|로그인하여 계정을 인증해 주세요.
+Need another link?|새 링크가 필요하신가요?
+Change email|이메일 변경
+Use another email|다른 이메일 사용
+Send code|인증 코드 보내기
+Resend code|인증 코드 다시 보내기
+Verification code|인증 코드
+Verify email|이메일 인증
+Verify and submit|인증 후 제출
+Verify and continue|인증 후 계속
+MY PROFILE|내 프로필
+Save changes|변경 사항 저장
+MY RESERVATIONS|내 예약
+YOUR RESERVATIONS|내 예약
+GUEST RESERVATIONS|비회원 예약
+FIND YOUR BOOKING|내 예약 찾기
+Use the email from your reservation.|예약 시 사용한 이메일을 입력해 주세요.
+Leave guest access|비회원 조회 종료
+Upcoming|예정된 예약
+Past|지난 예약
+Reservation views|예약 보기
+Reservation pages|예약 페이지
+Booking history|예약 내역
+View reservation|예약 보기
+View your reservations|내 예약 보기
+Start a new request|새 예약 요청
+Make a reservation|예약하기
+Reservation details|예약 상세
+Reservation|예약
+Reservations|예약
+Pending|검토 대기
+Confirmed|확정
+Rejected|거절됨
+Cancelled|취소됨
+Expired|만료됨
+CheckedIn|체크인 완료
+CheckedOut|체크아웃 완료
+NoShow|미방문
+Checked in|체크인 완료
+Checked out|체크아웃 완료
+No-show|미방문
+Reschedule requested|일정 재선택 요청
+Cancellation requested|취소 요청
+Schedule change requested|일정 변경 요청
+Schedule change approved|일정 변경 승인
+Schedule change rejected|일정 변경 거절
+Pending · Overdue|검토 대기 · 기한 초과
+Reference|예약 번호
+RESERVATION DETAILS|예약 상세
+RESERVATION INFORMATION|예약 정보
+Reservation status|예약 상태
+View reservation status|예약 상태 보기
+Refresh booking status|예약 상태 새로고침
+View your booking status for the latest reservation and deposit updates.|예약 상태에서 최신 예약 및 예약금 정보를 확인하세요.
+Back to My Reservations|내 예약으로 돌아가기
+Back to your reservations|내 예약으로 돌아가기
+Back to reservation|예약으로 돌아가기
+Back to booking|예약 작성으로 돌아가기
+Date|날짜
+Time|시간
+Duration|이용 시간
+Duration in minutes|이용 시간(분)
+Bays|베이
+Guests|이용 인원
+Guest name|예약자 이름
+Your details|예약자 정보
+Contact details|연락처 정보
+Notes|요청 사항
+Notes (optional)|요청 사항(선택)
+Number of guests|이용 인원
+Number of guests *|이용 인원 *
+Attendees (legacy total)|이용 인원(기존 총인원)
+Participants|참가자
+History|변경 내역
+All times are Asia/Manila.|모든 시간은 마닐라 시간(Asia/Manila) 기준입니다.
+All times are in Asia/Manila.|모든 시간은 마닐라 시간(Asia/Manila) 기준입니다.
+Manila time|마닐라 시간
+Start time|시작 시간
+Start time · Manila|시작 시간 · 마닐라
+Start time · Asia/Manila|시작 시간 · 마닐라
+Indicative rate|예상 요금
+indicative|예상 요금
+Regular bay|일반 베이
+Regular simulator bay|일반 시뮬레이터 베이
+Regular simulator bays|일반 시뮬레이터 베이
+VIP bay|VIP 베이
+Filipino coach|필리핀 코치
+Philippine coach|필리핀 코치
+Korean pro coaching|한국 프로 코칭
+KPGA pro coaching|KPGA 프로 코칭
+Korean lesson program|한국 골프 레슨 프로그램
+KPGA lesson program|KPGA 레슨 프로그램
+Rent the whole shop|전체 매장 대관
+Whole-shop rental|전체 매장 대관
+Coaching|골프 레슨
+Deposit|예약금
+50% deposit|예약금 50%
+Rental total|총 대관 요금
+rental total|총 대관 요금
+Deposit status|예약금 상태
+Payment status|결제 상태
+Review deposit|예약금 확인
+Deposit deadline · Asia/Manila|예약금 납부 기한 · 마닐라
+Awaiting deposit|예약금 납부 대기
+Deposit received|예약금 수령
+Payment failed — retry before the deposit deadline|결제 실패 — 납부 기한 전에 다시 시도해 주세요
+Checkout cancelled — retry before the deposit deadline|결제 취소 — 납부 기한 전에 다시 시도해 주세요
+Late payment — reconciliation required|기한 후 결제 — 직원 확인 필요
+No deposit required|예약금 없음
+DEPOSIT CHECKOUT|예약금 결제
+Simulated checkout. No real money is collected.|모의 결제입니다. 실제 금액은 청구되지 않습니다.
+Simulated deposit recorded. No real money was collected.|모의 예약금이 기록되었습니다. 실제 금액은 청구되지 않았습니다.
+No money is collected.|실제 금액은 청구되지 않습니다.
+This is not a payment receipt.|결제 영수증이 아닙니다.
+Other demo outcomes|다른 모의 결제 결과
+Simulate failure|결제 실패 시뮬레이션
+Simulate successful deposit|예약금 납부 성공 시뮬레이션
+Cancel checkout|결제 취소
+Checkout closed|결제 종료
+Confirm your reservation|예약 확정
+Submit the simulated deposit to confirm your reservation. No real money is collected.|모의 예약금을 제출하면 예약이 확정됩니다. 실제 금액은 청구되지 않습니다.
+A successful simulated deposit confirms your whole-shop reservation automatically.|모의 예약금 납부가 성공하면 전체 매장 대관 예약이 자동으로 확정됩니다.
+Failed or cancelled checkout can be retried before the deadline.|납부 기한 전에는 실패하거나 취소된 결제를 다시 시도할 수 있습니다.
+Whole-shop deposit activity will appear here.|전체 매장 대관 예약금 내역이 여기에 표시됩니다.
+No transactions yet.|아직 결제 내역이 없습니다.
+TRANSACTIONS|결제 내역
+MAKE A RESERVATION|예약하기
+SELECT YOUR EXPERIENCE|서비스 선택
+CHOOSE DATE & TIME|날짜 및 시간 선택
+SELECT YOUR BAYS|베이 선택
+YOUR DETAILS|예약자 정보
+REVIEW YOUR REQUEST|예약 요청 확인
+Booking steps|예약 단계
+Experience|서비스
+Date & time|날짜 및 시간
+Select bays|베이 선택
+Review|확인
+Previous month|이전 달
+Next month|다음 달
+Choose your times|이용 시간을 선택하세요
+Choose your session|세션을 선택하세요
+Time of day|시간대
+Session times, Asia/Manila|세션 시간, 마닐라 기준
+Choose one bay or bring your group together across several. Your whole selection is checked as one request. Click a bay or drag across available bays to select several.|베이 한 개 또는 여러 개를 한 번에 예약할 수 있습니다. 선택한 전체 일정의 이용 가능 여부를 함께 확인합니다. 베이를 클릭하거나 이용 가능한 베이 위로 드래그해 여러 개를 선택하세요.
+Availability checked on submission|제출 시 이용 가능 여부 확인
+I have read the|다음 내용을 읽었습니다.
+privacy policy|개인정보 처리방침
+and understand how my reservation details will be used.|예약 정보가 어떻게 사용되는지 이해했습니다.
+Whole-shop: a simulated 50% deposit within 60 minutes confirms automatically. No real money is collected.|전체 매장 대관: 60분 이내에 모의 예약금 50%를 납부하면 자동으로 확정됩니다. 실제 금액은 청구되지 않습니다.
+Whole-shop online checkout is unavailable. Contact the venue.|전체 매장 대관 온라인 결제를 이용할 수 없습니다. 매장에 문의해 주세요.
+SUBMIT REQUEST|예약 요청 제출
+VERIFY EMAIL TO SUBMIT|이메일 인증 후 제출
+MAKE IT YOURS.|나만의 라운드를 시작하세요.
+Continue as a guest or sign in.|비회원으로 계속하거나 로그인하세요.
+Continue as guest|비회원으로 계속
+You can complete this form as a guest, or|비회원으로 작성하거나 예약 전에
+before booking.|하실 수 있습니다.
+VERIFY YOUR BOOKING|예약 인증
+After verification, your request is submitted for review.|인증 후 예약 요청이 직원 검토를 위해 제출됩니다.
+Your code expired. No bays were held.|인증 코드가 만료되었습니다. 베이는 확보되지 않았습니다.
+Your current booking|현재 예약
+Your current booking stays reserved. The proposed time is subject to availability and staff approval.|현재 예약은 유지됩니다. 변경할 시간은 이용 가능 여부와 직원 승인에 따라 결정됩니다.
+Proposed schedule|변경할 일정
+Reason for the change|변경 사유
+Submit change request|일정 변경 요청 제출
+Request a schedule change|일정 변경 요청
+Request schedule change|일정 변경 요청
+Your original booking stays reserved until staff approves.|직원이 승인할 때까지 기존 예약은 유지됩니다.
+A cancellation request is awaiting staff review.|취소 요청이 직원 검토를 기다리고 있습니다.
+Staff review this cancellation. Arrange any deposit refund with the venue.|직원이 취소 요청을 검토합니다. 예약금 환불은 매장과 협의해 주세요.
+This cancels your reservation immediately and releases any remaining bay hold.|예약이 즉시 취소되며 남은 베이 확보가 해제됩니다.
+Online cancellation closes one hour before the session.|온라인 취소는 이용 시작 1시간 전까지 가능합니다.
+Request cancellation|취소 요청
+Cancel reservation|예약 취소
+Send cancellation request|취소 요청 보내기
+Confirm cancellation|취소 확정
+Choose another time|다른 시간 선택
+The original slot is unavailable. You can choose another time.|기존 시간대는 이용할 수 없습니다. 다른 시간을 선택해 주세요.
+The bay hold has been released. Staff can still review this request before the session starts. Confirmation depends on availability.|베이 확보가 해제되었습니다. 이용 시작 전까지 직원이 요청을 검토할 수 있으며, 이용 가능 여부에 따라 확정됩니다.
+The review clock pauses outside operating hours and resumes at the next opening.|영업시간 외에는 검토 시간이 멈추며 다음 영업 시작 시 다시 진행됩니다.
+Awaiting the simulated 50% deposit.|모의 예약금 50% 납부를 기다리고 있습니다.
+Awaiting staff review.|직원의 검토를 기다리고 있습니다.
+This request does not confirm your reservation.|이 요청만으로 예약이 확정되지 않습니다.
+Payment deadline|결제 기한
+Review deadline|검토 기한
+Recorded|기록됨
+Awaiting confirmation|확인 대기
+Request ID:|요청 ID:
+Error.|오류
+An error occurred while processing your request.|요청 처리 중 오류가 발생했습니다.
+Check the entered value.|입력 내용을 확인해 주세요.
+Choose a date|날짜 선택
+Choose your hours|이용 시간 선택
+Choose your bays|베이 선택
+hour|시간
+hours|시간
+ hours| 시간
+30 minutes|30분
+Sun|일
+Mon|월
+Tue|화
+Wed|수
+Thu|목
+Fri|금
+Sat|토
+Morning|오전
+Afternoon|오후
+Evening|저녁
+Tuesday class · 3–4 PM|화요일 수업 · 오후 3~4시
+Half day · 3–9 PM|반일 · 오후 3~9시
+Whole day · opening–midnight|종일 · 영업 시작~자정
+Choose an available program date in the calendar.|달력에서 이용 가능한 프로그램 날짜를 선택해 주세요.
+Choose your start time|시작 시간을 선택해 주세요
+Choose a date and start time to check availability.|날짜와 시작 시간을 선택하면 이용 가능 여부를 확인할 수 있습니다.
+Checking your selected session…|선택한 시간의 이용 가능 여부를 확인하고 있습니다…
+Choose a valid session within venue opening hours.|영업시간 내의 유효한 세션을 선택해 주세요.
+The rental quote could not be loaded. Please choose a valid rental session.|대관 견적을 불러오지 못했습니다. 유효한 대관 시간을 선택해 주세요.
+Available for your session|선택한 시간에 이용 가능
+Unavailable|이용 불가
+All active bays are available together.|모든 운영 베이를 함께 이용할 수 있습니다.
+Whole-shop rental is unavailable for this session. Choose another time.|이 시간에는 전체 매장 대관이 불가능합니다. 다른 시간을 선택해 주세요.
+Available bays for your complete session.|선택한 전체 시간에 이용 가능한 베이입니다.
+No bays available for this session. Choose another time.|이 시간에는 이용 가능한 베이가 없습니다. 다른 시간을 선택해 주세요.
+Your previous selection expired. Choose your session again.|이전 선택이 만료되었습니다. 이용 시간을 다시 선택해 주세요.
+This start time is no longer bookable. Choose a later time.|이 시작 시간은 더 이상 예약할 수 없습니다. 더 늦은 시간을 선택해 주세요.
+Current offerings from the venue.|매장의 현재 서비스입니다.
+We couldn’t refresh services. Please check rates with the venue; we’ll try again shortly.|서비스를 새로고침하지 못했습니다. 요금은 매장에 확인해 주세요. 잠시 후 다시 시도합니다.
+Services are temporarily unavailable. We’ll try again shortly, or contact the venue for current offerings.|현재 서비스를 불러올 수 없습니다. 잠시 후 다시 시도하거나 매장에 문의해 주세요.
+Enter your first name.|이름을 입력해 주세요.
+Enter your last name.|성을 입력해 주세요.
+Enter your contact number.|연락처를 입력해 주세요.
+Enter your email address.|이메일 주소를 입력해 주세요.
+Enter your password.|비밀번호를 입력해 주세요.
+Enter a valid email address.|올바른 이메일 주소를 입력해 주세요.
+Use letters for names; numbers are not allowed.|이름에는 문자를 사용해 주세요. 숫자는 사용할 수 없습니다.
+Use letters for names; spaces, apostrophes, periods and hyphens are allowed.|이름에는 문자를 사용해 주세요. 공백, 아포스트로피, 마침표, 하이픈을 사용할 수 있습니다.
+Enter a valid contact number using 7–15 digits only.|연락처는 숫자 7~15자리로 입력해 주세요.
+Enter a valid contact number using 7�15 digits only.|연락처는 숫자 7~15자리로 입력해 주세요.
+Use 12–128 characters with uppercase and lowercase letters, a number, and a symbol.|영문 대문자와 소문자, 숫자, 기호를 포함해 12~128자로 입력해 주세요.
+Passwords do not match.|비밀번호가 일치하지 않습니다.
+Password meets the requirements.|비밀번호가 요구 사항을 충족합니다.
+Use no more than {0} characters.|{0}자 이하로 입력해 주세요.
+Hide password|비밀번호 숨기기
+Show password|비밀번호 표시
+Hide confirm password|비밀번호 확인 숨기기
+Show confirm password|비밀번호 확인 표시
+Resend code ({0}s)|다시 보내기({0}초)
+Code expired. Resend a code.|인증 코드가 만료되었습니다. 새 코드를 요청해 주세요.
+Code expired. Return to your booking.|인증 코드가 만료되었습니다. 예약 작성으로 돌아가 주세요.
+Code expires in {0}:{1}.|인증 코드 만료까지 {0}:{1}
+Unable to sign in. Check your details or try again later.|로그인할 수 없습니다. 입력 내용을 확인하거나 잠시 후 다시 시도해 주세요.
+If an eligible account exists, password-reset instructions have been queued for delivery.|해당 계정이 있으면 비밀번호 재설정 안내가 발송됩니다.
+Your password has been reset. Sign in with your new password.|비밀번호가 재설정되었습니다. 새 비밀번호로 로그인해 주세요.
+This reset link is invalid or expired. Request a new link.|재설정 링크가 유효하지 않거나 만료되었습니다. 새 링크를 요청해 주세요.
+Your profile could not be saved. Reload the page and try again.|프로필을 저장하지 못했습니다. 페이지를 새로고침한 후 다시 시도해 주세요.
+Your profile has been updated.|프로필이 수정되었습니다.
+A new code has been queued. Check your inbox shortly.|새 인증 코드가 발송됩니다. 잠시 후 받은편지함을 확인해 주세요.
+Your saved request expired. Enter your booking details again.|저장된 요청이 만료되었습니다. 예약 내용을 다시 입력해 주세요.
+Your booking details were restored. Review availability and retry submission.|예약 내용이 복원되었습니다. 이용 가능 여부를 확인하고 다시 제출해 주세요.
+Verify your email before submitting a reservation.|예약을 제출하기 전에 이메일을 인증해 주세요.
+Booking email links are not configured. Please contact the venue.|예약 이메일 링크가 설정되지 않았습니다. 매장에 문의해 주세요.
+Demo payment outcome recorded. No money was collected.|모의 결제 결과가 기록되었습니다. 실제 금액은 청구되지 않았습니다.
+This hold has ended. The late demo result requires reconciliation; it does not confirm a booking.|베이 확보가 종료되었습니다. 기한 후 모의 결제 결과는 직원 확인이 필요하며 예약이 확정되지 않습니다.
+Online cancellation is available until one hour before the session for Pending or Confirmed bookings.|검토 대기 또는 확정 상태의 예약은 이용 시작 1시간 전까지 온라인으로 취소할 수 있습니다.
+Cancellation requested. Your booking remains allocated until staff approves. Deposit refunds are arranged with the venue.|취소가 요청되었습니다. 직원이 승인할 때까지 예약은 유지됩니다. 예약금 환불은 매장과 협의해 주세요.
+Reservation cancelled. Any remaining bay hold has been released.|예약이 취소되었습니다. 남아 있던 베이 확보가 해제되었습니다.
+This booking is not eligible for a schedule change.|일정을 변경할 수 없는 예약입니다.
+Change requested. Your original booking stays reserved until staff approves.|일정 변경이 요청되었습니다. 직원이 승인할 때까지 기존 예약은 유지됩니다.
+Verify your email before submitting a request.|요청을 제출하기 전에 이메일을 인증해 주세요.
+Choose a listed experience.|목록에서 서비스를 선택해 주세요.
+Choose a future reservation time.|미래의 예약 시간을 선택해 주세요.
+Whole-shop online checkout is not enabled. Please contact the venue.|전체 매장 대관 온라인 결제를 이용할 수 없습니다. 매장에 문의해 주세요.
+Complete your contact details, consent, and bay selection.|연락처, 동의 여부, 베이 선택을 모두 입력해 주세요.
+Your selected bays are unavailable. Choose another time or bay before submitting.|선택한 베이를 이용할 수 없습니다. 다른 시간이나 베이를 선택한 후 제출해 주세요.
+Choose a session after the staff review window finishes.|직원 검토 시간이 끝난 이후의 세션을 선택해 주세요.
+Checkout is unavailable.|결제를 이용할 수 없습니다.
+Choose a valid session date.|올바른 이용 날짜를 선택해 주세요.
+Choose at least 30 minutes in 30-minute increments within venue opening hours.|영업시간 내에서 30분 단위로 최소 30분 이상을 선택해 주세요.
+KPGA pro coaching is available Tuesday, Thursday and Saturday.|KPGA 프로 코칭은 화요일, 목요일, 토요일에 이용할 수 있습니다.
+KPGA lessons run Tuesday, 3–4 PM.|KPGA 레슨은 화요일 오후 3~4시에 진행됩니다.
+Choose half day (3–9 PM) or whole day (opening–midnight).|반일(오후 3~9시) 또는 종일(영업 시작~자정)을 선택해 주세요.
+Enter players and non-players for each selected bay.|선택한 각 베이의 플레이어와 비플레이어 수를 입력해 주세요.
+Include at least one player.|플레이어를 한 명 이상 포함해 주세요.
+The lesson program allows up to eight participants.|레슨 프로그램은 최대 8명이 참가할 수 있습니다.
+This booking is no longer available.|이 예약은 더 이상 이용할 수 없습니다.
+Choose a different start time or duration.|다른 시작 시간 또는 이용 시간을 선택해 주세요.
+Enter a reason of up to 500 characters and reload if this form is out of date.|사유를 500자 이하로 입력하고, 양식이 오래된 경우 새로고침해 주세요.
+This form was submitted with different details. Reload the booking.|다른 내용으로 이미 제출된 양식입니다. 예약을 새로고침해 주세요.
+This submission key was already used for another request. Reload the form.|다른 요청에 이미 사용된 제출 키입니다. 양식을 새로고침해 주세요.
+This submission key was already used for another request.|다른 요청에 이미 사용된 제출 키입니다.
+This submission was already received with different details. Start a new request to make another booking.|다른 내용으로 이미 접수된 요청입니다. 추가 예약은 새 요청으로 작성해 주세요.
+Please wait before requesting another code. You can request up to five codes per hour.|잠시 후 새 코드를 요청해 주세요. 시간당 최대 5번 요청할 수 있습니다.
+Wait one minute before requesting another code.|1분 후에 새 코드를 요청해 주세요.
+This code is invalid or expired. Request another code after five unsuccessful attempts.|인증 코드가 유효하지 않거나 만료되었습니다. 5회 실패한 경우 새 코드를 요청해 주세요.
+Staff review hours are not configured. Please contact the venue.|직원 검토 시간이 설정되지 않았습니다. 매장에 문의해 주세요.
+Online requests are unavailable until an approved staff review window and service policy apply. Please contact the venue.|승인된 직원 검토 시간과 서비스 정책이 적용될 때까지 온라인 요청을 이용할 수 없습니다. 매장에 문의해 주세요.
+ABOUT HOLE IN HUB|Hole In Hub 소개
+A NEW WAY TO PLAY|골프를 즐기는 새로운 방법
+STARTS HERE.|여기서 시작됩니다.
+THE HOLE IN HUB EXPERIENCE|Hole In Hub 체험
+PURE PLAY.|골프의 즐거움.
+GOOD COMPANY.|좋은 사람들과 함께.
+THE SIMULATOR BAYS|시뮬레이터 베이
+ROOM TO UNWIND|편안한 휴식 공간
+MORE THAN|골프를 넘어
+A ROUND.|함께하는 시간.
+MORE WAYS|더 다양한 방법으로
+TO PLAY|골프를 즐기세요
+MORE WAYS TO PLAY|더 다양한 골프 체험
+OFFERS & COACHING|혜택 및 코칭
+LEARN. PLAY.|배우고 즐기세요.
+COME TOGETHER.|함께 모이세요.
+EXPLORE THE EXPERIENCE|체험 둘러보기
+EXPLORE THE PROGRAMS|프로그램 둘러보기
+CONTACT & LOCATION|연락처 및 위치
+CONTACT THE VENUE|매장에 문의하기
+Explore availability|예약 가능 여부 보기
+Opening hours|영업시간
+Get directions|길 찾기
+Monday|월요일
+Tuesday–Sunday|화요일~일요일
+10 AM–midnight|오전 10시~자정
+11 AM–midnight|오전 11시~자정
+or|또는
+Choose this bay|이 베이 선택
+Your experience|이용 서비스
+Your date|이용 날짜
+Choose your time. Find your bay. From a solo session to a round with your people, it starts here.|시간과 베이를 선택하세요. 혼자서도, 친구들과 함께도 이곳에서 라운드를 시작할 수 있습니다.
+All rates are indicative and subject to venue confirmation. Bay bookings require venue approval; coaching also requires coach confirmation.|표시된 요금은 예상 요금이며 매장 확인이 필요합니다. 베이 예약은 매장 승인, 코칭은 코치 확인도 필요합니다.
+Adjust your selection|선택 변경
+Try another time|다른 시간 선택
+Explore another time|다른 시간 찾아보기
+Try another experience, or contact the venue for help arranging your visit.|다른 체험을 선택하거나 매장에 방문 일정을 문의하세요.
+There are no services to display right now. Contact the venue to plan your visit.|현재 표시할 서비스가 없습니다. 방문 계획은 매장에 문의하세요.
+Check the selection above. Your complete session must fit within opening hours.|위 선택을 확인하세요. 전체 이용 시간이 영업시간 안에 있어야 합니다.
+Availability reflects recorded reservations and venue blocks, not physical occupancy. Browsing does not hold a bay. Availability is checked again when you submit; online requests require a verified-email account and staff review.|예약 가능 여부는 기록된 예약과 운영 제한을 기준으로 합니다. 조회만으로는 베이가 확보되지 않습니다. 제출할 때 다시 확인하며, 온라인 요청에는 이메일 인증 및 직원 검토가 필요합니다.
+Submit anytime. Regular requests receive 30 minutes of staff review; VIP and coaching receive 60 minutes. The review clock pauses outside operating hours, and your selected bays are held until the review deadline. If review is overdue, confirmation depends on availability.|언제든 요청할 수 있습니다. 일반 베이는 30분, VIP와 코칭은 60분 동안 직원이 검토합니다. 영업시간 외에는 검토 시간이 멈추며, 검토 기한까지 선택한 베이가 확보됩니다. 기한이 지나면 이용 가능 여부에 따라 예약 확정이 결정됩니다.
+Mon–Fri: ₱600/hour before 3 PM; ₱800/hour from 3 PM–midnight. Weekends and holidays: ₱800/hour.|월~금 오후 3시 전 시간당 ₱600, 오후 3시~자정 시간당 ₱800. 주말 및 공휴일은 시간당 ₱800입니다.
+VIP 1 and VIP 2. ₱1,000/hour during opening hours.|VIP 1과 VIP 2. 영업시간 중 시간당 ₱1,000입니다.
+By reservation. Coach availability is confirmed by the venue.|예약제로 운영됩니다. 코치의 가능 여부는 매장에서 확인합니다.
+Tuesday, Thursday and Saturday. First visit selected here; arrange the remaining sessions with the coach.|화·목·토 운영. 첫 방문을 선택하고 이후 일정은 코치와 조율하세요.
+4 classes per month. Tuesday, 3–4 PM. Up to 8 participants. First class selected here; arrange remaining classes with the venue.|월 4회, 화요일 오후 3~4시, 최대 8명. 첫 수업을 선택하고 나머지 일정은 매장과 조율하세요.
+Mon–Thu: half day ₱40,000 / whole day ₱60,000. Fri–Sun and holidays: half day ₱50,000 / whole day ₱80,000. Half day: 3–9 PM; whole day: opening–midnight.|월~목 반일 ₱40,000, 종일 ₱60,000. 금~일 및 공휴일 반일 ₱50,000, 종일 ₱80,000. 반일은 오후 3~9시, 종일은 영업 시작~자정입니다.
+Code expires at {0} (Manila).|인증 코드는 마닐라 시간 {0}에 만료됩니다.
+Checked-In|체크인 완료
+Completed|이용 완료
+No-show recorded|미방문 기록
+Find your booking|내 예약 찾기
+Access your reservations|내 예약 조회
+Verify your booking|예약 인증
+Staff workspace|직원 업무 공간
+Find us in Quezon City|케손시티에서 만나세요
+Find the clubhouse|매장 위치 보기
+Find your next round, make time for a lesson, or bring the whole group.|라운드를 예약하거나 레슨을 받거나 단체로 방문해 보세요.
+Need help choosing a bay or arranging a private event? Speak with the venue about your group and preferred date.|베이 선택이나 단체 행사가 필요하신가요? 인원과 희망 날짜를 매장에 문의하세요.
+A round of golf. A space to unwind. A reason to get together. Hole In Hub brings virtual golf simulators and a lounge experience into one indoor destination in Quezon City.|골프를 즐기고 쉬어 가며 함께하는 시간. 케손시티의 Hole In Hub에서 실내 골프 시뮬레이터와 라운지를 만나보세요.
+Find a bay|베이 찾기
+FIND A BAY|베이 찾기
+FIND YOUR TIME|시간 선택
+PLAN YOUR ROUND|라운드 계획하기
+LET’S FIND ANOTHER TIME.|다른 시간을 찾아보세요.
+LET’S PLAN YOUR VISIT|방문 계획하기
+NO BAYS TO SHOW.|표시할 베이가 없습니다.
+A DIFFERENT TIME. THE SAME GREAT ROUND.|다른 시간에도 즐거운 라운드를.
+Bringing your people? Select several bays together in one request.|일행이 있나요? 한 번의 요청으로 여러 베이를 선택하세요.
+Ready to play?|시작할 준비가 되셨나요?
+Select the experience|체험 선택
+Check the reservation for the latest deposit status.|최신 예약금 상태는 예약 상세에서 확인하세요.
+Choose a time and plan your next visit.|시간을 선택하여 다음 방문을 계획하세요.
+Contact the clubhouse|매장에 문의하기
+Deposit deadline|예약금 납부 기한
+FOR YOUR NEXT ROUND.|다음 라운드를 위해.
+Finished, cancelled and expired requests will appear here.|이용 완료, 취소 및 만료된 예약이 여기에 표시됩니다.
+Five regular bays. Two VIP bays. One place to play.|일반 베이 5개와 VIP 베이 2개에서 골프를 즐기세요.
+MAKE ROOM|공간을 마련하세요
+No past reservations yet.|지난 예약이 없습니다.
+REQUEST RECEIVED|예약 요청 접수 완료
+RESERVATION CONFIRMED|예약 확정
+SIMULATOR BAY|시뮬레이터 베이
+Time to play|골프를 즐길 시간
+Unavailable for this time|이 시간에는 이용할 수 없습니다
+VIP EXPERIENCE|VIP 체험
+YOUR SPACE TO PLAY|골프를 즐기는 공간
+Your next round is waiting.|다음 라운드가 기다리고 있습니다.
+Your request is awaiting staff approval.|직원의 승인을 기다리고 있습니다.
+No guest reservations found for this email.|이 이메일로 등록된 비회원 예약이 없습니다.
+Email verified|이메일 인증 완료
+Verify your email|이메일을 인증해 주세요
+Your email is verified.|이메일 인증이 완료되었습니다.
+Not recorded|기록 없음
+BETTER TOGETHER|함께하면 더 즐겁습니다
+Bring your people. Reserve multiple bays together under one reservation.|일행과 함께 오세요. 한 번의 요청으로 여러 베이를 예약할 수 있습니다.
+Build your next round|다음 라운드 준비하기
+Get coached by the pros|프로의 코칭 받기
+Start a lifelong game|평생 즐길 골프 시작하기
+Step onto the turf and into your next round in Quezon City.|케손시티에서 다음 라운드를 시작하세요.
+Step onto the turf and into your next round. Five regular bays and two VIP bays make room for your game.|일반 베이 5개와 VIP 베이 2개에서 다음 라운드를 시작하세요.
+Take a little time between swings. Private spaces and the lounge make room for the moments beyond the game.|스윙 사이 잠시 쉬어 가세요. 프라이빗 공간과 라운지에서 골프 이외의 시간도 즐기실 수 있습니다.
+A shared experience. From the first swing to the last conversation.|첫 스윙부터 마지막 대화까지 함께하세요.
+Simulator bays, family rounds, and time together at Hole In Hub.|Hole In Hub에서 시뮬레이터 골프와 가족 라운드, 함께하는 시간을 즐기세요.
+From first swings to friendly challenges, discover the programs and experiences at Hole In Hub.|첫 스윙부터 친선 경기까지 Hole In Hub의 프로그램과 체험을 둘러보세요.
+Discover the programs shown in the venue's supplied posters. Confirm current dates, rates, availability, and terms with the venue.|안내 포스터에서 프로그램을 확인하세요. 최신 일정, 요금, 이용 가능 여부 및 조건은 매장에 문의하세요.
+Plan your visit to Hole In Hub in Quezon City. Get directions or reach out about coaching, group sessions and whole-shop bookings.|케손시티의 Hole In Hub 방문을 계획하세요. 길을 찾거나 코칭, 단체 이용 및 전체 대관을 문의하세요.
+On the third floor of the EK Building in Quezon City, Hole In Hub Golf & Lounge brings the game indoors. The bays are where you take your swings. The lounge is where you compare them. Come to practise one shot, take your first lesson or spend an evening playing with friends.|케손시티 EK 빌딩 3층의 Hole In Hub Golf & Lounge에서 실내 골프를 즐기세요. 베이에서 스윙하고 라운지에서 이야기를 나누세요. 연습, 첫 레슨, 친구들과의 저녁 라운드 모두 환영합니다.
+Account and reservation forms collect your name, email, contact number, selected services, attendance count, and booking details to manage your reservation request.|예약 요청을 관리하기 위해 계정 및 예약 양식에서 이름, 이메일, 연락처, 선택 서비스, 이용 인원, 예약 정보를 수집합니다.
+Your account-linked reservations are available to you and authorized venue staff. Email messages support account verification, password recovery, and reservation updates.|계정에 연결된 예약은 본인과 권한이 있는 매장 직원이 볼 수 있습니다. 이메일은 계정 인증, 비밀번호 복구 및 예약 안내에 사용됩니다.
+For questions about your information, contact|개인정보에 관한 문의는 다음 연락처로 보내 주세요.
+. Venue-approved retention terms and a complete privacy policy are required before production launch.|. 서비스 출시 전에 매장에서 승인한 보관 기간과 정식 개인정보 처리방침이 필요합니다.
+Your selected bays are held until the review deadline.|검토 기한까지 선택한 베이가 확보됩니다.
+Coach confirmation:|코치 확인:
+. Remaining package sessions are arranged with the venue.|. 남은 패키지 일정은 매장과 조율하세요.
+Staff review begins {0} Manila time.|직원 검토는 마닐라 시간 {0}에 시작합니다.
+Manila|마닐라
+minutes|분
+Queued|대기
+DepositReceived|예약금 수령
+AwaitingDeposit|예약금 대기
+NotRequired|필요 없음
+LatePayment|기한 후 결제
+CheckoutCancelled|결제 취소
+Failed|실패
+A little more room for your next round in VIP 1 or VIP 2.|VIP 1 또는 VIP 2에서 한층 더 여유롭게 라운드를 즐기세요.
+Make time for your game with a professional coaching session.|전문 코치와 함께 골프 실력을 키워 보세요.
+
+Service temporarily unavailable|서비스를 일시적으로 이용할 수 없습니다
+PLEASE TRY AGAIN SHORTLY|잠시 후 다시 시도해 주세요
+We cannot reach the booking service right now. Please try again shortly.|현재 예약 서비스에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.
+Your booking details are saved briefly so you can review and retry. If your request was already received, retrying will return its original receipt.|예약 정보가 잠시 저장됩니다. 내용을 확인한 후 다시 시도해 주세요. 이미 접수된 요청이라면 기존 접수 내역이 표시됩니다.
+Reference for support: {0}|문의용 참조 번호: {0}
+Try again|다시 시도
+Overview|개요
+Dashboard|대시보드
+Schedule|일정
+Review queue|검토 대기열
+Review queue, {0} awaiting review|검토 대기열, 검토 대기 {0}건
+Cancellations|취소 내역
+Cancellations, {0} pending|취소 내역, 대기 중인 요청 {0}건
+People|사용자
+Customers|고객
+Team & access|팀 및 권한
+Administration|관리
+Resources|시설
+Activity|활동 내역
+Notifications|알림
+Notifications, {0} new|알림, 새 알림 {0}건
+Venue management|매장 관리
+Daily report|일일 보고서
+Settings|설정
+Public website|고객 웹사이트
+Staff navigation|직원 메뉴
+Collapse sidebar|사이드바 접기
+Expand sidebar|사이드바 펼치기
+Close navigation|메뉴 닫기
+Close panel|패널 닫기
+Overdue|기한 초과
+Schedule changes|일정 변경
+Cancellation requests|취소 요청
+Deposits|예약금
+Expired requests|만료된 요청
+Delivery|발송 상태
+Delivery status|발송 상태
+Time, Manila|시간 (마닐라)
+Attempts|시도 횟수
+Action|작업
+New|새 알림
+No notifications|알림 없음
+Email delivery records will appear here.|이메일 발송 기록이 여기에 표시됩니다.
+Notification delivery|이메일 발송 내역
+Notification pages|알림 페이지
+All|전체
+Sending|발송 중
+Sent|발송 완료
+Suppressed|발송 제외
+Delivery timed out|발송 시간 초과
+Message content unavailable|메시지 내용을 불러올 수 없음
+Attempts exhausted|최대 시도 횟수 초과
+Delivery failed|발송 실패
+Page {0} · {1} shown|{0}페이지 · {1}건 표시
+Retry delivery|다시 발송
+Queue another delivery attempt for this email?|이 이메일을 다시 발송하도록 예약할까요?
+Queue retry|재발송 예약
+Email queued for retry|이메일 재발송이 예약되었습니다
+Email could not be retried|이메일을 재발송할 수 없습니다
+It may already be queued, or its booking or verification code is no longer eligible.|이미 재발송 대기 중이거나 예약 또는 인증 코드가 더 이상 유효하지 않을 수 있습니다.
+{0} requests|요청 {0}건
+
+Booking total|예약 총액
+Choose a session within this service’s available hours.|이 서비스의 이용 가능 시간 내에서 예약 시간을 선택해 주세요.
+The quote changed. Review the updated price and submit again.|요금이 변경되었습니다. 변경된 가격을 확인한 후 다시 제출해 주세요.
+This service is no longer available. Choose another experience.|이 서비스는 더 이상 예약할 수 없습니다. 다른 서비스를 선택해 주세요.
+Wait for the quote to finish loading.|요금 계산이 끝날 때까지 기다려 주세요.
+The quote could not be loaded. Select your bays again to retry.|요금을 불러오지 못했습니다. 베이를 다시 선택해 주세요.

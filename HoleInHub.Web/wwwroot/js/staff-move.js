@@ -370,7 +370,13 @@
             move.edgeTimer = setTimeout(advance, 100);
         } else if (!move.originalRows) gesture.hide();
     }
+    let blockedDrag;
     timeline.addEventListener('pointerdown', event => {
+        const restricted = event.target.closest('[data-move-restriction]');
+        if (restricted?.dataset.moveRestriction && event.button === 0) {
+            blockedDrag = { bar: restricted, pointer: event.pointerId, x: event.clientX, y: event.clientY };
+            return;
+        }
         const bar = event.target.closest('[data-move-booking]');
         if (!bar || move || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
         if (page.dataset.date && Date.parse(`${page.dataset.date}T${time(Number(bar.dataset.startMinute))}:00+08:00`) <= Date.now()) {
@@ -416,6 +422,14 @@
         if (move?.holdTimer || (event.pointerType === 'touch' && event.target.closest('[data-move-booking]'))) event.preventDefault();
     });
     timeline.addEventListener('pointermove', event => {
+        if (blockedDrag?.pointer === event.pointerId && !blockedDrag.rejected
+            && Math.hypot(event.clientX - blockedDrag.x, event.clientY - blockedDrag.y) >= 5) {
+            const bar = blockedDrag.bar;
+            blockedDrag.rejected = true;
+            shake(bar);
+            notify(bar.dataset.moveRestriction);
+            return;
+        }
         if (move?.pointer !== event.pointerId || move.held) return;
         if (!move.dragged && Math.hypot(event.clientX - move.origin, event.clientY - move.originY) < 5) return;
         clearTimeout(move.holdTimer);
@@ -427,6 +441,12 @@
         if (!move.batch) edgeAt(event);
     });
     timeline.addEventListener('pointerup', event => {
+        if (blockedDrag?.rejected && blockedDrag.pointer === event.pointerId) {
+            const suppress = click => { click.preventDefault(); click.stopImmediatePropagation(); };
+            timeline.addEventListener('click', suppress, { capture: true, once: true });
+            setTimeout(() => timeline.removeEventListener('click', suppress, true), 0);
+        }
+        blockedDrag = undefined;
         if (move?.pointer !== event.pointerId) return;
         const { bar, dragged, held } = move;
         move.pointer = undefined;
@@ -439,7 +459,7 @@
         setTimeout(() => timeline.removeEventListener('click', suppress, true), 0);
     });
     for (const type of ['pointercancel', 'lostpointercapture']) {
-        timeline.addEventListener(type, event => { if (move?.pointer === event.pointerId) restore(); });
+        timeline.addEventListener(type, event => { blockedDrag = undefined; if (move?.pointer === event.pointerId) restore(); });
     }
     timeline.addEventListener('keydown', event => {
         const bar = event.target.closest('[data-move-booking]');

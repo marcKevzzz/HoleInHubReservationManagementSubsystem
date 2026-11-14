@@ -1,0 +1,19 @@
+@model string
+@{
+    var adding = Model == "bay";
+}
+<fieldset class="resource-capacity">
+    <legend>Capacity</legend>
+    <div class="auth-input-wrap">
+        <input id="@(Model)-players" name="maxPlayers" type="number" min="1" step="1" placeholder=" " value="@(adding ? ViewData["BayMaxPlayers"] : null)" />
+        <label for="@(Model)-players">Max players</label>
+    </div>
+    <div class="auth-input-wrap">
+        <input id="@(Model)-total" name="maxTotalGuests" type="number" min="1" step="1" placeholder=" " value="@(adding ? ViewData["BayMaxTotalGuests"] : null)" />
+        <label for="@(Model)-total">Max total guests</label>
+    </div>
+    <div class="auth-input-wrap">
+        <input id="@(Model)-non-players" name="maxNonPlayers" type="number" min="0" step="1" placeholder=" " value="@(adding ? ViewData["BayMaxNonPlayers"] : null)" />
+        <label for="@(Model)-non-players">Max non-players (optional)</label>
+    </div>
+</fieldset>

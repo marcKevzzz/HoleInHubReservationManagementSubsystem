@@ -1,16 +1,25 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text.Json;
+using HoleInHub.Business.Reservations;
 using HoleInHub.Data.Services;
 namespace HoleInHub.Business.Services;
 
 public sealed record ServiceMedia(byte[] Content, string ContentType);
+public sealed class ServiceImpactException(string message, string acknowledgement) : Exception(message)
+{
+    public string Acknowledgement { get; } = acknowledgement;
+}
 public sealed record ServiceEdit(string Id, long Revision, string CommandId, bool Create, string Title, string Summary,
     string RateText, string Details, string BookingService, string Action, string ActionLabel, int Order, bool Active,
     string DepositType, decimal DepositValue, string[] Images)
 {
     public int? MaxPax { get; init; }
+    public ServicePricing? Pricing { get; init; }
+    public string BookingTypeName { get; init; } = "";
     public string[] ImageOrder { get; init; } = [];
+    public ServiceAvailabilityRule[]? AvailabilityRules { get; init; }
+    public string? ImpactAcknowledgement { get; init; }
 }
 public sealed partial class ServiceCatalog
 {
@@ -29,7 +38,7 @@ public sealed partial class ServiceCatalog
         Guid.NewGuid().ToString("N"), false, record.Title, record.Summary, record.RateText, record.Details,
         record.BookingService, record.Action, record.ActionLabel, record.Order, record.Active,
         record.DepositType, record.DepositValue, ImagePaths(record))
-    { MaxPax = record.MaxPax };
+    { MaxPax = record.MaxPax, Pricing = record.Pricing, BookingTypeName = record.BookingTypeName, AvailabilityRules = record.AvailabilityRules };
     public async Task<IReadOnlyList<ServiceEdit>> GetAllAsync(CancellationToken ct) =>
         (await persistence.GetAllAsync(ct)).Select(Edit).ToArray();
     public async Task<ServiceEdit?> GetAsync(string id, CancellationToken ct) =>
@@ -46,6 +55,11 @@ public sealed partial class ServiceCatalog
     }
     public static void Validate(ServiceEdit edit)
     {
+        if (edit.AvailabilityRules is { } availability) { Reservations.ServiceAvailabilityRules.Validate(availability); }
+        if (edit.BookingTypeName.Length > 80 || edit.BookingTypeName.Any(char.IsControl))
+        {
+            throw new ArgumentException("Use up to 80 characters for the booking type name.");
+        }
         if (edit.Id.Length is < 1 or > 80 || edit.Id.Any(c => !char.IsAsciiLetterOrDigit(c) && c != '-')
             || edit.Revision < 0 || !Guid.TryParseExact(edit.CommandId, "N", out _))
         {
@@ -62,6 +76,11 @@ public sealed partial class ServiceCatalog
         if (!BookingTypes.Contains(edit.BookingService) || edit.Action is not ("Book" or "Contact"))
         {
             throw new ArgumentException("Choose a supported booking type and customer action.");
+        }
+
+        if (edit.Pricing is not null)
+        {
+            PricingRules.Validate(edit.BookingService, edit.Pricing);
         }
 
         if (edit.DepositType is not ("None" or "Peso" or "Percentage") || edit.DepositType != "None"
@@ -146,7 +165,7 @@ public sealed partial class ServiceCatalog
             }
             paths = ordered;
         }
-        var commandHash = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(new { edit, paths, actor })));
+        var commandHash = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(new { edit = edit with { ImpactAcknowledgement = null }, paths, actor })));
         var record = new ServiceCatalogRecord
         {
             MaxPax = edit.MaxPax,
@@ -155,7 +174,10 @@ public sealed partial class ServiceCatalog
             Summary = edit.Summary.Trim(),
             Details = edit.Details.Trim(),
             RateText = edit.RateText.Trim(),
+            Pricing = edit.Pricing,
             BookingService = edit.BookingService,
+            AvailabilityRules = edit.AvailabilityRules,
+            BookingTypeName = edit.BookingTypeName.Trim(),
             Action = edit.Action,
             ActionLabel = edit.ActionLabel.Trim(),
             Order = edit.Order,
@@ -169,7 +191,27 @@ public sealed partial class ServiceCatalog
             UpdatedBy = actor,
             UpdatedUtc = DateTime.UtcNow
         };
-        await persistence.SaveAsync(record, edit.Revision, edit.Create, images, ct);
+        await persistence.SaveAsync(record, edit.Revision, edit.Create, images, ct, bookings =>
+        {
+            var affected = new List<string>();
+            foreach (var booking in bookings)
+            {
+                var local = TimeZoneInfo.ConvertTimeFromUtc(booking.StartUtc, Reservations.ReservationRules.Manila);
+                var duration = (int)(booking.EndUtc - booking.StartUtc).TotalMinutes;
+                try
+                {
+                    if (record.BookingService != booking.Service || record.MaxPax is int max && booking.Attendees > max)
+                    { affected.Add(booking.Reference); continue; }
+                    Reservations.ReservationService.PreviewServiceInterval(record, DateOnly.FromDateTime(local), TimeOnly.FromDateTime(local), duration, booking.Service);
+                }
+                catch (Reservations.ReservationValidationException) { affected.Add(booking.Reference); }
+            }
+            if (affected.Count == 0) { return; }
+            affected.Sort(StringComparer.Ordinal);
+            var acknowledgement = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(new { commandHash, affected })));
+            if (edit.ImpactAcknowledgement != acknowledgement)
+            { throw new ServiceImpactException($"{affected.Count} upcoming booking(s) fall outside the new rules: {string.Join(", ", affected.Take(10))}. Review them, then save again to confirm.", acknowledgement); }
+        });
     }
     public async Task SetStateAsync(string id, long revision, string commandId, string operation, string actor, CancellationToken ct)
     {

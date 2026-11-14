@@ -8,8 +8,8 @@ public sealed record BatchMoveRevision(string Id, long Revision);
 public sealed partial class ReservationPersistence
 {
     public async Task MoveStaffBatchAsync(IReadOnlyList<BatchMoveRevision> selected, string commandId, string hash,
-        string actor, string day, DateTime now, Func<ReservationRecord, (DateTime Start, DateTime End)> destination,
-        CancellationToken ct)
+        string actor, string day, DateTime now, Func<ReservationRecord, HoleInHub.Data.Services.ServiceCatalogRecord?, (DateTime Start, DateTime End)> destination,
+        CancellationToken ct, Action<ReservationRecord, IReadOnlyList<ResourceRecord>>? validateCapacity = null)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeout.CancelAfter(TimeSpan.FromSeconds(15));
@@ -48,12 +48,13 @@ public sealed partial class ReservationPersistence
                 {
                     throw new AllocationConflictException($"Booking {booking.Reference} changed. Reload the schedule.");
                 }
-                var (start, end) = destination(booking);
+                var (start, end) = destination(booking, await ReadAllocationServiceAsync(s, booking, token));
                 if (booking.ResourceIds.Length == 0 || booking.ResourceIds.Any(id =>
                     !catalog.TryGetValue(id, out var bay) || bay.Service != booking.Service))
                 {
                     throw new AllocationConflictException($"An assigned bay for {booking.Reference} is unavailable.");
                 }
+                validateCapacity?.Invoke(booking, booking.ResourceIds.Select(id => catalog[id]).ToArray());
 
                 var change = new ScheduleChangeRecord
                 {

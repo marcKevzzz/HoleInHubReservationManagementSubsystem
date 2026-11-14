@@ -9,13 +9,24 @@
 {
     <template data-staff-nav-template="@layout">
         <div class="staff-page-skeleton" data-skeleton-layout="@layout">
-            <div class="staff-skeleton-heading">
+            <div class="@(layout == "schedule" ? "staff-schedule-heading" : "staff-skeleton-heading")">
                 <span class="staff-skeleton-fill staff-skeleton-title"></span>
                 @if (layout == "dashboard")
                 {
                     <div class="dashboard-skeleton-toolbar"><span class="staff-skeleton-fill staff-skeleton-date"></span><span class="staff-skeleton-fill staff-skeleton-action"></span></div>
                 }
-                else if (layout is "schedule" or "customers" or "team" or "services" || layout == "settings" && User.IsInRole(StaffRoles.Admin))
+                else if (layout == "schedule")
+                {
+                    <div class="staff-schedule-actions">
+                        <span class="staff-skeleton-fill staff-skeleton-action"></span>
+                        @if (User.ManagesVenue())
+                        {
+                            <span class="staff-skeleton-fill staff-skeleton-block-action"></span>
+                            <span class="staff-skeleton-fill staff-skeleton-block-action"></span>
+                        }
+                    </div>
+                }
+                else if (layout is "customers" or "team" or "services" || layout == "settings" && User.IsInRole(StaffRoles.Admin))
                 {
                     <span class="staff-skeleton-fill staff-skeleton-action"></span>
                 }

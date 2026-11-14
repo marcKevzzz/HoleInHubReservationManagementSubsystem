@@ -1,6 +1,7 @@
 using System.Text.Json;
 using HoleInHub.Business.Reservations;
 using HoleInHub.Business.Services;
+using HoleInHubReservationManagementSubsystem.Localization;
 using HoleInHubReservationManagementSubsystem.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -22,7 +23,7 @@ public sealed class ServiceUnavailableFilter(ILogger<ServiceUnavailableFilter> l
         http.Response.Headers.CacheControl = "no-store"; http.Response.Headers["Referrer-Policy"] = "no-referrer";
         if (context.RouteData.Values["action"]?.ToString() is "CheckAvailability" or "RentalQuote")
         {
-            executed.Result = new ObjectResult(new { message = failure.Message, correlationId = http.TraceIdentifier }) { StatusCode = 503 };
+            executed.Result = new ObjectResult(new { message = CustomerText.T(failure.Message), correlationId = http.TraceIdentifier }) { StatusCode = 503 };
         }
         else if (context.Controller is Controller controller)
         {

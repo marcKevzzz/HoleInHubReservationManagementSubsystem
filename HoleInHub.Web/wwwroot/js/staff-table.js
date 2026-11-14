@@ -1,7 +1,19 @@
 (() => {
+    function closeButton(dialog) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'staff-icon-button panel-close';
+        const label = window.HoleInHubText?.t('Close panel') ?? 'Close panel';
+        button.setAttribute('aria-label', label);
+        button.title = label;
+        button.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>';
+        button.addEventListener('click', () => dialog.close());
+        return button;
+    }
     function confirmDecision(form, title, trigger, restore, context) {
         const dialog = document.createElement('dialog');
-        dialog.className = 'staff-row-details staff-workspace review-confirmation';
+        dialog.className = 'staff-row-details staff-workspace review-confirmation staff-detail-panel';
+        if (form.closest('.schedule-change-review')) dialog.classList.add('schedule-change-review');
         const heading = document.createElement('h2');
         heading.id = 'review-confirmation-title';
         heading.textContent = title;
@@ -9,7 +21,7 @@
         const cancel = document.createElement('button');
         cancel.type = 'button';
         cancel.className = 'button button-secondary';
-        cancel.textContent = 'Cancel';
+        cancel.textContent = window.HoleInHubText?.t('Cancel') ?? 'Cancel';
         cancel.autofocus = true;
         cancel.addEventListener('click', () => dialog.close());
         const footer = document.createElement('div');
@@ -23,7 +35,10 @@
             choice.addEventListener('change', update);
             update();
         }
-        dialog.append(heading);
+        const header = document.createElement('header');
+        header.className = 'staff-detail-panel-heading';
+        header.append(heading, closeButton(dialog));
+        dialog.append(header);
         if (context) dialog.append(context);
         dialog.append(form);
         dialog.addEventListener('close', () => {
@@ -31,7 +46,7 @@
             dialog.remove();
             trigger.focus({ preventScroll: true });
         });
-        document.body.append(dialog);
+        (document.querySelector('.staff-shell') || document.body).append(dialog);
         window.HoleInHubButtons?.mount(dialog);
         dialog.showModal();
     }
@@ -72,10 +87,10 @@
                     return;
                 }
                 const dialog = document.createElement('dialog');
-                dialog.className = 'staff-row-details';
+                dialog.className = 'staff-row-details staff-detail-panel';
                 const title = document.createElement('h2');
                 title.id = 'staff-row-details-title';
-                title.textContent = cells[0].textContent.trim();
+                title.textContent = row.dataset.resourceName || cells[0].textContent.trim();
                 dialog.setAttribute('aria-labelledby', title.id);
                 const facts = document.createElement('dl');
                 const headers = row.closest('table').querySelectorAll('thead th');
@@ -87,14 +102,12 @@
                     value.textContent = cell.textContent.trim();
                     facts.append(label, value);
                 });
-                const close = document.createElement('button');
-                close.type = 'button';
-                close.className = 'button button-secondary';
-                close.textContent = 'Close details';
-                close.addEventListener('click', () => dialog.close());
+                const header = document.createElement('header');
+                header.className = 'staff-detail-panel-heading';
+                header.append(title, closeButton(dialog));
                 dialog.addEventListener('close', () => { dialog.remove(); row.focus(); });
-                dialog.append(title, facts, close);
-                document.body.append(dialog);
+                dialog.append(header, facts);
+                (document.querySelector('.staff-shell') || document.body).append(dialog);
                 dialog.showModal();
             }
             row.addEventListener('click', navigate);

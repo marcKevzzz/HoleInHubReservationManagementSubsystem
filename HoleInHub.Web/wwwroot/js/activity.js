@@ -11,7 +11,7 @@
     const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
     const results = () => page.querySelector('[data-activity-results]');
     let listUrl = page.dataset.activityReturnUrl || results().dataset.listUrl;
-    let listRequest, detailRequest, debounce, trigger;
+    let listRequest, detailRequest, debounce, trigger, disposeButtons;
 
     function remember(kind, url, value) {
         try { sessionStorage.setItem('activity:' + kind + ':' + url, JSON.stringify(value)); } catch {}
@@ -39,6 +39,7 @@
         const url = new URL(value, location.origin);
         url.searchParams.delete('cursor');
         url.searchParams.delete('asOf');
+        url.searchParams.delete('page');
         return url;
     }
     function showDates() {
@@ -47,6 +48,8 @@
         for (const input of dates.querySelectorAll('input')) input.required = custom;
     }
     function syncFilters() {
+        const summary = page.querySelector('[data-activity-page-summary]');
+        if (summary) summary.textContent = results().dataset.pageSummary || '';
         if (!form) return;
         const url = new URL(listUrl, location.origin);
 
@@ -116,6 +119,8 @@
             if (!automatic && !reducedMotion.matches) updated.animate([{ opacity: .76 }, { opacity: 1 }], { duration: 150, easing: 'ease-out' });
             listUrl = updated.dataset.listUrl;
             syncFilters();
+            disposeButtons?.();
+            disposeButtons = window.HoleInHubButtons?.mount(updated);
             if (push) history.pushState({ activityList: true }, '', listUrl);
             else if (automatic) { history.replaceState({ activityList: true }, '', listUrl); window.scrollTo(0, previousY); }
             else restorePosition();
@@ -286,7 +291,7 @@
         url.pathname = '/staff/activity/' + encodeURIComponent(key);
         return url.pathname + url.search;
     }
-    window.addEventListener('pagehide', () => { clearTimeout(liveTimer); listRequest?.abort(); detailRequest?.abort(); });
+    window.addEventListener('pagehide', () => { clearTimeout(liveTimer); listRequest?.abort(); detailRequest?.abort(); disposeButtons?.(); });
     const initialUrl = new URL(location.href);
     const returnEvent = initialUrl.searchParams.get('focus');
     const selectedEvent = initialUrl.searchParams.get('open');

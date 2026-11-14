@@ -13,7 +13,7 @@ Reviewed against the working tree on 2026-11-04, including uncommitted feature w
 | Account booking | Verified accounts submit directly; profile contact defaults with legacy reservation fallback | Booking contact edits do not update the saved profile |
 | Allocation | Multi-bay and whole-shop booking, schedule blocks, persisted guards and idempotency | No separate allocation collection or named-coach scheduling model |
 | Staff review | Staff/Admin queue, approval/rejection, coach confirmation and cancellation decisions | No general staff-assisted creation, rescheduling, extension or attendance workflow |
-| Notifications | Durable SMTP outbox, verification, booking events, Pending alerts and expiry | No pre-start reminder, SMS/Viber provider or notification administration UI |
+| Notifications | Durable SMTP outbox, verification, booking events, Pending alerts and expiry, 15-minute reminders for eligible confirmed bookings, admin delivery tracking and retry | Delivery status records SMTP acceptance. Retrying after an interrupted send can duplicate email. |
 | Whole-shop checkout | Explicitly enabled Development/Demo simulation and 50% demonstration deposit | No real collection, authenticated live POS exchange or production payment confirmation |
 | Reports/inquiries | Public contact information | No operational reporting dashboard or predefined-answer chatbot |
 

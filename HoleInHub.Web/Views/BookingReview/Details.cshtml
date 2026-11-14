@@ -44,9 +44,10 @@
                 <a class="flow-back" asp-controller="Customers" asp-action="Details" asp-route-id="@customerId"
                    asp-route-view="@ViewData["CustomerView"]" asp-route-page="@ViewData["CustomerPage"]"><partial name="_BackArrow" /> Back to customer</a>
             }
-            else if (Model.FromQueue && Model.Queue.Filter == "cancellations")
+            else if (Model.FromQueue && Model.Queue.Filter is ("cancellations" or "cancellation-requests"))
             {
-                <a class="flow-back" asp-action="Cancellations" asp-route-day="@Model.Queue.Day" asp-route-sort="@Model.Queue.Sort">
+                <a class="flow-back" asp-action="Cancellations" asp-route-date="@date" asp-route-day="@Model.Queue.Day" asp-route-sort="@Model.Queue.Sort"
+                   asp-route-view="@(Model.Queue.Filter == "cancellation-requests" ? "requests" : null)">
                     <partial name="_BackArrow" /> Back to cancellations
                 </a>
             }
@@ -135,10 +136,6 @@
                     }
                     @if (!string.IsNullOrWhiteSpace(booking.Notes)) { <dt>Notes</dt><dd>@booking.Notes</dd> }
                 </dl>
-                @if (booking.PolicyVersion >= 2 && booking.Participants.Length == 0 && booking.Attendees > 6)
-                {
-                    <p class="review-callout"><span aria-hidden="true">ⓘ</span> Confirm the player distribution with the customer. Each bay allows up to six players.</p>
-                }
             </details>
             <details class="review-section review-disclosure" open="@(open && Model.Context.HasConflict)">
                 <summary>Bay availability</summary>

@@ -8,6 +8,8 @@ public sealed record ServiceCatalogItem(string Id, string Title, string ImagePat
     public int? MaxPax { get; init; }
     public string[] Images { get; init; } = [];
     public string DepositText { get; init; } = "";
+    public string BookingService { get; init; } = "";
+    public ServiceAvailabilityRule[]? AvailabilityRules { get; init; }
 }
 
 public interface IServiceCatalog
@@ -23,10 +25,11 @@ public sealed partial class ServiceCatalog(ServiceCatalogPersistence persistence
         return records.Select(x => new ServiceCatalogItem(x.Id, x.Title,
             x.ImagePath.StartsWith("/media/", StringComparison.Ordinal) && !x.ImagePath.Contains("..") && !x.ImagePath.Contains('\\')
                 ? x.ImagePath : "/media/facebook/venue-overview.webp",
-            x.Summary, x.RateText, x.Details,
-            x.BookingService == "WholeShop" || x.DepositType != "None" || x.Action == "Contact" ? "Contact the venue" : x.ActionLabel,
-            x.BookingService == "WholeShop" || x.DepositType != "None" || x.Action != "Book" ? "/Home/Contacts"
-                : "/Reservations/Create?service=" + Uri.EscapeDataString(x.BookingService))
-        { MaxPax = x.MaxPax, Images = ImagePaths(x), DepositText = FormatDeposit(x.DepositType, x.DepositValue) }).ToArray();
+            x.Summary, x.Pricing is { } pricing ? Reservations.PricingRules.Summary(x.BookingService, pricing) : x.RateText, x.Details,
+            "Request a booking", "/Reservations/Create?service=" + Uri.EscapeDataString(x.Id == x.BookingService ? x.BookingService : $"{x.BookingService}:{x.Id}"))
+        {
+            MaxPax = x.MaxPax, Images = ImagePaths(x), DepositText = FormatDeposit(x.DepositType, x.DepositValue),
+            BookingService = x.BookingService, AvailabilityRules = x.AvailabilityRules
+        }).ToArray();
     }
 }

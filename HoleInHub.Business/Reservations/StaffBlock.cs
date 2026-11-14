@@ -5,7 +5,7 @@ using HoleInHub.Data.Reservations;
 namespace HoleInHub.Business.Reservations;
 
 public sealed record StaffBlockRequest(string ResourceId, DateOnly Date, TimeOnly StartTime,
-    int DurationMinutes, string Reason, string IdempotencyKey);
+    int DurationMinutes, string Reason, string IdempotencyKey, bool WholeDay = false);
 
 public sealed record ScheduleBlockDto(string Id, string Location, DateTime StartUtc, DateTime EndUtc,
     string? Reason, string? CreatedBy, DateTime? CreatedUtc, string? ReleasedBy, DateTime? ReleasedUtc, string? ReleaseReason);
@@ -48,10 +48,16 @@ public sealed partial class ReservationService
             throw new ReservationValidationException("Enter a reason of 500 characters or fewer.");
         }
         request = request with { Reason = request.Reason.Trim() };
-        var (start, end) = ReservationRules.Interval(request.Date, request.StartTime, request.DurationMinutes);
+        var opening = ReservationRules.OpeningHour(request.Date.DayOfWeek) * 60;
+        var (start, end) = ReservationRules.Interval(request.Date,
+            request.WholeDay ? new TimeOnly(opening / 60, 0) : request.StartTime,
+            request.WholeDay ? 1440 - opening : request.DurationMinutes);
         var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime;
         var id = "admin-block:" + Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(new[] { actor, request.IdempotencyKey })));
-        var hash = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(request)));
+        // Keep retry hashes compatible with timed blocks saved before whole-day blocking was added.
+        var payload = request.WholeDay ? JsonSerializer.SerializeToUtf8Bytes(request) : JsonSerializer.SerializeToUtf8Bytes(new
+        { request.ResourceId, request.Date, request.StartTime, request.DurationMinutes, request.Reason, request.IdempotencyKey });
+        var hash = Convert.ToHexString(SHA256.HashData(payload));
         string Result(ScheduleBlock saved)
         {
             if (saved.SubmissionHash != hash)
@@ -67,7 +73,7 @@ public sealed partial class ReservationService
         // Check replays before the clock/catalog so an uncertain save can be retried later.
         var prior = await persistence.BlockByIdAsync(id, ct);
         if (prior is not null) { return Result(prior); }
-        if (start <= now.AddMinutes(-30))
+        if (request.WholeDay ? end <= now : start <= now.AddMinutes(-30))
         {
             throw new ReservationValidationException("Choose the current half-hour or a future time.");
         }
@@ -77,7 +83,7 @@ public sealed partial class ReservationService
             return Result(await persistence.InsertBlockAsync(new ScheduleBlock
             {
                 Id = id,
-                ResourceIds = [request.ResourceId],
+                ResourceIds = request.ResourceId == "*" ? [] : [request.ResourceId],
                 StartUtc = start,
                 EndUtc = end,
                 Reason = request.Reason,

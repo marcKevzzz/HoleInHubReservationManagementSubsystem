@@ -1,15 +1,16 @@
 @{ var staffAccess = ViewData["StaffAccess"] is true; }
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>@ViewData["Title"] | Hole In Hub</title>
+    <title>@T(ViewData["Title"]?.ToString() ?? "") | Hole In Hub</title>
     <script src="~/js/page-transition-start.js" asp-append-version="true"></script>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body class="auth-page@(staffAccess ? " staff-auth" : "")">
-    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <partial name="_CustomerLanguage" />
+<a class="skip-link" href="#main-content">@T("Skip to main content")</a>
     <div class="smooth-wrapper"><div class="smooth-content auth-shell">
         <aside class="auth-story" aria-label="Hole In Hub Golf and Lounge">
             <img class="auth-photo" src="~/media/facebook/venue-overview.webp" alt="" />
@@ -17,21 +18,22 @@
             @if (staffAccess)
             {
                 <div class="auth-story-copy">
-                    <h2>Staff workspace</h2>
+                    <h2>@T("Staff workspace")</h2>
                     <p>Reservations, arrivals, and the day ahead.</p>
                 </div>
             }
             else
             {
-                <div class="auth-story-copy"><h2>YOUR NEXT<br />ROUND STARTS HERE.</h2><p>A little practice. A little play.<br />Make time for both at Hole In Hub.</p></div>
-                <span class="auth-story-caption">GOLF &amp; LOUNGE</span>
+                <div class="auth-story-copy"><h2>@T("YOUR NEXT")<br />@T("ROUND STARTS HERE.")</h2><p>@T("A little practice. A little play.")<br />@T("Make time for both at Hole In Hub.")</p></div>
+                <span class="auth-story-caption">@T("GOLF & LOUNGE")</span>
             }
         </aside>
         <main id="main-content" class="auth-main" tabindex="-1">
+            @if (!staffAccess && ViewContext.RouteData.Values["action"]?.ToString() != "SignIn") { <partial name="_LanguageSwitch" /> }
             @RenderBody()
         </main>
     </div></div>
-    <script src="~/js/vendor/gsap.min.js" asp-append-version="true"></script><script src="~/js/ui-motion.js" asp-append-version="true"></script><script src="~/js/button-motion.js" asp-append-version="true"></script>
+    <script src="~/js/vendor/gsap.min.js" asp-append-version="true"></script><script src="~/js/ui-motion.js" asp-append-version="true"></script><script src="~/js/mobile-viewport.js" asp-append-version="true"></script><script src="~/js/button-motion.js" asp-append-version="true"></script>
     <partial name="_ScrollMotion" />
     <script src="~/js/contact-inputs.js" asp-append-version="true"></script>
     <script src="~/js/account.js" asp-append-version="true"></script>

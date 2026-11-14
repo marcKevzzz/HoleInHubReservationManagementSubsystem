@@ -11,6 +11,7 @@ public sealed class ActivityQuery
     public string Category { get; set; } = "All";
     public string Actor { get; set; } = "everyone";
     public string? Cursor { get; set; }
+    public int Page { get; set; } = 1;
     public DateTime? AsOf { get; set; }
     public string Url(string path = "/staff/activity", bool reset = false, string? actor = null, string? cursor = null) => QueryHelpers.AddQueryString(path, new Dictionary<string, string?>
     {
@@ -21,6 +22,7 @@ public sealed class ActivityQuery
         ["category"] = Category,
         ["actor"] = actor ?? Actor,
         ["cursor"] = reset ? null : cursor ?? Cursor,
+        ["page"] = reset ? null : (cursor is not null ? Math.Clamp(Page, 1, 100000) + 1 : Math.Clamp(Page, 1, 100000)).ToString(),
         ["asOf"] = reset ? null : AsOf?.ToString("O")
     });
 }

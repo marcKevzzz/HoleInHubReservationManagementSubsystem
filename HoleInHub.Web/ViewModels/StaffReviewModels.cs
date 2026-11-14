@@ -4,13 +4,16 @@ namespace HoleInHubReservationManagementSubsystem.ViewModels;
 
 public sealed record StaffReviewQueue(IReadOnlyList<ReservationDto> Items, string Filter, string? Day, string Sort, DateTime Now)
 {
+    public int Page { get; init; }
+    public bool HasMore { get; init; }
     public const string DefaultSection = "pending";
     public static IReadOnlyList<(string Key, string Label, string Title)> Sections { get; } =
     [
         ("pending", "Pending", "Pending reviews"),
         ("overdue", "Overdue", "Overdue requests"),
         ("changes", "Schedule changes", "Schedule changes"),
-        ("cancellations", "Cancellations", "Cancellation requests"),
+        ("cancellation-requests", "Cancellation requests", "Cancellation requests"),
+        ("cancellations", "Cancellations", "Cancelled reservations"),
         ("deposit", "Deposits", "Deposits"),
         ("expired", "Expired requests", "Expired requests")
     ];
@@ -22,6 +25,7 @@ public sealed record StaffReviewQueue(IReadOnlyList<ReservationDto> Items, strin
     {
         get
         {
+            if (Page > 0) { return Items; }
             var matches = Items.Where(x => (Day is null || Local(x.StartUtc).ToString("yyyy-MM-dd") == Day) && Matches(x));
             return Sort == "session"
                 ? matches.OrderBy(x => !Overdue(x)).ThenBy(x => x.StartUtc)
@@ -34,6 +38,8 @@ public sealed record StaffReviewQueue(IReadOnlyList<ReservationDto> Items, strin
     private bool Matches(ReservationDto booking) => Filter switch
     {
         "expired" => booking.Status == "Expired",
+        "cancellations" => booking.Status == "Cancelled",
+        "cancellation-requests" => booking.CancellationRequested,
         "overdue" => ReservationService.IsReviewOverdue(booking, Now),
         _ => Type(booking) == Filter && !(Filter == "pending" && ReservationService.IsReviewOverdue(booking, Now))
     };

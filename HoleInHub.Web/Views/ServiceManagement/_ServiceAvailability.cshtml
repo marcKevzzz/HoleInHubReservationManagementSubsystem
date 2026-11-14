@@ -1,0 +1,18 @@
+@model ServiceEditorForm
+<details id="service-availability" class="service-configuration-section service-disclosure" data-service-availability>
+    <summary>Availability</summary>
+    <div class="service-configuration-content">
+        <input type="hidden" name="EditAvailability" value="true" />
+        <p class="service-editor-note">Date-only rules limit bookings to those dates. No rules? Venue hours apply (Manila time).</p>
+        <div data-availability-rows>
+            @for (var i = 0; i < Model.Availability.Count; i++)
+            {
+                <partial name="_ServiceAvailabilityRow" model="(i.ToString(System.Globalization.CultureInfo.InvariantCulture), Model.Availability[i])" />
+            }
+        </div>
+        <template data-availability-template>
+            <partial name="_ServiceAvailabilityRow" model='("__index__", new ServiceAvailabilityRow { Weekday = 2 })' />
+        </template>
+        <button type="button" class="button button-secondary" data-add-availability data-action-icon="plus">Add availability</button>
+    </div>
+</details>

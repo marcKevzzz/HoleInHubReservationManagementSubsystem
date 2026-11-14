@@ -323,8 +323,14 @@ public sealed class GuestBookingFlowTests
                 ["reason"] = decision == "reject" ? "Venue cannot accommodate this request." : "",
                 ["fromQueue"] = "true"
             };
+            if (decision == "approve")
+            {
+                decisionFields["participants[0].ResourceId"] = record.ResourceIds[0];
+                decisionFields["participants[0].Players"] = "1";
+                decisionFields["participants[0].NonPlayers"] = (record.Attendees - 1).ToString();
+            }
             var decided = await staffClient.PostAsync("/BookingReview/Decide/" + record.Id, new FormUrlEncodedContent(decisionFields));
-            Assert.Equal(HttpStatusCode.Redirect, decided.StatusCode);
+            Assert.True(decided.StatusCode == HttpStatusCode.Redirect, (await decided.Content.ReadAsStringAsync())[..Math.Min(1200, (await decided.Content.ReadAsStringAsync()).Length)]);
             var destination = decided.Headers.Location!.ToString();
             Assert.Contains("fromQueue=True", destination, StringComparison.OrdinalIgnoreCase);
             var feedback = await staffClient.GetStringAsync(destination);

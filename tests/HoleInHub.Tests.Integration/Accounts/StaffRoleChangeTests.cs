@@ -215,15 +215,19 @@ public sealed class StaffRoleChangeTests(MongoDbFixture fixture) : IClassFixture
         await audit.InsertManyAsync(records);
 
         var first = await service.GetRoleActivityAsync(1, default);
-        Assert.Equal(50, first.Entries.Count);
+        Assert.Equal(20, first.Entries.Count);
         Assert.True(first.HasMore);
         Assert.Equal("Change 50", first.Entries[0].Reason);
         Assert.Equal(actor.Email, first.Entries[0].Actor);
         Assert.Equal("missing-account", first.Entries[0].Target);
 
         var second = await service.GetRoleActivityAsync(2, default);
-        Assert.False(second.HasMore);
-        Assert.Equal("Change 0", Assert.Single(second.Entries).Reason);
+        Assert.True(second.HasMore);
+        Assert.Equal(20, second.Entries.Count);
+        var third = await service.GetRoleActivityAsync(3, default);
+        Assert.False(third.HasMore);
+        Assert.Equal(11, third.Entries.Count);
+        Assert.Equal("Change 0", third.Entries.Last().Reason);
     }
 
     private async Task<(AccountPersistence, AccountService, IMongoCollection<BsonDocument>)> SetUpAsync()

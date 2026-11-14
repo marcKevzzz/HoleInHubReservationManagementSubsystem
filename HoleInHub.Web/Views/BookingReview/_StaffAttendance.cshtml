@@ -13,7 +13,15 @@
     };
 }
 <section class="review-section review-attendance" aria-labelledby="attendance-heading">
-    <div class="attendance-heading"><h2 id="attendance-heading">Attendance</h2><span class="staff-status" data-status="@(checkout ? "Checked-In" : booking.Status)">@(checkout ? "Checked in" : booking.Status == "Confirmed" ? "Awaiting arrival" : booking.Status)</span></div>
+    <div class="attendance-heading"><div class="attendance-title"><h2 id="attendance-heading">Attendance</h2>
+    @if (Model.Context.NeedsFollowUp)
+    {
+        <span class="attendance-help">
+            <button type="button" class="staff-icon-button" aria-label="Arrival follow-up information" aria-describedby="attendance-follow-up-help"><partial name="_StaffIcon" model='"info"' /></button>
+            <span class="attendance-tooltip" id="attendance-follow-up-help" role="tooltip">Guest has not checked in. Contact them to confirm arrival.</span>
+        </span>
+    }
+    </div><span class="staff-status" data-status="@(checkout ? "Checked-In" : booking.Status)">@(checkout ? "Checked in" : booking.Status == "Confirmed" ? "Awaiting arrival" : booking.Status)</span></div>
     <div asp-validation-summary="All" class="staff-error" role="alert"></div>
     @if (available)
     {
@@ -46,5 +54,4 @@
     {
         <p class="attendance-note">@(booking.Status == "Completed" ? "Guest checked out." : "No attendance action is available.")</p>
     }
-    @if (Model.Context.NeedsFollowUp) { <p class="review-callout">Guest has not checked in. Contact them to confirm arrival.</p> }
 </section>
