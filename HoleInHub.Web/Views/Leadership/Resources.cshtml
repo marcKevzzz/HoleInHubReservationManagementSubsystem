@@ -1,40 +1,57 @@
 @model IReadOnlyList<HoleInHub.Business.Reservations.ResourceDirectoryEntry>
 @{
     ViewData["Title"] = "Resources";
-    ViewData["LeadershipPage"] = "Resources";
 }
-<section class="staff-workspace staff-review leadership-page">
-    <header class="staff-workspace-heading"><h1>Resources</h1><p>Manage permanent bay inventory. For a temporary closure, use venue availability.</p></header>
-    @if (TempData["ResourceMessage"] is string message) { <p class="review-summary" role="status">@message</p> }
+<section class="staff-workspace resource-admin">
+    <header class="staff-workspace-heading people-directory-heading">
+        <h1>Resources</h1><a class="button" href="#add-bay" data-resource-add>Add bay</a>
+    </header>
     <div asp-validation-summary="All" class="staff-error" role="alert"></div>
-    <section class="review-section leadership-section">
-        <h2>Add a bay</h2>
-        <form method="post" asp-action="AddBay" class="review-filter-form">
-            <label>Bay name <input name="name" maxlength="80" required /></label>
-            <label>Bay ID <input name="id" maxlength="32" placeholder="bay-8" required /></label>
-            <label>Type <select name="service"><option>Regular</option><option>VIP</option></select></label>
-            <button class="button" type="submit" data-no-icon>Add bay</button>
-        </form>
-    </section>
-    <div class="leadership-table" tabindex="0" role="region" aria-label="Bay inventory">
-        <table>
-            <thead><tr><th scope="col">Bay</th><th scope="col">Type</th><th scope="col">Status</th><th scope="col">Action</th></tr></thead>
-            <tbody>
+    @if (Model.Count == 0)
+    {
+        <partial name="_StaffEmptyState" model='("resources", "No bays yet", "Add a regular or VIP bay to your inventory.", (string?)null, (string?)null)' />
+    }
+    else
+    {
+        <div class="resource-table" role="region" aria-label="Bay inventory" tabindex="0">
+            <table>
+                <thead><tr><th scope="col">Bay</th><th scope="col">Type</th><th scope="col">Status</th><th scope="col" class="resource-action-heading">Actions</th></tr></thead>
+                <tbody>
                 @foreach (var bay in Model)
                 {
                     <tr>
-                        <th scope="row">@bay.Name <small>@bay.Id</small></th><td>@bay.Service</td>
+                        <th scope="row"><span class="resource-identity"><span class="resource-symbol" aria-hidden="true"><partial name="_StaffIcon" model='"resources"' /></span><span>@bay.Name<small>@bay.Id</small></span></span></th>
+                        <td>@bay.Service</td>
                         <td><span class="staff-status" data-status="@(bay.Active ? "Confirmed" : "Completed")">@(bay.Active ? "Active" : "Retired")</span></td>
-                        <td>
-                            <form method="post" asp-action="SetBayActive">
-                                <input type="hidden" name="id" value="@bay.Id" />
-                                <input type="hidden" name="active" value="@(bay.Active ? "false" : "true")" />
-                                <button class="button button-secondary" type="submit" aria-label="@(bay.Active ? $"Retire {bay.Name}" : $"Restore {bay.Name}")" data-no-icon>@(bay.Active ? "Retire" : "Restore")</button>
+                        <td class="resource-actions">
+                            <form method="post" asp-action="SetBayActive" data-resource-state data-bay-name="@bay.Name" data-bay-id="@bay.Id">
+                                <input type="hidden" name="id" value="@bay.Id" /><input type="hidden" name="active" value="@(bay.Active ? "false" : "true")" />
+                                <button class="resource-action" type="submit" aria-label="@(bay.Active ? $"Retire {bay.Name} ({bay.Id})" : $"Restore {bay.Name} ({bay.Id})")"><partial name="_StaffIcon" model='@(bay.Active ? "view-off" : "refresh")' /><span>@(bay.Active ? "Retire" : "Restore")</span></button>
                             </form>
                         </td>
                     </tr>
                 }
-            </tbody>
-        </table>
-    </div>
+                </tbody>
+            </table>
+        </div>
+    }
+    <section id="add-bay" class="resource-add-content" data-resource-add-content>
+        <h2 id="resource-add-title">Add a bay</h2>
+        <p>Choose a permanent ID for the bay. Use venue availability for temporary closures.</p>
+        <form method="post" asp-action="AddBay" class="resource-form" data-resource-form>
+            <label for="bay-name">Bay name</label><input id="bay-name" name="name" maxlength="80" required value="@ViewData["BayName"]" autocomplete="off" />
+            <label for="bay-id">Bay ID</label><input id="bay-id" name="id" maxlength="32" pattern="[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*" required value="@ViewData["BayId"]" aria-describedby="bay-id-help" placeholder="e.g. bay-9" autocomplete="off" />
+            <small id="bay-id-help">Unique letters, numbers or hyphens. Saved in lowercase.</small>
+            <label for="bay-service">Type</label><select id="bay-service" name="service"><option selected="@(ViewData["BayService"] as string != "VIP")">Regular</option><option selected="@(ViewData["BayService"] as string == "VIP")">VIP</option></select>
+            <p class="staff-error" data-resource-error role="alert" hidden></p>
+            <div class="logout-actions"><button class="button button-tertiary" type="button" data-resource-cancel hidden>Cancel</button><button class="button" type="submit">Add bay</button></div>
+        </form>
+    </section>
+    <dialog class="logout-confirmation resource-add-dialog" data-resource-add-dialog aria-labelledby="resource-add-title"></dialog>
+    <dialog class="logout-confirmation" data-resource-confirm aria-labelledby="resource-confirm-title" aria-describedby="resource-confirm-description">
+        <h2 id="resource-confirm-title"></h2><p id="resource-confirm-description"></p>
+        <p class="staff-error" data-resource-error role="alert" hidden></p>
+        <div class="logout-actions"><button class="button button-tertiary" type="button" data-resource-cancel autofocus>Cancel</button><button class="button" type="button" data-resource-commit>Confirm</button></div>
+    </dialog>
 </section>
+@section Scripts { <script src="~/js/resource-admin.js" asp-append-version="true"></script> }

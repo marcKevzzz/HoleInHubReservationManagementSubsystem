@@ -18,6 +18,13 @@ public sealed class ActivityService(ActivityPersistence persistence, TimeProvide
     private static readonly TimeZoneInfo Manila = TimeZoneInfo.FindSystemTimeZoneById("Asia/Manila");
     private static readonly string[] Categories = ["All", "Reservations", "Customers", "Schedule", "Access"];
 
+    public async Task<IReadOnlyList<ActivityEntry>> LatestAsync(bool includeAccess, CancellationToken ct)
+    {
+        var now = clock.GetUtcNow().UtcDateTime;
+        var rows = await persistence.QueryAsync(new(DateTime.UnixEpoch, DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc), now, null, null, null, null), includeAccess, ct, limit: 5);
+        return rows.Take(5).Select(Map).ToArray();
+    }
+
     public async Task<ActivityPage> QueryAsync(ActivityFilter filter, bool includeAccess, string actorId, CancellationToken ct)
     {
         var query = Validate(filter, includeAccess, actorId, clock.GetUtcNow().UtcDateTime);

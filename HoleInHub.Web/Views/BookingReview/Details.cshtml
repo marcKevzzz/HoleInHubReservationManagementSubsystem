@@ -34,7 +34,12 @@
     <div class="review-top-nav">
         @if (activityReturn is null)
         {
-            if (ViewData["CustomerId"] is string customerId)
+            var dashboardReturn = Context.Request.Query["returnDashboard"].ToString();
+            if (Url.IsLocalUrl(dashboardReturn) && (dashboardReturn == "/staff/dashboard" || dashboardReturn.StartsWith("/staff/dashboard?", StringComparison.Ordinal)))
+            {
+                <a class="flow-back" href="@dashboardReturn"><partial name="_BackArrow" /> Back to dashboard</a>
+            }
+            else if (ViewData["CustomerId"] is string customerId)
             {
                 <a class="flow-back" asp-controller="Customers" asp-action="Details" asp-route-id="@customerId"
                    asp-route-view="@ViewData["CustomerView"]" asp-route-page="@ViewData["CustomerPage"]"><partial name="_BackArrow" /> Back to customer</a>

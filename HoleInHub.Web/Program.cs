@@ -12,6 +12,8 @@ builder.Services.AddControllersWithViews(options => options.Filters.Add<HoleInHu
 builder.Services.AddHealthChecks();
 builder.Services.AddCustomerAccounts(builder.Configuration, builder.Environment);
 builder.Services.AddScoped<GuestReservationSession>();
+builder.Services.AddSingleton<HoleInHub.Web.Live.WorkspaceUpdates>();
+builder.Services.AddHostedService<HoleInHub.Web.Live.WorkspaceChangeWorker>();
 
 var app = builder.Build();
 
@@ -62,6 +64,14 @@ app.UseRouting();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+app.Use(async (context, next) =>
+{
+    await next();
+    if (HttpMethods.IsPost(context.Request.Method) && context.Response.StatusCode is >= 200 and < 400)
+    {
+        context.RequestServices.GetRequiredService<HoleInHub.Web.Live.WorkspaceUpdates>().Publish();
+    }
+});
 
 // Liveness probe - returns 200 if process is listening
 app.MapGet("/health/live", () => Results.Ok(new
