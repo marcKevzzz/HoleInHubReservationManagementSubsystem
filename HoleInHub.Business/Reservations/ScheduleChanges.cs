@@ -42,14 +42,15 @@ public sealed partial class ReservationService
         ValidateTimelineServiceChange(booking.Service, target?.Service ?? booking.Service, booking.ResourceIds.Length, confirmVipUpgrade);
         var resources = booking.ResourceIds.Select(resource => resource == sourceResourceId ? resourceId! : resource).ToArray();
         var duration = (int)(booking.EndUtc - booking.StartUtc).TotalMinutes;
-        var (start, end) = ReservationRules.PreviewInterval(date, time, duration, booking.Service);
+        var (start, end) = await PreviewBookingIntervalAsync(date, time, duration,
+            upgrading ? "VIP" : booking.Service, ct, upgrading ? null : booking.ServiceEntryId, existingBooking: !upgrading);
         var now = (clock ?? TimeProvider.System).GetUtcNow();
         var proposal = new ScheduleChangeRecord { Id = commandId, PayloadHash = hash, StartUtc = start, EndUtc = end };
         try
         {
             await persistence.DecideScheduleChangeAsync(id, commandId, revision, true, resources, actor,
                 upgrading ? $"Regular to VIP upgrade: {sourceResourceId} to {resourceId}. Staff confirmed customer agreement to VIP pricing." : "Moved on the staff timeline.",
-                now.UtcDateTime, ct, proposal, upgrading);
+                now.UtcDateTime, ct, proposal, upgrading, validateCapacity: ValidateStoredCapacity, validateSession: ValidateChangedSession);
         }
         catch (AllocationConflictException error) { throw new ReservationValidationException(error.Message); }
     }
@@ -65,9 +66,16 @@ public sealed partial class ReservationService
     public static bool CanRequestScheduleChange(ReservationDto booking, DateTime now) =>
         CanMoveStaffBooking(booking, now) && booking.StartUtc >= now.AddHours(1);
 
-    public static bool CanMoveStaffBooking(ReservationDto booking, DateTime now) =>
-        booking.Status == "Confirmed" && booking.Service is ("Regular" or "VIP") && !booking.CancellationRequested
-        && booking.ScheduleChange?.Status != "Pending" && booking.StartUtc > now;
+    public static bool CanMoveStaffBooking(ReservationDto booking, DateTime now) => StaffMoveRestriction(booking, now) is null;
+
+    private static string? StaffMoveRestriction(ReservationDto booking, DateTime now)
+    {
+        if (booking.StartUtc <= now) { return "This reservation has already started and cannot be moved."; }
+        if (booking.Status != "Confirmed") { return "Only confirmed reservations can be moved."; }
+        if (booking.Service is not ("Regular" or "VIP")) { return "Only Regular and VIP bookings can be moved on the timeline."; }
+        if (booking.CancellationRequested) { return "Resolve the pending cancellation request before moving this reservation."; }
+        return booking.ScheduleChange?.Status == "Pending" ? "Resolve the pending schedule change before moving this reservation." : null;
+    }
 
     public async Task RequestScheduleChangeAsync(RequestScheduleChange command, string actor, CancellationToken ct)
     {
@@ -86,7 +94,7 @@ public sealed partial class ReservationService
             return;
         }
         var booking = Map(saved);
-        var (start, end) = ReservationRules.PreviewInterval(command.Date, command.StartTime, command.DurationMinutes, booking.Service);
+        var (start, end) = await PreviewBookingIntervalAsync(command.Date, command.StartTime, command.DurationMinutes, booking.Service, ct, booking.ServiceEntryId, existingBooking: true);
         if (start == booking.StartUtc && end == booking.EndUtc)
         {
             throw new ReservationValidationException("Choose a different start time or duration.");
@@ -122,18 +130,8 @@ public sealed partial class ReservationService
         }
         try
         {
-            if (approve)
-            {
-                var booking = await GetStaffAsync(id, ct)
-                    ?? throw new ReservationValidationException("This booking is no longer available.");
-                if (booking.Participants.Length > 0)
-                {
-                    BookingRules.ValidateParticipants(booking.Service, booking.ResourceIds, booking.Participants);
-                }
-                BookingRules.ValidateGuests(booking.Service, resources, booking.Attendees);
-            }
             return await persistence.DecideScheduleChangeAsync(id, proposal, revision, approve, resources, actor, reason?.Trim() ?? "",
-                (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime, ct);
+                (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime, ct, validateCapacity: ValidateStoredCapacity, validateSession: ValidateChangedSession);
         }
         catch (AllocationConflictException error) { throw new ReservationValidationException(error.Message); }
     }

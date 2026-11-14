@@ -24,6 +24,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<HoleInHub.Business.Reservations.ReservationService>();
         services.AddScoped<HoleInHub.Business.Reservations.GuestBookingService>();
         services.AddScoped<HoleInHub.Business.Accounts.EmailVerificationService>();
+        services.AddScoped<HoleInHub.Business.Accounts.NotificationDeliveryService>();
 
         return services;
     }

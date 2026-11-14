@@ -7,7 +7,8 @@
     <a class="flow-back" asp-action="Index" asp-route-date="@Model.Date?.ToString("yyyy-MM-dd")"><partial name="_BackArrow" /> Back to reservations</a>
     <header class="staff-workspace-heading">
         <h1>Block time</h1>
-        <p>Keep one bay free for maintenance or another staff activity.</p>
+        <p>Block a bay or the venue for maintenance, closures or staff activities.</p>
     </header>
     <partial name="_StaffBlockForm" model="Model" />
 </div>
+@section Scripts { <script src="~/js/staff-block.js" asp-append-version="true"></script> }

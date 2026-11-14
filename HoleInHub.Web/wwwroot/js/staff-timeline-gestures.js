@@ -1,6 +1,6 @@
 (() => {
     function mount() {
-    const zoomWidth = (width, delta, minimum = 68) => Math.max(minimum, Math.min(minimum * 3, width * Math.exp(-delta * .002)));
+    const zoomWidth = (width, delta, minimum = 68) => Math.max(minimum, Math.min(minimum * 5, width * Math.exp(-delta * .002)));
     const adjacentDay = (day, direction) => {
         const date = new Date(day + 'T12:00:00Z');
         date.setUTCDate(date.getUTCDate() + direction);

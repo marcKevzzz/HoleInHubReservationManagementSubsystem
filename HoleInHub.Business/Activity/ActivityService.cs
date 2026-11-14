@@ -18,17 +18,17 @@ public sealed class ActivityService(ActivityPersistence persistence, TimeProvide
     private static readonly TimeZoneInfo Manila = TimeZoneInfo.FindSystemTimeZoneById("Asia/Manila");
     private static readonly string[] Categories = ["All", "Reservations", "Customers", "Schedule", "Access"];
 
-    public async Task<IReadOnlyList<ActivityEntry>> LatestAsync(bool includeAccess, CancellationToken ct)
+    public async Task<IReadOnlyList<ActivityEntry>> LatestAsync(DateOnly from, DateOnly to, bool includeAccess, CancellationToken ct)
     {
-        var now = clock.GetUtcNow().UtcDateTime;
-        var rows = await persistence.QueryAsync(new(DateTime.UnixEpoch, DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc), now, null, null, null, null), includeAccess, ct, limit: 5);
+        var query = Validate(new(from, to), includeAccess, "", clock.GetUtcNow().UtcDateTime);
+        var rows = await persistence.QueryAsync(query, includeAccess, ct, limit: 5);
         return rows.Take(5).Select(Map).ToArray();
     }
 
     public async Task<ActivityPage> QueryAsync(ActivityFilter filter, bool includeAccess, string actorId, CancellationToken ct)
     {
         var query = Validate(filter, includeAccess, actorId, clock.GetUtcNow().UtcDateTime);
-        var rows = await persistence.QueryAsync(query, includeAccess, ct);
+        var rows = await persistence.QueryAsync(query, includeAccess, ct, limit: 50);
         var entries = rows.Take(50).Select(Map).ToArray();
         var next = rows.Count > 50 ? Encode(JsonSerializer.Serialize(new ActivityPosition(rows[49].OccurredUtc, rows[49].Key))) : null;
         return new(entries, next, query.AsOfUtc);

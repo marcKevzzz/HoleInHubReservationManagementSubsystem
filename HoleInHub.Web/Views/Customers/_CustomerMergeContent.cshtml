@@ -12,13 +12,14 @@
     <div asp-validation-summary="All" class="staff-error" role="alert" tabindex="-1"></div>
     @if (Model.Preview is not { } preview)
     {
-        <section class="merge-current"><h2>Main profile</h2><strong>@Name(Model.Source)</strong><span>@Value(Model.Source.Email) · @CustomerLabels.Phone(Model.Source.Phone)</span><small>@Model.Source.BookingCount @(Model.Source.BookingCount == 1 ? "reservation" : "reservations")</small></section>
+        <section class="merge-current"><h2>Selected customer</h2><strong>@Name(Model.Source)</strong><span>@Value(Model.Source.Email)</span><span>@CustomerLabels.Phone(Model.Source.Phone)</span><small>@Model.Source.BookingCount @(Model.Source.BookingCount == 1 ? "reservation" : "reservations")</small></section>
+        <template data-merge-guidance></template>
         <form class="staff-lookup people-search merge-customer-search" asp-action="Merge" asp-route-id="@Model.Source.Id" method="get" role="search" aria-label="Find a duplicate customer">
             <div class="auth-input-wrap"><partial name="_StaffIcon" model='"search"' /><label class="sr-only" for="merge-search">Name, phone, email or reference</label><input id="merge-search" type="search" name="search" value="@Model.Search" maxlength="100" placeholder="Find another customer record" /></div>
 
         </form>
         <p class="people-search-status" data-customer-search-status role="status">@(dialogMode ? null : Model.Error)</p>
-        <div class="merge-results-heading"><h2 class="merge-section-title">Choose another record</h2><span class="people-page-count" data-customer-count hidden="@(Model.Search.Length == 1)">Page @Model.Candidates.Page · @Model.Candidates.Items.Count(c=>c.BookingId!=Model.Source.BookingId) shown</span></div>
+        <div class="merge-results-heading"><h2 class="merge-section-title">Choose the duplicate</h2><span class="people-page-count" data-customer-count hidden="@(Model.Search.Length == 1)">Page @Model.Candidates.Page · @Model.Candidates.Items.Count(c=>c.BookingId!=Model.Source.BookingId) shown</span></div>
         <div data-customer-results hidden="@(Model.Search.Length == 1)">
         <ul class="merge-candidates">
             @foreach (var candidate in Model.Candidates.Items.Where(c=>c.BookingId!=Model.Source.BookingId))
@@ -34,7 +35,7 @@
         @if (Model.Candidates.Items.Count == 0 && Model.Search.Length != 1) { <p class="staff-empty">No matching records. Try another name, phone, email or reference.</p> }
         <nav class="customer-pagination" aria-label="Duplicate search pages">
             @if (Model.Candidates.Page>1) { <a asp-action="Merge" asp-route-id="@Model.Source.Id" asp-route-search="@Model.Search" asp-route-page="@(Model.Candidates.Page-1)">Previous</a> }
-            @if (Model.Candidates.HasMore) { <a asp-action="Merge" asp-route-id="@Model.Source.Id" asp-route-search="@Model.Search" asp-route-page="@(Model.Candidates.Page+1)">Next</a> }
+            @if (Model.Candidates.HasMore) { <a rel="next" asp-action="Merge" asp-route-id="@Model.Source.Id" asp-route-search="@Model.Search" asp-route-page="@(Model.Candidates.Page+1)">Next</a> }
         </nav>
         </div>
     }

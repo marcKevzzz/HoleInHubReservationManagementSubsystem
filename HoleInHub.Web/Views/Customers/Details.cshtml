@@ -23,9 +23,8 @@
         @if (profile is not null)
         {
             <nav class="customer-profile-actions" aria-label="Customer record actions">
-                <a class="staff-icon-button customer-action customer-action-primary" aria-label="New booking" asp-controller="BookingReview" asp-action="Index" asp-route-customerProfileId="@profile.Id"><partial name="_StaffIcon" model='"plus"' /></a>
-                @if (Model.Total > 0) { <a class="staff-icon-button customer-action" aria-label="Merge customer" asp-action="Merge" asp-route-id="@profile.Id"><partial name="_StaffIcon" model='"merge"' /></a> }
-                <a class="staff-icon-button customer-action" aria-label="Merge history" asp-action="MergeHistory" asp-route-id="@profile.Id"><partial name="_StaffIcon" model='"history"' /></a>
+                <a class="button" data-action-icon="plus" aria-label="New booking" asp-controller="BookingReview" asp-action="Index" asp-route-customerProfileId="@profile.Id">New booking</a>
+                @if (Model.Total > 0) { <a class="staff-link" aria-label="Merge customer" asp-action="Merge" asp-route-id="@profile.Id">Merge duplicate</a> }
             </nav>
         }
     </header>
@@ -51,7 +50,7 @@
             }
             else
             {
-                <p class="customer-page-label">Page @Model.Page · All times are Manila time.</p>
+                <p class="customer-page-label">Page @Model.Page</p>
                 <ul class="customer-bookings">
                     @foreach (var booking in Model.Bookings)
                     {
@@ -72,7 +71,7 @@
                 </ul>
                 <nav class="customer-pagination" aria-label="Reservation history pages">
                     @if (Model.Page > 1) { <a class="button button-secondary" asp-action="Details" asp-route-id="@customer.BookingId" asp-route-view="@(Model.UpcomingOnly ? "upcoming" : null)" asp-route-page="@(Model.Page - 1)">Previous</a> }
-                    @if (Model.HasMore && Model.Page < 1000) { <a class="button button-secondary" asp-action="Details" asp-route-id="@customer.BookingId" asp-route-view="@(Model.UpcomingOnly ? "upcoming" : null)" asp-route-page="@(Model.Page + 1)">Next page</a> }
+                    @if (Model.HasMore && Model.Page < 1000) { <a rel="next" class="button button-secondary" asp-action="Details" asp-route-id="@customer.BookingId" asp-route-view="@(Model.UpcomingOnly ? "upcoming" : null)" asp-route-page="@(Model.Page + 1)">Next page</a> }
                 </nav>
             }
         </section>

@@ -1,13 +1,13 @@
 @model HoleInHub.Web.ViewModels.GoogleSignUpModel
 @{ViewData["Title"]="Complete your account";}
 <section class="account-page account-registration"><div class="account-inner">
-<a class="flow-back" asp-action="SignIn" asp-route-returnUrl="@Model.ReturnUrl"><partial name="_BackArrow" /> Back to sign in</a>
-<h1>Complete your account</h1>
+<a class="flow-back" asp-action="SignIn" asp-route-returnUrl="@Model.ReturnUrl"><partial name="_BackArrow" /> @T("Back to sign in")</a>
+<h1>@T("Complete your account")</h1>
 <p class="auth-intro">Continue as @Model.Email. Save your contact details to prefill reservation forms. You can edit them when booking.</p>
 <form method="post" action="/account/google-complete">
 @Html.AntiForgeryToken()
 <input asp-for="ReturnUrl" type="hidden" />
 <div asp-validation-summary="All" role="alert" class="validation-summary"></div>
 <partial name="_ContactFields" model="Model" />
-<button class="button" type="submit">Create account</button>
+<button class="button" type="submit">@T("Create account")</button>
 </form></div></section>

@@ -73,8 +73,10 @@ public sealed partial class ReservationService
             throw new ReservationValidationException("Choose active bays of the same type: Regular or VIP.");
         }
         var service = bays[0].Service;
-        BookingRules.ValidateGuests(service, resources, request.Attendees);
-        var (start, end) = ReservationRules.Interval(request.Date, request.StartTime, request.DurationMinutes);
+        BookingRules.ValidateGuests(service, bays, request.Attendees);
+        var entry = await ResolveBookingServiceAsync(service, null, ct, existingBooking: true);
+        ValidateServiceCapacity(entry, request.Attendees);
+        var (start, end) = PreviewServiceInterval(entry, request.Date, request.StartTime, request.DurationMinutes, service);
         var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime;
         // The current half-hour is available for immediate arrivals.
         if (start <= now.AddMinutes(-30))
@@ -91,6 +93,9 @@ public sealed partial class ReservationService
             Status = "Confirmed",
             PolicyVersion = 2,
             Service = service,
+            ServiceEntryId = entry?.Active == true ? entry.Id : null,
+            ServiceRevision = entry?.Active == true ? entry.Revision : null,
+            RentalTotal = PriceBooking(entry, service, request.Date, request.StartTime, request.DurationMinutes, resources.Length).Total,
             StartUtc = start,
             EndUtc = end,
             CreatedUtc = now,
@@ -108,7 +113,7 @@ public sealed partial class ReservationService
                 AtUtc = now, Actor = actor, Reason = "Staff-assisted booking."
             }]
         };
-        try { return Result(await persistence.InsertAsync(record, ct, customerProfileId: request.CustomerProfileId)); }
+        try { return Result(await persistence.InsertAsync(record, ct, customerProfileId: request.CustomerProfileId, validateCapacity: ValidateStoredCapacity)); }
         catch (CustomerProfileConflictException e) { throw new ReservationValidationException(e.Message); }
         catch (AllocationConflictException error) { throw new ReservationValidationException(error.Message); }
     }

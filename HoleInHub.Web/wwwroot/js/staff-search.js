@@ -16,7 +16,7 @@
         if (!enhanced) return;
         const rect = form.getBoundingClientRect();
         const panel = document.querySelector('.staff-workspace')?.getBoundingClientRect?.() || { left: 0, width: window.innerWidth };
-        const width = Math.min(window.innerWidth - 32, panel.width * .95);
+        const width = Math.min(window.innerWidth - 32, panel.width);
         const left = Math.max(16, Math.min(window.innerWidth - width - 16, panel.left + (panel.width - width) / 2));
         results.style.cssText = `left:${left}px;top:${rect.bottom + 12}px;width:${width}px;max-height:${Math.max(120, window.innerHeight - rect.bottom - 30)}px`;
     }

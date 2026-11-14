@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using HoleInHub.Data.Context;
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 
 namespace HoleInHub.Data.Reservations;
@@ -13,19 +14,40 @@ public sealed partial class ReservationPersistence
     {
         var keys = new[] { "pending", "overdue", "changes", "cancellations", "deposit", "awaiting" };
         var counts = await Task.WhenAll(keys.Select(key =>
-            key == "awaiting" ? PendingReviewCountAsync(now, ct)
-                : Reservations.CountDocumentsAsync(ReviewSelection(key, now), cancellationToken: ct)));
+            Reservations.CountDocumentsAsync(ReviewSelection(key, now), cancellationToken: ct)));
         return keys.Select((key, index) => (key, count: counts[index])).ToDictionary(item => item.key, item => item.count);
     }
 
     public async Task<IReadOnlyList<ReservationRecord>> ReviewQueueAsync(string kind, DateTime now, DateTime? dayStart,
-        bool bySession, CancellationToken ct)
+        bool bySession, CancellationToken ct, int page = 0)
     {
         var filters = Builders<ReservationRecord>.Filter;
         var selection = ReviewSelection(kind, now);
         if (dayStart is { } start)
         {
             selection &= filters.Gte(x => x.StartUtc, start) & filters.Lt(x => x.StartUtc, start.AddDays(1));
+        }
+        if (page > 0)
+        {
+            var pending = new BsonDocument("$eq", new BsonArray { "$Status", "Pending" });
+            BsonValue deadline = kind == "cancelled" ? new BsonString("$StartUtc")
+                : new BsonDocument("$cond", new BsonArray { pending, "$ReviewDeadlineUtc", new BsonDateTime(DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc)) });
+            var sort = bySession
+                ? new BsonDocument { { "_queueOverdue", -1 }, { "StartUtc", 1 }, { "_id", 1 } }
+                : new BsonDocument { { "_queueDeadline", kind == "cancelled" ? -1 : 1 }, { "StartUtc", 1 }, { "_id", 1 } };
+            var stages = new BsonDocument[]
+            {
+                new("$match", selection.Render(new(Reservations.DocumentSerializer, BsonSerializer.SerializerRegistry))),
+                new("$set", new BsonDocument {
+                    { "_queueDeadline", deadline },
+                    { "_queueOverdue", new BsonDocument("$and", new BsonArray { pending, new BsonDocument("$lte", new BsonArray { "$ReviewDeadlineUtc", now }) }) }
+                }),
+                new("$sort", sort),
+                new("$skip", (Math.Clamp(page, 1, 1000) - 1) * 20),
+                new("$limit", 21),
+                new("$unset", new BsonArray { "_queueDeadline", "_queueOverdue" })
+            };
+            return await Reservations.Aggregate<ReservationRecord>(stages).ToListAsync(ct);
         }
         var query = Reservations.Find(selection);
         var ordered = bySession ? query.SortBy(x => x.StartUtc) : query.SortBy(x => x.ReviewDeadlineUtc);
@@ -45,13 +67,15 @@ public sealed partial class ReservationPersistence
             "overdue" => ordinary & filters.Lte(x => x.ReviewDeadlineUtc, now),
             "pending" => ordinary & filters.Gt(x => x.ReviewDeadlineUtc, now) & filters.Not(cancellation) & filters.Not(changes) & filters.Not(deposit),
             "cancellations" => cancellation,
+            "cancelled" => filters.Eq(x => x.Status, "Cancelled"),
             "changes" => changes & filters.Not(cancellation),
             "deposit" => deposit & filters.Not(cancellation) & filters.Not(changes),
+            "awaiting" => (pending | changes | deposit) & filters.Not(cancellation),
             _ => pending | cancellation | changes | deposit
         };
     }
 
-    public async Task<IReadOnlyList<ReservationRecord>> ExpiredRequestsAsync(DateTime? startUtc, DateTime? endUtc, CancellationToken ct)
+    public async Task<IReadOnlyList<ReservationRecord>> ExpiredRequestsAsync(DateTime? startUtc, DateTime? endUtc, CancellationToken ct, int page = 0, bool bySession = false)
     {
         var filters = Builders<ReservationRecord>.Filter;
         var filter = filters.Eq(x => x.Status, "Expired");
@@ -60,7 +84,11 @@ public sealed partial class ReservationPersistence
             var end = endUtc ?? throw new ArgumentException("A session date requires both interval endpoints.", nameof(endUtc));
             filter &= filters.Gte(x => x.StartUtc, start) & filters.Lt(x => x.StartUtc, end);
         }
-        return await Reservations.Find(filter).SortByDescending(x => x.ReviewDeadlineUtc).ThenByDescending(x => x.Id).Limit(200).ToListAsync(ct);
+        var query = Reservations.Find(filter);
+        var ordered = bySession ? query.SortBy(x => x.StartUtc) : query.SortByDescending(x => x.ReviewDeadlineUtc);
+        var stable = bySession ? ordered.ThenBy(x => x.Id) : ordered.ThenByDescending(x => x.Id);
+        return await stable
+            .Skip(page > 0 ? (Math.Clamp(page, 1, 1000) - 1) * 20 : 0).Limit(page > 0 ? 21 : 200).ToListAsync(ct);
     }
 
     public Task<long> PendingReviewCountAsync(DateTime now, CancellationToken ct) =>
@@ -155,7 +183,9 @@ public sealed partial class ReservationPersistence
             DueUtc = DateTime.UtcNow
         }, cancellationToken: ct);
 
-    public async Task<bool> TransitionAsync(string id, string action, string actor, DateTime now, string[] staffEmails, CancellationToken ct, string reason = "", long? expectedRevision = null, string? rebookUrl = null)
+    public async Task<bool> TransitionAsync(string id, string action, string actor, DateTime now, string[] staffEmails, CancellationToken ct,
+        string reason = "", long? expectedRevision = null, string? rebookUrl = null,
+        Func<ReservationRecord, IReadOnlyList<ResourceRecord>, ParticipantRecord[]>? confirmParticipants = null)
     {
         using var session = await context.Client.StartSessionAsync(cancellationToken: ct);
         return await session.WithTransactionAsync(async (s, token) =>
@@ -182,7 +212,17 @@ public sealed partial class ReservationPersistence
                     {
                         throw new AllocationConflictException("The bay is no longer available for this session. Check the schedule before approving.");
                     }
-                    record.Status = "Confirmed"; history = "Confirmed"; change = update.Set(x => x.Status, record.Status); break;
+                    record.Status = "Confirmed";
+                    history = "Confirmed";
+                    change = update.Set(x => x.Status, record.Status);
+                    if (confirmParticipants is not null && record.Participants.Length == 0)
+                    {
+                        var bays = await Resources.Find(s, Builders<ResourceRecord>.Filter.Eq(x => x.Active, true) &
+                            Builders<ResourceRecord>.Filter.In(x => x.Id, record.ResourceIds)).ToListAsync(token);
+                        record.Participants = confirmParticipants(record, bays);
+                        change = change.Set(x => x.Participants, record.Participants);
+                    }
+                    break;
                 case "reschedule" when pending && record.Service != "WholeShop" && !record.CancellationRequested
                     && record.ReviewDeadlineUtc <= now && !string.IsNullOrWhiteSpace(record.Email) && rebookUrl is not null:
                     if (!await HasReviewConflictAsync(record, token, s, now)) { return false; }
@@ -312,6 +352,9 @@ public sealed class EmailVerificationPersistence(IMongoDbContext context)
     private IMongoCollection<GuestVerificationRecord> Records => context.Database.GetCollection<GuestVerificationRecord>("guest_verifications");
     public async Task<bool> IssueAsync(GuestVerificationRecord record, OutboxRecord email, CancellationToken ct, EmailDeliveryQuota? quota = null)
     {
+        email.ExpiresUtc = record.ExpiresUtc;
+        email.VerificationId = record.Id;
+        email.VerificationIssuedUtc = record.SentUtc;
         using var session = await context.Client.StartSessionAsync(cancellationToken: ct);
         try
         {

@@ -1,10 +1,10 @@
-.settings-layout {display:grid;grid-template-columns:200px minmax(0,760px);gap:48px;align-items:start}
+.settings-layout {display:grid;grid-template-columns:190px minmax(0,1fr);gap:32px;align-items:start}
 .settings-nav {position:sticky;top:24px;display:grid;gap:4px}
 .settings-nav a {display:block;padding:10px 12px;color:var(--color-muted);font-size:.85rem;text-decoration:none;border-left:1px solid var(--color-line)}
 .settings-nav a:is(:hover,:focus-visible) {color:var(--color-green);background:var(--color-staff-surface);border-left-color:var(--color-green)}
-.settings-content {min-width:0}
-.settings-content>fieldset {border:0;padding:0;margin:0;min-width:0}
-.settings-section {display:grid;gap:20px;padding:24px 0 32px;border-top:1px solid var(--color-line);scroll-margin-top:24px}
+.settings-content {min-width:0;display:grid;gap:20px}
+.settings-content>fieldset {border:0;padding:0;margin:0;min-width:0;display:grid;gap:20px}
+.settings-section {display:grid;gap:24px;padding:28px;background:var(--color-paper);border:0;scroll-margin-top:24px}
 .staff-shell .settings-section h2 {margin:0;font:400 1.3rem/1.4 var(--body);text-transform:none;letter-spacing:0}
 .settings-section-heading {display:flex;justify-content:space-between;align-items:center;gap:20px}
 .settings-section-heading a {font-size:.8rem}
@@ -27,6 +27,9 @@
 .settings-facts dd {margin:0;overflow-wrap:anywhere}
 .settings-facts .people-pill {margin-left:6px}
 .settings-section .service-switch {max-width:100%}
+.settings-nav a[aria-current="location"] {background:var(--color-green);color:var(--color-paper);border-color:transparent}
+.settings-section h2+.settings-note {margin-top:-12px}
+.settings-page>.staff-workspace-heading {margin-bottom:32px}
 .venue-policies {max-width:800px;margin:56px auto;padding:0 24px}
 .venue-policies h2 {margin-top:40px;font-size:1.5rem}
 .venue-policies p {white-space:pre-wrap;line-height:1.75;overflow-wrap:anywhere}

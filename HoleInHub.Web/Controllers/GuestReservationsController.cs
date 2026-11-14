@@ -88,7 +88,7 @@ public sealed class GuestReservationsController(EmailVerificationService codes, 
         Response.Headers["Referrer-Policy"] = "no-referrer";
         var email = session.Email(HttpContext);
         if (email is null) { return RedirectToAction(nameof(Find)); }
-        page = Math.Clamp(page, 1, int.MaxValue / 25);
+        page = Math.Clamp(page, 1, int.MaxValue / 20);
         return View(new GuestReservationsModel(email, await reservations.GetGuestHistoryAsync(email, view == "past", page, ct), view == "past", page));
     }
 

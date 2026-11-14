@@ -43,14 +43,22 @@ public sealed partial class ReservationPersistence
                 await GuardAsync(s, allocation, token);
                 var prior = await Blocks.Find(s, x => x.Id == block.Id).FirstOrDefaultAsync(token);
                 if (prior is not null) { return prior; }
-                if (block.ResourceIds.Length != 1 || !await Resources.Find(s, x => x.Id == block.ResourceIds[0]
+                if (block.ResourceIds.Length == 0)
+                {
+                    var ids = await Resources.Find(s, x => x.Active && (x.Service == "Regular" || x.Service == "VIP"))
+                        .Project(x => x.Id).ToListAsync(token);
+                    allocation.ResourceIds = ids.ToArray();
+                    if (allocation.ResourceIds.Length == 0) { throw new AllocationConflictException("Add an active bay before blocking the venue."); }
+                    await GuardAsync(s, allocation, token);
+                }
+                else if (block.ResourceIds.Length != 1 || !await Resources.Find(s, x => x.Id == block.ResourceIds[0]
                     && x.Active && (x.Service == "Regular" || x.Service == "VIP")).AnyAsync(token))
                 {
                     throw new AllocationConflictException("Choose an active Regular or VIP bay.");
                 }
                 if (await HasAllocationConflictAsync(allocation, s, token, block.CreatedUtc ?? DateTime.UtcNow))
                 {
-                    throw new AllocationConflictException("This bay is no longer free for that time. Choose another bay or time.");
+                    throw new AllocationConflictException("The selected bays are no longer free for that time. Resolve overlapping bookings or blocks, or choose another time.");
                 }
                 await Blocks.InsertOneAsync(s, block, cancellationToken: token);
                 return block;

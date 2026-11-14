@@ -15,12 +15,16 @@
 @import "./app-select.css";
 @import "./settings.css";
 @import "./dashboard.css";
+@import "./staff-tiles.css";
+@import "./mobile.css";
+@import "./customer-language.css";
 @source "../Views";
 @source "../wwwroot/js";
 @theme { --color-account-placeholder:color-mix(in srgb, #60645d 88%, #fff); --color-error-line:color-mix(in srgb, #9b3027 65%, #fff); --color-control-line:#83877f; --color-error:#9b3027; --color-auth-shade:rgb(16 17 15 / 78%); --color-ink:#10110f; --color-paper:#fff; --color-green:#354f3b; --color-muted:#60645d; --color-line:#d5d7d1; --font-display:Oswald,"Arial Narrow",sans-serif; --font-body:Inter,Arial,sans-serif; }
 @theme {
-  --color-staff-canvas:color-mix(in srgb,var(--color-green) 3%,var(--color-paper));
-  --color-staff-surface:color-mix(in srgb,var(--color-green) 7%,var(--color-paper));
+  --color-staff-canvas:color-mix(in srgb,var(--color-ink) 3.5%,var(--color-paper));
+  --color-staff-divider:color-mix(in srgb,var(--color-line) 55%,transparent);
+  --color-staff-surface:color-mix(in srgb,var(--color-green) 10%,var(--color-paper));
   --color-staff-now:#25665e;
   --color-staff-arrived:#dfefec;
 }

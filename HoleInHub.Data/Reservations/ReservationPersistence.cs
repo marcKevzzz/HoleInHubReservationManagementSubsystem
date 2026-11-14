@@ -32,7 +32,14 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
     private Task GuardCatalogAsync(IClientSessionHandle session, CancellationToken ct) =>
         context.Database.GetCollection<BsonDocument>("allocation_guards").UpdateOneAsync(session, new BsonDocument("_id", "catalog"),
             new BsonDocument("$inc", new BsonDocument("version", 1)), new UpdateOptions { IsUpsert = true }, ct);
-    public async Task<ReservationRecord> InsertAsync(ReservationRecord record, CancellationToken ct, string? encryptedReceipt = null, string? customerProfileId = null)
+
+    private Task<HoleInHub.Data.Services.ServiceCatalogRecord?> ReadAllocationServiceAsync(
+        IClientSessionHandle session, ReservationRecord booking, CancellationToken ct) =>
+        context.Database.GetCollection<HoleInHub.Data.Services.ServiceCatalogRecord>("service_catalog")
+            .Find(session, item => item.Id == (booking.ServiceEntryId ?? booking.Service) &&
+                item.BookingService == booking.Service && !item.Deleted).FirstOrDefaultAsync(ct)!;
+    public async Task<ReservationRecord> InsertAsync(ReservationRecord record, CancellationToken ct, string? encryptedReceipt = null,
+        string? customerProfileId = null, Action<ReservationRecord, IReadOnlyList<ResourceRecord>>? validateCapacity = null)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct); timeout.CancelAfter(TimeSpan.FromSeconds(15)); ct = timeout.Token;
         using var session = await context.Client.StartSessionAsync(cancellationToken: ct);
@@ -46,6 +53,13 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
                     return prior;
                 }
 
+                if (record.ServiceEntryId is { } serviceId && record.ServiceRevision is { } serviceRevision)
+                {
+                    var current = await context.Database.GetCollection<HoleInHub.Data.Services.ServiceCatalogRecord>("service_catalog")
+                        .Find(s, item => item.Id == serviceId).FirstOrDefaultAsync(token);
+                    if (current is null || current.Revision != serviceRevision || !current.Active || current.Deleted)
+                    { throw new AllocationConflictException("The service changed. Review its hours and price before submitting again."); }
+                }
                 var catalog = await Resources.Find(s, x => x.Active).ToListAsync(token);
                 if (record.Service == "WholeShop")
                 {
@@ -66,7 +80,9 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
                 {
                     throw new AllocationConflictException("The bay catalog changed. Reload the form and check participant counts for every selected bay.");
                 }
-                record.ResourceNames = catalog.Where(x => record.ResourceIds.Contains(x.Id)).ToDictionary(x => x.Id, x => x.Name);
+                var selected = catalog.Where(x => record.ResourceIds.Contains(x.Id)).ToArray();
+                validateCapacity?.Invoke(record, selected);
+                record.ResourceNames = selected.ToDictionary(x => x.Id, x => x.Name);
                 if (await HasAllocationConflictAsync(record, s, token, record.CreatedUtc == default ? DateTime.UtcNow : record.CreatedUtc))
                 {
                     throw new AllocationConflictException("These bays are no longer available. Please choose another time or bay.");
@@ -172,6 +188,43 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
             try { await Resources.InsertOneAsync(s, resource, cancellationToken: token); }
             catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey)
             { throw new AllocationConflictException("A bay with that ID already exists."); }
+            return true;
+        }, cancellationToken: ct);
+    }
+
+    public async Task<bool> EditResourceAsync(ResourceRecord edited, long expectedRevision, DateTime now, CancellationToken ct,
+        Action<ResourceRecord, ResourceRecord, IReadOnlyList<ResourceRecord>, IReadOnlyList<ReservationRecord>>? validateCapacityChange = null)
+    {
+        using var session = await context.Client.StartSessionAsync(cancellationToken: ct);
+        return await session.WithTransactionAsync(async (s, token) =>
+        {
+            await GuardCatalogAsync(s, token);
+            var resource = await Resources.Find(s, x => x.Id == edited.Id).FirstOrDefaultAsync(token);
+            if (resource is null) { return false; }
+            if (resource.Revision != expectedRevision)
+            { throw new AllocationConflictException("This bay was changed by someone else. Reload the inventory before editing."); }
+            var filters = Builders<ReservationRecord>.Filter;
+            var affected = filters.AnyEq(x => x.ResourceIds, edited.Id);
+            var blocking = filters.Eq(x => x.Status, "Checked-In") | (HoldingCapacity(now) & filters.Gt(x => x.EndUtc, now));
+            if (resource.Service != edited.Service)
+            {
+                if (await Reservations.Find(s, (affected | filters.Eq(x => x.Service, "WholeShop")) & blocking).AnyAsync(token))
+                { throw new AllocationConflictException("Resolve current or upcoming reservations on this bay and whole-shop bookings before changing its type."); }
+            }
+            if (validateCapacityChange is not null && (resource.MaxPlayers != edited.MaxPlayers ||
+                resource.MaxTotalGuests != edited.MaxTotalGuests || resource.MaxNonPlayers != edited.MaxNonPlayers))
+            {
+                var upcoming = await Reservations.Find(s, affected & blocking & filters.Gt(x => x.EndUtc, now)).ToListAsync(token);
+                if (upcoming.Count > 0)
+                {
+                    var catalog = await Resources.Find(s, _ => true).ToListAsync(token);
+                    validateCapacityChange(resource, edited, catalog, upcoming);
+                }
+            }
+            var update = Builders<ResourceRecord>.Update.Set(x => x.Name, edited.Name).Set(x => x.Service, edited.Service)
+                .Set(x => x.MaxPlayers, edited.MaxPlayers).Set(x => x.MaxTotalGuests, edited.MaxTotalGuests)
+                .Set(x => x.MaxNonPlayers, edited.MaxNonPlayers).Inc(x => x.Revision, 1);
+            await Resources.UpdateOneAsync(s, x => x.Id == edited.Id, update, cancellationToken: token);
             return true;
         }, cancellationToken: ct);
     }

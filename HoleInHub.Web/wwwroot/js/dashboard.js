@@ -2,6 +2,7 @@
     let page = document.querySelector('[data-dashboard]');
     if (!page) return;
     let charts = [], request, sliceRequest, opener, activeSlice, updateTimer, pendingUpdate = false, updateFailureNotified = false;
+    let entrance;
     const preferences = new Map();
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
     const number = value => new Intl.NumberFormat('en-PH', { maximumFractionDigits: 2 }).format(value);
@@ -19,7 +20,7 @@
         selection.querySelector('a').href = sliceUrl(kind, value, group);
         preferences.set(section.dataset.chart + ':selection', { kind, value, label, group });
     }
-    function mountCharts() {
+    function mountCharts(animation) {
         if (!window.Chart) return;
         const data = JSON.parse(page.querySelector('[data-dashboard-data]').textContent);
         for (const section of page.querySelectorAll('[data-chart]')) {
@@ -38,7 +39,7 @@
                         tension: .35, cubicInterpolationMode: 'monotone', stepped: false, fill: false }]
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false, animation: false,
+                    responsive: true, maintainAspectRatio: false, animation,
                     interaction: { mode: 'index', intersect: false },
                     plugins: { legend: { display: false }, tooltip: { callbacks: {
                         label: context => number(context.parsed.y) + (daily ? ' booked sessions' : ' scheduled bay-hours')
@@ -69,7 +70,7 @@
             });
         }
     }
-    function mountPie() {
+    function mountPie(animation) {
         if (!window.Chart) return;
         const data = JSON.parse(page.querySelector('[data-dashboard-data]').textContent).services;
         if (!data?.length) return;
@@ -95,7 +96,7 @@
                 arcs.forEach((arc, index) => {
                     const share = data[index].Count / total;
                     // Small slices keep their exact values in the adjacent labeled list.
-                    if (share < .1) return;
+                    if (share < .1 || arc.endAngle - arc.startAngle < .5) return;
                     const angle = (arc.startAngle + arc.endAngle) / 2;
                     const radius = (arc.innerRadius + arc.outerRadius) / 2;
                     ctx.fillText(Math.round(share * 100) + '%', arc.x + Math.cos(angle) * radius, arc.y + Math.sin(angle) * radius);
@@ -104,7 +105,7 @@
             } }],
             data: { labels: data.map(row => row.Label), datasets: [{ data: data.map(row => row.Count),
                 backgroundColor: data.map(row => color(tokens[row.Id] || 'neutral')), borderColor: getComputedStyle(page).getPropertyValue('--color-paper').trim(), borderWidth: 3 }] },
-            options: { responsive: true, maintainAspectRatio: false, animation: false, cutout: '60%',
+            options: { responsive: true, maintainAspectRatio: false, animation, cutout: '60%',
                 plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => context.label + ': ' + number(context.parsed) + ' booked sessions' } } },
                 onClick: (_event, elements) => { if (elements.length) void inspect(sliceUrl('service', data[elements[0].index].Id), frame.querySelector('canvas')); }
             }
@@ -141,12 +142,19 @@
             event.preventDefault(); period.open = false; period.querySelector('summary').focus();
         });
     }
-    function mount() {
-
+    function mount(animate = true) {
         window.HoleInHubButtons?.mount(page);
         mountPeriod();
-        mountCharts();
-        mountPie();
+        const playEntrance = animate && !reduced.matches;
+        const animation = playEntrance ? { duration: 520, easing: 'easeOutQuart' } : false;
+        mountCharts(animation);
+        mountPie(animation);
+        if (playEntrance && window.gsap) {
+            const targets = page.querySelectorAll('.dashboard-summary > div, .dashboard-main > section, .dashboard-bay-insight');
+            entrance = window.gsap.fromTo(targets, { opacity: .65, y: 8 }, {
+                opacity: 1, y: 0, duration: .4, stagger: .035, ease: 'power3.out', clearProps: 'opacity,transform'
+            });
+        }
         const dialog = page.querySelector('[data-dashboard-dialog]');
         page.querySelector('[data-dashboard-close]').addEventListener('click', () => dialog.close());
         dialog.addEventListener('close', () => { sliceRequest?.abort(); opener?.focus({ preventScroll: true }); });
@@ -192,10 +200,11 @@
                 pendingUpdate = true; queueUpdate(); return;
             }
             const focusName = manual ? document.activeElement?.getAttribute('name') : null;
+            entrance?.revert(); entrance = undefined;
             charts.forEach(chart => chart.destroy()); charts = [];
             oldPage.replaceWith(next); page = next;
             if (push) history.pushState(null, '', next.dataset.url);
-            mount();
+            mount(manual);
             updateFailureNotified = false;
             if (focusName) {
                 const field = page.querySelector('[name="' + CSS.escape(focusName) + '"]');
@@ -267,7 +276,14 @@
         preferences.clear(); void load(url.href);
     });
     window.addEventListener('popstate', () => { preferences.clear(); void load(location.href, false); });
-    reduced.addEventListener('change', () => charts.forEach(chart => { chart.options.animation = false; chart.update('none'); }));
-    window.addEventListener('pagehide', () => { clearTimeout(updateTimer); request?.abort(); sliceRequest?.abort(); charts.forEach(chart => chart.destroy()); });
+    reduced.addEventListener('change', event => {
+        if (!event.matches) return;
+        entrance?.revert(); entrance = undefined;
+        charts.forEach(chart => { chart.stop(); chart.options.animation = false; chart.update('none'); });
+    });
+    window.addEventListener('pagehide', () => {
+        clearTimeout(updateTimer); request?.abort(); sliceRequest?.abort();
+        entrance?.revert(); charts.forEach(chart => chart.destroy());
+    });
     mount();
 })();

@@ -4,12 +4,32 @@
     const root = document.documentElement;
     const rail = document.querySelector('.staff-rail');
     const drawer = document.getElementById('staff-rail-content');
-    const mobile = window.matchMedia('(max-width: 720px)');
+    const main = document.getElementById('main-content');
+    const backdrop = document.querySelector('[data-staff-nav-backdrop]');
+    root.setAttribute('data-staff-mobile-menu', '');
+    const mobile = window.matchMedia('(max-width: 900px)');
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
     const key = 'holeinhub-staff-sidebar';
     let desktopCollapsed = false;
     try { desktopCollapsed = sessionStorage.getItem(key) === 'collapsed'; } catch { /* Storage is optional. */ }
     const compact = () => !mobile.matches && desktopCollapsed;
+    const languageTrigger = rail.querySelector('.staff-language-trigger');
+    const languageOptions = document.getElementById('staff-language-options');
+
+    function placeLanguagePopup() {
+        if (!languageOptions?.matches(':popover-open')) return;
+        const anchor = languageTrigger.getBoundingClientRect();
+        const margin = 8;
+        if (anchor.bottom <= 0 || anchor.top >= window.innerHeight) {
+            languageOptions.hidePopover();
+            return;
+        }
+        languageOptions.style.left = Math.max(margin, Math.min(anchor.right + margin,
+            window.innerWidth - languageOptions.offsetWidth - margin)) + 'px';
+        languageOptions.style.top = Math.max(margin, Math.min(anchor.top,
+            window.innerHeight - languageOptions.offsetHeight - margin)) + 'px';
+    }
+    languageOptions?.addEventListener('toggle', placeLanguagePopup);
 
     const review = rail.querySelector('.staff-review-nav');
     const summary = review?.querySelector('summary');
@@ -82,26 +102,37 @@
     });
     rail.addEventListener('focusout', hideTooltip);
     rail.addEventListener('pointerdown', hideTooltip);
-    drawer.addEventListener('scroll', () => { hideTooltip(); placePopup(); }, { passive: true });
-    window.addEventListener('resize', () => { hideTooltip(); placePopup(); });
+    drawer.addEventListener('scroll', () => { hideTooltip(); placePopup(); placeLanguagePopup(); }, { passive: true });
+    window.addEventListener('resize', () => { hideTooltip(); placePopup(); placeLanguagePopup(); });
 
     function render(collapsed) {
         hideTooltip();
         closePopup();
+        if (languageOptions && typeof languageOptions.showPopover === 'function') {
+            if (languageOptions.matches(':popover-open')) languageOptions.hidePopover();
+            languageOptions.toggleAttribute('popover', compact());
+            languageTrigger.hidden = !compact();
+        }
         const label = mobile.matches
             ? (collapsed ? 'Open staff navigation' : 'Close staff navigation')
             : (collapsed ? 'Expand sidebar' : 'Collapse sidebar');
         root.toggleAttribute('data-staff-collapsed', collapsed);
+        const mobileOpen = mobile.matches && !collapsed;
+        root.toggleAttribute('data-staff-mobile-open', mobileOpen);
+        main.inert = mobileOpen;
+        if (backdrop) backdrop.hidden = !mobileOpen;
         drawer.inert = mobile.matches && collapsed;
         toggle.setAttribute('aria-expanded', String(!collapsed));
-        toggle.setAttribute('aria-label', label);
-        toggle.title = label;
+        const localizedLabel = window.HoleInHubText?.t(label) ?? label;
+        toggle.setAttribute('aria-label', localizedLabel);
+        toggle.title = localizedLabel;
         finishDropdown();
         if (compact()) summary?.setAttribute('aria-expanded', 'false');
         else summary?.removeAttribute('aria-expanded');
     }
 
     toggle.hidden = false;
+    backdrop?.addEventListener('click', () => { render(true); toggle.focus(); });
     render(mobile.matches || desktopCollapsed);
     const railScrollKey = () => key + (compact() ? '-compact-scroll' : '-scroll');
     if (!mobile.matches) {
@@ -166,6 +197,13 @@
         render(mobile.matches || desktopCollapsed);
     });
     rail.addEventListener('keydown', event => {
+        if (event.key === 'Tab' && mobile.matches && toggle.getAttribute('aria-expanded') === 'true') {
+            const controls = [...rail.querySelectorAll('a[href],button:not([disabled]),summary,[tabindex="0"]')]
+                .filter(control => control.getClientRects().length && !control.closest('[inert]'));
+            const first = controls[0], last = controls.at(-1);
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+        }
         if (event.key !== 'Escape') return;
         hideTooltip();
         if (pages?.matches(':popover-open')) {
@@ -179,7 +217,6 @@
         }
     });
 
-    const main = document.getElementById('main-content');
     const skeleton = main.querySelector('[data-staff-nav-loading]');
     const status = document.querySelector('[data-staff-nav-status]');
     let showTimer, resetTimer;
@@ -193,6 +230,7 @@
     rail.addEventListener('click', event => {
         const link = event.target.closest('a[href]');
         if (!link || event.defaultPrevented || event.button || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || link.target || link.download) return;
+        if (mobile.matches) render(true);
         const url = new URL(link.href);
         if (url.origin !== window.location.origin || !/^\/(staff|manager|admin)(\/|$)/.test(url.pathname)
             || url.href === window.location.href || url.hash) return;
@@ -218,20 +256,28 @@
     window.addEventListener('pageshow', resetLoading);
 
     const badges = [...rail.querySelectorAll('[data-request-count]')];
+    const notificationBadge = badges.find(badge => badge.dataset.requestCount === 'notifications');
+    function updateNotifications(count) {
+        if (!notificationBadge || !Number.isSafeInteger(count) || count < 0) return;
+        const label = count > 99 ? '99+' : count;
+        notificationBadge.textContent = label;
+        notificationBadge.hidden = count === 0;
+        notificationBadge.parentElement.setAttribute('aria-label', count
+            ? (window.HoleInHubText?.f('Notifications, {0} new', label) ?? ('Notifications, ' + label + ' new'))
+            : (window.HoleInHubText?.t('Notifications') ?? 'Notifications'));
+    }
+    let notificationReadUpdates = 0;
+    document.addEventListener('notifications:read', event => {
+        notificationReadUpdates++;
+        updateNotifications(event.detail);
+    });
     let refreshingCounts = false;
-    let countsLoaded = false;
     async function refreshCounts() {
         if (!review || document.hidden || refreshingCounts) return;
         refreshingCounts = true;
+        const readUpdates = notificationReadUpdates;
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10000);
-        const placeholders = countsLoaded ? [] : badges.filter(badge => badge.hidden);
-        const loading = setTimeout(() => {
-            for (const badge of placeholders) {
-                badge.setAttribute('data-count-loading', '');
-                badge.hidden = false;
-            }
-        }, 160);
         try {
             const response = await fetch(review.dataset.countsUrl, { cache: 'no-store', signal: controller.signal, redirect: 'error' });
             if (!response.ok) return;
@@ -239,22 +285,27 @@
             for (const badge of badges) {
                 const count = counts[badge.dataset.requestCount];
                 if (!Number.isSafeInteger(count) || count < 0) continue;
+                if (badge === notificationBadge) {
+                    if (readUpdates === notificationReadUpdates) updateNotifications(count);
+                    continue;
+                }
                 badge.textContent = count > 99 ? '99+' : count;
                 badge.hidden = count === 0;
-                badge.setAttribute('aria-label', count + ' requests');
                 if (badge.dataset.requestCount === 'awaiting') {
-                    summary.setAttribute('aria-label', count ? 'Review queue, ' + count + ' awaiting review' : 'Review queue');
+                    summary.setAttribute('aria-label', count
+                        ? (window.HoleInHubText?.f('Review queue, {0} awaiting review', count) ?? ('Review queue, ' + count + ' awaiting review'))
+                        : (window.HoleInHubText?.t('Review queue') ?? 'Review queue'));
+                } else if (badge.dataset.requestCount === 'cancellations' && badge.parentElement.matches('.staff-nav > a')) {
+                    badge.parentElement.setAttribute('aria-label', count
+                        ? (window.HoleInHubText?.f('Cancellations, {0} pending', count) ?? ('Cancellations, ' + count + ' pending'))
+                        : (window.HoleInHubText?.t('Cancellations') ?? 'Cancellations'));
+                } else {
+                    badge.setAttribute('aria-label', window.HoleInHubText?.f('{0} requests', count) ?? (count + ' requests'));
                 }
             }
-            countsLoaded = true;
         } catch { /* Keep the last known counts until the next refresh. */ }
         finally {
             clearTimeout(timeout);
-            clearTimeout(loading);
-            for (const badge of placeholders) {
-                badge.removeAttribute('data-count-loading');
-                if (!badge.textContent.trim()) badge.hidden = true;
-            }
             refreshingCounts = false;
         }
     }

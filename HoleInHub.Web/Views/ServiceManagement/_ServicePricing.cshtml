@@ -1,0 +1,47 @@
+@model ServiceEditorForm
+<details id="service-pricing" class="service-configuration-section service-disclosure" data-service-pricing>
+    <summary>Pricing</summary>
+    <div class="service-configuration-content">
+        <input type="hidden" name="EditPricing" value="true" />
+        <div class="service-rule-grid">
+            <div class="auth-input-wrap">
+                <input asp-for="RateAmount" type="number" min="0.01" max="1000000" step="0.01" required placeholder=" " />
+                <label asp-for="RateAmount" data-base-price-label>Base rate (₱)</label>
+                <span asp-validation-for="RateAmount" data-error-for="RateAmount"></span>
+            </div>
+            <div class="auth-input-wrap" data-price-format="package">
+                <input asp-for="ClassCount" type="number" min="1" placeholder=" " />
+                <label asp-for="ClassCount">Included classes</label>
+                <span asp-validation-for="ClassCount" data-error-for="ClassCount"></span>
+            </div>
+            <div class="auth-input-wrap" data-price-format="rental">
+                <input asp-for="WholeDayRate" type="number" min="0.01" step="0.01" placeholder=" " />
+                <label asp-for="WholeDayRate">Whole-day rate (₱)</label>
+                <span asp-validation-for="WholeDayRate" data-error-for="WholeDayRate"></span>
+            </div>
+        </div>
+        <div data-price-format="hourly">
+            <h3>Hourly rate bands</h3>
+            <div data-price-rows="Bands">
+                @for (var i = 0; i < Model.Bands.Count; i++)
+                {
+                    <partial name="_PricingRule" model='(i.ToString(), Model.Bands[i], (RentalPriceForm?)null)' />
+                }
+            </div>
+            <template data-price-template="Bands"><partial name="_PricingRule" model='("__index__", new PricingBandForm(), (RentalPriceForm?)null)' /></template>
+            <button type="button" class="button button-secondary" data-add-price="Bands" data-action-icon="plus">Add rate band</button>
+        </div>
+        <div data-price-format="rental">
+            <h3>Whole-shop price overrides</h3>
+            <p class="service-editor-note">Date rates override weekday rates.</p>
+            <div data-price-rows="RentalOverrides">
+                @for (var i = 0; i < Model.RentalOverrides.Count; i++)
+                {
+                    <partial name="_PricingRule" model='(i.ToString(), (PricingBandForm?)null, Model.RentalOverrides[i])' />
+                }
+            </div>
+            <template data-price-template="RentalOverrides"><partial name="_PricingRule" model='("__index__", (PricingBandForm?)null, new RentalPriceForm())' /></template>
+            <button type="button" class="button button-secondary" data-add-price="RentalOverrides" data-action-icon="plus">Add rental override</button>
+        </div>
+    </div>
+</details>

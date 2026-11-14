@@ -1,7 +1,7 @@
 @model HoleInHub.Web.ViewModels.SignUpModel
 @{ ViewData["Title"] = "Create Your Account"; }
-<section class="account-page account-registration"><div class="account-inner"><a class="flow-back" href="/"><partial name="_BackArrow" /> Back to home</a><h1>Create your account</h1>
-@if (TempData["AccountMessage"] is string message) { <p role="status">@message</p> }
+<section class="account-page account-registration"><div class="account-inner"><a class="flow-back" href="/"><partial name="_BackArrow" /> @T("Back to home")</a><h1>@T("Create your account")</h1>
+@if (TempData["AccountMessage"] is string message) { <p role="status">@T(message)</p> }
 @if (ViewData["Message"] is string result) { <p role="status">@result</p> }
 
 <form method="post" action="/account/sign-up">
@@ -9,9 +9,9 @@
 <input asp-for="ReturnUrl" type="hidden" />
 <div asp-validation-summary="All" role="alert" class="validation-summary"></div>
 <partial name="_ContactFields" model="Model" />
-<div class="field"><div class="auth-input-wrap"><input asp-for="Email" aria-describedby="Email-error" type="email" autocomplete="email" maxlength="254" autocapitalize="none" spellcheck="false" required  placeholder=" " /><label asp-for="Email"></label></div><span asp-validation-for="Email" id="Email-error" aria-live="polite" class="field-error"></span></div>
-<div class="field"><div class="auth-input-wrap"><input asp-for="Password" aria-describedby="Password-error" type="password" autocomplete="new-password" data-password-rules="true" required minlength="12" maxlength="128" placeholder=" " /><label asp-for="Password"></label><partial name="_PasswordToggle" model='@("Password")' /></div><span asp-validation-for="Password" id="Password-error" aria-live="polite" class="field-error"></span></div>
-<div class="field"><div class="auth-input-wrap"><input asp-for="ConfirmPassword" aria-describedby="ConfirmPassword-error" type="password" autocomplete="new-password" required minlength="12" maxlength="128" placeholder=" " /><label asp-for="ConfirmPassword"></label><partial name="_PasswordToggle" model='@("ConfirmPassword")' /></div><span asp-validation-for="ConfirmPassword" id="ConfirmPassword-error" aria-live="polite" class="field-error"></span></div>
-<button class="button" type="submit">Create account</button></form>
+<div class="field"><div class="auth-input-wrap"><input asp-for="Email" aria-describedby="Email-error" type="email" autocomplete="email" maxlength="254" autocapitalize="none" spellcheck="false" required  placeholder=" " /><label asp-for="Email">@T("Email")</label></div><span asp-validation-for="Email" id="Email-error" aria-live="polite" class="field-error"></span></div>
+<div class="field"><div class="auth-input-wrap"><input asp-for="Password" aria-describedby="Password-error" type="password" autocomplete="new-password" data-password-rules="true" required minlength="12" maxlength="128" placeholder=" " /><label asp-for="Password">@T("Password")</label><partial name="_PasswordToggle" model='@("Password")' /></div><span asp-validation-for="Password" id="Password-error" aria-live="polite" class="field-error"></span></div>
+<div class="field"><div class="auth-input-wrap"><input asp-for="ConfirmPassword" aria-describedby="ConfirmPassword-error" type="password" autocomplete="new-password" required minlength="12" maxlength="128" placeholder=" " /><label asp-for="ConfirmPassword">@T("Confirm password")</label><partial name="_PasswordToggle" model='@("ConfirmPassword")' /></div><span asp-validation-for="ConfirmPassword" id="ConfirmPassword-error" aria-live="polite" class="field-error"></span></div>
+<button class="button" type="submit">@T("Create account")</button></form>
 <partial name="_GoogleButton" model='@(Model.ReturnUrl ?? "")' />
-<p class="auth-switch">Already have an account? <a asp-controller="Account" asp-action="SignIn" asp-route-returnUrl="@Model.ReturnUrl">Sign in</a></p></div></section>
+<p class="auth-switch">@T("Already have an account?") <a asp-controller="Account" asp-action="SignIn" asp-route-returnUrl="@Model.ReturnUrl">@T("Sign in")</a></p></div></section>

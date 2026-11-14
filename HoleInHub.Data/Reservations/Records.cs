@@ -8,11 +8,17 @@ public sealed class ResourceRecord
     [BsonId] public string Id { get; set; } = "";
     public string Name { get; set; } = "";
     public string Service { get; set; } = "Regular";
+    [BsonIgnoreIfNull] public int? MaxPlayers { get; set; }
+    [BsonIgnoreIfNull] public int? MaxTotalGuests { get; set; }
+    [BsonIgnoreIfNull] public int? MaxNonPlayers { get; set; }
+    [BsonIgnoreIfDefault] public long Revision { get; set; }
 }
 
 public sealed class ReservationRecord
 {
     public long Revision { get; set; }
+    [BsonIgnoreIfNull] public string? ServiceEntryId { get; set; }
+    [BsonIgnoreIfNull] public long? ServiceRevision { get; set; }
     [BsonIgnoreIfNull] public DateTime? CheckedInUtc { get; set; }
     [BsonIgnoreIfNull] public DateTime? CheckedOutUtc { get; set; }
     public int PolicyVersion { get; set; }
@@ -116,6 +122,15 @@ public sealed class OutboxRecord
     public DateTime? SentUtc { get; set; }
     public int Attempts { get; set; }
     public bool Failed { get; set; }
+    [BsonIgnoreIfNull] public DateTime? ReminderStartUtc { get; set; }
+    [BsonIgnoreIfNull] public DateTime? ExpiresUtc { get; set; }
+    [BsonIgnoreIfNull] public string? VerificationId { get; set; }
+    [BsonIgnoreIfNull] public DateTime? VerificationIssuedUtc { get; set; }
+    [BsonIgnoreIfNull] public DateTime? SuppressedUtc { get; set; }
+    [BsonIgnoreIfNull] public DateTime? LastAttemptUtc { get; set; }
+    [BsonIgnoreIfNull] public DateTime? FailedUtc { get; set; }
+    [BsonIgnoreIfNull] public string? FailureType { get; set; }
+    [BsonIgnoreIfNull] public Dictionary<string, DateTime>? ReadThroughByAdmin { get; set; }
 }
 
 public sealed class ParticipantRecord

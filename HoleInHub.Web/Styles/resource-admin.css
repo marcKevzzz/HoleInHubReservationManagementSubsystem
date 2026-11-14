@@ -1,3 +1,4 @@
+.resource-admin > .staff-workspace-heading {gap:16px;margin-bottom:28px}
 .resource-toolbar {display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:24px 0 12px;font-size:.85rem}
 .resource-toolbar p {margin:0;color:var(--color-muted)}
 .staff-shell .resource-toolbar a {display:inline-flex;align-items:center;gap:6px;color:var(--color-green)}
@@ -12,9 +13,11 @@
 .resource-symbol {display:grid;place-items:center;width:40px;height:40px;background:var(--color-staff-surface);color:var(--color-green);flex:none}
 .resource-identity small {display:block;margin-top:5px;color:var(--color-muted);font-size:.75rem;font-weight:400}
 .resource-action-heading {text-align:right}
-.resource-actions form {display:flex;justify-content:flex-end}
-.resource-action {display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:8px 12px;color:var(--color-green);background:transparent;border:0;cursor:pointer;font:inherit}
+.resource-actions {text-align:right;white-space:nowrap}
+.resource-actions form {display:inline-flex;vertical-align:middle}
+.resource-action {display:inline-flex;vertical-align:middle;align-items:center;justify-content:center;width:36px;height:36px;min-height:36px;padding:8px;color:var(--color-green);background:transparent;border:0;border-radius:0;cursor:pointer;font:inherit}
 .resource-action:hover {background:var(--color-staff-surface)}
+.staff-shell .resource-actions .resource-action .staff-icon {width:18px;height:18px}
 .resource-admin :is(a,button,input,select,[tabindex]):focus-visible {outline:2px solid var(--color-green);outline-offset:3px}
 .resource-add-content {margin-top:32px;max-width:480px}
 .resource-add-dialog .resource-add-content {margin:0}
@@ -26,4 +29,16 @@
 .resource-form small {color:var(--color-muted);font-size:.75rem;line-height:1.5}
 .resource-form .logout-actions {margin-top:20px}
 .resource-admin .logout-confirmation .staff-error {color:var(--color-error)}
-@media(max-width:600px) {.resource-table :is(th,td) {padding:12px 8px}.resource-symbol {display:none}.resource-table tbody th {min-width:115px}.resource-action {padding-inline:6px}.resource-action svg {display:none}.resource-toolbar {align-items:flex-start;flex-direction:column;gap:10px}}
+.resource-form .auth-input-wrap {position:relative;margin-top:12px}
+.resource-form .auth-input-wrap input {padding:26px 0 8px;border:0;border-bottom:1px solid var(--color-control-line);background:transparent}
+.staff-shell .resource-form .auth-input-wrap label {position:absolute;inset:0 auto auto 0;margin:0;transform:translateY(25px);font-size:.85rem;font-weight:400;color:var(--color-muted);pointer-events:none}
+.staff-shell .resource-form .auth-input-wrap:focus-within label,.staff-shell .resource-form .auth-input-wrap input:not(:placeholder-shown)+label {transform:translateY(0);font-size:.72rem}
+.resource-form .auth-input-wrap::after {content:none}
+.resource-capacity {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;min-width:0;border:0;padding:10px 0 0;margin:20px 0 0}
+.staff-shell .resource-capacity legend {margin:0;font:500 .95rem/1.5 var(--body);letter-spacing:0;text-transform:none}
+.resource-form .resource-capacity .auth-input-wrap {margin:0;min-width:0}
+.resource-capacity .auth-input-wrap:last-of-type {grid-column:1/-1}
+.staff-shell .resource-form .auth-input-wrap input:focus-visible {outline:0;box-shadow:inset 0 -1px var(--color-green);border-bottom-color:var(--color-green)}
+.resource-form .logout-actions {display:flex;justify-content:flex-end;gap:12px}
+@media(prefers-reduced-motion:no-preference) {.resource-form .auth-input-wrap label {transition:transform .2s var(--ease),font-size .2s var(--ease)}}
+@media(max-width:600px) {.resource-table :is(th,td) {padding:12px 8px}.resource-symbol {display:none}.resource-table tbody th {min-width:115px}.resource-action {padding-inline:6px}.resource-toolbar {align-items:flex-start;flex-direction:column;gap:10px}}

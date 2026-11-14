@@ -145,7 +145,7 @@ public sealed partial class CustomerProfilePersistence(IMongoDbContext context)
             frontier = aliases.Where(ids.Add).ToArray();
         }
         var filter = Builders<CustomerProfileOperationRecord>.Filter.In(x => x.SourceId, ids) | Builders<CustomerProfileOperationRecord>.Filter.In(x => x.TargetId, ids);
-        return await Operations.Find(filter).SortByDescending(x => x.OccurredUtc).ThenByDescending(x => x.Id).Skip((page - 1) * 25).Limit(26).ToListAsync(ct);
+        return await Operations.Find(filter).SortByDescending(x => x.OccurredUtc).ThenByDescending(x => x.Id).Skip((page - 1) * 20).Limit(21).ToListAsync(ct);
     }
     public Task<CustomerProfileOperationRecord?> OperationAsync(string id, CancellationToken ct) => Operations.Find(x => x.Id == id).FirstOrDefaultAsync(ct)!;
     public async Task<bool> CanUndoAsync(CustomerProfileOperationRecord op, CancellationToken ct)

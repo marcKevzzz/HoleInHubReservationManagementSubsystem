@@ -34,6 +34,7 @@ public sealed class ActivityController(ActivityService activity, IDataProtection
     public async Task<IActionResult> Index([FromQuery] ActivityQuery q, CancellationToken ct)
     {
         Dates(q);
+        q.Page = q.Cursor is null ? 1 : Math.Clamp(q.Page, 1, 100000);
         if (q.Category.Equals("Access", StringComparison.OrdinalIgnoreCase) && !Access) { return StatusCode(StatusCodes.Status403Forbidden); }
         ActivityPage? page = null; string? error = null;
         try

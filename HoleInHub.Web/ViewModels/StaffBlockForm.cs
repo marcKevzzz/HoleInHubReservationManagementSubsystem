@@ -7,6 +7,7 @@ namespace HoleInHubReservationManagementSubsystem.ViewModels;
 public sealed class StaffBlockForm
 {
     [Required] public string ResourceId { get; set; } = "";
+    public bool WholeDay { get; set; }
     [Required] public DateOnly? Date { get; set; }
     [Required] public TimeOnly? StartTime { get; set; }
     [Range(30, 840)] public int DurationMinutes { get; set; } = 30;

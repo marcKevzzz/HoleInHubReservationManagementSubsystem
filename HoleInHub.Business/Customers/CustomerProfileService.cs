@@ -139,12 +139,12 @@ public sealed class CustomerProfileService(CustomerProfilePersistence persistenc
         page = Math.Clamp(page, 1, 1000);
         var operations = await persistence.HistoryAsync(profile.Id, page, ct);
         var entries = new List<CustomerMergeHistoryEntry>();
-        foreach (var op in operations.Take(25))
+        foreach (var op in operations.Take(20))
         {
             entries.Add(new(op.Id, op.Kind, op.SourceId, op.TargetId, Name(op.SourceBefore), Name(op.TargetBefore), op.ActorLabel.Length > 0 ? op.ActorLabel : op.ActorId,
                 op.Reason, op.OccurredUtc, op.ReservationIds.Length, await persistence.CanUndoAsync(op, ct), op.UndoneById));
         }
-        return new(profile, entries.ToArray(), page, operations.Count > 25);
+        return new(profile, entries.ToArray(), page, operations.Count > 20);
     }
     public async Task<CustomerMergeReceipt> UndoAsync(string operationId, string commandId, string reason, string actorId, string actorLabel, CancellationToken ct)
     {

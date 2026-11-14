@@ -13,19 +13,19 @@
 <div class="page-content booking-status-page">
     @if (ViewData["GuestAccess"] is true)
     {
-        <a class="flow-back" href="/guest/reservations"><partial name="_BackArrow" /> Back to your reservations</a>
+        <a class="flow-back" href="/guest/reservations"><partial name="_BackArrow" /> @T("Back to your reservations")</a>
     }
     else if (User.Identity?.IsAuthenticated == true)
     {
-        <a class="flow-back" href="/my-reservations"><partial name="_BackArrow" /> Back to My Reservations</a>
+        <a class="flow-back" href="/my-reservations"><partial name="_BackArrow" /> @T("Back to My Reservations")</a>
     }
     <header class="booking-status-heading">
-        <h1>RESERVATION DETAILS</h1>
-        <p>Reference <strong class="booking-reference">@Model.Reference</strong></p>
+        <h1>@T("RESERVATION DETAILS")</h1>
+        <p>@T("Reference") <strong class="booking-reference">@Model.Reference</strong></p>
     </header>
     @if (TempData["BookingMessage"] is string message)
     {
-        <p role="status" class="booking-feedback">@message</p>
+        <p role="status" class="booking-feedback">@CustomerText.Error(message)</p>
     }
     <div class="booking-status-layout">
         <div class="booking-status-main">
@@ -33,47 +33,54 @@
                 <div class="booking-visit">
                     <div class="account-date"><time datetime="@Model.StartUtc.ToString("O")"><span>@start.ToString("dd")</span>@start.ToString("MMM yyyy")</time></div>
                     <div>
-                        <h2 id="booking-experience">@ReservationLabels.Service(Model.Service)</h2>
+                        <h2 id="booking-experience">@T(ReservationLabels.Service(Model.Service))</h2>
                         <p>@start.ToString("h:mm tt")–@end.ToString("h:mm tt")</p>
-                        <p class="booking-muted">All times are Asia/Manila.</p>
+                        <p class="booking-muted">@T("All times are Asia/Manila.")</p>
                     </div>
                 </div>
                 <dl class="booking-facts">
                     @if (Model.Service != "WholeShop" && ReservationLabels.IndicativeRate(Model.Service) is string rate)
                     {
-                        <div><dt>Indicative rate</dt><dd>@rate</dd></div>
+                        <div><dt>@T("Indicative rate")</dt><dd>@rate</dd></div>
                     }
-                    <div><dt>Bays</dt><dd>@string.Join(", ", Model.ResourceIds.Select(id => Model.ResourceNames.GetValueOrDefault(id, id)))</dd></div>
-                    <div><dt>@(Model.PolicyVersion == 0 ? "Attendees (legacy total)" : "Number of guests")</dt><dd>@Model.Attendees</dd></div>
-                    <div><dt>Contact</dt><dd>@Model.FirstName @Model.LastName · @Model.Phone</dd></div>
+                    <div><dt>@T("Bays")</dt><dd>@string.Join(", ", Model.ResourceIds.Select(id => Model.ResourceNames.GetValueOrDefault(id, id)))</dd></div>
+                    <div><dt>@(Model.PolicyVersion == 0 ? T("Attendees (legacy total)") : T("Number of guests"))</dt><dd>@Model.Attendees</dd></div>
+                    <div><dt>@T("Contact")</dt><dd>@Model.FirstName @Model.LastName · @Model.Phone</dd></div>
                     @if (!string.IsNullOrWhiteSpace(Model.Notes))
                     {
-                        <div class="booking-fact-wide"><dt>Notes</dt><dd class="booking-notes">@Model.Notes</dd></div>
+                        <div class="booking-fact-wide"><dt>@T("Notes")</dt><dd class="booking-notes">@Model.Notes</dd></div>
                     }
                 </dl>
             </section>
             @if (Model.Service == "WholeShop")
             {
                 <section class="booking-detail-section" aria-labelledby="booking-deposit">
-                    <h2 id="booking-deposit">Deposit</h2>
+                    <h2 id="booking-deposit">@T("Deposit")</h2>
                     <dl class="booking-facts">
-                        <div class="booking-fact-wide"><dt>Deposit status</dt><dd>@ReservationLabels.Payment(Model.PaymentStatus)</dd></div>
-                        <div><dt>Rental total</dt><dd>₱@Model.RentalTotal?.ToString("N2")</dd></div>
-                        <div><dt>Deposit</dt><dd>₱@Model.DepositAmount?.ToString("N2")</dd></div>
+                        <div class="booking-fact-wide"><dt>@T("Deposit status")</dt><dd>@T(ReservationLabels.Payment(Model.PaymentStatus))</dd></div>
+                        <div><dt>@T("Rental total")</dt><dd>₱@Model.RentalTotal?.ToString("N2")</dd></div>
+                        <div><dt>@T("Deposit")</dt><dd>₱@Model.DepositAmount?.ToString("N2")</dd></div>
                     </dl>
+                </section>
+            }
+            else if (Model.RentalTotal is decimal total)
+            {
+                <section class="booking-detail-section" aria-labelledby="booking-price">
+                    <h2 id="booking-price">@T("Booking total")</h2>
+                    <p>₱@total.ToString("N2")</p>
                 </section>
             }
             @if (BookingRules.IsCoaching(Model.Service))
             {
                 <section class="booking-detail-section" aria-labelledby="booking-coaching">
-                    <h2 id="booking-coaching">Coaching</h2>
+                    <h2 id="booking-coaching">@T("Coaching")</h2>
                     <p>Coach confirmation: @(Model.CoachConfirmed ? "Recorded" : "Awaiting confirmation"). Remaining package sessions are arranged with the venue.</p>
                 </section>
             }
             @if (Model.Participants.Length > 0)
             {
                 <section class="booking-detail-section" aria-labelledby="booking-participants">
-                    <h2 id="booking-participants">Participants</h2>
+                    <h2 id="booking-participants">@T("Participants")</h2>
                     <ul class="booking-participants">
                         @foreach (var p in Model.Participants)
                         {
@@ -83,12 +90,12 @@
                 </section>
             }
             <section class="booking-detail-section" aria-labelledby="booking-history">
-                <h2 id="booking-history">History</h2>
+                <h2 id="booking-history">@T("History")</h2>
                 <ol class="booking-history">
                     @foreach (var entry in Model.History)
                     {
                         <li>
-                            <div><strong>@ReservationLabels.History(entry.Status)</strong>@if (!string.IsNullOrWhiteSpace(entry.Reason)) { <p>@entry.Reason</p> }</div>
+                            <div><strong>@T(ReservationLabels.History(entry.Status))</strong>@if (!string.IsNullOrWhiteSpace(entry.Reason)) { <p>@entry.Reason</p> }</div>
                             <time datetime="@entry.AtUtc.ToString("O")">@TimeZoneInfo.ConvertTimeFromUtc(entry.AtUtc, ReservationRules.Manila).ToString("dd MMM yyyy h:mm tt")</time>
                         </li>
                     }
@@ -96,37 +103,37 @@
             </section>
         </div>
         <aside class="booking-status-sidebar" aria-labelledby="booking-status">
-            <h2 id="booking-status">Reservation status</h2>
-            <p class="booking-current-status">@(overdue ? "Pending · Overdue" : needsRebooking ? "Choose another time" : Model.Status)</p>
+            <h2 id="booking-status">@T("Reservation status")</h2>
+            <p class="booking-current-status">@(overdue ? T("Pending · Overdue") : needsRebooking ? T("Choose another time") : T(Model.Status))</p>
             @if (Model.Status == "Pending")
             {
-                <p>@(Model.Service == "WholeShop" ? "Awaiting the simulated 50% deposit." : "Awaiting staff review.") This request does not confirm your reservation.</p>
-                <dl class="booking-deadline"><dt>@(Model.Service == "WholeShop" ? "Payment deadline" : "Review deadline") · Asia/Manila</dt><dd>@TimeZoneInfo.ConvertTimeFromUtc(Model.ReviewDeadlineUtc, ReservationRules.Manila).ToString("dd MMM yyyy h:mm tt")</dd></dl>
+                <p>@(Model.Service == "WholeShop" ? "Awaiting the simulated 50% deposit." : "Awaiting staff review.") @T("This request does not confirm your reservation.")</p>
+                <dl class="booking-deadline"><dt>@(Model.Service == "WholeShop" ? T("Payment deadline") : T("Review deadline")) · Asia/Manila</dt><dd>@TimeZoneInfo.ConvertTimeFromUtc(Model.ReviewDeadlineUtc, ReservationRules.Manila).ToString("dd MMM yyyy h:mm tt")</dd></dl>
                 @if (overdue)
                 {
-                    <p>The bay hold has been released. Staff can still review this request before the session starts. Confirmation depends on availability.</p>
+                    <p>@T("The bay hold has been released. Staff can still review this request before the session starts. Confirmation depends on availability.")</p>
                 }
                 else if (Model.Service != "WholeShop" && Model.ReviewStartsUtc is { } begins)
                 {
-                    <p>@(begins > DateTime.UtcNow ? $"Staff review begins {TimeZoneInfo.ConvertTimeFromUtc(begins, ReservationRules.Manila):ddd, d MMM, h:mm tt} Manila time." : "The review clock pauses outside operating hours and resumes at the next opening.") Your selected bays are held until the review deadline.</p>
+                    <p>@(begins > DateTime.UtcNow ? F("Staff review begins {0} Manila time.", TimeZoneInfo.ConvertTimeFromUtc(begins, ReservationRules.Manila).ToString("ddd, d MMM, h:mm tt")) : "The review clock pauses outside operating hours and resumes at the next opening.") @T("Your selected bays are held until the review deadline.")</p>
                 }
             }
             <div class="booking-status-actions">
                 @if (Model.Service == "WholeShop" && Model.Status == "Pending" && ViewData["DemoPayments"] is true)
                 {
-                    <a class="button" asp-controller="Reservations" asp-action="Checkout" asp-route-id="@Model.Id" asp-route-token="@ViewData["AccessToken"]" asp-route-guest="@(ViewData["GuestAccess"] is true?"true":null)">Review deposit</a>
+                    <a class="button" asp-controller="Reservations" asp-action="Checkout" asp-route-id="@Model.Id" asp-route-token="@ViewData["AccessToken"]" asp-route-guest="@(ViewData["GuestAccess"] is true?"true":null)">@T("Review deposit")</a>
                 }
-                @if(ViewData["GuestAccess"] is true){<a class="booking-text-link" href="/guest/reservations/details/@Uri.EscapeDataString(Model.Id)">Refresh booking status</a>}
-                else{<a class="booking-text-link" asp-controller="Reservations" asp-action="Status" asp-route-id="@Model.Id" asp-route-token="@ViewData["AccessToken"]">Refresh booking status</a>}
+                @if(ViewData["GuestAccess"] is true){<a class="booking-text-link" href="/guest/reservations/details/@Uri.EscapeDataString(Model.Id)">@T("Refresh booking status")</a>}
+                else{<a class="booking-text-link" asp-controller="Reservations" asp-action="Status" asp-route-id="@Model.Id" asp-route-token="@ViewData["AccessToken"]">@T("Refresh booking status")</a>}
             </div>
             @if (Model.CancellationRequested)
             {
-                <p class="booking-cancellation">A cancellation request is awaiting staff review.</p>
+                <p class="booking-cancellation">@T("A cancellation request is awaiting staff review.")</p>
             }
             @if (needsRebooking)
             {
-                <p>The original slot is unavailable. You can choose another time.</p>
-                <a class="button button-secondary" asp-controller="Reservations" asp-action="Create">Choose another time</a>
+                <p>@T("The original slot is unavailable. You can choose another time.")</p>
+                <a class="button button-secondary" asp-controller="Reservations" asp-action="Create">@T("Choose another time")</a>
             }
             @if (Model.ScheduleChange is { } proposal)
             {
@@ -134,36 +141,36 @@
                     <h2>Schedule change · @proposal.Status</h2>
                     <p>@StaffReviewQueue.Local(proposal.StartUtc).ToString("ddd, d MMM, h:mm tt")–@StaffReviewQueue.Local(proposal.EndUtc).ToString("h:mm tt")</p>
                     <p>@proposal.Reason</p>
-                    @if (proposal.Status == "Pending") { <p>Your original booking stays reserved until staff approves.</p> }
+                    @if (proposal.Status == "Pending") { <p>@T("Your original booking stays reserved until staff approves.")</p> }
                 </section>
             }
             @if (ReservationService.CanRequestScheduleChange(Model, DateTime.UtcNow))
             {
                 <a class="button button-secondary" asp-controller="Reservations" asp-action="Change" asp-route-id="@Model.Id" asp-route-token="@ViewData["AccessToken"]"
-                   asp-route-guest="@(ViewData["GuestAccess"] is true ? "true" : null)">Request schedule change</a>
+                   asp-route-guest="@(ViewData["GuestAccess"] is true ? "true" : null)">@T("Request schedule change")</a>
             }
             @if (ReservationService.CanCancelOnline(Model, now))
             {
                 <details class="booking-cancellation">
-                    <summary class="focus-visible:ring-2">@(Model.Service == "WholeShop" ? "Request cancellation" : "Cancel reservation")</summary>
+                    <summary class="focus-visible:ring-2">@(Model.Service == "WholeShop" ? T("Request cancellation") : T("Cancel reservation"))</summary>
                     <form asp-controller="Reservations" asp-action="RequestCancellation" asp-route-id="@Model.Id"
                           asp-route-guest="@(ViewData["GuestAccess"] is true ? "true" : null)" method="post">
                         <input type="hidden" name="token" value="@ViewData["AccessToken"]" />
                         @if (Model.Service == "WholeShop")
                         {
-                            <p>Staff review this cancellation. Arrange any deposit refund with the venue.</p>
+                            <p>@T("Staff review this cancellation. Arrange any deposit refund with the venue.")</p>
                         }
                         else
                         {
-                            <p>This cancels your reservation immediately and releases any remaining bay hold.</p>
+                            <p>@T("This cancels your reservation immediately and releases any remaining bay hold.")</p>
                         }
-                        <button class="button button-secondary" type="submit">@(Model.Service == "WholeShop" ? "Send cancellation request" : "Confirm cancellation")</button>
+                        <button class="button button-secondary" type="submit">@(Model.Service == "WholeShop" ? T("Send cancellation request") : T("Confirm cancellation"))</button>
                     </form>
                 </details>
             }
             else if ((Model.Status is "Pending" or "Confirmed") && !Model.CancellationRequested)
             {
-                <p class="booking-cancellation">Online cancellation closes one hour before the session.</p>
+                <p class="booking-cancellation">@T("Online cancellation closes one hour before the session.")</p>
             }
         </aside>
     </div>

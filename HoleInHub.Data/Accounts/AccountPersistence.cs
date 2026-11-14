@@ -19,6 +19,8 @@ public sealed class AccountPersistence(IMongoDbContext context)
     private IMongoCollection<StaffRoleAuditRecord> RoleAudit =>
         context.Database.GetCollection<StaffRoleAuditRecord>(StaffRoleAuditRecord.CollectionName);
     public Task<AccountRecord?> FindByIdAsync(string id, CancellationToken ct) => Accounts.Find(x => x.Id == id).FirstOrDefaultAsync(ct)!;
+    public Task<DateTime?> GetNotificationReadTimeAsync(string id, CancellationToken ct) =>
+        Accounts.Find(x => x.Id == id).Project(x => x.NotificationsReadThroughUtc).FirstOrDefaultAsync(ct);
     public Task<AccountRecord?> FindByEmailAsync(string email, CancellationToken ct) => Accounts.Find(x => x.NormalizedEmail == email).FirstOrDefaultAsync(ct)!;
     public Task<AccountRecord?> FindByGoogleSubjectAsync(string subject, CancellationToken ct) => Accounts.Find(x => x.GoogleSubject == subject).FirstOrDefaultAsync(ct)!;
     public Task<List<AccountDirectoryRow>> ReadDirectoryAsync(IReadOnlyList<string>? roles, int offset, int limit, CancellationToken ct)
@@ -75,7 +77,7 @@ public sealed class AccountPersistence(IMongoDbContext context)
     }
 
     public async Task<StaffRoleWriteResult> ResetStaffPinAsync(string actorStamp, string expectedVersion,
-        StaffRoleAuditRecord audit, CancellationToken ct)
+        StaffRoleAuditRecord audit, HoleInHub.Data.Reservations.OutboxRecord notice, CancellationToken ct)
     {
         using var session = await context.Client.StartSessionAsync(cancellationToken: ct);
         return await session.WithTransactionAsync(async (transaction, token) =>
@@ -101,6 +103,8 @@ public sealed class AccountPersistence(IMongoDbContext context)
             await context.Database.GetCollection<StaffPinCredential>("staff_pin_credentials").DeleteOneAsync(transaction,
                 x => x.AccountId == audit.TargetAccountId, cancellationToken: token);
             await RoleAudit.InsertOneAsync(transaction, audit, cancellationToken: token);
+            await context.Database.GetCollection<HoleInHub.Data.Reservations.OutboxRecord>("outbox").InsertOneAsync(transaction,
+                notice, cancellationToken: token);
             await Accounts.UpdateOneAsync(transaction, actorFilter,
                 Builders<AccountRecord>.Update.Set(x => x.Version, Guid.NewGuid().ToString("N")), cancellationToken: token);
             return StaffRoleWriteResult.Applied;

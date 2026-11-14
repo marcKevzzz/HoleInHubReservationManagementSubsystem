@@ -1,18 +1,27 @@
 @using HoleInHub.Business.Services
 @model ServiceEditorForm
-@{ Layout = "_StaffLayout"; ViewData["Title"] = Model.Create ? "Add service" : "Edit service"; }
+@{ Layout = "_StaffLayout"; ViewData["Title"] = Model.Create ? "Add service" : "Edit service";
+    var typeNames = ServiceCatalog.BookingTypes.Select(ReservationLabels.Service).Concat(ViewData["BookingTypeNames"] as string[] ?? []).Append(Model.BookingTypeName).Where(name => !string.IsNullOrWhiteSpace(name) && name != "__new").Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+    if (string.IsNullOrWhiteSpace(Model.BookingTypeName)) { Model.BookingTypeName = ReservationLabels.Service(Model.BookingService); }
+}
 <section class="staff-workspace service-admin service-editor">
     <a class="flow-back" asp-action="Index"><partial name="_BackArrow" /> Back to services</a>
     <header class="staff-workspace-heading service-admin-heading">
         <h1>@ViewData["Title"]</h1>
-        <div class="service-admin-actions"><label class="service-switch"><span>Active</span><input form="service-editor-form" id="Active" name="Active" type="checkbox" value="true" checked="@Model.Active" role="switch" /><span class="service-switch-track" aria-hidden="true"></span></label><a class="button button-secondary" asp-action="Index">Cancel</a><button class="button" type="submit" form="service-editor-form">Save service</button></div>
+        <div class="service-admin-actions"><label class="service-switch"><span>Active</span><input form="service-editor-form" id="Active" name="Active" type="checkbox" value="true" checked="@Model.Active" role="switch" /><span class="service-switch-track" aria-hidden="true"></span></label><a class="button button-secondary" asp-action="Index">Cancel</a><button class="button" type="submit" form="service-editor-form" data-action-icon="save">Save service</button></div>
     </header>
     <form id="service-editor-form" asp-action="Save" method="post" enctype="multipart/form-data" data-service-editor class="service-editor-grid">
         <input type="hidden" name="Active" value="false" /><input asp-for="Id" type="hidden" /><input asp-for="Revision" type="hidden" /><input asp-for="CommandId" type="hidden" /><input asp-for="Create" type="hidden" />
-        <input asp-for="Details" type="hidden" /><input asp-for="RateText" type="hidden" /><input asp-for="Action" type="hidden" /><input asp-for="ActionLabel" type="hidden" /><input asp-for="Order" type="hidden" />
+        <input asp-for="RateText" type="hidden" /><input asp-for="ActionLabel" type="hidden" /><input asp-for="Order" type="hidden" />
+        <input type="hidden" name="ImpactAcknowledgement" value="@Model.ImpactAcknowledgement" />
         <p class="service-field-error service-save-error" data-save-error role="alert"></p>
         <div asp-validation-summary="All" class="staff-error" role="alert"></div>
-        <div class="service-editor-main service-composition">
+        <nav class="flex flex-wrap gap-x-5 gap-y-2" aria-label="Service editor sections">
+            <a href="#service-details">Details</a>
+            <a href="#service-availability">Availability</a>
+            <a href="#service-pricing">Pricing</a>
+        </nav>
+        <div id="service-details" class="service-editor-main service-composition">
             <section class="service-editor-section service-image-section">
                 <h2>Images</h2>
                 <div class="service-editor-gallery" data-service-gallery>
@@ -26,13 +35,14 @@
             </section>
             <section class="service-editor-section service-detail-fields">
                 <h2>Service details</h2>
-                <div class="auth-input-wrap"><input asp-for="Title" required maxlength="120" placeholder=" " /><label asp-for="Title">Service name</label><span asp-validation-for="Title" data-error-for="Title"></span></div>
-                <input asp-for="MaxPax" type="hidden" />
-                <div class="service-money-field"><div class="auth-input-wrap"><input asp-for="RateAmount" type="number" required min="0.01" max="1000000" step="0.01" placeholder=" " /><label asp-for="RateAmount">Displayed rate</label><span asp-validation-for="RateAmount" data-error-for="RateAmount"></span></div><select asp-for="RateUnit" aria-label="Rate unit"><option value="Peso">₱</option><option value="Percentage">%</option></select></div>
+                <div class="auth-input-wrap"><input asp-for="Title" required maxlength="120" placeholder=" " /><label asp-for="Title">Service / offer name</label><span asp-validation-for="Title" data-error-for="Title"></span></div>
+                <div class="auth-input-wrap"><input asp-for="MaxPax" type="number" min="1" max="80" placeholder=" " /><label asp-for="MaxPax">Maximum guests per booking (optional)</label><span asp-validation-for="MaxPax" data-error-for="MaxPax"></span></div>
         <aside class="service-editor-options">
             <section class="service-editor-section">
 
-                <div class="service-editor-field"><label asp-for="BookingService">Booking type</label><select asp-for="BookingService">@foreach (var type in ServiceCatalog.BookingTypes) { <option value="@type">@ReservationLabels.Service(type)</option> }</select></div>
+                <div class="service-editor-field"><label asp-for="BookingTypeName">Booking type</label><select asp-for="BookingTypeName" data-booking-type>@foreach (var name in typeNames) { <option value="@name">@name</option> }<option value="__new">Add new…</option></select></div>
+                <div class="auth-input-wrap" data-new-booking-type><input asp-for="NewBookingTypeName" maxlength="80" placeholder=" "/><label asp-for="NewBookingTypeName">New booking type</label><span asp-validation-for="NewBookingTypeName" data-error-for="NewBookingTypeName"></span></div>
+                <div class="service-editor-field"><label asp-for="BookingService">Bay allocation &amp; review rules</label><select asp-for="BookingService">@foreach (var type in ServiceCatalog.BookingTypes) { <option value="@type">@ReservationLabels.Service(type)</option> }</select></div>
             </section>
             <section class="service-editor-section">
                 <label class="service-switch"><span>Deposit</span><input type="checkbox" role="switch" data-deposit-enabled checked="@(Model.DepositType != "None")" /><span class="service-switch-track" aria-hidden="true"></span></label>
@@ -43,8 +53,19 @@
             </section>
         </div>
 
-        <section class="service-description"><div class="auth-input-wrap"><textarea asp-for="Summary" required maxlength="500" rows="2" placeholder=" "></textarea><label asp-for="Summary">Short description</label><span asp-validation-for="Summary" data-error-for="Summary"></span></div></section>
+        <div class="service-description-grid">
+            <section class="service-description"><div class="auth-input-wrap"><textarea asp-for="Summary" required maxlength="500" rows="3" placeholder=" "></textarea><label asp-for="Summary">Short description</label><span asp-validation-for="Summary" data-error-for="Summary"></span></div></section>
+            <section class="service-description"><div class="auth-input-wrap"><textarea asp-for="Details" rows="3" maxlength="12000" placeholder=" "></textarea><label asp-for="Details">Package inclusions &amp; offer terms</label><span asp-validation-for="Details" data-error-for="Details"></span></div></section>
+        </div>
+        <div class="service-configuration-grid">
+            <partial name="_ServiceAvailability" model="Model" />
+            <partial name="_ServicePricing" model="Model" />
+        </div>
     </form>
     <dialog class="service-image-viewer" data-image-viewer aria-label="Service images"><button type="button" class="service-viewer-close" data-viewer-close aria-label="Close images"><partial name="_StaffIcon" model='"close"' /></button><div data-viewer-content></div></dialog>
 </section>
-@section Scripts { <script src="~/js/service-admin.js" asp-append-version="true"></script> }
+@section Scripts {
+    <script src="~/js/service-admin.js" asp-append-version="true"></script>
+    <script src="~/js/service-availability.js" asp-append-version="true"></script>
+    <script src="~/js/service-pricing.js" asp-append-version="true"></script>
+}

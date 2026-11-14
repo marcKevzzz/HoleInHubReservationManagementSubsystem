@@ -3,6 +3,7 @@ namespace HoleInHub.Business.Reservations;
 public sealed record StaffReviewContext(ReservationDto Booking, bool HasConflict, bool HasEmail, long? PastBookings, long? Cancellations, bool CanCheckIn = false, bool CanCheckOut = false, bool NeedsFollowUp = false)
 {
     public string Email { get; init; } = "";
+    public IReadOnlyList<ResourceDto> Bays { get; init; } = [];
 }
 
 public sealed partial class ReservationService
@@ -28,6 +29,10 @@ public sealed partial class ReservationService
             !conflict && AttendanceRules.CanCheckIn(record, now),
             record.Status == "Checked-In" && now >= record.StartUtc && (record.CheckedInUtc is null || now >= record.CheckedInUtc),
             record.Status == "Confirmed" && now >= AttendanceRules.FollowUpDue(record.StartUtc, record.EndUtc))
-        { Email = record.Email };
+        {
+            Email = record.Email,
+            Bays = record.Status == "Pending" && record.Participants.Length == 0 && record.Service != "WholeShop"
+                ? (await GetCatalogAsync(ct)).Where(bay => record.ResourceIds.Contains(bay.Id)).ToArray() : []
+        };
     }
 }

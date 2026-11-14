@@ -10,7 +10,7 @@
 <div class="staff-workspace staff-customers people-page" data-customer-directory-page>
     <header class="staff-workspace-heading people-directory-heading">
         <h1>Customers</h1>
-        <a class="button" data-people-create asp-action="Create">Add customer</a>
+        <a class="button" data-people-create data-action-icon="plus" asp-action="Create">Add customer</a>
     </header>
     <div class="people-toolbar">
         <form class="staff-lookup people-search" asp-action="Index" method="get" role="search" aria-label="Find a customer">
@@ -61,7 +61,7 @@
         </div>
         <nav class="customer-pagination" aria-label="Customer pages">
             @if (Model.Page > 1) { <a class="button button-secondary" asp-action="Index" asp-route-search="@Model.Search" asp-route-page="@(Model.Page - 1)">Previous</a> }
-            @if (Model.HasMore && Model.Page < 1000) { <a class="button button-secondary" asp-action="Index" asp-route-search="@Model.Search" asp-route-page="@(Model.Page + 1)">Next page</a> }
+            @if (Model.HasMore && Model.Page < 1000) { <a rel="next" class="button button-secondary" asp-action="Index" asp-route-search="@Model.Search" asp-route-page="@(Model.Page + 1)">Next page</a> }
         </nav>
     }
     </div>

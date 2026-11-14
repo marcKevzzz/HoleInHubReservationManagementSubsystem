@@ -4,7 +4,7 @@
 }
 <section class="staff-workspace resource-admin">
     <header class="staff-workspace-heading people-directory-heading">
-        <h1>Resources</h1><a class="button" href="#add-bay" data-resource-add>Add bay</a>
+        <h1>Resources</h1><a class="button" href="#add-bay" data-resource-add data-action-icon="plus">Add bay</a>
     </header>
     <div asp-validation-summary="All" class="staff-error" role="alert"></div>
     @if (Model.Count == 0)
@@ -19,14 +19,17 @@
                 <tbody>
                 @foreach (var bay in Model)
                 {
-                    <tr>
-                        <th scope="row"><span class="resource-identity"><span class="resource-symbol" aria-hidden="true"><partial name="_StaffIcon" model='"resources"' /></span><span>@bay.Name<small>@bay.Id</small></span></span></th>
+                    <tr data-resource-name="@bay.Name">
+                        <th scope="row"><span class="resource-identity"><span class="resource-symbol" aria-hidden="true"><partial name="_StaffIcon" model='@(bay.Service == "VIP" ? "vip-bay" : "regular-bay")' /></span><span>@bay.Name<small>@bay.Id</small></span></span></th>
                         <td>@bay.Service</td>
                         <td><span class="staff-status" data-status="@(bay.Active ? "Confirmed" : "Completed")">@(bay.Active ? "Active" : "Retired")</span></td>
                         <td class="resource-actions">
+                            <button class="resource-action" type="button" data-resource-edit data-bay-id="@bay.Id" data-bay-name="@bay.Name" data-bay-service="@bay.Service"
+                                    data-bay-revision="@bay.Revision" data-bay-max-players="@bay.MaxPlayers" data-bay-max-total-guests="@bay.MaxTotalGuests"
+                                    data-bay-max-non-players="@bay.MaxNonPlayers" title="Edit bay" aria-label="Edit @bay.Name"><partial name="_StaffIcon" model='"edit"' /></button>
                             <form method="post" asp-action="SetBayActive" data-resource-state data-bay-name="@bay.Name" data-bay-id="@bay.Id">
                                 <input type="hidden" name="id" value="@bay.Id" /><input type="hidden" name="active" value="@(bay.Active ? "false" : "true")" />
-                                <button class="resource-action" type="submit" aria-label="@(bay.Active ? $"Retire {bay.Name} ({bay.Id})" : $"Restore {bay.Name} ({bay.Id})")"><partial name="_StaffIcon" model='@(bay.Active ? "view-off" : "refresh")' /><span>@(bay.Active ? "Retire" : "Restore")</span></button>
+                                <button class="resource-action" type="submit" title="@(bay.Active ? "Retire bay" : "Restore bay")" aria-label="@(bay.Active ? $"Retire {bay.Name} ({bay.Id})" : $"Restore {bay.Name} ({bay.Id})")"><partial name="_StaffIcon" model='@(bay.Active ? "blocked" : "refresh")' /></button>
                             </form>
                         </td>
                     </tr>
@@ -36,18 +39,30 @@
         </div>
     }
     <section id="add-bay" class="resource-add-content" data-resource-add-content>
-        <h2 id="resource-add-title">Add a bay</h2>
-        <p>Choose a permanent ID for the bay. Use venue availability for temporary closures.</p>
+        <header class="staff-detail-panel-heading"><h2 id="resource-add-title">Add a bay</h2><button type="button" class="staff-icon-button" data-resource-close aria-label="Close panel" title="Close panel"><partial name="_StaffIcon" model='"close"' /></button></header>
         <form method="post" asp-action="AddBay" class="resource-form" data-resource-form>
-            <label for="bay-name">Bay name</label><input id="bay-name" name="name" maxlength="80" required value="@ViewData["BayName"]" autocomplete="off" />
-            <label for="bay-id">Bay ID</label><input id="bay-id" name="id" maxlength="32" pattern="[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*" required value="@ViewData["BayId"]" aria-describedby="bay-id-help" placeholder="e.g. bay-9" autocomplete="off" />
+            <div class="auth-input-wrap"><input id="bay-name" name="name" maxlength="80" required value="@ViewData["BayName"]" autocomplete="off" placeholder=" " /><label for="bay-name">Bay name</label></div>
+            <div class="auth-input-wrap"><input id="bay-id" name="id" maxlength="32" pattern="[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*" required value="@ViewData["BayId"]" aria-describedby="bay-id-help" placeholder=" " autocomplete="off" /><label for="bay-id">Bay ID</label></div>
             <small id="bay-id-help">Unique letters, numbers or hyphens. Saved in lowercase.</small>
             <label for="bay-service">Type</label><select id="bay-service" name="service"><option selected="@(ViewData["BayService"] as string != "VIP")">Regular</option><option selected="@(ViewData["BayService"] as string == "VIP")">VIP</option></select>
+            <partial name="_BayCapacity" model='"bay"' />
             <p class="staff-error" data-resource-error role="alert" hidden></p>
-            <div class="logout-actions"><button class="button button-tertiary" type="button" data-resource-cancel hidden>Cancel</button><button class="button" type="submit">Add bay</button></div>
+            <div class="logout-actions"><button class="button" type="submit">Add bay</button></div>
         </form>
     </section>
-    <dialog class="logout-confirmation resource-add-dialog" data-resource-add-dialog aria-labelledby="resource-add-title"></dialog>
+    <dialog class="resource-add-dialog staff-detail-panel" data-resource-add-dialog aria-labelledby="resource-add-title"></dialog>
+    <dialog class="staff-detail-panel resource-edit-dialog" data-resource-edit-dialog aria-labelledby="resource-edit-title">
+        <header class="staff-detail-panel-heading"><h2 id="resource-edit-title">Edit bay</h2><button type="button" class="staff-icon-button" data-resource-close aria-label="Close panel" title="Close panel"><partial name="_StaffIcon" model='"close"' /></button></header>
+        <form method="post" asp-action="EditBay" class="resource-form" data-resource-edit-form>
+            <input type="hidden" name="expectedRevision"/><input type="hidden" name="capacityAcknowledgement"/>
+            <div class="auth-input-wrap"><input id="edit-bay-name" name="name" maxlength="80" required placeholder=" " autocomplete="off"/><label for="edit-bay-name">Bay name</label></div>
+            <div class="auth-input-wrap"><input id="edit-bay-id" name="id" readonly placeholder=" "/><label for="edit-bay-id">Bay ID</label></div>
+            <label for="edit-bay-service">Type</label><select id="edit-bay-service" name="service"><option>Regular</option><option>VIP</option></select>
+            <partial name="_BayCapacity" model='"edit-bay"' />
+            <p class="staff-error" data-resource-error role="alert" hidden></p>
+            <div class="logout-actions"><button class="button" type="submit" data-no-icon>Save bay</button></div>
+        </form>
+    </dialog>
     <dialog class="logout-confirmation" data-resource-confirm aria-labelledby="resource-confirm-title" aria-describedby="resource-confirm-description">
         <h2 id="resource-confirm-title"></h2><p id="resource-confirm-description"></p>
         <p class="staff-error" data-resource-error role="alert" hidden></p>

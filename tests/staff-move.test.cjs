@@ -100,6 +100,17 @@ test(`vertical dragging into a bay with ${name} validates the actual time`, asyn
     assert.equal(style.start, '14.2857%');
     assert.equal(style.translate, '');
     assert.equal(dialog.open, false);
+    bar.dataset.moveRestriction = 'This reservation has already started and cannot be moved.';
+    bar.closest = selector => selector === '[data-move-restriction]' ? bar : source;
+    const noticeCount = notices.length;
+    timeline.handlers.pointerdown(pointer(25));
+    assert.equal(notices.length, noticeCount, 'ordinary clicks still open booking details');
+    timeline.handlers.pointermove(pointer(75));
+    timeline.handlers.pointermove(pointer(80));
+    assert.equal(notices.length, noticeCount + 1);
+    assert.equal(notices.at(-1).message, bar.dataset.moveRestriction);
+    timeline.handlers.pointerup(pointer(80));
+    assert.equal(dialog.open, false);
 });
 }
 

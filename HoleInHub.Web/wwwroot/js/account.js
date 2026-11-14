@@ -20,7 +20,8 @@
         toggle.addEventListener('click', () => {
             const show = input.type === 'password';
             input.type = show ? 'text' : 'password';
-            toggle.setAttribute('aria-label', `${show ? 'Hide' : 'Show'} ${name}`);
+            const label = `${show ? 'Hide' : 'Show'} ${name}`;
+            toggle.setAttribute('aria-label', window.HoleInHubText?.t(label) ?? label);
             toggle.querySelector('.password-eye').toggleAttribute('hidden', show);
             toggle.querySelector('.password-eye-slash').toggleAttribute('hidden', !show);
         });
@@ -39,7 +40,8 @@
             message = 'Use 12–128 characters with uppercase and lowercase letters, a number, and a symbol.';
         } else if (input.name === 'ConfirmPassword' && input.value !== form.elements.Password.value) message = 'Passwords do not match.';
         input.setAttribute('aria-invalid', String(Boolean(message)));
-        const next = message || (input.dataset.passwordRules ? 'Password meets the requirements.' : '');
+        const text = message || (input.dataset.passwordRules ? 'Password meets the requirements.' : '');
+        const next = window.HoleInHubText?.t(text) ?? text;
         if (feedback.textContent !== next) {
             feedback.textContent = next;
             feedback.dataset.valid = String(!message);

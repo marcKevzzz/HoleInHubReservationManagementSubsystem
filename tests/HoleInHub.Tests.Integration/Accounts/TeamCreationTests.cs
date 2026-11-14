@@ -79,6 +79,11 @@ public sealed class TeamCreationTests(MongoDbFixture fixture) : IClassFixture<Mo
         Assert.Equal(after.SecurityStamp, (await service.FindByIdAsync(staff.Id, default))!.SecurityStamp);
         Assert.Equal(StaffRoleChangeResult.Stale, await service.ResetStaffPinAsync(command with { CommandId = Guid.NewGuid().ToString("N") }, default));
         Assert.Equal(1, await db.Database.GetCollection<BsonDocument>("staff_role_audit").CountDocumentsAsync(FilterDefinition<BsonDocument>.Empty));
+        var notice = await db.Database.GetCollection<HoleInHub.Data.Reservations.OutboxRecord>("outbox").Find(x => x.Id == command.CommandId + ":pin-reset").SingleAsync();
+        Assert.Equal(staff.Email, notice.Recipient);
+        Assert.Contains("authorized staff desktop", notice.Body);
+        Assert.Contains("verify the emailed code", notice.Body);
+        Assert.Equal(1, await db.Database.GetCollection<HoleInHub.Data.Reservations.OutboxRecord>("outbox").CountDocumentsAsync(FilterDefinition<HoleInHub.Data.Reservations.OutboxRecord>.Empty));
     }
 
     [Fact]

@@ -8,7 +8,7 @@
 }
 <section class="staff-workspace people-page customer-merge-page">
     <a class="flow-back" asp-action="Details" asp-route-id="@Model.Source.Id"><partial name="_BackArrow" /> Back to customer</a>
-    <header class="staff-workspace-heading"><h1>Merge customer records</h1><p>Keep one staff profile for the same person. Review the records before combining their history.</p></header>
+    <header class="staff-workspace-heading"><h1>Merge duplicate customer</h1></header>
     <partial name="_CustomerMergeContent" model="Model" />
 </section>
 @section Scripts {

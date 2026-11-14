@@ -3,7 +3,9 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using HoleInHub.Business.Accounts;
 using HoleInHub.Business.Reservations;
+using HoleInHub.Business.Services;
 using HoleInHub.Web.Accounts;
+using HoleInHubReservationManagementSubsystem.Localization;
 using HoleInHubReservationManagementSubsystem.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
@@ -14,15 +16,35 @@ namespace HoleInHubReservationManagementSubsystem.Controllers;
 
 public sealed class ReservationsController(ReservationService reservations, GuestBookingService guests,
     IDataProtectionProvider protection, IOptions<ReservationPolicy> policy,
-    IOptions<AccountEmailOptions> emailOptions, IHostEnvironment environment, TimeProvider clock, AccountService accounts, GuestReservationSession guestAccess) : Controller
+    IOptions<AccountEmailOptions> emailOptions, IHostEnvironment environment, TimeProvider clock, AccountService accounts, GuestReservationSession guestAccess,
+    IServiceCatalog catalog) : Controller
 {
     [AllowAnonymous] public IActionResult Availability() => NotFound();
-    [AllowAnonymous, HttpGet] public async Task<IActionResult> CheckAvailability(DateOnly date, TimeOnly startTime, int durationMinutes, string service, CancellationToken ct) { try { return Json(await reservations.GetAvailabilityAsync(date, startTime, durationMinutes, service, ct)); } catch (ReservationValidationException error) { return BadRequest(new { message = error.Message }); } }
     [AllowAnonymous, HttpGet]
-    public IActionResult RentalQuote(DateOnly date, TimeOnly startTime, int durationMinutes)
+    public async Task<IActionResult> CheckAvailability(DateOnly date, TimeOnly startTime, int durationMinutes, string service, CancellationToken ct)
     {
-        try { return Json(reservations.GetDemoQuote(date, startTime, durationMinutes, DemoAllowed)); }
-        catch (ReservationValidationException error) { return BadRequest(new { message = error.Message }); }
+        var (type, entryId) = BookingChoice(service);
+        try { return Json(await reservations.GetAvailabilityAsync(date, startTime, durationMinutes, type, ct, entryId)); }
+        catch (ReservationValidationException error) { return BadRequest(new { message = CustomerText.Error(error.Message) }); }
+    }
+
+    private static (string Type, string? EntryId) BookingChoice(string? value)
+    {
+        var parts = (value ?? "").Split(':', 2);
+        return (parts[0], parts.Length == 2 ? parts[1] : null);
+    }
+    [AllowAnonymous, HttpGet]
+    public async Task<IActionResult> RentalQuote(DateOnly date, TimeOnly startTime, int durationMinutes, CancellationToken ct,
+        string service = "WholeShop", int bayCount = 1)
+    {
+        var (type, entryId) = BookingChoice(service);
+        try
+        {
+            var quote = await reservations.GetQuoteAsync(date, startTime, durationMinutes, type, entryId, bayCount, DemoAllowed, ct);
+            return Json(new { rentalTotal = quote.Total, quote.DepositAmount, quote.Currency, quote.Lines,
+                quoteKey = ReservationService.QuoteKey(quote, type, entryId, date, startTime, durationMinutes, bayCount) });
+        }
+        catch (ReservationValidationException error) { return BadRequest(new { message = CustomerText.Error(error.Message) }); }
     }
     [Authorize, ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public async Task<IActionResult> Index(string? view, CancellationToken ct)
@@ -38,12 +60,14 @@ public sealed class ReservationsController(ReservationService reservations, Gues
     {
         var resources = await reservations.GetCatalogAsync(ct);
         ViewData["Resources"] = resources;
+        var (type, entryId) = BookingChoice(service);
         var model = new SubmitReservationRequest
         {
             Date = date ?? DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, ReservationRules.Manila).DateTime.AddDays(1)),
             StartTime = startTime ?? new TimeOnly(11, 0),
             DurationMinutes = durationMinutes ?? 60,
-            Service = service is "Regular" or "VIP" or "PhilippineCoach" or "KpgaPro" or "KpgaGroup" or "WholeShop" ? service : "Regular",
+            Service = ServiceCatalog.BookingTypes.Contains(type) ? type : "Regular",
+            ServiceEntryId = ServiceCatalog.BookingTypes.Contains(type) ? entryId : null,
             IdempotencyKey = Guid.NewGuid().ToString("N")
         };
         if (model.Service == "WholeShop" && startTime == null && durationMinutes == null)
@@ -75,8 +99,11 @@ public sealed class ReservationsController(ReservationService reservations, Gues
             }
             catch (JsonException) { ModelState.AddModelError("", "Your saved request expired. Enter your booking details again."); }
         }
-        try { ReservationRules.PreviewInterval(model.Date, model.StartTime, model.DurationMinutes, model.Service); }
-        catch (ReservationValidationException error) { ModelState.AddModelError("", error.Message); }
+        if (date.HasValue && startTime.HasValue || editDraft || recover)
+        {
+            try { await reservations.PreviewBookingIntervalAsync(model.Date, model.StartTime, model.DurationMinutes, model.Service, ct, model.ServiceEntryId); }
+            catch (ReservationValidationException error) { ModelState.AddModelError("", error.Message); }
+        }
         if (resourceId is not null && resources.Any(resource => resource.Id == resourceId && resource.Service == model.Service))
         {
             model.ResourceIds = [resourceId];
@@ -114,6 +141,7 @@ public sealed class ReservationsController(ReservationService reservations, Gues
     private async Task PrepareAsync(SubmitReservationRequest request, CancellationToken ct)
     {
         ViewData["Resources"] = await reservations.GetCatalogAsync(ct);
+        ViewData["BookingServices"] = await catalog.GetActiveAsync(ct);
         GuestSession();
         ViewData["NowUtc"] = clock.GetUtcNow().ToString("O");
         ViewData["DemoPayments"] = DemoAllowed;
@@ -122,6 +150,9 @@ public sealed class ReservationsController(ReservationService reservations, Gues
     [HttpPost, AllowAnonymous, ValidateAntiForgeryToken, EnableRateLimiting("accounts")]
     public async Task<IActionResult> Create(SubmitReservationRequest request, CancellationToken ct)
     {
+        var (type, entryId) = BookingChoice(request.Service);
+        request.Service = type;
+        request.ServiceEntryId = entryId;
         if (!ContactRules.IsName(request.FirstName)) { ModelState.AddModelError(nameof(request.FirstName), ContactRules.NameError); }
         if (!ContactRules.IsName(request.LastName)) { ModelState.AddModelError(nameof(request.LastName), ContactRules.NameError); }
         if (!ContactRules.IsPhone(request.Phone)) { ModelState.AddModelError(nameof(request.Phone), ContactRules.PhoneError); }
@@ -218,7 +249,7 @@ public sealed class ReservationsController(ReservationService reservations, Gues
             throw new ReservationValidationException("Booking email links are not configured. Please contact the venue.");
         }
         var statusPath = account ? "/Reservations" : $"/Reservations/Status?token={access}";
-        var start = ReservationRules.PreviewInterval(request.Date, request.StartTime, request.DurationMinutes, request.Service).Start;
+        var start = TimeZoneInfo.ConvertTimeToUtc(request.Date.ToDateTime(request.StartTime), ReservationRules.Manila);
         var localStart = TimeZoneInfo.ConvertTimeFromUtc(start, ReservationRules.Manila);
         var receipt = "protected:" + protection.CreateProtector("BookingEmail").Protect(
             $"Hi {request.FirstName.Trim()},\n\nYour reservation request has been received.\nReservation status: Pending\nExperience: {ReservationLabels.Service(request.Service)}\nSession: {localStart:dd MMM yyyy h:mm tt} (Asia/Manila)\nNumber of guests: {request.Attendees}\n\n" +

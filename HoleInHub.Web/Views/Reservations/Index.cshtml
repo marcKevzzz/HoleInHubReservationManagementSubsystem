@@ -4,8 +4,8 @@
 @{ViewData["Title"]="My reservations";ViewData["AccountPage"]="reservations";var bookings=Model.ShowPast?Model.Past:Model.Upcoming;}
 <div class="page-content account-hub">
 <partial name="_AccountNavigation" />
-<header class="account-heading"><h1>MY RESERVATIONS</h1></header>
-<nav class="account-reservation-tabs" aria-label="Reservation views"><a asp-action="Index" aria-current="@(!Model.ShowPast?"page":null)">Upcoming <span>@Model.Upcoming.Count</span></a><a asp-action="Index" asp-route-view="past" aria-current="@(Model.ShowPast?"page":null)">Past <span>@Model.Past.Count</span></a></nav>
-<p class="account-timezone">All times are Asia/Manila.</p>
-@if(bookings.Count==0){<div class="account-empty" data-motion="stagger"><h2>@(Model.ShowPast?"No past reservations yet.":"Your next round is waiting.")</h2><p>@(Model.ShowPast?"Finished, cancelled and expired requests will appear here.":"Choose a time and plan your next visit.")</p>@if (!Model.ShowPast) { <a class="button button-secondary" asp-action="Create">Explore availability</a> }</div>}
+<header class="account-heading"><h1>@T("MY RESERVATIONS")</h1></header>
+<nav class="account-reservation-tabs" aria-label="@T("Reservation views")"><a asp-action="Index" aria-current="@(!Model.ShowPast?"page":null)">@T("Upcoming") <span>@Model.Upcoming.Count</span></a><a asp-action="Index" asp-route-view="past" aria-current="@(Model.ShowPast?"page":null)">@T("Past") <span>@Model.Past.Count</span></a></nav>
+<p class="account-timezone">@T("All times are Asia/Manila.")</p>
+@if(bookings.Count==0){<div class="account-empty" data-motion="stagger"><h2>@(Model.ShowPast?T("No past reservations yet."):T("Your next round is waiting."))</h2><p>@(Model.ShowPast?T("Finished, cancelled and expired requests will appear here."):T("Choose a time and plan your next visit."))</p>@if (!Model.ShowPast) { <a class="button button-secondary" asp-action="Create">@T("Explore availability")</a> }</div>}
 else{<div class="account-reservations">@foreach(var booking in bookings){<partial name="_ReservationRow" model="booking" />}</div>}</div>

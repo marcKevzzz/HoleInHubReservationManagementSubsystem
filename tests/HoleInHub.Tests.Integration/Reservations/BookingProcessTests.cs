@@ -254,6 +254,43 @@ public sealed class BookingProcessTests(MongoDbFixture fixture) : IClassFixture<
         Assert.Equal(0, counts["pending"]);
         Assert.Equal(0, counts["deposit"]);
         Assert.False(counts.ContainsKey("expired"));
+        var firstPage = await store.ReviewQueueAsync("overdue", now, null, false, default, page: 1);
+        var secondPage = await store.ReviewQueueAsync("overdue", now, null, false, default, page: 2);
+        Assert.Equal(21, firstPage.Count);
+        Assert.Equal(21, secondPage.Count);
+        Assert.Empty(firstPage.Take(20).Select(item => item.Id).Intersect(secondPage.Take(20).Select(item => item.Id)));
+    }
+
+    [Fact]
+    public async Task ReviewTotalIncludesScheduleChangesAndDepositsWithoutDoubleCounting()
+    {
+        var (store, _, context) = await Setup();
+        var now = DateTime.UtcNow;
+        var overdue = Request();
+        overdue.ReviewDeadlineUtc = now.AddMinutes(-1);
+        overdue.ScheduleChange = new() { Status = "Pending" };
+        var change = Request();
+        change.Status = "Confirmed";
+        change.ScheduleChange = new() { Status = "Pending" };
+        var deposit = Request("WholeShop");
+        deposit.ResourceIds = deposit.Participants.Select(participant => participant.ResourceId).ToArray();
+        var cancellation = Request();
+        cancellation.CancellationRequested = true;
+        var expired = Request();
+        expired.Status = "Expired";
+        var cancelled = Request();
+        cancelled.Status = "Cancelled";
+        await context.Database.GetCollection<ReservationRecord>("reservations")
+            .InsertManyAsync([overdue, change, deposit, cancellation, expired, cancelled]);
+
+        var counts = await store.ReviewCountsAsync(now, default);
+
+        Assert.Equal(3, counts["awaiting"]);
+        Assert.Equal(2, counts["changes"]);
+        Assert.Equal(1, counts["deposit"]);
+        Assert.Equal(1, counts["cancellations"]);
+        Assert.Equal(cancelled.Id, Assert.Single(await store.ReviewQueueAsync("cancelled", now, null, false, default, page: 1)).Id);
+        Assert.Equal(cancellation.Id, Assert.Single(await store.ReviewQueueAsync("cancellations", now, null, false, default, page: 1)).Id);
     }
 
     [Fact]

@@ -19,6 +19,15 @@
     function mount() {
     const page = document.querySelector('[data-staff-schedule]');
     if (!page) return;
+    const notice = page.querySelector('[data-customer-booking-notice]');
+    if (notice && !window.HoleInHubSchedule) {
+        window.HoleInHubToasts?.show({
+            kind: 'info', title: notice.dataset.title,
+            message: 'Drag an open time on any bay, or choose New booking, then review the prefilled details.',
+            href: notice.dataset.href, action: 'Back to customer', autoDismiss: true,
+            replaceKey: 'customer-booking-context'
+        });
+    }
     function highlight(booking) {
         const id = booking?.dataset.multiBay === 'true' ? booking.dataset.bookingId : null;
         for (const bar of page.querySelectorAll('.staff-timeline-bar[data-booking-id]')) {
@@ -52,7 +61,7 @@
             if (drawer.open) return;
             opener = booking;
             for (const bar of page.querySelectorAll('.staff-timeline-bar[data-booking-id]')) {
-                bar.classList.toggle('is-booking-open', booking.dataset.multiBay === 'true' && bar.dataset.bookingId === booking.dataset.bookingId);
+                bar.classList.toggle('is-booking-open', bar.dataset.bookingId === booking.dataset.bookingId);
             }
             drawer.querySelectorAll('[data-drawer]').forEach(field => {
                 field.textContent = booking.dataset[field.dataset.drawer];
@@ -114,7 +123,6 @@
                     const bounds = bars[0].getBoundingClientRect();
                     bars[0].focus({ preventScroll: true });
                     bars.forEach(bar => bar.classList.add('is-search-target'));
-                    bars[0].addEventListener('blur', () => bars.forEach(bar => bar.classList.remove('is-search-target')), { once: true });
                     const left = scroller.scrollLeft + bounds.left - viewport.left - label - 16;
                     const top = scroller.scrollTop + bounds.top - viewport.top - axis - 12;
                     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -125,13 +133,16 @@
                     }
                     return;
                 }
-                if (destination !== page) { window.location.assign(booking.href); return; }
-                // Expired and cancelled bookings have no timeline bar.
+                // Expired and cancelled bookings have no timeline bar, but still open in the drawer.
+                destination.dispatchEvent(new CustomEvent('staff:open-booking', { detail: booking }));
+                return;
             }
             openBooking(booking);
         });
         drawer.addEventListener('close', () => { actionsRequest?.abort();
-            for (const bar of page.querySelectorAll('.is-booking-open')) bar.classList.remove('is-booking-open');
+            for (const bar of page.querySelectorAll('.is-booking-open, .is-search-target')) {
+                bar.classList.remove('is-booking-open', 'is-search-target');
+            }
             opener?.focus({ preventScroll: true }); });
     }
 

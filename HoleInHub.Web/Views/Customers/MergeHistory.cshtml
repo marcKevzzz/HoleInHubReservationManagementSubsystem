@@ -37,7 +37,7 @@
     </ol>
     <nav class="customer-pagination" aria-label="Merge history pages">
         @if (Model.Page>1) { <a asp-action="MergeHistory" asp-route-id="@Model.Profile.Id" asp-route-page="@(Model.Page-1)">Previous</a> }
-        @if (Model.HasMore) { <a asp-action="MergeHistory" asp-route-id="@Model.Profile.Id" asp-route-page="@(Model.Page+1)">Next</a> }
+        @if (Model.HasMore) { <a rel="next" asp-action="MergeHistory" asp-route-id="@Model.Profile.Id" asp-route-page="@(Model.Page+1)">Next</a> }
     </nav>
 </section>
 @section Scripts { <script src="~/js/reason-confirmation.js" asp-append-version="true"></script> }

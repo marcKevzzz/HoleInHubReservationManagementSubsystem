@@ -2,7 +2,12 @@
 (() => {
     const active = new WeakMap();
     const mounted = new WeakMap();
-    const selector = '.button, .flow-back, button.staff-hover-link';
+    const selector = '.button, .flow-back, button.staff-hover-link, nav[aria-label$="pages"] a, .dashboard-pagination a';
+    const actionIcons = {
+        plus: 'M12 4v16M4 12h16',
+        save: 'm5 12 4 4 10-10',
+        calendar: 'M7 3v4m10-4v4M3 9h18M5 5h14v16H5z'
+    };
 
     function prepare(button, left = false) {
         if (button.querySelector('[data-button-label]')) return;
@@ -27,13 +32,15 @@
             label.append(row);
         }
         button.append(label);
-        if (button.hasAttribute('data-no-icon') && !button.closest?.('.staff-shell')) return;
+        const actionIcon = actionIcons[button.dataset?.actionIcon];
+        if (button.hasAttribute('data-no-icon')
+            || (button.closest?.('.staff-shell') && (button.closest('dialog') || (!left && !actionIcon)))) return;
         const icon = document.createElement('span');
         icon.className = left ? 'button-icon button-icon-left' : 'button-icon';
         icon.setAttribute('aria-hidden', 'true');
-        icon.innerHTML = '<svg class="button-icon-a" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M4 12h15M13 6l6 6-6 6"/></svg><svg class="button-icon-b" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M4 12h15M13 6l6 6-6 6"/></svg>';
+        const path = actionIcon || (left ? 'M20 12H5M11 6l-6 6 6 6' : 'M4 12h15M13 6l6 6-6 6');
+        icon.innerHTML = ['a', 'b'].map(key => `<svg class="button-icon-${key}" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="${path}"/></svg>`).join('');
         if (left) {
-            icon.querySelectorAll('path').forEach(path => path.setAttribute('d', 'M20 12H5M11 6l-6 6 6 6'));
             button.prepend(icon);
         } else button.append(icon);
     }

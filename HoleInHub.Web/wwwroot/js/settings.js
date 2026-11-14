@@ -1,6 +1,18 @@
 (() => {
  const form=document.querySelector('[data-settings-form]'),dialog=document.querySelector('[data-settings-confirm]');
  if(!form || !dialog)return;
+ const links=[...document.querySelectorAll('.settings-nav a')];
+ if(typeof IntersectionObserver==='function') {
+   const observer=new IntersectionObserver(entries=>{
+     const visible=entries.filter(entry=>entry.isIntersecting).sort((a,b)=>a.boundingClientRect.top-b.boundingClientRect.top)[0];
+     if(!visible)return;
+     for(const link of links) {
+       if(link.hash==='#'+visible.target.id)link.setAttribute('aria-current','location');
+       else link.removeAttribute('aria-current');
+     }
+   },{rootMargin:'-5% 0px -65% 0px',threshold:0});
+   document.querySelectorAll('.settings-section').forEach(section=>observer.observe(section));
+ }
  let confirmed=false;
  form.addEventListener('submit',event=>{
    if(!confirmed && dialog.showModal){event.preventDefault();dialog.showModal();return;}

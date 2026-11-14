@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using HoleInHub.Business.Accounts;
 using HoleInHub.Business.Services;
+using HoleInHub.Business.Reservations;
 using HoleInHubReservationManagementSubsystem.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,13 +12,25 @@ namespace HoleInHubReservationManagementSubsystem.Controllers;
 [Route("admin/services")]
 public sealed class ServiceManagementController(ServiceCatalog catalog) : Controller
 {
+    private static string PricingField(PricingValidationException error) => error.Field == "BaseRate" ? "RateAmount" : error.Field;
+
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken ct) => View(await catalog.GetAllAsync(ct));
     [HttpGet("new")]
-    public IActionResult Create() => View("Edit", new ServiceEditorForm());
+    public async Task<IActionResult> Create(CancellationToken ct)
+    {
+        await LoadBookingTypesAsync(ct);
+        return View("Edit", new ServiceEditorForm().LoadPricing(PricingRules.Default("Regular")));
+    }
     [HttpGet("{id}/edit")]
-    public async Task<IActionResult> Edit(string id, CancellationToken ct) =>
-        await catalog.GetAsync(id, ct) is { } item ? View(ServiceEditorForm.From(item)) : NotFound();
+    public async Task<IActionResult> Edit(string id, CancellationToken ct)
+    {
+        await LoadBookingTypesAsync(ct);
+        return await catalog.GetAsync(id, ct) is { } item ? View(ServiceEditorForm.From(item)) : NotFound();
+    }
+    private async Task LoadBookingTypesAsync(CancellationToken ct) =>
+        ViewData["BookingTypeNames"] = (await catalog.GetAllAsync(ct)).Select(item => item.BookingTypeName)
+            .Where(name => !string.IsNullOrWhiteSpace(name)).Distinct(StringComparer.OrdinalIgnoreCase).Order().ToArray();
 
     [HttpPost("reorder")]
     public async Task<IActionResult> Reorder(string positions, CancellationToken ct)
@@ -63,6 +76,17 @@ public sealed class ServiceManagementController(ServiceCatalog catalog) : Contro
 
                 return RedirectToAction(nameof(Index));
             }
+            catch (ServiceImpactException error)
+            {
+                if (Request.Headers.Accept == "application/json")
+                { return Conflict(new { error = error.Message, acknowledgement = error.Acknowledgement }); }
+                form.ImpactAcknowledgement = error.Acknowledgement;
+                ModelState.AddModelError("", error.Message);
+            }
+            catch (PricingValidationException error)
+            {
+                ModelState.AddModelError(PricingField(error), error.Message);
+            }
             catch (Exception error) when (error is ArgumentException or InvalidOperationException)
             {
                 if (Request.Headers.Accept == "application/json")
@@ -78,6 +102,7 @@ public sealed class ServiceManagementController(ServiceCatalog catalog) : Contro
             return UnprocessableEntity(new { error = "Check the highlighted fields and try again.", fields = ModelState.Where(pair => pair.Value?.Errors.Count > 0).ToDictionary(pair => pair.Key, pair => pair.Value!.Errors[0].ErrorMessage) });
         }
 
+        await LoadBookingTypesAsync(ct);
         return View("Edit", form);
     }
     [HttpPost("{id}/state")]

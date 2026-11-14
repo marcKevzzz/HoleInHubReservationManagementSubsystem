@@ -27,7 +27,7 @@ public sealed partial class ReservationService
             new { kind = "batch-move", selected, date, offsetMinutes, actor })));
         var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime;
 
-        (DateTime Start, DateTime End) Destination(ReservationRecord record)
+        (DateTime Start, DateTime End) Destination(ReservationRecord record, HoleInHub.Data.Services.ServiceCatalogRecord? service)
         {
             var booking = Map(record);
             if (!CanMoveStaffBooking(booking, now))
@@ -43,7 +43,8 @@ public sealed partial class ReservationService
             var duration = (int)(booking.EndUtc - booking.StartUtc).TotalMinutes;
             try
             {
-                var interval = ReservationRules.PreviewInterval(date, TimeOnly.FromDateTime(target), duration, booking.Service);
+                var interval = PreviewServiceInterval(service, date, TimeOnly.FromDateTime(target), duration, booking.Service);
+                ValidateServiceCapacity(service, booking.Attendees);
                 if (interval.Start <= now)
                 {
                     throw new ReservationValidationException("Choose a time that has not started.");
@@ -59,7 +60,7 @@ public sealed partial class ReservationService
         try
         {
             await persistence.MoveStaffBatchAsync(selected, commandId, hash, actor, date.ToString("yyyy-MM-dd",
-                System.Globalization.CultureInfo.InvariantCulture), now, Destination, ct);
+                System.Globalization.CultureInfo.InvariantCulture), now, Destination, ct, ValidateStoredCapacity);
         }
         catch (AllocationConflictException error)
         {

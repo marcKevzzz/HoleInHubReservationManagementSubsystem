@@ -100,6 +100,8 @@ public sealed class ActivityAccessTests
                 var nextUrl = WebUtility.HtmlDecode(nextLink.Groups[1].Value);
                 var secondPage = await client.GetStringAsync(nextUrl);
                 Assert.Contains("HIH-PAGING-51", secondPage);
+                Assert.DoesNotContain("HIH-PAGING-50", secondPage);
+                Assert.DoesNotContain("HIH-PAGING-41", secondPage);
                 Assert.DoesNotContain("HIH-PAGING-01", secondPage);
                 Assert.Equal(HttpStatusCode.BadRequest,
                     (await client.GetAsync(nextUrl.Replace("search=HIH-PAGING", "search=unrelated"))).StatusCode);

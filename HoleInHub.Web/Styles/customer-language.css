@@ -1,0 +1,28 @@
+.customer-language {display:inline-grid;grid-template-columns:repeat(2,1fr);align-items:center;gap:2px;margin:0;padding:2px;border-radius:999px;background:var(--color-staff-surface);color:var(--color-ink);white-space:nowrap}
+.customer-language button {min-width:27px;min-height:27px;padding:4px 6px;background:transparent;color:inherit;border:0;border-radius:999px;font:650 .6875rem/1 var(--font-body);cursor:pointer}
+.customer-language button[aria-pressed=true] {background:var(--color-green);color:var(--color-paper)}
+.customer-language button[aria-pressed=false]:hover {background:var(--color-paper)}
+.customer-language button:focus-visible {outline:2px solid var(--color-ink);outline-offset:1px}
+.verification-shell .customer-language {display:grid;width:max-content;margin:12px auto}
+.staff-language {display:flex;align-items:center;padding-inline:calc(var(--staff-rail-inline) + 13px)}
+.staff-language .customer-language,.staff-language .customer-language button {border-radius:0}
+.staff-rail-footer .staff-language .customer-language button {min-height:32px;padding:4px 9px;justify-content:center}
+.staff-rail-footer .staff-language .customer-language button[aria-pressed=true] {background:var(--color-green);color:var(--color-paper)}
+.staff-rail-footer .staff-language-trigger[hidden],.staff-language .customer-language[popover]:not(:popover-open) {display:none}
+.staff-rail-footer .staff-language-trigger {justify-content:center;font-variant-numeric:tabular-nums}
+.staff-language .customer-language[popover] {
+    position:fixed;
+    inset:auto;
+    margin:0;
+    width:max-content;
+    padding:8px;
+    background:var(--color-paper);
+    border:1px solid var(--color-line);
+    box-shadow:0 12px 32px color-mix(in srgb,var(--color-ink) 15%,transparent);
+}
+.staff-language:has(.staff-language-trigger:not([hidden])) {padding-inline:0}
+html[lang=ko] :is(h1,h2,h3,legend,.button) {word-break:keep-all;overflow-wrap:anywhere}
+@media(max-width:480px) {
+  .header-actions .customer-language button {padding-inline:4px;font-size:.6875rem}
+  .site-header.header .header-actions:has(.customer-language) {gap:4px}
+}

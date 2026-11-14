@@ -1,5 +1,12 @@
 (() => {
     function mount(root = document) {
+        const guidance = root.querySelector('[data-merge-guidance]');
+        if (guidance) {
+            window.HoleInHubToasts?.show({ kind: 'info', title: 'Choose a duplicate customer',
+                message: 'Choose another record for the same person. Compare contact details and select the reservations to combine.',
+                autoDismiss: true, replaceKey: 'customer-merge-guidance' });
+            guidance.remove();
+        }
         const form = root.querySelector('[data-customer-merge]');
         if (!form) return;
         const output = form.querySelector('[data-merge-count]');

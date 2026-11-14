@@ -1,4 +1,5 @@
 using HoleInHub.Data.Context;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 namespace HoleInHub.Data.Services;
@@ -20,13 +21,17 @@ public sealed partial class ServiceCatalogPersistence
         context.Database.GetCollection<ServiceImageRecord>("service_images").Find(x => x.Id == id).FirstOrDefaultAsync(ct)!;
 
     public async Task SaveAsync(ServiceCatalogRecord record, long revision, bool create,
-        IReadOnlyList<ServiceImageRecord> images, CancellationToken ct)
+        IReadOnlyList<ServiceImageRecord> images, CancellationToken ct,
+        Action<IReadOnlyList<HoleInHub.Data.Reservations.ReservationRecord>>? checkImpacts = null)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeout.CancelAfter(TimeSpan.FromSeconds(15));
         using var session = await context.Client.StartSessionAsync(cancellationToken: timeout.Token);
         await session.WithTransactionAsync(async (s, token) =>
         {
+            await context.Database.GetCollection<BsonDocument>("allocation_guards").UpdateOneAsync(s,
+                new BsonDocument("_id", "catalog"), new BsonDocument("$inc", new BsonDocument("version", 1)),
+                new UpdateOptions { IsUpsert = true }, token);
             var prior = await Catalog.Find(s, x => x.Id == record.Id).FirstOrDefaultAsync(token);
             if (prior?.CommandId == record.CommandId)
             {
@@ -40,6 +45,17 @@ public sealed partial class ServiceCatalogPersistence
             if (create ? prior is not null : prior is null || prior.Deleted || prior.Revision != revision)
             {
                 throw new InvalidOperationException("This service changed. Reload its latest details before saving.");
+            }
+
+            if (prior is not null && checkImpacts is not null)
+            {
+                var now = record.UpdatedUtc ?? DateTime.UtcNow;
+                var bookings = await context.Database.GetCollection<HoleInHub.Data.Reservations.ReservationRecord>("reservations")
+                    .Find(s, booking => (booking.ServiceEntryId == prior.Id ||
+                        booking.ServiceEntryId == null && prior.Id == booking.Service) &&
+                        booking.StartUtc > now && (booking.Status == "Pending" || booking.Status == "Confirmed"))
+                    .ToListAsync(token);
+                checkImpacts(bookings);
             }
 
             foreach (var image in images)

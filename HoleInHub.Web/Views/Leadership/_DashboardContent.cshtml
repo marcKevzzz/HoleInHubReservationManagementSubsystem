@@ -1,4 +1,5 @@
 @using HoleInHub.Business.Reservations
+@using Microsoft.AspNetCore.WebUtilities
 @using System.Text.Json
 @model DashboardViewModel
 @{
@@ -12,6 +13,7 @@
     var previous = data.Previous;
     var comparisonPeriod = data.From == data.To ? "previous day" : $"previous {data.To.DayNumber - data.From.DayNumber + 1} days";
     var unavailableBays = data.Bays.Where(x => x.State != "Available").ToArray();
+    var activityUrl = new ActivityQuery { Range = "custom", From = data.From, To = data.To }.Url();
     var peak = trends ? data.Days.Max(x => (double)x.Booked) : hours.Max(x => x.Regular + x.Vip + x.Other);
     var periodLabel = !trends ? data.From == today ? "Today" : data.From.ToString("d MMM yyyy")
         : data.To == today && data.To.DayNumber - data.From.DayNumber == 6 ? "Last 7 days"
@@ -43,7 +45,7 @@
                     </form>
                 </div>
             </details>
-            <a class="button" asp-controller="BookingReview" asp-action="Index" asp-route-date="@data.From.ToString("yyyy-MM-dd")">Open schedule</a>
+            <a class="button" data-action-icon="calendar" asp-controller="BookingReview" asp-action="Index" asp-route-date="@data.From.ToString("yyyy-MM-dd")">Open schedule</a>
         </div>
     </header>
     <span class="sr-only" data-dashboard-updated>Updated @localNow.ToString("h:mm tt") Manila time</span><span class="sr-only" data-dashboard-loading role="status"></span>
@@ -53,7 +55,12 @@
         @if (attention.Length > 0)
         {
             <span class="dashboard-attention-label"><partial name="_StaffIcon" model='"inbox"' />Live review</span>
-            @foreach (var (key, label) in attention) { <a asp-route="staff-review-section" asp-route-section="@key" class="@(key == "overdue" ? "is-urgent" : null)"><span class="staff-hover-link"><strong>@data.Attention.GetValueOrDefault(key)</strong> @label</span></a> }
+            @foreach (var (key, label) in attention)
+            {
+                var url = key == "cancellations" ? Url.Action("Cancellations", "BookingReview", new { view = "requests" })
+                    : Url.RouteUrl("staff-review-section", new { section = key });
+                <a href="@url" class="@(key == "overdue" ? "is-urgent" : null)"><span class="staff-hover-link"><strong>@data.Attention.GetValueOrDefault(key)</strong> @label</span></a>
+            }
         }
         else { <span class="dashboard-all-clear"><partial name="_StaffIcon" model='"completed"' />No reviews waiting</span> }
     </nav>
@@ -76,7 +83,10 @@
     <div class="dashboard-main">
         <section class="dashboard-chart" data-chart="@(trends ? "daily" : "hourly")">
             <div class="dashboard-section-heading"><h2>@(trends ? "Booked sessions" : "Bay demand")</h2>@if (peak > 0) { <span>Peak @peak.ToString("0.##") @(trends ? "/ day" : "bay-hours")</span> }</div>
-            @if (peak == 0) { <p class="dashboard-empty">@(trends ? "No booked sessions" : "No booked bay-hours")</p> }
+            @if (peak == 0)
+            {
+                <partial name="_DashboardEmptyState" model='@("reports", trends ? "No booked sessions" : "No booked bay-hours", "Bookings for this period will appear here.")' />
+            }
             <div class="dashboard-chart-frame" data-chart-frame hidden><canvas role="img" aria-label="@(trends ? "Booked sessions by Manila start date. Select a point to inspect bookings." : "Scheduled bay-hours by Manila hour, summed across bay types. This is scheduled demand, not measured occupancy.")"></canvas></div>
             <div class="dashboard-selection" data-chart-selection hidden><span></span><a class="staff-hover-link" data-selection-link data-dashboard-slice>View bookings</a><button type="button" data-clear-selection>Clear</button></div>
             <ul class="dashboard-chart-access sr-only" aria-label="Chart values and booking links">
@@ -86,7 +96,10 @@
         </section>
         <section class="dashboard-services">
             <div class="dashboard-section-heading"><h2>Service</h2><span>@booked booked</span></div>
-            @if (booked == 0) { <p class="dashboard-empty">No booked services</p> }
+            @if (booked == 0)
+            {
+                <partial name="_DashboardEmptyState" model='@("calendar", "No booked services", "Services will appear here once they’re booked.")' />
+            }
             <div class="dashboard-pie-frame" data-pie-frame hidden><canvas tabindex="-1" role="img" aria-label="Share of booked sessions by service. The labeled service list provides exact counts and percentages."></canvas></div>
             <ol class="dashboard-service-ranking">
             @foreach (var service in data.Services)
@@ -104,7 +117,7 @@
                 <div class="dashboard-section-heading"><h2>Next arrivals</h2><a class="staff-hover-link" asp-controller="BookingReview" asp-action="Index" asp-route-date="@data.From.ToString("yyyy-MM-dd")">View schedule</a></div>
                 @if (data.Arrivals.Count == 0)
                 {
-                    <div class="dashboard-empty-arrivals"><partial name="_StaffIcon" model='"user-clock"' /><h3>No arrivals due</h3><p>Upcoming arrivals will appear here.</p></div>
+                    <partial name="_DashboardEmptyState" model='@("user-clock", "No arrivals due", "Upcoming arrivals will appear here.")' />
                 }
                 <ol>@foreach (var arrival in data.Arrivals.Take(3)) { <li><time>@DashboardMetrics.Local(arrival.StartUtc).ToString("h:mm tt")</time><div><a asp-controller="BookingReview" asp-action="Details" asp-route-id="@arrival.Id" asp-route-returnDashboard="@Model.DashboardUrl">@(string.IsNullOrWhiteSpace(arrival.Guest) ? arrival.Reference : arrival.Guest)</a><span>@arrival.Service · @string.Join(", ", arrival.Bays)</span>@if (arrival.FollowUp) { <strong class="dashboard-follow-up">Follow-up due</strong> }</div></li> }</ol>
             </section>
@@ -118,14 +131,17 @@
         </div>
     }
     <section class="dashboard-activity">
-        <div class="dashboard-section-heading"><h2>Latest activity</h2><a class="staff-hover-link" href="/staff/activity">View all</a></div>
-        @if (Model.LatestActivity.Count == 0) { <p class="dashboard-empty">No activity yet</p> }
+        <div class="dashboard-section-heading"><h2>Latest activity</h2><a class="staff-hover-link" href="@activityUrl">View all</a></div>
+        @if (Model.LatestActivity.Count == 0)
+        {
+            <partial name="_DashboardEmptyState" model='@("history", "No activity in this period", "Try another date or date range.")' />
+        }
         else
         {
             <div class="dashboard-table-wrap"><table aria-label="Five latest activities"><thead><tr><th scope="col">Time, Manila</th><th scope="col">Activity</th><th scope="col">Record</th><th scope="col">By</th><th scope="col"><span class="sr-only">Open activity</span></th></tr></thead><tbody>
             @foreach (var entry in Model.LatestActivity)
             {
-                <tr data-dashboard-activity-row><td><time datetime="@entry.OccurredUtc.ToString("O")">@DashboardMetrics.Local(entry.OccurredUtc).ToString("d MMM, h:mm tt")</time></td><td><a href="/staff/activity?open=@Uri.EscapeDataString(entry.Key)" data-dashboard-activity-link>@entry.Title</a></td><td>@entry.TargetLabel</td><td>@entry.Actor</td><td class="dashboard-activity-arrow"><partial name="_StaffIcon" model='"arrow-right"' /></td></tr>
+                <tr data-dashboard-activity-row><td><time datetime="@entry.OccurredUtc.ToString("O")">@DashboardMetrics.Local(entry.OccurredUtc).ToString("d MMM, h:mm tt")</time></td><td><a href="@QueryHelpers.AddQueryString(activityUrl, "open", entry.Key)" data-dashboard-activity-link>@entry.Title</a></td><td>@entry.TargetLabel</td><td>@entry.Actor</td><td class="dashboard-activity-arrow"><partial name="_StaffIcon" model='"arrow-right"' /></td></tr>
             }
             </tbody></table></div>
         }

@@ -2,7 +2,7 @@
 @model SettingsForm
 @{ Layout="_StaffLayout";ViewData["Title"]="Settings";var admin=User.IsInRole(StaffRoles.Admin);string Time(int minutes)=>minutes==1440?"24:00":TimeSpan.FromMinutes(minutes).ToString(@"hh\:mm"); }
 <section class="staff-workspace settings-page">
-    <header class="staff-workspace-heading service-admin-heading"><h1>Settings</h1><div class="service-admin-actions">@if(admin){<button class="button" type="submit" form="settings-form">Save changes</button>}</div></header>
+    <header class="staff-workspace-heading service-admin-heading"><h1>Settings</h1><div class="service-admin-actions">@if(admin){<button class="button" type="submit" form="settings-form" data-no-icon>Save changes</button>}</div></header>
     <form id="settings-form" asp-action="Save" method="post" data-settings-form>
         <input asp-for="Revision" type="hidden"/><input asp-for="CommandId" type="hidden"/>
         <div asp-validation-summary="All" class="staff-error" role="alert"></div>

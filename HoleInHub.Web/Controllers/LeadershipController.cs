@@ -80,7 +80,7 @@ public sealed partial class LeadershipController(ReservationService reservations
         if (result == StaffRoleChangeResult.NotFound) { return NotFound(); }
         new ToastNotice(result == StaffRoleChangeResult.Applied ? "success" : "warning",
             result == StaffRoleChangeResult.Applied ? "PIN reset" : "PIN could not be reset",
-            result == StaffRoleChangeResult.Applied ? "The team member must set up a new PIN." : "The account changed. Review the latest details and try again.").Store(TempData);
+            result == StaffRoleChangeResult.Applied ? "Their old PIN and sessions are revoked. Setup instructions have been queued for email." : "The account changed. Review the latest details and try again.").Store(TempData);
         return RedirectToAction(nameof(Person), new { id });
     }
 
@@ -186,11 +186,13 @@ public sealed partial class LeadershipController(ReservationService reservations
     public async Task<IActionResult> Resources(CancellationToken ct) => View(await reservations.GetResourceDirectoryAsync(ct));
 
     [Authorize(Roles = StaffRoles.Admin), HttpPost("/admin/resources")]
-    public async Task<IActionResult> AddBay(string? id, string? name, string? service, CancellationToken ct)
+    public async Task<IActionResult> AddBay(string? id, string? name, string? service, int? maxPlayers, int? maxTotalGuests,
+        int? maxNonPlayers, CancellationToken ct)
     {
         try
         {
-            await reservations.AddBayAsync(id ?? "", name ?? "", service ?? "", ct);
+            if (!ModelState.IsValid) { throw new ReservationValidationException("Enter whole numbers for bay capacity."); }
+            await reservations.AddBayAsync(id ?? "", name ?? "", service ?? "", maxPlayers, maxTotalGuests, maxNonPlayers, ct);
             new ToastNotice("success", "Bay added", $"{name?.Trim()} is now in the inventory.").Store(TempData);
             return ResourceSaved();
         }
@@ -200,6 +202,9 @@ public sealed partial class LeadershipController(ReservationService reservations
             ViewData["BayName"] = name;
             ViewData["BayId"] = id;
             ViewData["BayService"] = service;
+            ViewData["BayMaxPlayers"] = maxPlayers;
+            ViewData["BayMaxTotalGuests"] = maxTotalGuests;
+            ViewData["BayMaxNonPlayers"] = maxNonPlayers;
             ModelState.AddModelError("", ex.Message);
             return View(nameof(Resources), await reservations.GetResourceDirectoryAsync(ct));
         }
@@ -224,6 +229,33 @@ public sealed partial class LeadershipController(ReservationService reservations
     }
 
     private bool WantsResourceJson => Request.Headers.Accept.ToString().Contains("application/json", StringComparison.OrdinalIgnoreCase);
+
+    [Authorize(Roles = StaffRoles.Admin), HttpPost("/admin/resources/edit")]
+    public async Task<IActionResult> EditBay(string? id, string? name, string? service, int? maxPlayers, int? maxTotalGuests,
+        int? maxNonPlayers, long? expectedRevision, string? capacityAcknowledgement, CancellationToken ct)
+    {
+        try
+        {
+            if (!ModelState.IsValid) { throw new ReservationValidationException("Enter whole numbers for bay capacity and reload the inventory if needed."); }
+            if (!await reservations.EditBayAsync(id ?? "", name ?? "", service ?? "", maxPlayers, maxTotalGuests,
+                maxNonPlayers, expectedRevision, capacityAcknowledgement, ct))
+            { return NotFound(new { error = "This bay no longer exists. Reload the inventory." }); }
+            new ToastNotice("success", "Bay updated", $"{name?.Trim()} has been saved.").Store(TempData);
+            return ResourceSaved();
+        }
+        catch (ResourceCapacityWarningException ex)
+        {
+            if (WantsResourceJson) { return Conflict(new { error = ex.Message, acknowledgement = ex.Acknowledgement }); }
+            ModelState.AddModelError("", ex.Message);
+            return View(nameof(Resources), await reservations.GetResourceDirectoryAsync(ct));
+        }
+        catch (ReservationValidationException ex)
+        {
+            if (WantsResourceJson) { return Conflict(new { error = ex.Message }); }
+            ModelState.AddModelError("", ex.Message);
+            return View(nameof(Resources), await reservations.GetResourceDirectoryAsync(ct));
+        }
+    }
 
     private IActionResult ResourceSaved() => WantsResourceJson
         ? Json(new { redirect = Url.Action(nameof(Resources)) })

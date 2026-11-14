@@ -27,7 +27,7 @@ public sealed partial class LeadershipController
             ViewData["PendingReviews"] = data.Attention.GetValueOrDefault("awaiting");
             var model = new DashboardViewModel(data, query.Mode, User.ManagesVenue())
             {
-                LatestActivity = await activity.LatestAsync(User.IsInRole(HoleInHub.Business.Accounts.StaffRoles.Admin), ct)
+                LatestActivity = await activity.LatestAsync(from, to, User.IsInRole(HoleInHub.Business.Accounts.StaffRoles.Admin), ct)
             };
             return Request.Headers["X-Dashboard"] == "true" ? PartialView("_DashboardContent", model) : View(model);
         }

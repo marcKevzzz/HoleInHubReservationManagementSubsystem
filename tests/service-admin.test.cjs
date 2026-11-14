@@ -2,8 +2,40 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
+const readScript = name => fs.readFileSync(require('node:path').join(__dirname, '../HoleInHub.Web/wwwroot/js', name), 'utf8');
+
+test('pricing summaries update after switching a band to a specific date', () => {
+    const fields = {
+        Day: { value: 'Monday' }, Date: { value: '2026-11-17' }, Start: { value: '15:00' },
+        End: { value: '' }, EndsAtMidnight: { checked: true }, Rate: { value: '800' }
+    };
+    const dayLabel = {}, rateLabel = {}, baseLabel = {};
+    const row = {
+        querySelector(selector) {
+            if (selector === '[data-rule-day]') return dayLabel;
+            if (selector === '[data-rule-rate]') return rateLabel;
+            return fields[selector.split('"')[1].slice(1)];
+        }
+    };
+    const form = { elements: { BookingService: { value: 'Regular', addEventListener() {} } } };
+    const events = {};
+    const section = {
+        closest: () => form, querySelectorAll: () => [],
+        querySelector: selector => selector === '[data-base-price-label]' ? baseLabel : null,
+        addEventListener(name, fn) { events[name] = fn; }
+    };
+    vm.runInNewContext(readScript('service-pricing.js'), {
+        document: { querySelector: () => section }
+    });
+    fields.Date.closest = () => row;
+    events.change({ target: fields.Date });
+    assert.equal(fields.Day.value, '');
+    assert.equal(dayLabel.textContent, '2026-11-17');
+    assert.match(rateLabel.textContent, /15:00–24:00 · ₱800/);
+});
+
 class Element {
-    constructor(){this.children=[];this.events={};this.dataset={};this.style={setProperty(){}};this.value='';this.checked=false;this.files=[];}
+    constructor(){this.children=[];this.events={};this.dataset={};this.style={setProperty:(name,value)=>this.style[name]=value,removeProperty:name=>delete this.style[name]};this.value='';this.checked=false;this.files=[];}
     after(element){this.nextElementSibling=element;}
     getAttribute(name){return this[name] || "Unit";}
     dispatchEvent(event){this.events[event.type]?.(event);}
@@ -14,18 +46,39 @@ class Element {
     addEventListener(name,fn){this.events[name]=fn;}
     querySelector(selector){return this.map?.[selector];}
 }
-function setup(count, enhance=false, motion, reduced=false){
+function setup(count, enhance=false, motion, reduced=false, layout=false){
     const gallery=new Element(), add=new Element(), uploads=new Element(), error=new Element();
     gallery.querySelectorAll=()=>Array.from({length:count},(_,i)=>({dataset:{path:'/media/image'+i},querySelector:()=>({src:'/media/image'+i})}));
     const deposit=new Element(), enabled=new Element(), unit=new Element(), wrap=new Element(), amount=new Element();unit.value='Peso';wrap.map={input:amount};
     const viewer=new Element(), content=new Element(), close=new Element();viewer.map={'[data-viewer-content]':content,'[data-viewer-close]':close};viewer.showModal=()=>viewer.open=true;viewer.close=()=>viewer.open=false;
     const form=new Element(),rate=new Element(),rateUnit=new Element();rateUnit.value='Peso';
+    const typePicker=new Element(),newType=new Element(),newTypeInput=new Element();typePicker.value='Regular bay';newType.map={input:newTypeInput};
     if(enhance){unit.options=rateUnit.options=[{value:'Peso',textContent:'₱'},{value:'Percentage',textContent:'%'}];form.querySelectorAll=()=>[unit,rateUnit];}
     form.map={'[data-deposit-type]':deposit,'[data-deposit-enabled]':enabled,'[data-deposit-unit]':unit,'[data-deposit-value]':wrap,'[name=RateAmount]':rate,'[name=RateUnit]':rateUnit,'[data-service-gallery]':gallery,'[data-image-add]':add,'[data-service-uploads]':uploads,'[data-images-error]':error};
+    form.map['[data-booking-type]']=typePicker;form.map['[data-new-booking-type]']=newType;
+    const resizeCallbacks=[];
+    if(layout){const details=new Element();details.getBoundingClientRect=()=>({bottom:600+(enabled.checked?100:0)+(typePicker.value==='__new'?80:0)});gallery.getBoundingClientRect=()=>({top:100});wrap.getBoundingClientRect=()=>({height:100});newType.getBoundingClientRect=()=>({height:80});form.map['.service-detail-fields']=details;}
     class Transfer{constructor(){this.files=[];this.items={add:file=>this.files.push(file)};}}
-    vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../HoleInHub.Web/wwwroot/js/service-admin.js'),'utf8'),{document:{addEventListener(){},querySelector:s=>s==='[data-service-editor]'?form:s==='[data-image-viewer]'?viewer:null,createElement:()=>new Element()},window:{gsap:motion,matchMedia:()=>({matches:reduced}),addEventListener(){}},DataTransfer:Transfer,URL:{revokeObjectURL(){},createObjectURL:()=>'/blob/new'},Event:class {constructor(type){this.type=type;}},HTMLElement:Element});
-    return {gallery,viewer,enabled,unit,amount,amountWrap:wrap,deposit,uploads,error,form,rate};
+    vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../HoleInHub.Web/wwwroot/js/service-admin.js'),'utf8'),{document:{addEventListener(){},querySelector:s=>s==='[data-service-editor]'?form:s==='[data-image-viewer]'?viewer:null,createElement:()=>new Element()},window:{innerWidth:1200,gsap:motion,matchMedia:()=>({matches:reduced}),addEventListener(){}},ResizeObserver:class{constructor(callback){resizeCallbacks.push(callback);}observe(){}},DataTransfer:Transfer,URL:{revokeObjectURL(){},createObjectURL:()=>'/blob/new'},Event:class {constructor(type){this.type=type;}},HTMLElement:Element});
+    return {gallery,viewer,enabled,unit,amount,amountWrap:wrap,deposit,uploads,error,form,rate,typePicker,newType,newTypeInput,resize:()=>resizeCallbacks.forEach(callback=>callback())};
 }
+test('image composition fills the base details column without growing for optional fields',()=>{
+    const ui=setup(1,false,undefined,true,true);ui.resize();
+    assert.equal(ui.gallery.style['--service-gallery-height'],'500px');
+    ui.enabled.checked=true;ui.enabled.events.change();ui.resize();
+    assert.equal(ui.gallery.style['--service-gallery-height'],'500px');
+    ui.typePicker.value='__new';ui.typePicker.events.change();ui.resize();
+    assert.equal(ui.gallery.style['--service-gallery-height'],'500px');
+});
+test('choosing Add new reveals a required booking type and switching back disables it',()=>{
+    let transitions=0;
+    const ui=setup(1,false,{set(){},killTweensOf(){},fromTo(){transitions++;}},false);
+    assert.equal(ui.newType.hidden,true);assert.equal(ui.newTypeInput.disabled,true);
+    ui.typePicker.value='__new';ui.typePicker.events.change();
+    assert.equal(ui.newType.hidden,false);assert.equal(ui.newTypeInput.required,true);assert.equal(transitions,1);
+    ui.typePicker.value='VIP bay';ui.typePicker.events.change();
+    assert.equal(ui.newType.hidden,true);assert.equal(ui.newTypeInput.required,false);
+});
 test('gallery caps previews, exposes overflow, and persists a reordered primary',()=>{
     const ui=setup(6);
     assert.equal(ui.gallery.dataset.count,'4');
@@ -105,9 +158,12 @@ test(`invalid service fields and images respect reduced motion (${reduced})`,()=
     const ui=setup(1,false,undefined,reduced);
     let fieldShakes=0, galleryShakes=0;
     ui.rate.animate=()=>{fieldShakes++;};
-    ui.rate.name='RateAmount';ui.rate.validationMessage='Enter a rate.';
+    const section = { open: false, parentElement: { closest: () => null } };
+    ui.rate.name='RateAmount';ui.rate.validationMessage='Enter a rate.';ui.rate.form=ui.form;
+    ui.rate.closest=selector=>selector==='details'?section:null;
     ui.form.querySelector=()=>ui.rate;
     ui.form.events.invalid({target:ui.rate,preventDefault(){}});
+    assert.equal(section.open,true);
     assert.equal(fieldShakes,reduced?0:1);
     ui.gallery.animate=()=>{galleryShakes++;};
     ui.uploads.files=[{type:'image/svg+xml',size:10}];ui.uploads.events.change();
