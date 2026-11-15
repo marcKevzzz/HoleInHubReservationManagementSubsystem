@@ -11,8 +11,7 @@ public sealed class AccountPageTests : IClassFixture<WebApplicationFactory<Progr
     [Theory]
     [InlineData("FirstName", "Guest2", "Use letters for names")]
     [InlineData("LastName", "Player٣", "Use letters for names")]
-    [InlineData("Phone", "+639123456789", "digits only")]
-    [InlineData("Phone", "0912abc6789", "digits only")]
+    [InlineData("Phone", "0912abc6789", "prefix and digit count")]
     public async Task SignUpRejectsForgedNamesAndNonNumericPhones(string field, string value, string message)
     {
         await using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder => builder.UseEnvironment("Testing").UseSetting("Authentication:Google:Enabled", "false"));
@@ -25,8 +24,8 @@ public sealed class AccountPageTests : IClassFixture<WebApplicationFactory<Progr
             ["LastName"] = "Player",
             ["Phone"] = "09123456789",
             ["Email"] = "validation@example.test",
-            ["Password"] = "ValidPassword123!",
-            ["ConfirmPassword"] = "ValidPassword123!"
+            ["Password"] = "ValidPassword123",
+            ["ConfirmPassword"] = "ValidPassword123"
         };
         form[field] = value;
         var response = await client.PostAsync("/account/sign-up", new FormUrlEncodedContent(form));
@@ -63,7 +62,7 @@ public sealed class AccountPageTests : IClassFixture<WebApplicationFactory<Progr
         Assert.Matches(@"class=""(?:[^""]*\s)?auth-shell(?:\s[^""]*)?""", html);
         Assert.DoesNotContain("site-header", html);
         Assert.DoesNotContain("site-footer", html);
-        Assert.Contains(path == "/account/forgot-password" ? "Back to sign in" : "Back to home", html);
+        Assert.Contains(path is "/account/forgot-password" or "/account/reset-password" ? "Back to sign in" : "Back to home", html);
         if (path != "/account/verify-email") { Assert.Contains("placeholder=\" \"", html); }
         Assert.Contains("/js/ui-motion.js", html);
         Assert.True(html.IndexOf("/js/vendor/gsap.min.js", StringComparison.Ordinal) < html.IndexOf("/js/ui-motion.js", StringComparison.Ordinal));

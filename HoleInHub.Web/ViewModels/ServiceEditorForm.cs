@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
-using HoleInHub.Business.Services;
 using HoleInHub.Business.Reservations;
+using HoleInHub.Business.Services;
 using HoleInHub.Data.Services;
 namespace HoleInHubReservationManagementSubsystem.ViewModels;
 
@@ -26,7 +26,8 @@ public sealed class ServiceAvailabilityRow
 
     public static ServiceAvailabilityRow From(ServiceAvailabilityRule rule) => new()
     {
-        Weekday = rule.Weekday, Date = rule.Date,
+        Weekday = rule.Weekday,
+        Date = rule.Date,
         Start = $"{rule.StartMinute / 60:00}:{rule.StartMinute % 60:00}",
         End = $"{rule.EndMinute / 60:00}:{rule.EndMinute % 60:00}",
         Mode = rule.Closed ? "closed" : rule.FixedSession ? "fixed" : "window"
@@ -76,9 +77,14 @@ public sealed partial class ServiceEditorForm
         if (BookingTypeName == "__new" && string.IsNullOrWhiteSpace(typeName)) { throw new ArgumentException("Enter the new booking type name."); }
         return new(Id, Revision, CommandId, Create, Title, Summary, rate, string.IsNullOrWhiteSpace(Details) ? Summary : Details,
         BookingService, "Book", "Request a booking", Order, Active, DepositType, DepositValue, Images)
-        { MaxPax = MaxPax, Pricing = pricing, ImageOrder = ImageOrder, BookingTypeName = typeName,
+        {
+            MaxPax = MaxPax,
+            Pricing = pricing,
+            ImageOrder = ImageOrder,
+            BookingTypeName = typeName,
             AvailabilityRules = EditAvailability ? Availability.Select(row => row.Rule()).ToArray() : null,
-            ImpactAcknowledgement = ImpactAcknowledgement };
+            ImpactAcknowledgement = ImpactAcknowledgement
+        };
     }
     private static decimal? ParseRate(string text) => decimal.TryParse(System.Text.RegularExpressions.Regex.Match(text, @"[0-9][0-9,]*(?:\.[0-9]+)?").Value.Replace(",", ""), System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var value) ? value : null;
     public static ServiceEditorForm From(ServiceEdit item) => new ServiceEditorForm

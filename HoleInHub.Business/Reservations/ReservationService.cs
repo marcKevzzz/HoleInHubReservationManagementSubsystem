@@ -77,7 +77,7 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
             ResourceIds = request.ResourceIds,
             FirstName = request.FirstName.Trim(),
             LastName = request.LastName.Trim(),
-            Phone = request.Phone.Trim(),
+            Phone = HoleInHub.Business.Accounts.ContactRules.PhoneDigits(request.Phone),
             Attendees = request.Attendees,
             Notes = request.Notes?.Trim() ?? "",
             PrivacyAccepted = request.PrivacyAccepted,
@@ -281,7 +281,10 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
 
         return await persistence.ApplyDemoPaymentAsync(id, outcome, "DEMO-" + id, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime, ct);
     }
-    private static ReservationDto Map(ReservationRecord x) => new(x.Id, x.Reference, x.Service, x.Status, x.StartUtc, x.EndUtc, x.ReviewDeadlineUtc, x.ResourceIds, x.FirstName, x.LastName, x.Phone, x.Attendees, x.History.Select(h => new ReservationHistoryDto(h.Status, h.AtUtc, h.Actor, h.Reason)).ToArray(), x.Notes)
+    private static AttendanceSnapshotDto? MapAttendance(HoleInHub.Data.Reservations.ReservationAttendanceSnapshot? state) => state is null ? null
+        : new(state.Status, state.StartUtc, state.EndUtc, state.CheckedInUtc, state.CheckedOutUtc);
+    private static ReservationDto Map(ReservationRecord x) => new(x.Id, x.Reference, x.Service, x.Status, x.StartUtc, x.EndUtc, x.ReviewDeadlineUtc, x.ResourceIds, x.FirstName, x.LastName, x.Phone, x.Attendees, x.History.Select(h => new ReservationHistoryDto(h.Status, h.AtUtc, h.Actor, h.Reason)
+    { AttendanceBefore = MapAttendance(h.AttendanceBefore), AttendanceAfter = MapAttendance(h.AttendanceAfter) }).ToArray(), x.Notes)
     {
         PolicyVersion = x.PolicyVersion,
         ServiceEntryId = x.ServiceEntryId,

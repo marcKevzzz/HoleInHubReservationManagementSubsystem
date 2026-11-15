@@ -1,6 +1,6 @@
-using System.Text.RegularExpressions;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using HoleInHub.Data.Reservations;
 
 namespace HoleInHub.Business.Reservations;
@@ -60,8 +60,15 @@ public sealed partial class ReservationService
 
     private static ResourceRecord BuildResource(string id, string name, string service, int? maxPlayers, int? maxTotalGuests, int? maxNonPlayers)
     {
-        var bay = new ResourceRecord { Id = id, Name = name, Service = service, MaxPlayers = maxPlayers,
-            MaxTotalGuests = maxTotalGuests, MaxNonPlayers = maxNonPlayers };
+        var bay = new ResourceRecord
+        {
+            Id = id,
+            Name = name,
+            Service = service,
+            MaxPlayers = maxPlayers,
+            MaxTotalGuests = maxTotalGuests,
+            MaxNonPlayers = maxNonPlayers
+        };
         var limits = MapResource(bay);
         if (limits.MaxPlayers < 1 || limits.MaxTotalGuests < limits.MaxPlayers || maxNonPlayers < 0 || maxNonPlayers > limits.MaxTotalGuests)
         {

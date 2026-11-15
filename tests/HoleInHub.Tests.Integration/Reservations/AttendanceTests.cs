@@ -10,7 +10,7 @@ using Xunit;
 namespace HoleInHub.Tests.Integration.Reservations;
 
 [Trait("Category", "Integration")]
-public sealed class AttendanceTests(MongoDbFixture fixture) : IClassFixture<MongoDbFixture>
+public sealed partial class AttendanceTests(MongoDbFixture fixture) : IClassFixture<MongoDbFixture>
 {
     private static readonly DateTime Start = new(2026, 11, 10, 5, 0, 0, DateTimeKind.Utc);
     private sealed class Clock : TimeProvider
@@ -28,7 +28,11 @@ public sealed class AttendanceTests(MongoDbFixture fixture) : IClassFixture<Mong
         await new Migration_005_GoogleAccounts().UpAsync(context.Database, default);
         await new Migration_006_SchemaHardening().UpAsync(context.Database, default);
         await new Migration_010_StaffAssistedReservations().UpAsync(context.Database, default);
-        if (attendance) { await new Migration_013_ReservationAttendance().UpAsync(context.Database, default); }
+        if (attendance)
+        {
+            await new Migration_013_ReservationAttendance().UpAsync(context.Database, default);
+            await new Migration_020_AttendanceOperations().UpAsync(context.Database, default);
+        }
         return (new(context), context);
     }
     private static ReservationRecord Booking(string status = "Confirmed", string service = "Regular", string[]? resources = null) => new()
@@ -55,6 +59,27 @@ public sealed class AttendanceTests(MongoDbFixture fixture) : IClassFixture<Mong
         new(id, action, revision, Guid.NewGuid().ToString("N"), reason);
     private static ReservationService Service(ReservationPersistence store, HoleInHub.Data.Context.IMongoDbContext context, Clock clock) =>
         new(store, new OutboxPersistence(context), Options.Create(new ReservationPolicy()), clock);
+
+    [Fact]
+    public async Task ArrivalOpensAnHourEarlyAndCanBeClosedBeforeTheScheduledStart()
+    {
+        var (store, context) = await Setup();
+        var clock = new Clock { Now = Start.AddHours(-1).AddTicks(-1) };
+        var service = Service(store, context, clock);
+        var booking = await store.InsertAsync(Booking(), default);
+        Assert.Equal(AttendanceResult.NotEligible, await service.RecordAttendanceAsync(Command(booking.Id), "staff", default));
+        clock.Now = Start.AddHours(-1);
+        Assert.Equal(AttendanceResult.Applied, await service.RecordAttendanceAsync(Command(booking.Id), "staff", default));
+        var review = (await service.GetStaffReviewAsync(booking.Id, default))!;
+        Assert.True(review.CanCheckOut);
+        clock.Now = Start.AddMinutes(-30);
+        Assert.Equal(AttendanceResult.Applied, await service.RecordAttendanceAsync(Command(booking.Id, "check-out", 1, "Guest left"), "staff", default));
+        var saved = (await store.ByIdAsync(booking.Id, default))!;
+        Assert.Equal(Start.AddHours(-1), saved.CheckedInUtc);
+        Assert.Equal(clock.Now, saved.CheckedOutUtc);
+        Assert.Equal(Start, saved.StartUtc);
+        Assert.Equal(Start.AddHours(2), saved.EndUtc);
+    }
 
     [Fact]
     public async Task ArrivalDepartureAndOldRetriesPreserveAuditAndReleaseCapacity()

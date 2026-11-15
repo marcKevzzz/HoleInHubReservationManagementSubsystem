@@ -6,15 +6,15 @@
         <h1>Set staff PIN</h1>
         <p>Your email is verified. Choose a six-digit PIN.</p>
         <form asp-action="NewPin" method="post">
-            <div asp-validation-summary="All" role="alert" class="validation-summary"></div>
-            <div class="field"><div class="auth-input-wrap">
-                <input id="Pin" name="Pin" type="password" inputmode="numeric" autocomplete="off" pattern="[0-9]{6}" maxlength="6" placeholder=" " required />
-                <label asp-for="Pin"></label>
-            </div></div>
-            <div class="field"><div class="auth-input-wrap">
-                <input id="ConfirmPin" name="ConfirmPin" type="password" inputmode="numeric" autocomplete="off" pattern="[0-9]{6}" maxlength="6" placeholder=" " required />
-                <label asp-for="ConfirmPin"></label>
-            </div></div>
+            <div asp-validation-summary="ModelOnly" role="alert" class="validation-summary"></div>
+            <div class="field code-field"><label asp-for="Pin">New PIN</label><div class="code-entry" data-code-entry data-code-secret>
+                <input id="Pin" name="Pin" type="password" inputmode="numeric" autocomplete="new-password" pattern="[0-9]{6}" maxlength="6" required aria-describedby="Pin-error" />
+                <div class="code-slots" data-code-slots hidden aria-hidden="true">@for(var digit=0;digit<6;digit++){<span></span>}</div>
+            </div><span asp-validation-for="Pin" id="Pin-error" class="field-error" aria-live="polite"></span></div>
+            <div class="field code-field"><label asp-for="ConfirmPin">Confirm PIN</label><div class="code-entry" data-code-entry data-code-secret>
+                <input id="ConfirmPin" name="ConfirmPin" type="password" inputmode="numeric" autocomplete="new-password" pattern="[0-9]{6}" maxlength="6" required aria-describedby="ConfirmPin-error" />
+                <div class="code-slots" data-code-slots hidden aria-hidden="true">@for(var digit=0;digit<6;digit++){<span></span>}</div>
+            </div><span asp-validation-for="ConfirmPin" id="ConfirmPin-error" class="field-error" aria-live="polite"></span></div>
             <button class="button" type="submit" data-no-icon>Save PIN</button>
         </form>
     </div>

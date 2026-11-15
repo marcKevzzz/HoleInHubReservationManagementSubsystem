@@ -1,0 +1,5 @@
+@model (string Id, string Label, string Text)
+<span class="attendance-help staff-help">
+    <button type="button" class="staff-icon-button" aria-label="@Model.Label" aria-describedby="@Model.Id"><partial name="_StaffIcon" model='"info"' /></button>
+    <span class="attendance-tooltip" id="@Model.Id" role="tooltip">@Model.Text</span>
+</span>

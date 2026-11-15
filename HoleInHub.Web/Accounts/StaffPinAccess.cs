@@ -22,6 +22,7 @@ public sealed class StaffPinAccess
     public const string SecurityStampClaim = "hih:staff-security-stamp";
 
     public bool Enabled { get; init; }
+    public bool RequireDesktopCertificate { get; init; } = true;
     public string Host { get; init; } = "";
     public string Pepper { get; init; } = "";
     public string[] DesktopFingerprints { get; init; } = [];
@@ -44,6 +45,7 @@ public sealed class StaffPinAccess
             return !HasLeadershipPresentation || (context.Connection.RemoteIpAddress is { } ip && IPAddress.IsLoopback(ip))
                 ? "presentation" : null;
         }
+        if (!RequireDesktopCertificate) { return "certificate-free"; }
         var certificate = await context.Connection.GetClientCertificateAsync(context.RequestAborted);
         if (certificate is null || now.UtcDateTime < certificate.NotBefore.ToUniversalTime()
             || now.UtcDateTime >= certificate.NotAfter.ToUniversalTime())
@@ -96,9 +98,9 @@ public sealed class StaffPinAccess
             .Validate(settings => !settings.Enabled || (Uri.CheckHostName(settings.Host) != UriHostNameType.Unknown
                 && settings.Pepper.Length >= 32 && (settings.IsPresentation
                     ? environment.IsDevelopment()
-                    : settings.DesktopFingerprints.Length > 0 && settings.DesktopFingerprints.All(
-                        fingerprint => fingerprint.Length == 64 && fingerprint.All(Uri.IsHexDigit)))),
-                "Staff PIN requires a staff hostname, a secret pepper of at least 32 characters, and an approved desktop or development presentation account.")
+                    : !settings.RequireDesktopCertificate || (settings.DesktopFingerprints.Length > 0 && settings.DesktopFingerprints.All(
+                        fingerprint => fingerprint.Length == 64 && fingerprint.All(Uri.IsHexDigit))))),
+                "Staff PIN requires a staff hostname, a secret pepper of at least 32 characters, and an approved desktop unless desktop certificates are explicitly disabled or a development presentation account is configured.")
             .Validate(settings => !settings.Enabled || !settings.HasLeadershipPresentation ||
                 (environment.IsDevelopment() && settings.IsPresentation && settings.Host == "localhost"),
                 "Manager presentation PINs require a localhost development workspace.")

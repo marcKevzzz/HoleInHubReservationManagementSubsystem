@@ -270,13 +270,13 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
     public async Task<IActionResult> Counts([FromServices] NotificationDeliveryService delivery, CancellationToken ct)
     {
         var counts = await reservations.GetReviewCountsAsync(ct);
-        if (!User.IsInRole(StaffRoles.Admin) || User.FindFirstValue(ClaimTypes.NameIdentifier) is not string staffId)
+        if (User.FindFirstValue(ClaimTypes.NameIdentifier) is not string staffId)
         {
             return Json(counts);
         }
         var adminCounts = new Dictionary<string, long>(counts)
         {
-            ["notifications"] = await delivery.CountUnreadAsync(staffId, ct)
+            ["notifications"] = await delivery.CountUnreadAsync(staffId, ct, operational: !User.IsInRole(StaffRoles.Admin))
         };
         return Json(adminCounts);
     }
@@ -300,8 +300,15 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
     }
 
     [HttpGet("/staff/cancellations")]
-    public async Task<IActionResult> Cancellations(string? day, string? sort, CancellationToken ct, int page = 1, string? view = null) =>
-        View("Queue", await LoadQueueAsync(view == "requests" ? "cancellation-requests" : "cancellations", day, sort, ct, Math.Clamp(page, 1, 1000)));
+    public async Task<IActionResult> Cancellations(string? day, string? sort, CancellationToken ct, int page = 1, string? view = null, string? selection = null)
+    {
+        if (selection is "cancelled-deadline" or "cancelled-session" or "requests-deadline" or "requests-session")
+        {
+            view = selection.StartsWith("requests-", StringComparison.Ordinal) ? "requests" : null;
+            sort = selection.EndsWith("-session", StringComparison.Ordinal) ? "session" : "deadline";
+        }
+        return View("Queue", await LoadQueueAsync(view == "requests" ? "cancellation-requests" : "cancellations", day, sort, ct, Math.Clamp(page, 1, 1000)));
+    }
 
     private async Task<StaffReviewQueue> LoadQueueAsync(string? filter, string? day, string? sort, CancellationToken ct, int page = 0)
     {
@@ -385,8 +392,11 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
         {
             try
             {
+                static DateTime? ManilaUtc(DateTime? local) => local.HasValue
+                    ? TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(local.Value, DateTimeKind.Unspecified), ReservationRules.Manila) : null;
                 var result = await reservations.RecordAttendanceAsync(new AttendanceCommand(id, form.Action,
-                    form.ExpectedRevision!.Value, form.CommandId, form.Reason), actor, ct);
+                    form.ExpectedRevision!.Value, form.CommandId, form.Reason, form.CorrectedStatus,
+                    ManilaUtc(form.ArrivalLocal), ManilaUtc(form.DepartureLocal), form.ExtensionMinutes), actor, ct);
                 if (result == AttendanceResult.NotFound) { return NotFound(); }
                 if (result is AttendanceResult.Applied or AttendanceResult.AlreadyApplied or AttendanceResult.Stale)
                 {
@@ -394,7 +404,11 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
                     {
                         AttendanceResult.Stale => new ToastNotice("warning", "Booking changed", "Review the latest details before trying again."),
                         AttendanceResult.AlreadyApplied => new ToastNotice("info",
-                            form.Action == "check-in" ? "Guest already checked in" : "Guest already checked out"),
+                            form.Action == "check-in" ? "Guest already checked in"
+                                : form.Action == "check-out" ? "Guest already checked out" : "Action already saved"),
+                        _ when form.Action == "no-show" => new ToastNotice("success", "Marked as no-show", "Remaining bay time was released."),
+                        _ when form.Action == "correct" => new ToastNotice("success", "Attendance corrected"),
+                        _ when form.Action == "extend" => new ToastNotice("success", "Session extended"),
                         _ when form.Action == "check-in" => new ToastNotice("success", "Guest checked in"),
                         _ => new ToastNotice("success", "Guest checked out", "Remaining bay time was released.")
                     };

@@ -1,4 +1,23 @@
 Language|언어
+Account: {0}, {1}|계정: {0}, {1}
+Admin|관리자
+Manager|매니저
+Staff|직원
+Personal details|개인 정보
+Manage your details and sign-in security.|개인 정보와 로그인 보안을 관리하세요.
+Your work account information.|업무 계정 정보입니다.
+Work email|업무 이메일
+Role|역할
+Staff PIN|직원 PIN
+Your six-digit workspace sign-in.|업무 공간 로그인에 사용하는 6자리 PIN입니다.
+Verify your work email before choosing a new PIN.|새 PIN을 설정하기 전에 업무 이메일을 인증하세요.
+Change PIN|PIN 변경
+Current password|현재 비밀번호
+New password|새 비밀번호
+Confirm new password|새 비밀번호 확인
+Change password|비밀번호 변경
+Changing your password signs you out.|비밀번호를 변경하면 로그아웃됩니다.
+Changing your password signs you out. You’ll also need to set a new PIN.|비밀번호를 변경하면 로그아웃됩니다. 새 PIN도 설정해야 합니다.
 Home|홈
 About|소개
 Gallery|갤러리
@@ -567,3 +586,19 @@ The quote changed. Review the updated price and submit again.|요금이 변경�
 This service is no longer available. Choose another experience.|이 서비스는 더 이상 예약할 수 없습니다. 다른 서비스를 선택해 주세요.
 Wait for the quote to finish loading.|요금 계산이 끝날 때까지 기다려 주세요.
 The quote could not be loaded. Select your bays again to retry.|요금을 불러오지 못했습니다. 베이를 다시 선택해 주세요.
+
+Use 11 digits for a number starting with 09.|09로 시작하는 번호는 숫자 11자리로 입력해 주세요.
+Use 11 digits for a number starting with 010.|010으로 시작하는 번호는 숫자 11자리로 입력해 주세요.
+Use 12 digits for a number starting with 639 or +639.|639 또는 +639로 시작하는 번호는 숫자 12자리로 입력해 주세요.
+Use 12 digits for a number starting with 8210 or +8210.|8210 또는 +8210으로 시작하는 번호는 숫자 12자리로 입력해 주세요.
+Drop the leading 0 after the country code.|국가번호 뒤의 첫 번째 0을 빼 주세요.
+Use 9 or 10 digits for a landline starting with 02.|02로 시작하는 유선 전화번호는 숫자 9~10자리로 입력해 주세요.
+Check the contact number’s prefix and digit count.|연락처의 앞자리와 자릿수를 확인해 주세요.
+
+Original booking amount|기존 예약 금액
+
+Contact the venue for additional time charges.|추가 이용 요금은 매장에 문의해 주세요.
+
+Attendance corrected|출석 정보 수정
+
+Session extended|이용 시간 연장

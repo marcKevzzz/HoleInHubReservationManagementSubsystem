@@ -148,7 +148,7 @@ public sealed class AccountService(AccountPersistence persistence, TimeProvider 
     public Task<bool> CreateAsync(AccountDetails account, CancellationToken ct) => persistence.CreateAsync(ToRecord(account), ct);
     public Task<bool> UpdateAsync(AccountDetails account, string expectedVersion, CancellationToken ct) => persistence.UpdateAsync(ToRecord(account), expectedVersion, ct);
     private static AccountDetails? Map(AccountRecord? a) => a is null ? null : new(a.Id, a.Email, a.NormalizedEmail, a.PasswordHash, a.SecurityStamp, a.Version, a.EmailConfirmed, a.AccessFailedCount, a.LockoutEndUtc, a.Roles) { FirstName = a.FirstName, LastName = a.LastName, Phone = a.Phone, GoogleSubject = a.GoogleSubject };
-    private static AccountRecord ToRecord(AccountDetails a) => new() { Id = a.Id, Email = a.Email, NormalizedEmail = a.NormalizedEmail, PasswordHash = a.PasswordHash, SecurityStamp = a.SecurityStamp, Version = a.Version, EmailConfirmed = a.EmailConfirmed, AccessFailedCount = a.AccessFailedCount, LockoutEndUtc = a.LockoutEndUtc, Roles = a.Roles, FirstName = a.FirstName, LastName = a.LastName, Phone = a.Phone, GoogleSubject = a.GoogleSubject };
+    private static AccountRecord ToRecord(AccountDetails a) => new() { Id = a.Id, Email = a.Email, NormalizedEmail = a.NormalizedEmail, PasswordHash = a.PasswordHash, SecurityStamp = a.SecurityStamp, Version = a.Version, EmailConfirmed = a.EmailConfirmed, AccessFailedCount = a.AccessFailedCount, LockoutEndUtc = a.LockoutEndUtc, Roles = a.Roles, FirstName = a.FirstName, LastName = a.LastName, Phone = ContactRules.PhoneDigits(a.Phone), GoogleSubject = a.GoogleSubject };
 }
 
 public sealed record AccountDirectoryEntry(string Id, string Email, string Name, string[] Roles, bool EmailConfirmed);

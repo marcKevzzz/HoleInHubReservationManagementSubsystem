@@ -10,7 +10,13 @@ public sealed class DashboardMetricsTests
     private static readonly DateTime Start = DashboardMetrics.Utc(Day);
     private static DashboardRow Row(string id, string status = "Confirmed", int hour = 11, int duration = 120, string[]? bays = null) => new()
     {
-        Id = id, Status = status, Service = "Regular", ResourceIds = bays ?? ["bay-2"], StartUtc = Start.AddHours(hour), EndUtc = Start.AddHours(hour).AddMinutes(duration), Guest = "Guest"
+        Id = id,
+        Status = status,
+        Service = "Regular",
+        ResourceIds = bays ?? ["bay-2"],
+        StartUtc = Start.AddHours(hour),
+        EndUtc = Start.AddHours(hour).AddMinutes(duration),
+        Guest = "Guest"
     };
     private static DashboardSnapshot Calculate(params DashboardRow[] rows) => DashboardMetrics.Calculate(Day, Day, Start.AddHours(10), rows,
         new Dictionary<string, long>(), new Dictionary<string, string> { ["bay-2"] = "Regular", ["vip-7"] = "VIP" }, []);

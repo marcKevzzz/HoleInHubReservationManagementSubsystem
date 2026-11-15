@@ -134,6 +134,10 @@ Every PIN-authenticated staff request rechecks the enrolled certificate, employe
 
 The workspace accepts Staff and Manager PIN sessions and Admin password sessions. Staff, Manager, and Admin can use the schedule, assisted booking, customer lookup, reservation review, and attendance workflows. Manager and Admin can create and release temporary schedule blocks. Admin alone can add, retire, and restore bays in the inventory. An active booking can prevent a catalog change. The server reads current employee roles on every staff request and ends the session when those roles change. The application emits structured sign-in and switch events with the employee account ID where known. The Admin activity log displays persisted staff role changes. A persistent log of sign-in and switch events remains future work.
 
+### Hosted demo and QA certificate switch
+
+Owner-authorized hosted demonstrations and QA can set `StaffPin__RequireDesktopCertificate=false` with the existing Atlas database and accounts. The default is `true`. This switch supports Production hosting, retains HTTPS and the configured staff hostname, and uses the ordinary PIN flow for verified Staff and Manager accounts. It does not require the Development presentation accounts. PIN setup/reset and role-based workspace permissions continue to work normally. Certificate-free requests share the existing device attempt quota; employee quotas and session checks remain enforced. Restoring the default ends certificate-free sessions on their next validation. See [hosted setup](../STAFF-SIGN-IN-SETUP.md#hosted-demo-and-qa-on-any-device) for deployment and rollback instructions.
+
 ### Presentation mode
 
 For a private demonstration, start a Development HTTPS instance and set `StaffPin__PresentationAccount` to a verified account with the Staff role and an existing PIN. The sign-in page asks only for the PIN, and the HTTPS listener should use ordinary server TLS. Browsers need access to the configured staff hostname and must trust its HTTPS server certificate. The device retry quota is shared in this mode. Use a private preview network and remove the setting after the presentation.

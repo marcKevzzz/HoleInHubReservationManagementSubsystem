@@ -41,7 +41,7 @@ public sealed partial class ReservationService
         if (request.CustomerProfileId is not null && (request.CustomerProfileId.Length != 67
             || !request.CustomerProfileId.StartsWith("cp_", StringComparison.Ordinal) || !request.CustomerProfileId[3..].All(char.IsAsciiHexDigit)))
         { throw new ReservationValidationException("Choose a valid customer profile from the customer directory."); }
-        request = request with { FirstName = request.FirstName.Trim(), LastName = request.LastName.Trim(), Phone = request.Phone!.Trim() };
+        request = request with { FirstName = request.FirstName.Trim(), LastName = request.LastName.Trim(), Phone = ContactRules.PhoneDigits(request.Phone) };
         var resources = new[] { request.ResourceId }.Concat(request.AdditionalResourceIds ?? []).ToArray();
         if (resources.Length > 8 || resources.Any(string.IsNullOrWhiteSpace)
             || resources.Distinct(StringComparer.Ordinal).Count() != resources.Length)

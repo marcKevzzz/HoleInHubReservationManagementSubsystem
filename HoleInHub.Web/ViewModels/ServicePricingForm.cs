@@ -17,8 +17,11 @@ public sealed class PricingBandForm
 
     public static PricingBandForm From(HourlyRateBand row) => new()
     {
-        Day = row.Day, Date = row.Date, Rate = row.Rate,
-        Start = TimeOnly.MinValue.AddMinutes(row.StartMinute), EndsAtMidnight = row.EndMinute == 1440,
+        Day = row.Day,
+        Date = row.Date,
+        Rate = row.Rate,
+        Start = TimeOnly.MinValue.AddMinutes(row.StartMinute),
+        EndsAtMidnight = row.EndMinute == 1440,
         End = row.EndMinute == 1440 ? null : TimeOnly.MinValue.AddMinutes(row.EndMinute)
     };
 
@@ -36,7 +39,10 @@ public sealed class RentalPriceForm
     public RentalRateOverride ToOverride() => new(Day, Date, HalfDayRate, WholeDayRate);
     public static RentalPriceForm From(RentalRateOverride row) => new()
     {
-        Day = row.Day, Date = row.Date, HalfDayRate = row.HalfDayRate, WholeDayRate = row.WholeDayRate
+        Day = row.Day,
+        Date = row.Date,
+        HalfDayRate = row.HalfDayRate,
+        WholeDayRate = row.WholeDayRate
     };
 }
 

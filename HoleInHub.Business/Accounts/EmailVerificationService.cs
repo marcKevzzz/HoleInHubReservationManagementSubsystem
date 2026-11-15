@@ -19,7 +19,8 @@ public sealed class EmailVerificationService(EmailVerificationPersistence persis
         }
 
         var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime;
-        var limitedDelivery = purpose == "GuestRecovery" || scope.StartsWith("staff-pin:", StringComparison.Ordinal);
+        var limitedDelivery = purpose == "GuestRecovery" || scope.StartsWith("staff-pin:", StringComparison.Ordinal)
+            || scope.StartsWith("password-reset:", StringComparison.Ordinal);
         if (!await persistence.IssueAsync(new GuestVerificationRecord { Id = Hash(scope), Purpose = purpose, Email = email, CodeHash = codeHash, ProtectedContext = protectedContext, SentUtc = now, ExpiresUtc = now.AddMinutes(10) },
             new OutboxRecord { Id = Guid.NewGuid().ToString("N"), Recipient = email, Subject = subject, Body = encryptedBody, DueUtc = now }, ct, limitedDelivery ? new EmailDeliveryQuota(Hash(email), 5, TimeSpan.FromHours(1), TimeSpan.FromMinutes(1)) : null))
         {

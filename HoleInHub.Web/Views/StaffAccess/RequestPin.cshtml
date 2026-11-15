@@ -6,15 +6,15 @@
         <h1>Set up or reset your PIN</h1>
         <p class="staff-auth-intro">Enter your work account details. We’ll email you a six-digit code before you choose a PIN.</p>
         <form asp-action="Setup" method="post">
-            <div asp-validation-summary="All" role="alert" class="validation-summary"></div>
+            <div asp-validation-summary="ModelOnly" role="alert" class="validation-summary"></div>
             <div class="field"><div class="auth-input-wrap">
-                <input asp-for="Email" type="email" autocomplete="username" maxlength="254" placeholder=" " required />
+                <input asp-for="Email" type="email" autocomplete="username" maxlength="254" placeholder=" " required aria-describedby="Email-error" />
                 <label asp-for="Email"></label>
-            </div></div>
+            </div><span asp-validation-for="Email" id="Email-error" class="field-error" aria-live="polite"></span></div>
             <div class="field"><div class="auth-input-wrap">
-                <input id="Password" name="Password" type="password" autocomplete="current-password" maxlength="256" placeholder=" " required />
-                <label asp-for="Password"></label>
-            </div></div>
+                <input id="Password" name="Password" type="password" autocomplete="current-password" maxlength="256" placeholder=" " required aria-describedby="Password-error" />
+                <label asp-for="Password"></label><partial name="~/Views/Account/_PasswordToggle.cshtml" model='@("Password")' />
+            </div><span asp-validation-for="Password" id="Password-error" class="field-error" aria-live="polite"></span></div>
             <button class="button" type="submit" data-no-icon>Send verification code</button>
         </form>
     </div>

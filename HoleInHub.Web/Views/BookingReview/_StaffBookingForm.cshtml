@@ -60,7 +60,7 @@
         </div>
         <div>
             <div class="auth-input-wrap">
-                <input asp-for="Phone" type="tel" inputmode="tel" pattern="@ContactRules.PhonePattern" required placeholder=" " />
+                <input asp-for="Phone" type="tel" autocomplete="tel" maxlength="16" inputmode="tel" pattern="@ContactRules.PhonePattern" required placeholder=" " />
                 <label asp-for="Phone">Contact number</label>
             </div>
         </div>

@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using HoleInHub.Business.Accounts;
-using HoleInHub.Business.Services;
 using HoleInHub.Business.Reservations;
+using HoleInHub.Business.Services;
 using HoleInHubReservationManagementSubsystem.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

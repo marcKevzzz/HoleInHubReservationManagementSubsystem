@@ -1,0 +1,61 @@
+.staff-user-footer {display:flex;align-items:center;flex:none;gap:0;margin:0 calc(-1 * var(--staff-rail-inline)) -8px;padding:8px 0 0;border-top:1px solid var(--color-line)}
+.staff-user-trigger {display:flex;align-items:center;gap:8px;min-width:0;flex:1;min-height:52px;padding:6px 0 6px 18px;border:0;background:transparent;color:var(--color-ink);text-align:left;cursor:pointer}
+.staff-user-avatar {display:grid;place-items:center;flex:none;width:28px;height:28px}
+.staff-user-avatar .staff-icon {width:26px;height:26px;stroke-width:1.12}
+.staff-user-identity {display:grid;min-width:0;gap:2px}
+.staff-user-identity strong {overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.78rem;font-weight:600;line-height:1.4}
+.staff-user-identity small {font-size:.68rem;color:var(--color-muted);line-height:1.4}
+.staff-user-footer form {margin:0;flex:none}
+.staff-user-logout {display:grid;place-items:center;width:48px;height:52px;border:0;background:transparent;color:var(--color-error);cursor:pointer}
+.staff-user-trigger:is(:hover,:focus-visible) {background:var(--color-staff-surface)}
+.staff-user-logout:is(:hover,:focus-visible) {background:color-mix(in srgb,var(--color-error) 10%,var(--color-paper))}
+.staff-rail .staff-user-footer :is(a,button):not(.staff-rail-toggle):is(:hover,:focus-visible) .staff-icon {transform:none;transition:none}
+.staff-user-menu {position:fixed;inset:auto auto 90px 12px;margin:0;width:240px;max-width:calc(100vw - 16px);padding:8px;border:1px solid var(--color-line);background:var(--color-paper);color:var(--color-ink);box-shadow:0 12px 32px color-mix(in srgb,var(--color-ink) 14%,transparent);font:400 .8rem/1.5 var(--body)}
+.staff-user-menu > :is(a,button) {display:flex;align-items:center;gap:10px;width:100%;min-height:40px;padding:8px 12px;border:0;background:transparent;color:inherit;text-align:left;text-decoration:none;cursor:pointer}
+.staff-user-menu > a:is(:hover,:focus-visible) {background:var(--color-staff-surface)}
+.staff-user-language {display:grid;padding:8px 0;border-top:1px solid var(--color-line);margin-top:4px}
+.staff-user-language .customer-language {display:grid;width:100%;border-radius:0}
+.staff-user-language .customer-language button {min-height:30px;border-radius:0}
+.staff-user-menu .staff-user-menu-logout {display:none;background:color-mix(in srgb,var(--color-error) 10%,var(--color-paper));color:var(--color-error);margin-top:4px}
+.staff-user-menu .staff-user-menu-logout:is(:hover,:focus-visible) {background:color-mix(in srgb,var(--color-error) 17%,var(--color-paper))}
+.staff-profile {max-width:940px}
+.staff-profile-section {display:grid;grid-template-columns:minmax(180px,1fr) minmax(0,1.65fr);gap:40px;border-top:1px solid var(--color-line);padding:28px 0 32px}
+.staff-profile .staff-section-heading p {max-width:28ch;font-size:.8rem;margin-top:8px}
+.staff-profile-form {display:grid;gap:8px;min-width:0}
+.staff-profile .field {margin:0;min-width:0}
+.staff-profile .auth-input-wrap input {display:block;width:100%;min-height:60px;padding:26px 0 8px;border:0;border-bottom:1px solid var(--color-control-line);border-radius:0;background:transparent;font-size:.85rem}
+.staff-profile .auth-input-wrap:has(.password-toggle) input {padding-right:44px}
+.staff-profile .auth-input-wrap label {position:absolute;inset:4px auto auto 0;transform:translateY(24px);transform-origin:left top;font-size:.85rem;font-weight:400;line-height:1.5;color:var(--color-muted);pointer-events:none;margin:0}
+.staff-profile .auth-input-wrap:focus-within label,.staff-profile .auth-input-wrap input:not(:placeholder-shown)+label {transform:translateY(0);font-size:.72rem}
+.staff-profile .field-error {display:block;min-height:18px;font-size:.72rem;line-height:1.5;color:var(--color-error)}
+.staff-profile .field-error:empty {visibility:hidden}
+.staff-profile .input-validation-error,.staff-profile input[aria-invalid=true] {border-bottom-color:var(--color-error)}
+.staff-profile-account {display:flex;gap:32px;padding:12px 0 20px;overflow-wrap:anywhere}
+.staff-profile-account span {font-size:.72rem;color:var(--color-muted)}
+.staff-profile-account p,.staff-profile-security p {font-size:.82rem;line-height:1.6}
+.staff-profile .button {justify-self:start;margin-top:4px;min-width:150px}
+.staff-profile-security {display:grid;justify-items:start;align-content:start;gap:16px;padding-top:4px}
+.staff-profile .password-toggle {position:absolute;inset:auto 0 0 auto;display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;background:transparent;color:var(--color-muted)}
+.staff-profile .password-toggle[hidden],.staff-profile .password-toggle svg[hidden] {display:none}
+.staff-profile .password-toggle:hover {color:var(--color-green)}
+.staff-profile .auth-hint,.staff-profile .password-strength {font-size:.72rem}
+.staff-profile .validation-summary-valid {display:none}
+@media(min-width:901px) {
+    [data-staff-collapsed] .staff-user-identity,[data-staff-collapsed] .staff-user-footer > form {display:none}
+    [data-staff-collapsed] .staff-user-trigger {justify-content:center;padding-inline:0}
+    [data-staff-collapsed] .staff-user-menu .staff-user-menu-logout {display:flex}
+}
+@media(max-width:900px) {
+    [data-staff-collapsed][data-staff-mobile-menu] .staff-user-footer {display:none}
+    .staff-user-footer {margin-bottom:0;padding-bottom:4px}
+    [data-staff-mobile-menu] .staff-user-footer {position:fixed;inset:calc(var(--app-viewport-height,100dvh) - 80px - env(safe-area-inset-bottom)) auto auto 0;width:min(340px,calc(100vw - 36px));height:calc(80px + env(safe-area-inset-bottom));margin:0;padding:12px 0 calc(12px + env(safe-area-inset-bottom));background:var(--color-paper)}
+    [data-staff-mobile-menu] .staff-rail-drawer {height:calc(var(--app-viewport-height,100dvh) - 144px - env(safe-area-inset-bottom))}
+}
+@media(max-width:640px) {
+    .staff-profile-section {grid-template-columns:minmax(0,1fr);gap:16px;padding-block:24px}
+    .staff-profile .staff-section-heading p {max-width:50ch}
+}
+@media(prefers-reduced-motion:no-preference) {
+    .staff-user-trigger,.staff-user-logout,.staff-user-menu > :is(a,button) {transition:background-color .2s var(--ease),color .2s var(--ease)}
+    .staff-profile .auth-input-wrap label {transition:transform .2s var(--ease),font-size .2s var(--ease)}
+}

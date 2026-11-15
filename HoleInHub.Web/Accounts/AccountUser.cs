@@ -4,6 +4,14 @@ namespace HoleInHub.Web.Accounts;
 
 public sealed class AccountUser
 {
+    public string WelcomeTitle
+    {
+        get
+        {
+            var name = (FirstName + " " + LastName).Trim();
+            return name.Length > 0 ? $"Welcome back, {name}" : "Welcome back";
+        }
+    }
     public string FirstName { get; set; } = "";
     public string LastName { get; set; } = "";
     public string Phone { get; set; } = "";

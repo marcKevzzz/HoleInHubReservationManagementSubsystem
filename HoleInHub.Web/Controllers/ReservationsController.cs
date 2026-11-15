@@ -41,8 +41,14 @@ public sealed class ReservationsController(ReservationService reservations, Gues
         try
         {
             var quote = await reservations.GetQuoteAsync(date, startTime, durationMinutes, type, entryId, bayCount, DemoAllowed, ct);
-            return Json(new { rentalTotal = quote.Total, quote.DepositAmount, quote.Currency, quote.Lines,
-                quoteKey = ReservationService.QuoteKey(quote, type, entryId, date, startTime, durationMinutes, bayCount) });
+            return Json(new
+            {
+                rentalTotal = quote.Total,
+                quote.DepositAmount,
+                quote.Currency,
+                quote.Lines,
+                quoteKey = ReservationService.QuoteKey(quote, type, entryId, date, startTime, durationMinutes, bayCount)
+            });
         }
         catch (ReservationValidationException error) { return BadRequest(new { message = CustomerText.Error(error.Message) }); }
     }

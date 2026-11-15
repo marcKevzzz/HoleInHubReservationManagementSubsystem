@@ -63,6 +63,8 @@ public sealed class ReservationRecord
 
 public sealed class HistoryRecord
 {
+    [BsonIgnoreIfNull] public ReservationAttendanceSnapshot? AttendanceBefore { get; set; }
+    [BsonIgnoreIfNull] public ReservationAttendanceSnapshot? AttendanceAfter { get; set; }
     [BsonIgnoreIfNull] public ScheduleChangeRecord? ScheduleChange { get; set; }
     [BsonIgnoreIfNull] public string? CommandId { get; set; }
     [BsonIgnoreIfNull] public string? CommandHash { get; set; }
@@ -73,6 +75,23 @@ public sealed class HistoryRecord
     public string Status { get; set; } = "";
     public DateTime AtUtc { get; set; }
     public string Actor { get; set; } = "";
+}
+
+public sealed class ReservationAttendanceSnapshot
+{
+    public string Status { get; set; } = "";
+    public DateTime StartUtc { get; set; }
+    public DateTime EndUtc { get; set; }
+    [BsonIgnoreIfNull] public DateTime? CheckedInUtc { get; set; }
+    [BsonIgnoreIfNull] public DateTime? CheckedOutUtc { get; set; }
+    public static ReservationAttendanceSnapshot From(ReservationRecord record) => new()
+    {
+        Status = record.Status,
+        StartUtc = record.StartUtc,
+        EndUtc = record.EndUtc,
+        CheckedInUtc = record.CheckedInUtc,
+        CheckedOutUtc = record.CheckedOutUtc
+    };
 }
 
 public sealed class ScheduleChangeRecord

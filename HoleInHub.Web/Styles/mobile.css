@@ -51,7 +51,7 @@
     .activity-filters>label.activity-filter-field {width:100%;min-width:0}
     .activity-filters .app-select-menu>button {font-size:.8125rem;padding:8px 10px}
     .staff-shell .review-sort a,.review-filters a {min-height:32px;font-size:.75rem;padding:6px 10px}
-    .staff-shell {--timeline-max-height:65dvh}
+    .staff-shell {--timeline-max-height:72dvh}
     .staff-shell .staff-timeline-scroll {max-width:100%;touch-action:pan-x pan-y}
     .staff-timeline {--bay-width:72px;--hour-width:76px}
     .staff-shell :is(.review-request,.customer-directory-item) {gap:6px 10px;padding:10px 12px;font-size:.8125rem}
@@ -83,8 +83,9 @@
     .service-editor .service-description-grid {grid-template-columns:1fr;gap:0}
     .staff-shell .settings-section {padding:20px 16px;gap:20px}
     .settings-layout {grid-template-columns:1fr;gap:16px}
-    .settings-nav {position:static;display:flex;max-width:100%;gap:4px;overflow-x:auto}
-    .settings-nav a {min-height:44px;display:flex;align-items:center;white-space:nowrap;flex:none}
+    .settings-layout {grid-template-columns:1fr;gap:20px}
+    .settings-nav {position:static;grid-template-columns:repeat(3,minmax(0,1fr));max-height:none;overflow:visible}
+    .settings-nav a {min-height:44px;display:flex;align-items:center;border-left:0;border-bottom:1px solid var(--color-line);overflow-wrap:anywhere}
     .settings-days {gap:4px}
     .settings-days label {min-width:32px}
     .settings-days span {min-height:44px;font-size:.75rem;padding-inline:4px}
@@ -149,6 +150,9 @@
     .staff-shell .people-page .people-directory:not(.role-activity-table) tbody td:nth-child(3) {grid-column:2;grid-row:2;justify-self:end}
     .staff-shell .people-page .people-directory:not(.role-activity-table) tbody td.review-row-actions {grid-column:2;grid-row:1;justify-self:end}
     .people-directory .people-pill {font-size:.6875rem;padding:3px 7px}
+}
+@media(max-width:480px) {
+    .settings-nav {grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(max-width:600px) {
     .dashboard-activity table,.dashboard-activity tbody {display:block;width:100%;min-width:0}

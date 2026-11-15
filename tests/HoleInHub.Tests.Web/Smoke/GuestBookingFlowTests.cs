@@ -136,7 +136,7 @@ public sealed class GuestBookingFlowTests
     [InlineData("Attendees", "invalid", "Attendees")]
     [InlineData("FirstName", "Guest2", "FirstName")]
     [InlineData("LastName", "Player٣", "LastName")]
-    [InlineData("Phone", "+639123456789", "Phone")]
+    [InlineData("Phone", "+63912345678", "Phone")]
     [InlineData("Phone", "0912abc6789", "Phone")]
     [InlineData("StartTime", "01:00", "")]
     public async Task FailedSubmissionProvidesFieldKeysForWizardFeedback(string field, string value, string expectedKey)

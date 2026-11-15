@@ -46,12 +46,12 @@ function setup(withContact=false) {
 test('contact fields use contact-specific errors and validate phone format',()=>{
     const ui=setup(true);ui.firstName.value=' ';ui.firstName.fire('blur');assert.match(ui.errors['FirstName-error'].textContent,/first name/);
     ui.lastName.fire('blur');assert.match(ui.errors['LastName-error'].textContent,/last name/);
-    ui.phone.value='invalid';ui.phone.validity.patternMismatch=true;ui.phone.fire('blur');assert.match(ui.errors['Phone-error'].textContent,/valid contact number/);
+    ui.phone.value='invalid';ui.phone.validity.patternMismatch=true;ui.phone.fire('blur');assert.match(ui.errors['Phone-error'].textContent,/contact number/);
     ui.phone.value='09123456789';ui.phone.validity.patternMismatch=false;ui.phone.fire('blur');assert.equal(ui.errors['Phone-error'].textContent,'');
 });
 test('password toggles reveal and conceal each field independently without changing its value', () => {
     const ui = setup();
-    ui.password.value = 'GoodPassword123!';
+    ui.password.value = 'GoodPassword123';
     assert.equal(ui.toggles[0].hidden, false);
     ui.toggles[0].click();
     assert.equal(ui.password.type, 'text');
@@ -60,7 +60,7 @@ test('password toggles reveal and conceal each field independently without chang
     assert.equal(ui.toggles[0].querySelector('.password-eye-slash').hidden, false);
     ui.toggles[0].click();
     assert.equal(ui.password.type, 'password');
-    assert.equal(ui.password.value, 'GoodPassword123!');
+    assert.equal(ui.password.value, 'GoodPassword123');
     assert.equal(ui.toggles[0].querySelector('.password-eye').hidden, false);
     ui.toggles[1].click();
     assert.equal(ui.confirm.type, 'text');
@@ -71,17 +71,17 @@ test('password guidance waits for the debounce and clears when requirements are 
     ui.password.value = 'short'; ui.password.fire('input');
     assert.equal(ui.errors['Password-error'].textContent, '');
     ui.flush();
-    assert.match(ui.errors['Password-error'].textContent, /12/);
+    assert.match(ui.errors['Password-error'].textContent, /8/);
     assert.equal(ui.password['aria-invalid'], 'true');
-    ui.password.value = 'GoodPassword123!'; ui.password.fire('input'); ui.flush();
+    ui.password.value = 'GoodPassword123'; ui.password.fire('input'); ui.flush();
     assert.equal(ui.password['aria-invalid'], 'false');
-    assert.match(ui.errors['Password-error'].textContent, /meets/);
+    assert.equal(ui.errors['Password-error'].textContent, '');
 });
 test('confirmation updates when a previously matching password changes', () => {
     const ui = setup();
-    ui.password.value = ui.confirm.value = 'GoodPassword123!'; ui.confirm.fire('blur');
+    ui.password.value = ui.confirm.value = 'GoodPassword123'; ui.confirm.fire('blur');
     assert.equal(ui.confirm['aria-invalid'], 'false');
-    ui.password.value = 'OtherPassword123!'; ui.password.fire('input'); ui.flush();
+    ui.password.value = 'OtherPassword123'; ui.password.fire('input'); ui.flush();
     assert.equal(ui.confirm['aria-invalid'], 'true');
     assert.match(ui.errors['ConfirmPassword-error'].textContent, /do not match/);
 });
@@ -89,14 +89,14 @@ test('invalid submit stays on the form and focuses its first error', () => {
     const ui = setup(); let prevented = false;
     ui.form.submit({ preventDefault: () => prevented = true });
     assert.equal(prevented, true); assert.equal(ui.email.focused, true);
-    ui.email.value = 'player@example.com'; ui.password.value = ui.confirm.value = 'GoodPassword123!';
+    ui.email.value = 'player@example.com'; ui.password.value = ui.confirm.value = 'GoodPassword123';
     prevented = false; ui.form.submit({ preventDefault: () => prevented = true });
     assert.equal(prevented, false);
 });
 
 
 test('valid submit prevents duplicates and restores controls on back navigation',()=>{
- const ui=setup();ui.email.value='guest@example.test';ui.password.value='GoodPassword123!';ui.confirm.value=ui.password.value;
+ const ui=setup();ui.email.value='guest@example.test';ui.password.value='GoodPassword123';ui.confirm.value=ui.password.value;
  ui.form.submit({preventDefault(){throw Error('first valid submit should proceed');}});
  assert.equal(ui.submitButton.disabled,true);
  let prevented=false;ui.form.submit({preventDefault(){prevented=true;}});assert.equal(prevented,true);

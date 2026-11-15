@@ -15,7 +15,7 @@ public sealed class CustomerMergeTests(MongoDbFixture fixture) : IClassFixture<M
         AccountId = owner,
         FirstName = name,
         LastName = "Santos",
-        Email = "shared@example.test",
+        Email = owner.Replace(':', '.') + "@example.test",
         Phone = "09175550123",
         Reference = "HIH-" + Guid.NewGuid().ToString("N")[..10],
         Service = "Regular",
@@ -139,19 +139,24 @@ public sealed class CustomerMergeTests(MongoDbFixture fixture) : IClassFixture<M
     }
 
     [Fact]
-    public async Task NewVerifiedGuestsWithSharedEmailStaySeparateButLegacyBackfillGroupsArePreserved()
+    public async Task NewVerifiedGuestsReuseEmailProfileAndPreserveBookingContactsAndOwnership()
     {
         var context = fixture.CreateDbContext();
         await new Migration_002_Reservations().UpAsync(context.Database, default);
         var first = Booking("guest:old-a", "Alex"); first.EmailVerificationId = "old-a";
         var second = Booking("guest:old-b", "Family"); second.EmailVerificationId = "old-b";
+        second.Email = first.Email;
         var records = context.Database.GetCollection<ReservationRecord>("reservations");
         await records.InsertManyAsync([first, second]);
         await new Migration_018_CustomerProfiles().UpAsync(context.Database, default);
         var store = new CustomerProfilePersistence(context);
         Assert.Equal((await store.ReadAsync(first.Id, default))!.Profile.Id, (await store.ReadAsync(second.Id, default))!.Profile.Id);
+        var originalName = (await store.ReadAsync(first.Id, default))!.Profile.FirstName;
         var a = Booking("guest:new-a", "Alex"); a.EmailVerificationId = "new-a";
         var b = Booking("guest:new-b", "Different"); b.EmailVerificationId = "new-b";
+        a.Email = first.Email;
+        b.Email = "  " + a.Email.ToUpperInvariant() + "  ";
+        b.Phone = "01012345678";
         foreach (var record in new[] { a, b })
         {
             using var session = await context.Client.StartSessionAsync();
@@ -162,11 +167,72 @@ public sealed class CustomerMergeTests(MongoDbFixture fixture) : IClassFixture<M
                 return true;
             });
         }
-        Assert.NotEqual((await store.ReadAsync(a.Id, default))!.Profile.Id, (await store.ReadAsync(b.Id, default))!.Profile.Id);
-        Assert.NotEqual((await store.ReadAsync(first.Id, default))!.Profile.Id, (await store.ReadAsync(a.Id, default))!.Profile.Id);
+        var shared = (await store.ReadAsync(a.Id, default))!;
+        Assert.Equal(originalName, shared.Profile.FirstName);
+        Assert.Equal(shared.Profile.Id, (await store.ReadAsync(b.Id, default))!.Profile.Id);
+        Assert.Equal((await store.ReadAsync(first.Id, default))!.Profile.Id, shared.Profile.Id);
+        Assert.Contains(shared.Profile.Variants, contact => contact.FirstName == "Different" && contact.Phone == b.Phone);
+        Assert.Equal("Different", (await records.Find(x => x.Id == b.Id).SingleAsync()).FirstName);
+        Assert.Equal("guest:new-b", (await records.Find(x => x.Id == b.Id).SingleAsync()).AccountId);
         await new Migration_018_CustomerProfiles().UpAsync(context.Database, default);
-        Assert.Single((await store.ReadAsync(a.Id, default))!.ReservationIds);
+        Assert.Equal(4, (await store.ReadAsync(a.Id, default))!.ReservationIds.Length);
     }
+    [Fact]
+    public async Task GuestAndAccountBookingsReuseManualEmailContactWithoutChangingItsPrimaryName()
+    {
+        var context = fixture.CreateDbContext();
+        await new Migration_002_Reservations().UpAsync(context.Database, default);
+        await new Migration_018_CustomerProfiles().UpAsync(context.Database, default);
+        var store = new CustomerProfilePersistence(context);
+        var original = new CustomerProfileRecord
+        {
+            Id = "cp_" + new string('a', 64),
+            Kind = "Manual",
+            FirstName = "Original",
+            LastName = "Santos",
+            Email = "shared@example.test",
+            Phone = "09175550123",
+            CreatedUtc = DateTime.UtcNow,
+            UpdatedUtc = DateTime.UtcNow
+        };
+        Assert.Equal(original.Id, await store.CreateContactAsync(original, default));
+        var alternate = new CustomerProfileRecord
+        {
+            Id = "cp_" + new string('b', 64),
+            Kind = "Manual",
+            FirstName = "Alternate",
+            LastName = "Santos",
+            Email = "SHARED@example.test",
+            Phone = "01012345678",
+            CreatedUtc = DateTime.UtcNow,
+            UpdatedUtc = DateTime.UtcNow
+        };
+        Assert.Equal(original.Id, await store.CreateContactAsync(alternate, default));
+        Assert.Equal(original.Id, await store.CreateContactAsync(alternate, default));
+        var records = context.Database.GetCollection<ReservationRecord>("reservations");
+        foreach (var owner in new[] { "guest:new", "account-new" })
+        {
+            var booking = Booking(owner, "Booking name");
+            booking.Email = "shared@example.test";
+            booking.EmailVerificationId = "verified";
+            using var session = await context.Client.StartSessionAsync();
+            await session.WithTransactionAsync(async (transaction, token) =>
+            {
+                await records.InsertOneAsync(transaction, booking, cancellationToken: token);
+                await store.AttachAsync(transaction, booking, null, token);
+                return true;
+            });
+            Assert.Equal(original.Id, (await store.ReadAsync(booking.Id, default))!.Profile.Id);
+        }
+        var snapshot = (await store.ReadAsync(original.Id, default))!;
+        Assert.Equal("Original", snapshot.Profile.FirstName);
+        Assert.Equal(2, snapshot.ReservationIds.Length);
+        Assert.Contains(snapshot.Profile.Variants, variant => variant.Phone == alternate.Phone);
+        Assert.Single((await store.SearchAsync("", [], 1, default)).Items);
+        alternate.Phone = "09175550999";
+        await Assert.ThrowsAsync<CustomerProfileConflictException>(() => store.CreateContactAsync(alternate, default));
+    }
+
     [Fact]
     public async Task ReversingDependentMergeMakesTheOriginalMergeUndoableAgain()
     {

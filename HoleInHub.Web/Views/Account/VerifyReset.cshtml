@@ -1,0 +1,11 @@
+@model HoleInHub.Web.ViewModels.EmailCodeFormModel
+@{ ViewData["Title"] = "Reset your password"; }
+<section class="account-page"><div class="account-inner">
+<a class="flow-back" asp-action="ForgotPassword"><partial name="_BackArrow" /> Change email</a>
+<h1>Check your email</h1>
+<p class="auth-intro">If your email belongs to a verified account, we’ll send a six-digit code. Enter it here to choose a new password.</p>
+<div asp-validation-summary="ModelOnly" role="alert" class="validation-summary"></div>
+@if (ViewData["VerificationMessage"] is string message) { <p role="status">@message</p> }
+<partial name="_EmailCodeForm" model="Model" />
+</div></section>
+@section Scripts { <script src="~/js/booking-verification.js" asp-append-version="true"></script> }

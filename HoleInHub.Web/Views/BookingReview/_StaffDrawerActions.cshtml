@@ -3,7 +3,7 @@
 {
     <partial name="_ReviewDecision" model="Model" />
 }
-@if (Model.Context.CanCheckIn || Model.Context.CanCheckOut || Model.Context.Booking.Status is "Confirmed" or "Checked-In")
+@if (Model.Context.CanCheckIn || Model.Context.CanCheckOut || Model.Context.Booking.Status is "Confirmed" or "Checked-In" or "Completed" or "No-show")
 {
     <partial name="_StaffAttendance" model="Model" />
 }

@@ -111,10 +111,11 @@ public sealed class ActivityPersistence(IMongoDbContext context)
             case "r":
                 projection.Add("TargetLabel", Value("Reference")).Add("TargetKind", "reservation")
                     .Add("EventType", Value("History.EventType")).Add("Reason", Value("History.Reason"))
-                    .Add("PreviousStatus", "$History.PreviousReservationStatus").Add("Status", Value("History.Status"))
+                    .Add("PreviousStatus", "$History.PreviousReservationStatus").Add("Status", new BsonDocument("$ifNull", new BsonArray { "$History.ReservationStatus", Value("History.Status") }))
                     .Add("TargetStartUtc", "$History.ScheduleChange.StartUtc")
                     .Add("BeforeStartUtc", "$History.ScheduleChange.OriginalStartUtc").Add("AfterStartUtc", "$History.ScheduleChange.StartUtc")
-                    .Add("BeforeEndUtc", "$History.ScheduleChange.OriginalEndUtc").Add("AfterEndUtc", "$History.ScheduleChange.EndUtc")
+                    .Add("BeforeEndUtc", new BsonDocument("$ifNull", new BsonArray { "$History.AttendanceBefore.EndUtc", "$History.ScheduleChange.OriginalEndUtc" }))
+                    .Add("AfterEndUtc", new BsonDocument("$ifNull", new BsonArray { "$History.AttendanceAfter.EndUtc", "$History.ScheduleChange.EndUtc" }))
                     .Add("BeforeResources", "$History.ScheduleChange.OriginalResourceIds").Add("AfterResources", "$History.ScheduleChange.ResourceIds");
                 break;
             case "b":

@@ -11,10 +11,15 @@
     <a class="skip-link" href="#main-content">@T("Skip to main content")</a>
     <div class="smooth-wrapper"><div class="smooth-content">
     <a class="verification-brand" href="/" aria-label="@T("Hole In Hub home")"><img src="~/media/brand/wordmark-hq.webp" alt="Hole In Hub Golf &amp; Lounge" /></a>
-    <partial name="_LanguageSwitch" />
     <main id="main-content" tabindex="-1">@RenderBody()</main>
     </div></div>
+    <partial name="_ToastStack" />
     <script src="~/js/vendor/gsap.min.js" asp-append-version="true"></script>
+    <script src="~/js/ui-motion.js" asp-append-version="true"></script>
+    <script src="~/js/toast-stack.js" asp-append-version="true"></script>
+    <script src="~/js/auth-feedback.js" asp-append-version="true"></script>
+    <script src="~/js/code-input.js" asp-append-version="true"></script>
+    <script src="~/js/account.js" asp-append-version="true"></script>
     <script src="~/js/mobile-viewport.js" asp-append-version="true"></script><script src="~/js/button-motion.js" asp-append-version="true"></script>
     <partial name="_ScrollMotion" />
     <script src="~/js/app-select.js" asp-append-version="true"></script>@await RenderSectionAsync("Scripts", required: false)

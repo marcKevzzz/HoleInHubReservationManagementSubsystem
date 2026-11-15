@@ -13,6 +13,6 @@
         <template data-availability-template>
             <partial name="_ServiceAvailabilityRow" model='("__index__", new ServiceAvailabilityRow { Weekday = 2 })' />
         </template>
-        <button type="button" class="button button-secondary" data-add-availability data-action-icon="plus">Add availability</button>
+        <button type="button" class="button button-secondary" data-add-availability data-action-icon="plus">Add availability<partial name="_ButtonActionIcon" model='"plus"' /></button>
     </div>
 </details>

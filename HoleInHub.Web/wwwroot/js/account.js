@@ -1,5 +1,5 @@
 (() => {
-    const content = document.querySelector('.account-inner');
+    const content = document.querySelector('.account-inner, .booking-verification-page');
     const form = content?.querySelector('form');
     if (!form || form.hasAttribute?.('data-email-code') || form.hasAttribute?.('data-staff-pin')) return;
 
@@ -12,7 +12,7 @@
 
 
     content.querySelectorAll('.auth-switch a,.auth-recovery').forEach(link => link.classList.add('prototype-link'));
-    const inputs = [...form.querySelectorAll('input:not([type="hidden"])')];
+    const inputs = [...form.querySelectorAll('input:not([type="hidden"]):not([type="checkbox"])')];
     content.querySelectorAll('[data-password-toggle]').forEach(toggle => {
         const input = document.getElementById(toggle.dataset.passwordToggle);
         const name = input.name === 'ConfirmPassword' ? 'confirm password' : 'password';
@@ -30,17 +30,18 @@
     const timers = new Map();
     function validate(input) {
         const feedback = document.getElementById(`${input.id}-error`);
-        if (!feedback) return true;
+        if (!feedback) return input.checkValidity?.() ?? true;
         let message = '';
         if (!input.value.trim()) message = ({FirstName:'Enter your first name.',LastName:'Enter your last name.',Phone:'Enter your contact number.'})[input.name] || (input.type === 'email' ? 'Enter your email address.' : 'Enter your password.');
         else if (input.validity.typeMismatch) message = 'Enter a valid email address.';
-        else if (input.validity.patternMismatch) message = ['FirstName','LastName'].includes(input.name) ? 'Use letters for names; numbers are not allowed.' : 'Enter a valid contact number using 7�15 digits only.';
+        else if (input.validity.patternMismatch) message = input.dataset.passwordRules ? 'Use 8–128 letters or numbers.' : ['Pin','ConfirmPin'].includes(input.name) ? 'Enter a six-digit PIN.' : ['FirstName','LastName'].includes(input.name) ? 'Use letters, spaces, commas, periods, apostrophes or hyphens.' : (window.HoleInHubContacts?.error(input.value) ?? 'Check the contact number’s prefix and digit count.');
         else if (input.validity.tooLong) message = `Use no more than ${input.maxLength} characters.`;
-        else if (input.dataset.passwordRules && (input.value.length < 12 || !/[a-z]/.test(input.value) || !/[A-Z]/.test(input.value) || !/[0-9]/.test(input.value) || !/[^a-zA-Z0-9]/.test(input.value))) {
-            message = 'Use 12–128 characters with uppercase and lowercase letters, a number, and a symbol.';
+        else if (input.dataset.passwordRules && (input.value.length < 8 || input.value.length > 128 || !/^[A-Za-z0-9]+$/.test(input.value))) {
+            message = 'Use 8–128 letters or numbers.';
         } else if (input.name === 'ConfirmPassword' && input.value !== form.elements.Password.value) message = 'Passwords do not match.';
+        else if (input.name === 'ConfirmPin' && input.value !== form.elements.Pin.value) message = 'PINs do not match.';
         input.setAttribute('aria-invalid', String(Boolean(message)));
-        const text = message || (input.dataset.passwordRules ? 'Password meets the requirements.' : '');
+        const text = message;
         const next = window.HoleInHubText?.t(text) ?? text;
         if (feedback.textContent !== next) {
             feedback.textContent = next;
@@ -64,7 +65,7 @@
         input.addEventListener('blur', () => {
             clearTimeout(timers.get(input));
             touched.add(input);
-            validate(input);
+            if (!validate(input)) window.HoleInHubAuthFeedback?.shake(input.closest?.('.field') ?? input);
         });
     });
     // Native validation remains available when this enhancement cannot run.
@@ -78,7 +79,7 @@
             clearTimeout(timers.get(input));
             return !validate(input);
         });
-        if (invalid.length) { event.preventDefault(); invalid[0].focus(); return; }
+        if (invalid.length) { event.preventDefault(); invalid[0].focus(); window.HoleInHubAuthFeedback?.invalid(invalid, 'Check the highlighted fields.'); return; }
         submitting=true;submitButtons.forEach(button=>{button.disabled=true;button.setAttribute("aria-busy","true");});
     });
 })();

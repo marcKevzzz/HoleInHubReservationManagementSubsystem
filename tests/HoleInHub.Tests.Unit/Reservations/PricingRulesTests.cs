@@ -1,6 +1,6 @@
 using HoleInHub.Business.Reservations;
-using Xunit;
 using HoleInHub.Data.Services;
+using Xunit;
 
 namespace HoleInHub.Tests.Unit.Reservations;
 
@@ -21,7 +21,7 @@ public sealed class PricingRulesTests
     {
         var date = new DateOnly(2026, 12, 25);
         var pricing = PricingRules.Default("Regular");
-        pricing = pricing with { Bands = [..pricing.Bands, new(null, date, 900, 930, 1100m)] };
+        pricing = pricing with { Bands = [.. pricing.Bands, new(null, date, 900, 930, 1100m)] };
 
         var quote = PricingRules.Calculate("Regular", pricing, date, new TimeOnly(14, 30), 90, 1);
 

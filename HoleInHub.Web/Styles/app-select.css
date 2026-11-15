@@ -10,7 +10,7 @@
 .app-select[data-open=true] .app-select-caret {transform:translateY(3px) rotate(225deg)}
 .app-select-menu {position:fixed;z-index:10000;padding:4px;background:var(--color-paper);border:1px solid var(--color-line);box-shadow:0 8px 20px rgb(16 17 15 / 10%);overflow:auto;overscroll-behavior:contain;opacity:0;visibility:hidden;transform:translateY(-5px);pointer-events:none;max-width:calc(100vw - 16px)}
 .app-select[data-open=true]>.app-select-menu {opacity:1;visibility:visible;transform:translateY(0);pointer-events:auto}
-.app-select-menu>button {display:block;width:100%;padding:9px 12px;border:0;border-radius:0;background:transparent;color:var(--color-ink);font:400 .875rem/1.4 var(--body,Inter,sans-serif);text-align:left;cursor:pointer}
+.app-select-menu>button {display:block;width:100%;min-height:40px;padding:10px 12px;border:0;border-radius:0;background:transparent;color:var(--color-ink);font:400 .875rem/1.4 var(--body,Inter,sans-serif);text-align:left;cursor:pointer}
 .app-select-menu>button::after {content:none!important}
 .app-select-menu>button:is(:hover,:focus-visible) {background:var(--color-staff-surface);outline:0}
 .app-select-menu>button[aria-selected=true] {background:var(--color-green);color:var(--color-paper)}
@@ -27,3 +27,12 @@
 .auth-input-wrap:has(>select.app-select-native)>label {position:absolute;top:4px;left:0;transform:none!important;font-size:.75rem;line-height:1.4;pointer-events:none}
 .app-select-trigger,.app-select-menu {box-sizing:border-box;min-width:0}
 .app-select-menu>button {white-space:normal;overflow-wrap:anywhere}
+.staff-shell .app-select-trigger {padding-inline:0;line-height:1.5}
+.staff-shell :is(.activity-filter-field,.staff-filter-field) {display:grid;gap:4px;margin:0;font-size:.75rem;color:var(--color-muted)}
+.staff-shell .app-select-menu>button[aria-selected=true] {background:var(--color-staff-surface);color:var(--color-green);font-weight:600}
+.staff-shell .app-select-menu>button:is(:hover,:focus-visible) {background:var(--color-staff-surface);color:var(--color-ink)}
+.app-select-menu>button:focus-visible {outline:2px solid var(--color-green);outline-offset:-2px}
+@media(prefers-reduced-motion:no-preference) {
+ .app-select-caret {transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+ .app-select-menu>button {transition:background-color .18s ease,color .18s ease}
+}

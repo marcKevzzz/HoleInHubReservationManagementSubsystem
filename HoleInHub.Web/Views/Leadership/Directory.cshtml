@@ -10,7 +10,7 @@
 <section class="staff-workspace staff-customers leadership-page people-page">
     <header class="staff-workspace-heading people-directory-heading">
         <h1>@ViewData["Title"]</h1>
-        @if (ViewData["TeamCreation"] is true) { <a class="button" data-people-create data-action-icon="plus" asp-controller="TeamMembers" asp-action="Create">Add team member</a> }
+        @if (ViewData["TeamCreation"] is true) { <a class="button" data-people-create data-action-icon="plus" asp-controller="TeamMembers" asp-action="Create">Add team member<partial name="_ButtonActionIcon" model='"plus"' /></a> }
     </header>
     <div class="people-toolbar staff-date-controls">
         <nav class="review-sort" aria-label="Staff role">

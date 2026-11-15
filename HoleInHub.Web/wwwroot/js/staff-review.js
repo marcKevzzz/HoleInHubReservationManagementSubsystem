@@ -1,4 +1,5 @@
 (() => {
+    document.querySelector('[data-cancellation-filter]')?.addEventListener('change', event => event.target.form.requestSubmit());
     const deadlines = [...document.querySelectorAll('[data-deadline]')];
     const history = [...document.querySelectorAll('[data-relative]')];
     const review = document.querySelector('[data-review-closes]');

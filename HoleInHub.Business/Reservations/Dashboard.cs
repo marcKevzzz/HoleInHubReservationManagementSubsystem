@@ -26,8 +26,13 @@ public static class DashboardMetrics
     public static DateTime Local(DateTime utc) => TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), ReservationRules.Manila);
     public static string ServiceLabel(string id) => id switch
     {
-        "Regular" => "Regular", "VIP" => "VIP", "PhilippineCoach" => "Philippine coach",
-        "KpgaPro" => "KPGA pro", "KpgaGroup" => "KPGA lessons", "WholeShop" => "Whole shop", _ => string.IsNullOrEmpty(id) ? "Unknown service" : id
+        "Regular" => "Regular",
+        "VIP" => "VIP",
+        "PhilippineCoach" => "Philippine coach",
+        "KpgaPro" => "KPGA pro",
+        "KpgaGroup" => "KPGA lessons",
+        "WholeShop" => "Whole shop",
+        _ => string.IsNullOrEmpty(id) ? "Unknown service" : id
     };
     public static void ValidateRange(DateOnly from, DateOnly to)
     {
@@ -142,8 +147,11 @@ public sealed partial class ReservationService
             }
         }
         var data = DashboardMetrics.Calculate(from, to, now, await rows, await attention, (await catalog).ToDictionary(x => x.Id, x => x.Service), bays);
-        return data with { Previous = previousRows is not null && (await previousRows).Count <= 20000 && previousRange is { } range
-            ? DashboardMetrics.Baseline(range.From, range.To, await previousRows) : null };
+        return data with
+        {
+            Previous = previousRows is not null && (await previousRows).Count <= 20000 && previousRange is { } range
+            ? DashboardMetrics.Baseline(range.From, range.To, await previousRows) : null
+        };
     }
 
     public async Task<DashboardSlice> GetDashboardSliceAsync(DateOnly from, DateOnly to, string kind, string? value, string? group, int page, CancellationToken ct)

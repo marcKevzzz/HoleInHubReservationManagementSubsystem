@@ -1,5 +1,5 @@
-using HoleInHub.Business.Services;
 using HoleInHub.Business.Reservations;
+using HoleInHub.Business.Services;
 using HoleInHub.Data.Migrations.Definitions;
 using HoleInHub.Data.Reservations;
 using HoleInHub.Data.Services;
@@ -73,7 +73,8 @@ public sealed class ServiceCatalogTests(MongoDbFixture fixture) : IClassFixture<
         var id = Guid.NewGuid().ToString("N");
         var create = new ServiceEdit(id, 0, Guid.NewGuid().ToString("N"), true, "Practice package",
             "A venue offering", "Confirm with venue", "Detailed description", "Regular", "Book", "Book now",
-            20, false, "None", 0, []) { BookingTypeName = "Practice package" };
+            20, false, "None", 0, [])
+        { BookingTypeName = "Practice package" };
         await catalog.SaveAsync(create, [png], "admin", default);
         await catalog.SaveAsync(create, [png], "admin", default);
         Assert.DoesNotContain(await catalog.GetActiveAsync(default), item => item.Id == id);

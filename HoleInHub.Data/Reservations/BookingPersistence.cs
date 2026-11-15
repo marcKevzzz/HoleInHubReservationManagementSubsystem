@@ -163,7 +163,7 @@ public sealed partial class ReservationPersistence
         var resources = Resources.Find(_ => true).SortBy(x => x.Id).ToListAsync(ct);
         var filters = Builders<ReservationRecord>.Filter;
         var bookings = Reservations.Find(filters.Where(x => x.StartUtc < endUtc && x.EndUtc > startUtc) &
-            (HoldingCapacity(now) | filters.Eq(x => x.Status, "Completed")))
+            (HoldingCapacity(now) | filters.In(x => x.Status, new[] { "Completed", "No-show" })))
             .SortBy(x => x.StartUtc).ToListAsync(ct);
         var blocks = context.Database.GetCollection<ScheduleBlock>("schedule_blocks")
             .Find(x => x.ReleasedUtc == null && x.StartUtc < endUtc && x.EndUtc > startUtc).ToListAsync(ct);

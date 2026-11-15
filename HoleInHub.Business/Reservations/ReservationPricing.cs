@@ -1,6 +1,6 @@
-using HoleInHub.Data.Services;
 using System.Security.Cryptography;
 using System.Text.Json;
+using HoleInHub.Data.Services;
 
 namespace HoleInHub.Business.Reservations;
 

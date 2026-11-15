@@ -55,13 +55,15 @@ public sealed partial class StaffPinAccessTests
         return request.CreateSelfSigned(now.AddMinutes(-5), now.AddDays(1));
     }
 
-    private static WebApplicationFactory<Program> Factory(X509Certificate2 certificate, string database, bool enabled = true, bool presentation = false) =>
+    private static WebApplicationFactory<Program> Factory(X509Certificate2 certificate, string database, bool enabled = true, bool presentation = false,
+        bool requireDesktopCertificate = true) =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder => builder
             .UseEnvironment(presentation ? "Development" : "Testing").ConfigureLogging(logging => logging.ClearProviders())
             .ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Development:StaffWorkspaceUrl"] = "",
                 ["StaffPin:Enabled"] = enabled.ToString(),
+                ["StaffPin:RequireDesktopCertificate"] = requireDesktopCertificate.ToString(),
                 ["StaffPin:Host"] = "staff.example.test",
                 ["StaffPin:Pepper"] = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)),
                 ["StaffPin:DesktopFingerprints:0"] = presentation ? null : certificate.GetCertHashString(HashAlgorithmName.SHA256),
@@ -179,6 +181,7 @@ public sealed partial class StaffPinAccessTests
                 var cookieName = isolatedDemo ? "__Host-HihRoleDemoPin=" : "__Host-HihStaffPin=";
                 Assert.Contains(signedIn.Headers.GetValues("Set-Cookie"), value => value.StartsWith(cookieName, StringComparison.Ordinal));
             }
+            using var beforeAdmin = await SubmitAsync(browser, "/", "/account/sign-out", []);
             using var admin = await SubmitAsync(browser, "/account/sign-in",
                 new() { ["Email"] = employees[2].Email, ["Password"] = "StaffTestPassword123!" });
             Assert.Equal(HttpStatusCode.Redirect, admin.StatusCode);
@@ -190,6 +193,7 @@ public sealed partial class StaffPinAccessTests
                 (await SubmitAsync(browser, "/staff/people", rolePath, new() { ["Form.Role"] = "Admin" })).StatusCode);
             Assert.True(await pins.TrySaveAsync(employees[1].Id, hasher.HashPassword(employees[1], access.PinInput(employees[1], codes[0])),
                 employees[1].SecurityStamp, default));
+            using var beforeAmbiguous = await SubmitAsync(browser, "/", "/account/sign-out", []);
             using var ambiguous = await SubmitAsync(browser, "/staff/sign-in", new() { ["Pin"] = codes[0] });
             Assert.Equal(HttpStatusCode.OK, ambiguous.StatusCode);
             Assert.Contains("That PIN didn", await ambiguous.Content.ReadAsStringAsync());
@@ -401,7 +405,7 @@ public sealed partial class StaffPinAccessTests
                 using var availability = await desktop.GetAsync("/manager/availability?date=2026-11-10");
                 Assert.Equal("/staff?date=2026-11-10", availability.Headers.Location?.OriginalString);
                 var settings = await desktop.GetStringAsync("/staff/settings");
-                Assert.Contains("<fieldset disabled=\"disabled\">", settings);
+                Assert.Matches("<input(?=[^>]*name=\"ReviewDays\")(?=[^>]*disabled=\"disabled\")[^>]*>", settings);
                 Assert.Contains("name=\"ReviewDays\"", settings);
                 Assert.DoesNotContain("name=\"StaffEmails\"", settings);
                 Assert.DoesNotContain("form=\"settings-form\"", settings);
@@ -576,6 +580,7 @@ public sealed partial class StaffPinAccessTests
             Assert.Equal(HttpStatusCode.Redirect, expired.StatusCode);
             Assert.Equal("/account/sign-in", expired.Headers.Location?.AbsolutePath);
 
+            using var expiredSignOut = await SubmitAsync(admin, "/", "/account/sign-out", []);
             using var returnToBookings = await SubmitAsync(admin, "/account/sign-in", new()
             {
                 ["Email"] = adminAccount.Email,
@@ -586,15 +591,22 @@ public sealed partial class StaffPinAccessTests
             Assert.Equal(HttpStatusCode.OK, (await admin.GetAsync("/my-reservations")).StatusCode);
             Assert.Equal(HttpStatusCode.OK, (await admin.GetAsync("/staff/people")).StatusCode);
 
+            using var beforeSwitch = await SubmitAsync(admin, "/", "/account/sign-out", []);
+            // Give each account-switch phase its own HTTP throttle budget.
+            admin.DefaultRequestHeaders.Remove("X-Test-Address");
+            admin.DefaultRequestHeaders.Add("X-Test-Address", "192.0.2.21");
             using var switchedAccount = await SubmitAsync(admin, "/account/sign-in",
                 new() { ["Email"] = customer.Email, ["Password"] = password });
             Assert.Equal("/", switchedAccount.Headers.Location?.OriginalString);
             Assert.Equal(HttpStatusCode.Redirect, (await admin.GetAsync("/admin/users")).StatusCode);
 
+            using var beforeAdmin = await SubmitAsync(admin, "/", "/account/sign-out", []);
+            admin.DefaultRequestHeaders.Remove("X-Test-Address");
+            admin.DefaultRequestHeaders.Add("X-Test-Address", "192.0.2.22");
             using var signedBackIn = await SubmitAsync(admin, "/account/sign-in",
                 new() { ["Email"] = adminAccount.Email, ["Password"] = password });
             Assert.Equal("/staff/dashboard", signedBackIn.Headers.Location?.OriginalString);
-            using var signedOut = await SubmitAsync(admin, "/account/sign-in", "/account/sign-out", []);
+            using var signedOut = await SubmitAsync(admin, "/", "/account/sign-out", []);
             Assert.Equal(HttpStatusCode.Redirect, signedOut.StatusCode);
             Assert.Contains(signedOut.Headers.GetValues("Set-Cookie"),
                 header => header.StartsWith("__Host-HihStaffPin=;", StringComparison.Ordinal));

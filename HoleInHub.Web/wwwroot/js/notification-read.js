@@ -1,6 +1,6 @@
 (() => {
     const form = document.querySelector('[data-read-visible]');
-    if (!form || !window.IntersectionObserver) return;
+    if (!form) return;
 
     const token = form.elements.__RequestVerificationToken.value;
     const visible = new Set();
@@ -8,15 +8,21 @@
     let timer;
     let sending = false;
 
-    const observer = new IntersectionObserver(entries => {
+    const observer = window.IntersectionObserver ? new IntersectionObserver(entries => {
         for (const { target, intersectionRatio } of entries) {
-            if (intersectionRatio >= .5) visible.add(target);
+            if (intersectionRatio > 0) visible.add(target);
             else visible.delete(target);
         }
         queueVisible();
-    }, { threshold: .5 });
+    }, { threshold: [0, .01] }) : null;
 
-    for (const row of document.querySelectorAll('[data-unread-id]')) observer.observe(row);
+    for (const row of document.querySelectorAll('[data-unread-id]')) observer?.observe(row);
+    for (const type of ['click', 'focusin']) document.addEventListener(type, event => {
+        const row = event.target.closest('[data-unread-id]');
+        if (!row || document.hidden) return;
+        pending.add(row);
+        if (!sending) void save();
+    });
 
     function queueVisible() {
         if (document.hidden) return;
@@ -43,10 +49,11 @@
             if (!response.ok) throw new Error('Could not save read notifications');
             const { unread } = await response.json();
             for (const row of rows) {
-                observer.unobserve(row);
+                observer?.unobserve(row);
                 visible.delete(row);
                 pending.delete(row);
                 row.querySelector('.notification-new')?.remove();
+                row.removeAttribute('data-unread-id');
             }
             document.dispatchEvent(new CustomEvent('notifications:read', { detail: unread }));
         } catch {

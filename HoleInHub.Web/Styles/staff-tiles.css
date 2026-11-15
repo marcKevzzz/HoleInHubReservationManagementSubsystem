@@ -31,7 +31,7 @@
     .review-view-link:is(:hover,:focus-visible) svg {transform:translateX(4px)}
 }
 .staff-rail {border:0}
-.staff-shell .review-booking-summary {background:var(--color-paper);padding:24px;border:0}
+.staff-shell .review-booking-summary {background:transparent;padding:20px 0;border-block:1px solid var(--color-staff-divider)}
 .staff-shell :is(.review-booking-summary,.people-summary)>div+div {border-left:1px solid var(--color-staff-divider);padding-left:24px}
 @media(max-width:720px) {
     .staff-shell :is(.review-booking-summary,.people-summary)>div+div {border-left:0;padding-left:0;border-top:1px solid var(--color-staff-divider);padding-top:16px}
@@ -165,6 +165,21 @@
 }
 .staff-rail-drawer,.staff-rail-content {padding-inline:0;scrollbar-width:none;scrollbar-gutter:auto}
 .staff-rail-drawer::-webkit-scrollbar,.staff-rail-content::-webkit-scrollbar {display:none}
+.staff-rail-scrollbar {
+    position:absolute;
+    top:0;
+    width:10px;
+    padding-inline-start:6px;
+    touch-action:none;
+}
+.staff-rail-scrollbar::before {
+    content:"";
+    display:block;
+    height:100%;
+    border-radius:999px;
+    background:var(--color-control-line);
+}
+.staff-rail-scrollbar[hidden] {display:none}
 .staff-nav-heading {padding-inline:calc(var(--staff-rail-inline) + 12px)}
 .staff-review-nav > summary::after {flex:none}
 .staff-review-nav > summary:has(.staff-nav-count:not([hidden]))::after {margin-inline-start:0}
@@ -192,10 +207,10 @@
         justify-content:center;
         padding-inline:0;
     }
-    [data-staff-collapsed] .staff-nav > a .staff-notification-count:not([hidden]) {
+    [data-staff-collapsed] :is(.staff-nav > a .staff-notification-count,.staff-review-nav > summary [data-request-count="awaiting"]):not([hidden]) {
         display:inline-flex;
         position:absolute;
-        inset:3px 4px auto auto;
+        inset:3px 8px auto auto;
         min-width:13px;
         height:13px;
         padding-inline:2px;
@@ -280,3 +295,42 @@
     background:var(--color-error);
     color:var(--color-paper);
 }
+
+/* Keep staff filters and summaries on the same compact grid. */
+.people-page .people-toolbar .review-sort{gap:0}
+.people-page .people-toolbar .review-sort a{padding-inline:18px}
+.staff-filter-form{display:grid;gap:4px;min-width:260px;max-width:100%;margin:0}
+.staff-filter-form label{margin:0}
+.staff-field-heading{position:relative;display:flex;align-items:center;gap:6px}
+.staff-field-heading :is(label,h2){margin:0}
+.staff-help .staff-icon-button{width:28px;height:28px;min-height:28px;padding:7px;background:transparent;border:0}
+.staff-help{position:static}
+.staff-help .attendance-tooltip{left:0;width:280px;max-width:min(280px,calc(100vw - 48px));text-align:left;white-space:normal;z-index:30}
+.staff-help[data-help-dismissed] .attendance-tooltip{visibility:hidden;opacity:0}
+.staff-schedule-title {position:relative;display:flex;align-items:center;gap:6px}
+.staff-shell .staff-schedule-title .staff-timeline-help {position:static;margin:0}
+.staff-shell .staff-timeline-help .attendance-tooltip {top:calc(100% + 8px);left:0;right:auto;width:440px;max-width:calc(100vw - 32px);padding:16px;z-index:60;pointer-events:none}
+.staff-timeline-help .attendance-tooltip > strong {display:block;margin-bottom:10px;font-size:.8125rem;font-weight:600}
+.staff-timeline-help dl {display:grid;gap:7px;margin:0}
+.staff-timeline-help dl > div {display:grid;grid-template-columns:112px minmax(0,1fr);gap:12px}
+.staff-timeline-help dt {font-weight:500}
+.staff-timeline-help dd {margin:0}
+.staff-timeline-help kbd {font:inherit;font-weight:600;white-space:nowrap}
+.staff-timeline-help-note {display:block;margin-top:12px;padding-top:10px;border-top:1px solid currentColor}
+@media(max-width:480px) {.staff-timeline-help dl > div {grid-template-columns:94px minmax(0,1fr);gap:8px}.staff-timeline-help .attendance-tooltip {font-size:.6875rem;line-height:1.45}}
+.staff-create-form legend:has(.staff-help){position:relative;display:flex;align-items:center;gap:6px}
+.people-signin{align-content:start;gap:10px}
+.people-signin .button{width:fit-content;min-height:40px;font-size:.8rem}
+.people-signin .reason-confirmation{width:min(500px,calc(100vw - 32px))}
+.people-signin .reason-confirmation h2{font-size:30px;text-transform:none}
+.people-signin .reason-confirmation .logout-actions{grid-template-columns:auto minmax(0,1fr)}
+.people-signin .reason-confirmation .button{width:100%;white-space:normal}
+.staff-notification-list{list-style:none;padding:0;margin:0}
+.staff-notification-list li{border-bottom:1px solid var(--color-staff-divider)}
+.staff-notification-list li>a{display:flex;align-items:center;gap:14px;padding:18px 12px;color:var(--color-ink)}
+.staff-notification-list li>a:is(:hover,:focus-visible){background:var(--color-staff-surface)}
+.staff-notification-list li>a>span:first-of-type{display:grid;gap:4px;flex:1;min-width:0}
+.staff-notification-list strong{font-size:.9rem;font-weight:600}
+.staff-notification-list time{font-size:.75rem;color:var(--color-muted)}
+.staff-notification-list .notification-new{font-size:.7rem;color:var(--color-green)}
+.staff-notification-count[hidden]{display:none!important}

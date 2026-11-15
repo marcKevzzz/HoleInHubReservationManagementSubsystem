@@ -7,7 +7,7 @@
 <form method="post" action="/account/google-complete">
 @Html.AntiForgeryToken()
 <input asp-for="ReturnUrl" type="hidden" />
-<div asp-validation-summary="All" role="alert" class="validation-summary"></div>
+<div asp-validation-summary="ModelOnly" role="alert" class="validation-summary"></div>
 <partial name="_ContactFields" model="Model" />
 <button class="button" type="submit">@T("Create account")</button>
 </form></div></section>

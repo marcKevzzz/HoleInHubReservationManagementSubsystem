@@ -17,8 +17,13 @@ public sealed class ReservationReminderTests(MongoDbFixture fixture) : IClassFix
 
     private static ReservationRecord Booking(DateTime start) => new()
     {
-        Reference = "HIH-REMINDER", Status = "Confirmed", Email = "customer@example.test",
-        Service = "Regular", StartUtc = start, EndUtc = start.AddHours(1), CreatedUtc = start.AddHours(-2)
+        Reference = "HIH-REMINDER",
+        Status = "Confirmed",
+        Email = "customer@example.test",
+        Service = "Regular",
+        StartUtc = start,
+        EndUtc = start.AddHours(1),
+        CreatedUtc = start.AddHours(-2)
     };
 
     [Fact]

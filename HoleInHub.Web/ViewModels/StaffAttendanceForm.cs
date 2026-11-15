@@ -10,4 +10,8 @@ public sealed class StaffAttendanceForm
     [StringLength(500)] public string? Reason { get; set; }
     [Range(typeof(bool), "true", "true", ErrorMessage = "Confirm the attendance action before saving.")]
     public bool ConfirmAttendance { get; set; }
+    public string? CorrectedStatus { get; set; }
+    public DateTime? ArrivalLocal { get; set; }
+    public DateTime? DepartureLocal { get; set; }
+    public int ExtensionMinutes { get; set; }
 }

@@ -9,8 +9,12 @@ public sealed class ReservationReminderTests
     private static readonly DateTime Now = new(2026, 11, 14, 15, 50, 0, DateTimeKind.Utc);
     private static ReservationRecord Booking() => new()
     {
-        Id = "booking", Reference = "HIH-TEST", Status = "Confirmed", Email = "customer@example.test",
-        StartUtc = Now.AddMinutes(15), EndUtc = Now.AddMinutes(75)
+        Id = "booking",
+        Reference = "HIH-TEST",
+        Status = "Confirmed",
+        Email = "customer@example.test",
+        StartUtc = Now.AddMinutes(15),
+        EndUtc = Now.AddMinutes(75)
     };
 
     [Theory]

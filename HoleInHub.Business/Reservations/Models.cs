@@ -49,7 +49,12 @@ public sealed record ReservationDto(string Id, string Reference, string Service,
     public ScheduleChangeDto? ScheduleChange { get; init; }
     public DateTime? ReviewStartsUtc { get; init; }
 }
-public sealed record ReservationHistoryDto(string Status, DateTime AtUtc, string Actor, string Reason = "");
+public sealed record ReservationHistoryDto(string Status, DateTime AtUtc, string Actor, string Reason = "")
+{
+    public AttendanceSnapshotDto? AttendanceBefore { get; init; }
+    public AttendanceSnapshotDto? AttendanceAfter { get; init; }
+}
+public sealed record AttendanceSnapshotDto(string Status, DateTime StartUtc, DateTime EndUtc, DateTime? ArrivalUtc, DateTime? DepartureUtc);
 public sealed class ReservationValidationException(string message) : Exception(message);
 public sealed class ReservationPolicy
 {

@@ -25,9 +25,14 @@ public sealed class NotificationService(OutboxPersistence persistence)
     }
     public Task<bool> IsEligibleAsync(QueuedEmail email, CancellationToken ct) => persistence.IsEligibleAsync(new OutboxRecord
     {
-        Id = email.Id, Recipient = email.Recipient, ReservationId = email.ReservationId, RequiredStatus = email.RequiredStatus,
-        ReminderStartUtc = email.ReminderStartUtc, ExpiresUtc = email.ExpiresUtc,
-        VerificationId = email.VerificationId, VerificationIssuedUtc = email.VerificationIssuedUtc
+        Id = email.Id,
+        Recipient = email.Recipient,
+        ReservationId = email.ReservationId,
+        RequiredStatus = email.RequiredStatus,
+        ReminderStartUtc = email.ReminderStartUtc,
+        ExpiresUtc = email.ExpiresUtc,
+        VerificationId = email.VerificationId,
+        VerificationIssuedUtc = email.VerificationIssuedUtc
     }, ct);
     public Task CompleteAsync(QueuedEmail email, CancellationToken ct) => persistence.CompleteAsync(email.Id, email.LeaseToken!, ct);
     public Task SuppressAsync(QueuedEmail email, CancellationToken ct) => persistence.SuppressAsync(email.Id, email.LeaseToken!, DateTime.UtcNow, ct);

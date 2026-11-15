@@ -4,7 +4,7 @@
 }
 <section class="staff-workspace resource-admin">
     <header class="staff-workspace-heading people-directory-heading">
-        <h1>Resources</h1><a class="button" href="#add-bay" data-resource-add data-action-icon="plus">Add bay</a>
+        <h1>Resources</h1><a class="button" href="#add-bay" data-resource-add data-action-icon="plus">Add bay<partial name="_ButtonActionIcon" model='"plus"' /></a>
     </header>
     <div asp-validation-summary="All" class="staff-error" role="alert"></div>
     @if (Model.Count == 0)

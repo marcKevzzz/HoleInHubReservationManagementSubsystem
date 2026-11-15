@@ -3,4 +3,8 @@
     <a href="/my-reservations" aria-current="@(current == "reservations" ? "page" : null)">My reservations</a>
     <a href="/transactions" aria-current="@(current == "transactions" ? "page" : null)">Transactions</a>
     <a href="/my-profile" aria-current="@(current == "profile" ? "page" : null)">My profile</a>
+    @if (!HoleInHub.Business.Accounts.StaffRoles.Workspace.Any(User.IsInRole))
+    {
+        <a href="/notifications" aria-current="@(current == "notifications" ? "page" : null)">Notifications</a>
+    }
 </nav>

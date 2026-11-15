@@ -16,7 +16,11 @@ public static class AccountExtensions
         services.AddIdentityCore<AccountUser>(options =>
         {
             options.User.RequireUniqueEmail = true;
-            options.Password.RequiredLength = 12;
+            options.Password.RequiredLength = 8;
+            options.Password.RequireDigit = false;
+            options.Password.RequireLowercase = false;
+            options.Password.RequireUppercase = false;
+            options.Password.RequireNonAlphanumeric = false;
             options.SignIn.RequireConfirmedEmail = false;
             options.Lockout.MaxFailedAccessAttempts = 5;
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
@@ -67,6 +71,19 @@ public static class AccountExtensions
             options.Cookie.SameSite = SameSiteMode.Lax;
             options.Cookie.SecurePolicy = environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
             options.ExpireTimeSpan = TimeSpan.FromHours(8);
+            options.SlidingExpiration = false;
+            options.Events.OnValidatePrincipal = async context =>
+            {
+                var now = context.HttpContext.RequestServices.GetRequiredService<TimeProvider>().GetUtcNow();
+                if (context.Properties.Items.TryGetValue("hih-session-end", out var deadline)
+                    && long.TryParse(deadline, out var seconds) && now.ToUnixTimeSeconds() >= seconds)
+                {
+                    context.RejectPrincipal();
+                    await context.HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
+                    return;
+                }
+                await SecurityStampValidator.ValidatePrincipalAsync(context);
+            };
         });
         services.AddAuthorization(options =>
         {

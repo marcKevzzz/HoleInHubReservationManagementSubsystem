@@ -1,11 +1,29 @@
+@using Microsoft.AspNetCore.Authentication
+@using HoleInHub.Business.Accounts
+@using HoleInHub.Web.Accounts
+@{
+    var workspaceUser = (await Context.AuthenticateAsync(StaffPinAccess.Scheme)).Principal;
+    var signedIn = User.Identity?.IsAuthenticated == true || workspaceUser?.Identity?.IsAuthenticated == true;
+    var staff = StaffRoles.Workspace.Any(User.IsInRole) || workspaceUser?.Identity?.IsAuthenticated == true;
+    var leadership = User.ManagesVenue() || workspaceUser?.ManagesVenue() == true;
+    var workspaceLabel = User.IsInRole(StaffRoles.Admin) || workspaceUser?.IsInRole(StaffRoles.Admin) == true ? "Admin workspace" : leadership ? "Manager workspace" : "Staff workspace";
+}
 <div id="account-menu" class="account-menu" popover="auto" aria-labelledby="account-menu-title">
-    @if (User.Identity?.IsAuthenticated == true)
+    @if (signedIn)
     {
         <h2 id="account-menu-title">@T("Your account")</h2>
         <nav aria-label="@T("Account")">
             <a href="/my-reservations" class="account-menu-row prototype-link">@T("My reservations")</a>
             <a href="/transactions" class="account-menu-row prototype-link">@T("Transactions")</a>
             <a href="/my-profile" class="account-menu-row prototype-link">@T("My profile")</a>
+            @if (staff)
+            {
+                <a href="@(leadership ? "/staff/dashboard" : "/staff")" class="account-menu-row prototype-link">@T(workspaceLabel)</a>
+            }
+            else
+            {
+                <a href="/notifications" class="account-menu-row prototype-link">@T("Notifications")</a>
+            }
         </nav>
         <form id="account-logout-form" method="post" action="/account/sign-out">
             @Html.AntiForgeryToken()
@@ -23,7 +41,7 @@
     }
 </div>
 
-@if (User.Identity?.IsAuthenticated == true)
+@if (signedIn)
 {
     <partial name="_LogoutConfirmation" model=' "You’ll need to sign in again to manage your reservations." ' />
 }

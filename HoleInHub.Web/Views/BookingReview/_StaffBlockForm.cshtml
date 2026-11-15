@@ -3,8 +3,8 @@
     <input asp-for="IdempotencyKey" id="block-key" type="hidden" />
     <div asp-validation-summary="All" class="staff-error"></div>
     <fieldset>
-        <legend>Unavailable period</legend>
-        <div><label for="block-mode">Period</label><select asp-for="WholeDay" id="block-mode" data-block-mode><option value="false">Block time</option><option value="true">Block day · opening to midnight</option></select></div>
+        <legend>Unavailable period <partial name="_StaffHelp" model='("block-period-help", "About availability blocks", "A full day runs from opening to midnight. Resolve overlapping bookings, holds or blocks first. Saving prevents new bookings for the selected bays and period.")' /></legend>
+        <div><label for="block-mode">Period</label><select asp-for="WholeDay" id="block-mode" data-block-mode><option value="false">Time range</option><option value="true">Full day</option></select></div>
         <div>
             <label for="block-bay">Bay</label>
             <select asp-for="ResourceId" id="block-bay" required>
@@ -30,13 +30,10 @@
             <label for="block-duration">Duration in minutes</label>
             <input asp-for="DurationMinutes" id="block-duration" type="number" min="30" max="840" step="30" required />
         </div>
-        <p class="staff-create-hint">Manila time. A day block covers opening to midnight. Existing bookings, holds and blocks must be resolved first.</p>
     </fieldset>
     <div>
-        <label for="block-reason">Reason</label>
-        <textarea asp-for="Reason" id="block-reason" rows="3" maxlength="500" required aria-describedby="block-reason-hint"></textarea>
-        <p id="block-reason-hint" class="staff-create-hint">Visible to staff on the schedule. For example, simulator maintenance.</p>
+        <div class="staff-field-heading"><label for="block-reason">Reason</label><partial name="_StaffHelp" model='("block-reason-help", "About the block reason", "Staff can see this reason on the schedule. For example, simulator maintenance.")' /></div>
+        <textarea asp-for="Reason" id="block-reason" rows="3" maxlength="500" required aria-describedby="block-reason-help"></textarea>
     </div>
-    <p class="staff-create-hint">Saving makes the selected bays unavailable for new bookings during this period.</p>
     <button class="button" type="submit" disabled="@(Model.Bays.Count == 0)" data-block-save>Save block</button>
 </form>

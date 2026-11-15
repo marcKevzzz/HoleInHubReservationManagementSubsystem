@@ -14,6 +14,7 @@ public sealed class CustomerProfileService(CustomerProfilePersistence persistenc
             || !HoleInHub.Business.Accounts.ContactRules.IsPhone(phone)
             || email.Length > 254 || email.Length > 0 && (!System.Net.Mail.MailAddress.TryCreate(email, out var address) || address.Address != email))
         { throw new ReservationValidationException("Enter a valid name, contact number and optional email address."); }
+        phone = HoleInHub.Business.Accounts.ContactRules.PhoneDigits(phone);
         if (!await persistence.InstalledAsync(ct)) { throw new ReservationValidationException("Apply the customer-profile database update before adding contacts."); }
         var now = clock.GetUtcNow().UtcDateTime;
         var id = "cp_" + Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes("manual:" + actorId + ":" + commandId)));
@@ -32,9 +33,8 @@ public sealed class CustomerProfileService(CustomerProfilePersistence persistenc
             LastChangeOperationId = "created:" + actorId,
             Variants = [new(firstName.Trim(), lastName.Trim(), email.Trim(), phone, "", now)]
         };
-        try { await persistence.CreateContactAsync(profile, ct); }
+        try { return await persistence.CreateContactAsync(profile, ct); }
         catch (CustomerProfileConflictException error) { throw new ReservationValidationException(error.Message); }
-        return id;
     }
 
     public Task<bool> InstalledAsync(CancellationToken ct) => persistence.InstalledAsync(ct);
