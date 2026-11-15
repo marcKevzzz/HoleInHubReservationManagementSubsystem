@@ -13,6 +13,22 @@ public sealed class SettingsController(OperationalSettings settings) : Controlle
 {
     [HttpGet("/staff/settings")]
     public async Task<IActionResult> Index(CancellationToken ct) => View(SettingsForm.From(await settings.GetAsync(ct)));
+    [HttpGet("/staff/settings/health")]
+    public async Task<IActionResult> Health([FromServices] HoleInHub.Business.Services.IHealthService health, CancellationToken ct)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeout.CancelAfter(TimeSpan.FromSeconds(8));
+        try
+        {
+            var (ready, _) = await health.CheckDatabaseReadinessAsync(timeout.Token);
+            return Json(new { ready, checkedUtc = DateTime.UtcNow });
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
+        catch (Exception)
+        {
+            return Json(new { ready = false, checkedUtc = DateTime.UtcNow });
+        }
+    }
     [Authorize(Roles = StaffRoles.Admin), HttpPost("/staff/settings/save"), RequestSizeLimit(100000)]
     public async Task<IActionResult> Save(SettingsForm form, CancellationToken ct)
     {

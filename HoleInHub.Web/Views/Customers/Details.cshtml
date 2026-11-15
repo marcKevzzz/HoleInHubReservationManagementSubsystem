@@ -23,8 +23,8 @@
         @if (profile is not null)
         {
             <nav class="customer-profile-actions" aria-label="Customer record actions">
-                <a class="button" data-action-icon="plus" aria-label="New booking" asp-controller="BookingReview" asp-action="Index" asp-route-customerProfileId="@profile.Id">New booking</a>
-                @if (Model.Total > 0) { <a class="staff-link" aria-label="Merge customer" asp-action="Merge" asp-route-id="@profile.Id">Merge duplicate</a> }
+                <a class="button" data-action-icon="plus" aria-label="New booking" asp-controller="BookingReview" asp-action="Index" asp-route-customerProfileId="@profile.Id">New booking<partial name="_ButtonActionIcon" model='"plus"' /></a>
+                @if (Model.Total > 0) { <a class="staff-link" aria-label="Merge customer" asp-action="Merge" asp-route-id="@profile.Id" asp-route-search="@(string.IsNullOrWhiteSpace(customer.Phone) ? customer.Email : customer.Phone)">Merge duplicate</a> }
             </nav>
         }
     </header>

@@ -42,7 +42,7 @@ public sealed class CustomersController(ReservationService reservations, Custome
             {
                 var id = await profiles.CreateAsync(form.CommandId, form.FirstName, form.LastName,
                     form.Email?.Trim() ?? "", form.Phone.Trim(), User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "", ct);
-                new ToastNotice("success", "Customer added").Store(TempData);
+                new ToastNotice("success", "Customer saved").Store(TempData);
                 if (Request.Headers["X-People-Panel"] == "true") { return Json(new { redirectUrl = Url.Action(nameof(Details), new { id }) }); }
                 return RedirectToAction(nameof(Details), new { id });
             }

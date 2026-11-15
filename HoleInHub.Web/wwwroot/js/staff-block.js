@@ -19,16 +19,19 @@
         const time = page?.querySelector('[data-new-block]');
         const day = page?.querySelector('[data-new-block-day]');
         const panel = page?.querySelector('[data-create-block]');
-        if (!time || !day || !panel || page.dataset.blockShortcuts) return;
+        if (!time || !panel || page.dataset.blockShortcuts) return;
         page.dataset.blockShortcuts = 'true';
-        day.addEventListener('click', event => {
-            if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey || event.button) return;
-            event.preventDefault();
+        function openWholeDay() {
             time.click();
             const form = panel.querySelector('form.staff-create-form');
             form.elements.WholeDay.value = 'true';
             form.elements.ResourceId.value = '*';
             for (const field of [form.elements.WholeDay, form.elements.ResourceId]) field.dispatchEvent(new Event('change', {bubbles:true}));
+        }
+        day?.addEventListener('click', event => {
+            if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey || event.button) return;
+            event.preventDefault();
+            openWholeDay();
         });
         page.addEventListener('keydown', event => {
             if (event.defaultPrevented || event.repeat || !event.shiftKey || event.ctrlKey || event.metaKey || event.altKey
@@ -36,7 +39,8 @@
             const key = event.key.toLowerCase();
             if (key !== 'b' && key !== 'd') return;
             event.preventDefault();
-            (key === 'd' ? day : time).click();
+            if (key === 'd') openWholeDay();
+            else time.click();
         });
     }
     document.addEventListener('staff:schedule-mounted', () => mount());

@@ -8,7 +8,7 @@
     <a class="flow-back" asp-action="Index"><partial name="_BackArrow" /> Back to services</a>
     <header class="staff-workspace-heading service-admin-heading">
         <h1>@ViewData["Title"]</h1>
-        <div class="service-admin-actions"><label class="service-switch"><span>Active</span><input form="service-editor-form" id="Active" name="Active" type="checkbox" value="true" checked="@Model.Active" role="switch" /><span class="service-switch-track" aria-hidden="true"></span></label><a class="button button-secondary" asp-action="Index">Cancel</a><button class="button" type="submit" form="service-editor-form" data-action-icon="save">Save service</button></div>
+        <div class="service-admin-actions"><label class="service-switch"><span>Active</span><input form="service-editor-form" id="Active" name="Active" type="checkbox" value="true" checked="@Model.Active" role="switch" /><span class="service-switch-track" aria-hidden="true"></span></label><a class="button button-secondary" asp-action="Index">Cancel</a><button class="button" type="submit" form="service-editor-form" data-action-icon="save">Save service<partial name="_ButtonActionIcon" model='"save"' /></button></div>
     </header>
     <form id="service-editor-form" asp-action="Save" method="post" enctype="multipart/form-data" data-service-editor class="service-editor-grid">
         <input type="hidden" name="Active" value="false" /><input asp-for="Id" type="hidden" /><input asp-for="Revision" type="hidden" /><input asp-for="CommandId" type="hidden" /><input asp-for="Create" type="hidden" />

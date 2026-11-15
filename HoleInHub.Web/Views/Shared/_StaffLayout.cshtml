@@ -5,6 +5,7 @@
 @using System.Security.Claims
 @inject HoleInHub.Business.Reservations.ReservationService Reservations
 @inject NotificationDeliveryService Delivery
+@inject Microsoft.AspNetCore.Identity.UserManager<AccountUser> StaffUsers
 @{
     var activityReturn = ActivityNavigation.FromRequest(Context.Request);
     var date = Context.Request.Query["date"].ToString();
@@ -31,10 +32,17 @@
     var queueSort = isQueue ? Context.Request.Query["sort"].ToString() : null;
     var managesVenue = User.ManagesVenue();
     var isAdmin = User.IsInRole(StaffRoles.Admin);
+    AccountUser? currentStaff = null;
+    try { currentStaff = await StaffUsers.GetUserAsync(User); }
+    catch (Exception error) when (ServiceAvailability.Translate(error) is not null) { }
+    var staffName = ((currentStaff?.FirstName ?? "") + " " + (currentStaff?.LastName ?? "")).Trim();
+    if (staffName.Length == 0) { staffName = User.Identity?.Name ?? T("My account"); }
+    var staffRole = isAdmin ? "Admin" : managesVenue ? "Manager" : "Staff";
+    var notificationController = isAdmin ? "NotificationDelivery" : "StaffNotifications";
     var notificationUnread = ViewData["NotificationUnread"] as long? ?? 0;
-    if (isAdmin && ViewData["NotificationUnread"] is null && User.FindFirstValue(ClaimTypes.NameIdentifier) is string staffId)
+    if ((ViewData["NotificationUnread"] is null || controller != notificationController) && User.FindFirstValue(ClaimTypes.NameIdentifier) is string staffId)
     {
-        try { notificationUnread = await Delivery.CountUnreadAsync(staffId, Context.RequestAborted); }
+        try { notificationUnread = await Delivery.CountUnreadAsync(staffId, Context.RequestAborted, operational: !isAdmin); }
         catch (Exception error) when (ServiceAvailability.Translate(error) is not null) { }
     }
     var links = new (string Group, string Controller, string Action, string Icon, string Label, bool Visible)[]
@@ -48,13 +56,13 @@
         ("Administration", "Leadership", "Resources", "resources", "Resources", isAdmin),
         ("Administration", "ServiceManagement", "Index", "queue", "Services", isAdmin),
         ("Administration", "Activity", "Index", "history", "Activity", true),
-        ("Administration", "NotificationDelivery", "Index", "notifications", "Notifications", isAdmin),
+        ("Administration", notificationController, "Index", "notifications", "Notifications", true),
         ("Venue management", "Leadership", "Reports", "reports", "Daily report", managesVenue),
         ("Venue management", "Settings", "Index", "settings", "Settings", managesVenue)
     };
 }
 <!DOCTYPE html>
-<html lang="@(CustomerText.Korean ? "ko" : "en")">
+<html lang="@(CustomerText.Korean ? "ko" : "en")" data-staff-sign-in="@(TempData["ResetStaffScroll"] is true ? "true" : null)">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -123,13 +131,13 @@
                                 "Dashboard" => "dashboard", "Queue" => "queue", "Cancellations" => "cancellations",
                                 "People" => "team", "Reports" => "reports", "Settings" => "settings",
                                 "Resources" => "resources", "Services" => "services",
-                                _ => link.Controller == "Settings" ? "settings" : link.Controller == "ServiceManagement" ? "services" : link.Controller is "Activity" or "NotificationDelivery" ? "activity" : link.Controller == "Customers" ? "customers" : "schedule"
+                                _ => link.Controller == "Settings" ? "settings" : link.Controller == "ServiceManagement" ? "services" : link.Controller == "NotificationDelivery" ? "delivery" : link.Controller == "StaffNotifications" ? "notifications" : link.Controller == "Activity" ? "activity" : link.Controller == "Customers" ? "customers" : "schedule"
                             };
                             <a data-nav-layout="@skeletonLayout" asp-controller="@link.Controller" asp-action="@link.Action" asp-route-date="@(isReservations ? date : null)"
-                               aria-label="@(link.Controller == "NotificationDelivery" && notificationUnread > 0 ? F("Notifications, {0} new", notificationUnread > 99 ? "99+" : notificationUnread.ToString()) : isReservations && link.Action == "Cancellations" && pendingCancellations > 0 ? F("Cancellations, {0} pending", pendingCancellations) : T(link.Label))"
+                               aria-label="@(link.Controller == notificationController && notificationUnread > 0 ? F("Notifications, {0} new", notificationUnread > 99 ? "99+" : notificationUnread.ToString()) : isReservations && link.Action == "Cancellations" && pendingCancellations > 0 ? F("Cancellations, {0} pending", pendingCancellations) : T(link.Label))"
                                data-rail-tooltip="@T(link.Label)" aria-current="@(active ? "page" : null)">
                                 <partial name="_StaffIcon" model="@link.Icon" /><span class="staff-nav-label">@T(link.Label)</span>
-                                @if (link.Controller == "NotificationDelivery")
+                                @if (link.Controller == notificationController)
                                 {
                                     <span class="staff-nav-count staff-notification-count" data-request-count="notifications" aria-hidden="true" hidden="@(notificationUnread == 0)">@(notificationUnread > 99 ? "99+" : notificationUnread.ToString())</span>
                                 }
@@ -141,20 +149,21 @@
                         }
                     </nav>
                 }
-                <div class="staff-rail-footer">
-                    <div class="staff-language">
-                        <button type="button" class="staff-language-trigger" popovertarget="staff-language-options"
-                                aria-label="@T(CustomerText.Korean ? "Language: Korean" : "Language: English")" hidden>
-                            @(CustomerText.Korean ? "KR" : "EN")
-                        </button>
-                        <partial name="_LanguageSwitch" view-data='new ViewDataDictionary(ViewData) { ["LanguageSwitchId"] = "staff-language-options" }' />
-                    </div>
-                    <form id="account-logout-form" asp-controller="StaffAccess" asp-action="SignOutStaff" method="post">
-                        <button type="submit" aria-label="@T("Log out")" data-rail-tooltip="@T("Log out")">
-                            <partial name="_StaffIcon" model=' "logout" ' /><span class="staff-nav-label">@T("Log out")</span>
-                        </button>
-                    </form>
-                </div>
+            </div>
+        </div>
+        <span class="staff-rail-scrollbar" data-staff-rail-scrollbar hidden aria-hidden="true"></span>
+        <div class="staff-user-footer">
+            <button class="staff-user-trigger" type="button" popovertarget="staff-user-menu" aria-label="@F("Account: {0}, {1}", staffName, T(staffRole))" aria-expanded="false">
+                <span class="staff-user-avatar"><partial name="_StaffIcon" model='"user-circle"' /></span>
+                <span class="staff-user-identity"><strong>@staffName</strong><small>@T(staffRole)</small></span>
+            </button>
+            <form id="account-logout-form" asp-controller="StaffAccess" asp-action="SignOutStaff" method="post">
+                <button class="staff-user-logout" type="submit" aria-label="@T("Log out")" title="@T("Log out")"><partial name="_StaffIcon" model='"logout"' /></button>
+            </form>
+            <div class="staff-user-menu" id="staff-user-menu" popover>
+                <a data-nav-layout="profile" asp-controller="StaffProfile" asp-action="Index"><partial name="_StaffIcon" model='"user"' />@T("My profile")</a>
+                <div class="staff-user-language"><partial name="_LanguageSwitch" /></div>
+                <button class="staff-user-menu-logout" type="submit" form="account-logout-form"><partial name="_StaffIcon" model='"logout"' />@T("Log out")</button>
             </div>
         </div>
     </aside>
@@ -173,6 +182,7 @@
     </main>
     <partial name="_LogoutConfirmation" model='(isAdmin ? "You’ll need to sign in again to open your workspace." : "You’ll need to enter your PIN again to open your workspace.")' />
     <partial name="_CustomerLanguage" />
+    <script src="~/js/contact-inputs.js" asp-append-version="true"></script>
     <script src="~/js/staff-sidebar.js" asp-append-version="true"></script>
     <script src="~/js/vendor/gsap.min.js" asp-append-version="true"></script>
     <script src="~/js/ui-motion.js" asp-append-version="true"></script>

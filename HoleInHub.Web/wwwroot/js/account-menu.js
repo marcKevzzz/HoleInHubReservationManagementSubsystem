@@ -1,6 +1,6 @@
 (() => {
-    const trigger = document.querySelector('.profile-link');
-    const popup = document.querySelector('#account-menu');
+    const trigger = document.querySelector('.profile-link') || document.querySelector('.staff-user-trigger');
+    const popup = document.querySelector('#account-menu') || document.querySelector('#staff-user-menu');
     const hasPopup = trigger && popup && typeof popup.showPopover === 'function';
     const confirmation = document.querySelector('#logout-confirmation');
     const logoutForm = document.querySelector('#account-logout-form');

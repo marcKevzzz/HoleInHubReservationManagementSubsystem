@@ -53,6 +53,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_017_StaffRoleAdministration>();
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_018_CustomerProfiles>();
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_019_SystemSettings>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_020_AttendanceOperations>();
         services.AddSingleton<MongoMigrationRunner>();
 
         return services;

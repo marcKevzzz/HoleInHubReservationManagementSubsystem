@@ -14,7 +14,7 @@
     }
     <header class="staff-workspace-heading">
         <h1>@ViewData["Title"]</h1>
-        <p>@block.Location · Manila time</p>
+        <p>@block.Location</p>
     </header>
     <dl class="review-facts">
         <dt>When</dt><dd>@Local(block.StartUtc).ToString("ddd, d MMM yyyy, h:mm tt") – @Local(block.EndUtc).ToString("d MMM, h:mm tt")</dd>

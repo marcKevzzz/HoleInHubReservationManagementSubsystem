@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using HoleInHub.Data.Context;
 using HoleInHub.Data.Reservations;
 using MongoDB.Bson;
@@ -44,6 +45,15 @@ public sealed partial class CustomerProfilePersistence(IMongoDbContext context)
         .DistinctBy(x => (x.FirstName, x.LastName, x.Email.ToLowerInvariant(), x.Phone)).ToArray();
     private static void SetSearchNames(CustomerProfileRecord profile) => profile.SearchNames = profile.Variants
         .Select(v => (v.FirstName + " " + v.LastName).Trim()).Append((profile.FirstName + " " + profile.LastName).Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+    private async Task<CustomerProfileRecord?> FindByEmailAsync(IClientSessionHandle session, string email, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(email)) { return null; }
+        var match = new BsonRegularExpression("^" + Regex.Escape(email.Trim()) + "$", "i");
+        var filter = Builders<CustomerProfileRecord>.Filter;
+        var existing = await Profiles.Find(session, filter.Regex(x => x.Email, match) | filter.Regex("Variants.Email", match))
+            .SortBy(x => x.CreatedUtc).ThenBy(x => x.Id).FirstOrDefaultAsync(ct);
+        return existing is null ? null : await ResolveAsync(existing.Id, session, ct);
+    }
     public async Task AttachAsync(IClientSessionHandle session, ReservationRecord record, string? selectedProfileId, CancellationToken ct, bool legacyGrouping = false)
     {
         await GuardAsync(session, ct);
@@ -51,6 +61,10 @@ public sealed partial class CustomerProfilePersistence(IMongoDbContext context)
         var (identity, kind) = CustomerProfileRecord.Identity(record, legacyGrouping);
         var profile = await ResolveAsync(selectedProfileId ?? identity, session, ct);
         if (selectedProfileId is not null && profile is null) { throw new CustomerProfileConflictException("That customer profile is unavailable. Choose it again."); }
+        if (profile is null && selectedProfileId is null && !legacyGrouping)
+        {
+            profile = await FindByEmailAsync(session, record.Email, ct);
+        }
         if (profile is null)
         {
             profile = new()
@@ -79,7 +93,9 @@ public sealed partial class CustomerProfilePersistence(IMongoDbContext context)
             profile.ContactRevision++;
             profile.Variants = Variants(profile.Variants.Append(Contact(record)));
             profile.Sources = profile.Sources.Append(kind).Distinct().ToArray();
-            if (!profile.PreferredContactPinned && record.CreatedUtc >= profile.UpdatedUtc)
+            if (profile.Sources.Length > 1) { profile.Kind = "Combined"; }
+            if (profile.RepresentativeBookingId.Length == 0) { profile.RepresentativeBookingId = record.Id; }
+            if (!profile.PreferredContactPinned && legacyGrouping && record.CreatedUtc >= profile.UpdatedUtc)
             {
                 profile.FirstName = record.FirstName; profile.LastName = record.LastName; profile.Email = record.Email; profile.Phone = record.Phone;
                 profile.RepresentativeBookingId = record.Id;
@@ -90,10 +106,10 @@ public sealed partial class CustomerProfilePersistence(IMongoDbContext context)
         }
         await Memberships.InsertOneAsync(session, new() { Id = record.Id, ProfileId = profile.Id }, cancellationToken: ct);
     }
-    public async Task CreateContactAsync(CustomerProfileRecord profile, CancellationToken ct)
+    public async Task<string> CreateContactAsync(CustomerProfileRecord profile, CancellationToken ct)
     {
         using var session = await context.Client.StartSessionAsync(cancellationToken: ct);
-        await session.WithTransactionAsync(async (s, token) =>
+        return await session.WithTransactionAsync(async (s, token) =>
         {
             await GuardAsync(s, token);
             var prior = await Profiles.Find(s, x => x.Id == profile.Id).FirstOrDefaultAsync(token);
@@ -103,11 +119,31 @@ public sealed partial class CustomerProfilePersistence(IMongoDbContext context)
                 {
                     throw new CustomerProfileConflictException("This form already added different contact details. Open Add customer again.");
                 }
-                return true;
+                return (await ResolveAsync(prior.Id, s, token))!.Id;
+            }
+            var existing = await FindByEmailAsync(s, profile.Email, token);
+            if (existing is not null)
+            {
+                var contact = new CustomerContactVariant(profile.FirstName, profile.LastName, profile.Email, profile.Phone, "", profile.CreatedUtc);
+                var variants = Variants(existing.Variants.Append(contact));
+                if (variants.Length != existing.Variants.Length)
+                {
+                    existing.Variants = variants;
+                    existing.ContactRevision++;
+                    existing.UpdatedUtc = profile.CreatedUtc;
+                    existing.LastChangeOperationId = "contact:" + profile.Id;
+                    SetSearchNames(existing);
+                    await Profiles.ReplaceOneAsync(s, x => x.Id == existing.Id, existing, cancellationToken: token);
+                }
+                // Keep the command identity so retries with changed contact details are rejected.
+                profile.MergedIntoId = existing.Id;
+                SetSearchNames(profile);
+                await Profiles.InsertOneAsync(s, profile, cancellationToken: token);
+                return existing.Id;
             }
             SetSearchNames(profile);
             await Profiles.InsertOneAsync(s, profile, cancellationToken: token);
-            return true;
+            return profile.Id;
         }, new TransactionOptions(ReadConcern.Snapshot, writeConcern: WriteConcern.WMajority), ct);
     }
 

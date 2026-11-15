@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.Localization;
 using System.Globalization;
 using HoleInHub.Business.Extensions;
 using HoleInHub.Business.Services;
 using HoleInHub.Web.Accounts;
+using Microsoft.AspNetCore.Localization;
 
 var builder = WebApplication.CreateBuilder(args);
 

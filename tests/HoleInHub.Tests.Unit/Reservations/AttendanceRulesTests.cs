@@ -13,7 +13,11 @@ public sealed class AttendanceRulesTests
     [Fact]
     public void CheckInUsesHalfOpenWindowAndDoesNotStopAtGraceDeadline()
     {
-        Assert.Null(AttendanceRules.Decide(Booking(), "check-in", "", Start.AddTicks(-1)));
+        Assert.Null(AttendanceRules.Decide(Booking(), "check-in", "", Start.AddHours(-1).AddTicks(-1)));
+        var early = AttendanceRules.Decide(Booking(), "check-in", "", Start.AddHours(-1))!;
+        Assert.Equal("Checked-In", early.Status);
+        Assert.Equal(Start.AddHours(-1), early.CheckedInUtc);
+        Assert.NotNull(AttendanceRules.Decide(Booking(), "check-in", "", Start.AddTicks(-1)));
         Assert.Equal("Checked-In", AttendanceRules.Decide(Booking(), "check-in", "", Start)!.Status);
         Assert.NotNull(AttendanceRules.Decide(Booking(), "check-in", "", Start.AddMinutes(90)));
         Assert.Null(AttendanceRules.Decide(Booking(), "check-in", "", Start.AddHours(2)));
@@ -61,6 +65,18 @@ public sealed class AttendanceRulesTests
     {
         var booking = Booking("Checked-In"); booking.CheckedInUtc = Start.AddMinutes(20);
         Assert.Null(AttendanceRules.Decide(booking, "check-out", "Finished", Start.AddMinutes(10)));
+    }
+
+    [Fact]
+    public void EarlyArrivalCanCheckOutBeforeSessionWithAReason()
+    {
+        var booking = Booking("Checked-In");
+        booking.CheckedInUtc = Start.AddHours(-1);
+        Assert.Throws<ReservationValidationException>(() => AttendanceRules.Decide(booking, "check-out", "", Start.AddMinutes(-30)));
+        Assert.NotNull(AttendanceRules.Decide(booking, "check-out", "Guest left", Start.AddMinutes(-30)));
+        Assert.Null(AttendanceRules.Decide(booking, "check-out", "Guest left", Start.AddHours(-1).AddTicks(-1)));
+        Assert.Equal(Start, booking.StartUtc);
+        Assert.Equal(Start.AddHours(2), booking.EndUtc);
     }
 
     [Fact]

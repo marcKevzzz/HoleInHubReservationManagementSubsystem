@@ -1,7 +1,7 @@
 @using HoleInHub.Business.Accounts
 @using HoleInHub.Web.Accounts
 @{
-    var layouts = new List<string> { "dashboard", "activity", "schedule", "queue", "cancellations", "customers" };
+    var layouts = new List<string> { "dashboard", "activity", "schedule", "queue", "cancellations", "customers", "delivery", "notifications", "profile" };
     if (User.ManagesVenue()) { layouts.AddRange(["team", "reports", "settings"]); }
     if (User.IsInRole(StaffRoles.Admin)) { layouts.AddRange(["resources", "services"]); }
 }
@@ -21,7 +21,6 @@
                         <span class="staff-skeleton-fill staff-skeleton-action"></span>
                         @if (User.ManagesVenue())
                         {
-                            <span class="staff-skeleton-fill staff-skeleton-block-action"></span>
                             <span class="staff-skeleton-fill staff-skeleton-block-action"></span>
                         }
                     </div>
@@ -50,6 +49,17 @@
                     }
                 </div>
             }
+            else if (layout is "delivery" or "notifications")
+            {
+                @if (layout == "delivery") { <div class="staff-skeleton-tabs">@for(var tab=0;tab<4;tab++){<span class="staff-skeleton-fill"></span>}</div> }
+                <div class="staff-skeleton-rows staff-skeleton-activity">
+                    @for(var row=0;row<6;row++) { <div class="staff-skeleton-row"><span class="staff-skeleton-fill staff-skeleton-icon"></span><div class="staff-skeleton-copy"><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill"></span></div><span class="staff-skeleton-fill"></span></div> }
+                </div>
+            }
+            else if (layout == "profile")
+            {
+                <section class="staff-skeleton-facts"><span class="staff-skeleton-fill staff-skeleton-section-title"></span>@for(var row=0;row<5;row++){<div><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill"></span></div>}</section>
+            }
             else if (layout == "activity")
             {
                 <div class="staff-skeleton-tools">
@@ -69,7 +79,8 @@
             else if (layout is "queue" or "cancellations" or "customers" or "team")
             {
                 <div class="staff-skeleton-tools">
-                    @if (layout == "customers") { <span class="staff-skeleton-fill staff-skeleton-search"></span> }
+                    @if (layout == "cancellations") { <span class="staff-skeleton-fill staff-skeleton-control"></span> }
+                    else if (layout == "customers") { <span class="staff-skeleton-fill staff-skeleton-search"></span> }
                     else { <div class="staff-skeleton-tabs">@for (var tab = 0; tab < (layout == "team" ? 4 : 2); tab++) { <span class="staff-skeleton-fill"></span> }</div> }
                     <span class="staff-skeleton-fill @(layout is "queue" or "cancellations" ? "staff-skeleton-date" : "staff-skeleton-count")"></span>
                 </div>

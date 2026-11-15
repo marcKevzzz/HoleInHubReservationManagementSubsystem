@@ -45,7 +45,7 @@
                     </form>
                 </div>
             </details>
-            <a class="button" data-action-icon="calendar" asp-controller="BookingReview" asp-action="Index" asp-route-date="@data.From.ToString("yyyy-MM-dd")">Open schedule</a>
+            <a class="button" data-action-icon="calendar" asp-controller="BookingReview" asp-action="Index" asp-route-date="@data.From.ToString("yyyy-MM-dd")">Open schedule<partial name="_ButtonActionIcon" model='"calendar"' /></a>
         </div>
     </header>
     <span class="sr-only" data-dashboard-updated>Updated @localNow.ToString("h:mm tt") Manila time</span><span class="sr-only" data-dashboard-loading role="status"></span>

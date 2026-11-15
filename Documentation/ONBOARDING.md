@@ -227,6 +227,17 @@ Whole-shop checkout displays a server-calculated demonstration total/deposit and
 
 The future POS handoff must provide checkout tied to a reservation, an authoritative PHP rental/deposit quote, and an authenticated payment result with reservation/payment references, amount, currency and outcome. This release exposes no live payment callback and accepts no customer-supplied payment amount. POS retains collection, official receipts, refunds and settlement. Never connect the demo buttons to real funds.
 
+#### Hosted evaluation checkout (IIS)
+
+If the booking page renders `data-demo-payments="false"`, whole-shop quoting and simulated checkout are disabled. Selecting bays cannot fix that configuration. For an evaluation deployment, merge these non-secret entries into the deployed `web.config` under `system.webServer/aspNetCore/environmentVariables`, preserving all existing configuration:
+
+```xml
+<environmentVariable name="ASPNETCORE_ENVIRONMENT" value="Demo" />
+<environmentVariable name="ReservationPolicy__DemoPaymentsEnabled" value="true" />
+```
+
+Restart the hosted application, check `/health/ready`, and confirm the booking page now renders `data-demo-payments="true"`. Demo does not load Development user-secrets; keep the host's existing database, email and key-store configuration. These settings enable simulated outcomes only. Keep them disabled for real-money operation until the POS integration exists.
+
 Cancellation requests require at least one hour before the start and staff approval. The request itself releases no allocation and does not extend an existing Pending deadline. Refund terms and rescheduling remain venue-managed. Coaching uses regular bay capacity and requires staff to record external coach confirmation before venue approval; package bookings allocate only the selected first session.
 
 Verify with unit/smoke tests, local isolated MongoDB integration tests (including guest/staff HTTP flows), `npm run test:ui`, and `npm run build:css`. A healthy `/health/ready` requires all migrations 001–007, even when Google is disabled. Do not run integration tests against Atlas or the shared preview database.
@@ -258,6 +269,12 @@ References: [Microsoft Google authentication setup](https://learn.microsoft.com/
 
 
 ### Customer account pages and verification
+
+Authentication forms share square controls, six-slot email-code inputs, inline field errors and toast feedback. Account pages and guest recovery omit the language switch. Sign-in offers **Continue as guest** and an optional **Remember me for 30 days**; this customer session has an absolute 30-day limit, with existing security-stamp checks retained. Staff workspace sessions retain their existing shorter limits.
+
+New passwords chosen through signup, activation and reset use 8–128 ASCII letters/numbers, without case or symbol requirements. Existing passwords continue to work at sign-in. The strength indicator is guidance, not another submission requirement. Contact fields accept local PH/KR numbers and an optional leading `+`; pasted spaces and punctuation are removed, while persisted phone values remain digits for schema compatibility. Names also accept commas.
+
+Forgot-password now uses `/account/reset-password/verify`: a browser-bound, ten-minute email code with five attempts, a one-minute delivery cooldown and five deliveries per email per hour. The encrypted outbox and existing `AccountEmail` challenge purpose are reused with a separate `password-reset:` scope, so no migration is required. After verification the protected reset token remains on the server; the browser gets a placeholder and must retain its reset-context cookie. Unknown/unverified accounts see the same recovery flow without receiving mail. Existing reset links remain supported. Use the local Mailpit launcher above to capture codes.
 
 `/my-reservations`, `/transactions` and `/my-profile` share customer navigation and require sign-in. Profile updates accept only current-user first name, last name and contact number; the email remains immutable. Booking contact edits affect only the reservation. Transactions show existing owned whole-shop demonstration payment state and history, with separate rental/deposit and reservation/payment statuses; no real transaction ledger or receipts are created.
 
@@ -298,6 +315,8 @@ Successful reservation submission continues to enqueue one encrypted durable out
 
 
 ### Customer record consolidation
+
+Staff notifications at `/staff/notifications` show concise reservation updates for Staff, Manager and Admin. Only due, unsuppressed reservation messages appear; account verification/reset emails stay out of this feed. Visible or interacted-with rows save that account’s read markers and update the sidebar count. Delivery retries do not make a read reservation notice unread again. Admins retain **Email delivery** diagnostics. This reuses existing outbox fields and requires no migration. Success toasts appear after sign-in/account creation. Sidebar scroll starts at the top after sign-in/reload. **Block availability** combines timed and full-day blocks; Shift+B/Shift+D and the existing booking rules remain in effect.
 
 After explicit migration 018, Staff, Manager and Admin can open **Customers → customer details → Merge customer**. Choose another record, compare both histories, choose the main contact details and either all or specific reservations, then review and supply a reason. Shared phone/email/name matches are clues only. Use **Merge history** for the actor/reason and eligible undo. Login accounts, guest access and booking ownership remain separate.
 

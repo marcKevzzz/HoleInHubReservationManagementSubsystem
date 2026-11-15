@@ -5,7 +5,7 @@
         <div asp-validation-summary="All" class="staff-error" role="alert"></div>
         <input asp-for="CommandId" type="hidden" />
         <div class="people-form-names"><div class="auth-input-wrap"><input asp-for="FirstName" autocomplete="given-name" required maxlength="100" placeholder=" " /><label asp-for="FirstName">First name</label></div><div class="auth-input-wrap"><input asp-for="LastName" autocomplete="family-name" required maxlength="100" placeholder=" " /><label asp-for="LastName">Last name</label></div></div>
-        <div class="auth-input-wrap"><input asp-for="Phone" type="tel" inputmode="numeric" autocomplete="tel" pattern="[0-9]{7,15}" required maxlength="15" placeholder=" " /><label asp-for="Phone">Contact number</label></div>
+        <div class="auth-input-wrap"><input asp-for="Phone" type="tel" inputmode="tel" autocomplete="tel" pattern="@HoleInHub.Business.Accounts.ContactRules.PhonePattern" required maxlength="16" placeholder=" " /><label asp-for="Phone">Contact number</label></div>
         <div class="auth-input-wrap"><input asp-for="Email" type="email" autocomplete="email" maxlength="254" placeholder=" " /><label asp-for="Email">Email (optional)</label></div>
         <button class="button" type="submit">Add customer</button>
     </form>

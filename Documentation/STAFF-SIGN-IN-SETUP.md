@@ -27,6 +27,34 @@ PIN setup codes use the existing encrypted email outbox. They expire after ten m
 
 For local HTTPS, the existing `https` launch profile listens at `https://localhost:7077` and `http://localhost:5275`. Starting that profile alone does not enroll a desktop or enable PIN access.
 
+## Hosted demo and QA on any device
+
+Set these deployment settings for `https://holeinhub.runasp.net`, then restart the Web application after deploying the version that supports this switch:
+
+| Key | Value |
+| --- | --- |
+| `StaffPin__Enabled` | `true` |
+| `StaffPin__Host` | `holeinhub.runasp.net` |
+| `StaffPin__RequireDesktopCertificate` | `false` |
+
+For hosts configured through JSON, merge these properties into the deployed `appsettings.json`:
+
+```json
+"StaffPin": {
+  "Enabled": true,
+  "Host": "holeinhub.runasp.net",
+  "RequireDesktopCertificate": false
+}
+```
+
+Preserve the existing secret `StaffPin__Pepper` (or `StaffPin:Pepper`) exactly: existing Atlas PIN hashes depend on it. Keep the current Atlas connection and database settings. Leave `PresentationAccount` and `PresentationManagerAccount` empty; this mode works in Production with existing verified Staff and Manager accounts and does not require a local demo database.
+
+Open `https://holeinhub.runasp.net/staff/sign-in` from any device and enter the account's existing six-digit PIN. Staff and Manager permissions remain based on the stored account role. Accounts without a PIN can use the existing email/password and emailed-code setup at `/staff/pin/setup`. Admin continues to use `/account/sign-in`. No desktop client certificate is requested by the application in this mode; HTTPS is still required. The hosting listener must also allow connections without a client certificate.
+
+This explicitly removes the enrolled-device restriction, so anyone with a valid staff PIN can use that account's permissions and change the connected Atlas data. PIN lockouts, role checks, and session revocation remain enforced. Certificate-free access shares the existing device retry quota of 20 attempts per 15 minutes across devices; employee quotas also remain in effect.
+
+To restore enrolled-desktop access, set `StaffPin__RequireDesktopCertificate=true` (the default), retain/configure `DesktopFingerprints`, and restart. Existing certificate-free sessions fail their next workspace validation.
+
 ## Development presentation alternative
 
 The existing Development-only presentation mode permits a configured Staff demo account with an existing PIN on the configured HTTPS host. It asks only for the PIN. Set `StaffPin__PresentationAccount` alongside the enabled flag, hostname and secret pepper. PIN setup through `/staff/pin/setup` is disabled in presentation mode, so prepare the demo account and PIN before switching modes. Manager presentation has additional isolated-local-database restrictions; follow the implementation specification rather than enabling it against the normal database.
@@ -34,7 +62,7 @@ The existing Development-only presentation mode permits a configured Staff demo 
 ## Troubleshooting
 
 - **503 / Staff sign-in unavailable:** `StaffPin:Enabled` is false or missing.
-- **403 / Work desktop required:** HTTP, wrong staff hostname, missing/unapproved/expired desktop certificate, or a presentation restriction.
+- **403 / Work desktop required:** HTTP, wrong staff hostname, missing/unapproved/expired desktop certificate when required, or a presentation restriction.
 - **PIN rejected:** Check Staff/Manager role, verified account, existing PIN, current security stamp, attempt lockout, and whether another employee has the same PIN.
 - **Admin account:** Use `/account/sign-in`; Admin accounts do not use the Staff PIN flow.
 

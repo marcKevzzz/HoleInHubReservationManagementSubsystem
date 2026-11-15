@@ -30,7 +30,8 @@ public static class PricingRules
         "KpgaGroup" => new() { BaseRate = 2500m, ClassCount = 4 },
         "WholeShop" => new()
         {
-            BaseRate = 40000m, WholeDayRate = 60000m,
+            BaseRate = 40000m,
+            WholeDayRate = 60000m,
             RentalOverrides = [new(DayOfWeek.Friday, null, 50000m, 80000m),
                 new(DayOfWeek.Saturday, null, 50000m, 80000m), new(DayOfWeek.Sunday, null, 50000m, 80000m)]
         },

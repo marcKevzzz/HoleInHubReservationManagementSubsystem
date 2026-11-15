@@ -4,6 +4,8 @@ public sealed record StaffReviewContext(ReservationDto Booking, bool HasConflict
 {
     public string Email { get; init; } = "";
     public IReadOnlyList<ResourceDto> Bays { get; init; } = [];
+    public bool AttendanceOperationsAvailable { get; init; }
+    public bool CanMarkNoShow { get; init; }
 }
 
 public sealed partial class ReservationService
@@ -25,11 +27,14 @@ public sealed partial class ReservationService
         var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime;
         var conflict = record.Status is ("Pending" or "Confirmed") && await persistence.HasReviewConflictAsync(record, ct, now: now);
         var customer = await persistence.ReadCustomerContextAsync(record, now, ct);
+        var attendanceOperations = await persistence.AttendanceOperationsInstalledAsync(ct);
         return new(Map(record), conflict, !string.IsNullOrWhiteSpace(record.Email), customer?.Past, customer?.Cancellations,
             !conflict && AttendanceRules.CanCheckIn(record, now),
-            record.Status == "Checked-In" && now >= record.StartUtc && (record.CheckedInUtc is null || now >= record.CheckedInUtc),
+            AttendanceRules.CanCheckOut(record, now),
             record.Status == "Confirmed" && now >= AttendanceRules.FollowUpDue(record.StartUtc, record.EndUtc))
         {
+            AttendanceOperationsAvailable = attendanceOperations,
+            CanMarkNoShow = attendanceOperations && AttendanceRules.CanMarkNoShow(record, now),
             Email = record.Email,
             Bays = record.Status == "Pending" && record.Participants.Length == 0 && record.Service != "WholeShop"
                 ? (await GetCatalogAsync(ct)).Where(bay => record.ResourceIds.Contains(bay.Id)).ToArray() : []

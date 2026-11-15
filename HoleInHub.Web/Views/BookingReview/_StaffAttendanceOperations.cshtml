@@ -1,0 +1,52 @@
+@using HoleInHub.Business.Reservations
+@model StaffReviewDetail
+@{
+    var booking = Model.Context.Booking;
+    var now = Model.Queue.Now;
+    var actions = new List<(string Key, string Title, string Button, string Confirmation)>();
+    if (Model.Context.CanMarkNoShow) { actions.Add(("no-show", "Mark no-show", "Mark as no-show", "I followed up with the guest and confirmed they have not arrived.")); }
+    if (AttendanceCorrectionRules.CanCorrect(booking.Status) && !booking.CancellationRequested && booking.ScheduleChange?.Status != "Pending")
+    { actions.Add(("correct", "Correct attendance", "Save correction", "I reviewed the actual attendance and the reason for this correction.")); }
+    if (SessionExtensionRules.CanExtend(booking.Status, booking.Service, booking.StartUtc, booking.EndUtc, now)
+        && !booking.CancellationRequested && booking.ScheduleChange?.Status != "Pending")
+    { actions.Add(("extend", "Extend session", "Extend session", "The customer agrees to the extra time and any additional charges.")); }
+    string LocalValue(DateTime? value) => value.HasValue ? StaffReviewQueue.Local(value.Value).ToString("yyyy-MM-ddTHH:mm:ss.fff") : "";
+}
+@foreach (var action in actions)
+{
+    var saved = Model.AttendanceForm?.Action == action.Key ? Model.AttendanceForm : null;
+    var status = saved?.CorrectedStatus ?? booking.Status;
+    <details class="review-section attendance-operation" open="@(saved is not null)">
+        <summary>@action.Title</summary>
+        <form asp-action="Attendance" asp-route-id="@booking.Id" asp-route-date="@Model.ScheduleDate"
+              asp-route-fromQueue="@Model.FromQueue" asp-route-filter="@Model.Queue.Filter" asp-route-day="@Model.Queue.Day" asp-route-sort="@Model.Queue.Sort"
+              method="post" class="staff-create-form" data-attendance-form>
+            <input type="hidden" name="Action" value="@action.Key" />
+            <input type="hidden" name="ExpectedRevision" value="@(saved?.ExpectedRevision ?? booking.Revision)" />
+            <input type="hidden" name="CommandId" value="@(saved?.CommandId ?? Guid.NewGuid().ToString("N"))" />
+            @if (action.Key == "correct")
+            {
+                <div class="settings-field"><label for="correct-status">Attendance status</label><select id="correct-status" name="CorrectedStatus">
+                    @foreach (var item in new[] { "Confirmed", "Checked-In", "Completed", "No-show" }) { <option value="@item" selected="@(item == status)">@(item == "Checked-In" ? "Checked in" : item)</option> }
+                </select></div>
+                <div class="attendance-title"><span>Actual times · Manila</span><partial name="_StaffHelp" model='("correction-time-help", "About corrected times", "Checked in needs arrival only. Completed needs arrival and departure. Leave both times empty for Confirmed or No-show. Restoring a booking rechecks all original bays.")' /></div>
+                <div class="settings-field"><label for="correct-arrival">Arrival</label><input id="correct-arrival" type="datetime-local" step="0.001" name="ArrivalLocal" value="@(saved is not null ? saved.ArrivalLocal?.ToString("yyyy-MM-ddTHH:mm:ss.fff") : LocalValue(booking.CheckedInUtc))" /></div>
+                <div class="settings-field"><label for="correct-departure">Departure</label><input id="correct-departure" type="datetime-local" step="0.001" name="DepartureLocal" value="@(saved is not null ? saved.DepartureLocal?.ToString("yyyy-MM-ddTHH:mm:ss.fff") : LocalValue(booking.CheckedOutUtc))" /></div>
+            }
+            @if (action.Key == "extend")
+            {
+                var localStart = StaffReviewQueue.Local(booking.StartUtc);
+                var localEnd = StaffReviewQueue.Local(booking.EndUtc);
+                var maxMinutes = (int)Math.Min((localStart.Date.AddDays(1) - localEnd).TotalMinutes, 840 - (booking.EndUtc - booking.StartUtc).TotalMinutes);
+                <div class="settings-field"><label for="extension-minutes">Additional time</label><select id="extension-minutes" name="ExtensionMinutes" required>
+                    <option value="">Choose extra time</option>
+                    @for (var minutes = 30; minutes <= maxMinutes; minutes += 30) { <option value="@minutes" selected="@(saved?.ExtensionMinutes == minutes)">@minutes min · ends @localEnd.AddMinutes(minutes).ToString("h:mm tt")</option> }
+                </select></div>
+            }
+            <div class="settings-field"><label for="@(action.Key)-reason">Reason</label><textarea id="@(action.Key)-reason" name="Reason" rows="2" maxlength="500" required>@saved?.Reason</textarea></div>
+            <label class="staff-create-confirm attendance-confirm"><input type="checkbox" name="ConfirmAttendance" value="true" required checked="@(saved?.ConfirmAttendance ?? false)" /><span>@action.Confirmation</span></label>
+            <button class="button @(action.Key == "no-show" ? "review-danger" : "")" type="submit" data-no-icon>@action.Button</button>
+            <p data-attendance-expired hidden></p>
+        </form>
+    </details>
+}

@@ -12,7 +12,7 @@ Reviewed against the working tree on 2026-11-04, including uncommitted feature w
 | Guest booking | Protected draft, email code, availability recheck, atomic Pending submission and secure status link | Drafts hold no capacity; references alone grant no access |
 | Account booking | Verified accounts submit directly; profile contact defaults with legacy reservation fallback | Booking contact edits do not update the saved profile |
 | Allocation | Multi-bay and whole-shop booking, schedule blocks, persisted guards and idempotency | No separate allocation collection or named-coach scheduling model |
-| Staff review | Staff/Admin queue, approval/rejection, coach confirmation and cancellation decisions | No general staff-assisted creation, rescheduling, extension or attendance workflow |
+| Staff review | Queue decisions, attendance, manual no-show, attendance corrections and guarded Regular/VIP extensions | Extensions exclude coaching/whole-shop and do not process additional payments |
 | Notifications | Durable SMTP outbox, verification, booking events, Pending alerts and expiry, 15-minute reminders for eligible confirmed bookings, admin delivery tracking and retry | Delivery status records SMTP acceptance. Retrying after an interrupted send can duplicate email. |
 | Whole-shop checkout | Explicitly enabled Development/Demo simulation and 50% demonstration deposit | No real collection, authenticated live POS exchange or production payment confirmation |
 | Reports/inquiries | Public contact information | No operational reporting dashboard or predefined-answer chatbot |
@@ -62,7 +62,7 @@ Migration 006 adds typed collection validators, interval-order validation, optio
 
 New ordinary online requests may be submitted at any hour. Their capacity hold starts immediately, while the 30/60-minute review clock counts only approved staff coverage within Manila operating hours. Unused time carries across closing. The full review window must finish by the session start. Whole-shop retains its elapsed-time deposit deadline.
 
-Migration 014 adds optional saved review start and two alert timestamps. Existing bookings retain their saved deadlines and legacy alerts. Apply migrations explicitly through the Migrator. Manual no-show actions and attendance corrections remain deferred.
+Migration 014 adds optional saved review start and two alert timestamps. Existing bookings retain their saved deadlines and legacy alerts. Apply migrations explicitly through the Migrator. Manual no-show and attendance corrections were added in the 15 November slice below.
 
 ## Schedule changes — 7 November 2026
 
@@ -72,7 +72,13 @@ Customers use the existing account ownership, secure link or verified guest sess
 
 Migration 015 adds optional proposal and audit snapshots. The guarded transaction takes the catalog guard and sorted old/new resource-date guards, rechecks allocations, and commits the schedule, resource names, history and outbox together. Current/proposed resource IDs and intervals remain in history. Existing records remain readable. Apply the migration explicitly.
 
-This slice handles proposed changes before arrival. Whole-shop/coaching changes, changes during a session, direct staff moves without a customer proposal, manual no-show actions and attendance corrections remain deferred.
+This slice handles proposed changes before arrival. Whole-shop/coaching changes and direct staff moves without a customer proposal remain outside this slice. The 15 November slice below adds attendance corrections and Regular/VIP extensions during a session.
+
+## Attendance and extensions — 15 November 2026
+
+Staff may mark an unattended Confirmed booking No-show after follow-up at the earlier of one hour after start or scheduled end. Reasons and confirmation are required. Attendance corrections preserve before/after actual times and status, rechecking capacity atomically when restoring an active booking. Regular/VIP sessions can be extended in 30-minute increments while ongoing, within operating hours and subject to all booked bays remaining available. Extra charges remain venue/POS-managed; the customer page identifies the original quote.
+
+Migration 020 adds optional audit snapshots and event types. It must run explicitly before these actions become available. Existing check-in/checkout command hashes remain replayable. See the [implementation plan and verification record](plans/2026-11-15-attendance-and-extensions.md).
 
 ## Staff Customers — 7 November 2026
 

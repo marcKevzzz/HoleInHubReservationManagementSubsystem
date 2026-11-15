@@ -112,7 +112,7 @@ Excluded from Reservation implementation: inventory, food/merchandise ordering, 
 
 Still requiring agreement:
 
-- Client validation of the owner-approved provisional review/deposit deadlines; review coverage uses operating minutes with carryover to the next staffed opening. Manual no-show actions and attendance corrections remain deferred.
+- Client validation of the owner-approved provisional review/deposit deadlines; review coverage uses operating minutes with carryover to the next staffed opening.
 - Live POS payment evidence/contract, authoritative prices (including holidays), late-payment reconciliation and deposit refunds. The owner sets a 50% deposit and provisional 60-minute deadline for the demo.
 - Change-request approval criteria and late-arrival exceptions.
 - Client confirmation of remaining package sessions and rescheduling. Implemented ordinary sessions use a 30-minute minimum and half-hour increments; the customer enters one total guest count including non-players, with eight total people per Regular bay or ten per VIP. Staff checks the six-player-per-bay limit because a total count does not identify players. Cancellation requests require one hour of notice and staff approval, with no cancellation fee.
@@ -122,3 +122,5 @@ Still requiring agreement:
 The [aligned diagram package](diagrams/README.md) provides system architecture, system flowchart, context/Level 1 references, a combined Level 2 DFD with detail sheets, and POS integration flow. The final POS exchange contract remains to be agreed. These October exports are historical target designs; use [CURRENT-SYSTEM.md](CURRENT-SYSTEM.md) for the current flow and remaining implementation gaps.
 
 Owner update (2026-11-03): ordinary sessions may be 30 minutes. Each time tile represents a half-hour; dragging consecutive tiles sets the complete duration (two tiles = one hour). Existing fixed coaching classes and whole-shop rental windows retain their defined durations. Review deadlines and minimum booking lead times are unchanged.
+
+Owner update (2026-11-15): implement staff-managed no-show, attendance corrections and then session extensions. The first extension release covers Regular and VIP only. Implementation rules and verification evidence are recorded in the [attendance and extensions plan](plans/2026-11-15-attendance-and-extensions.md).

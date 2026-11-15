@@ -19,16 +19,15 @@
 <div class="staff-workspace" data-staff-schedule data-customer-profile-id="@Model.BookingForm.CustomerProfileId" data-date="@selectedDate" data-today="@today" data-first-hour="@timeline.FirstHour"
      data-opening-hour="@ReservationRules.OpeningHour(Model.Day.DayOfWeek)">
     <header class="staff-workspace-heading staff-schedule-heading">
-        <h1>Reservations</h1>
+        <div class="staff-schedule-title"><h1>Reservations</h1><partial name="_StaffTimelineHelp" /></div>
         <div class="staff-schedule-actions">
             @if (Model.BookingForm.Bays.Count > 0)
             {
-                <a class="button staff-new-booking" asp-action="Create" asp-route-date="@selectedDate" asp-route-customerProfileId="@Model.BookingForm.CustomerProfileId" data-new-booking data-action-icon="plus">New booking</a>
+                <a class="button staff-new-booking" asp-action="Create" asp-route-date="@selectedDate" asp-route-customerProfileId="@Model.BookingForm.CustomerProfileId" data-new-booking data-action-icon="plus">New booking<partial name="_ButtonActionIcon" model='"plus"' /></a>
             }
             @if (User.ManagesVenue() && Model.BlockForm is { Bays.Count: > 0 })
             {
-                <a class="button button-secondary" asp-action="CreateBlock" asp-route-date="@selectedDate" data-new-block aria-keyshortcuts="Shift+B" title="Block time · Shift+B in the timeline">Block time</a>
-                <a class="button button-secondary" asp-action="CreateBlock" asp-route-date="@selectedDate" asp-route-wholeDay="true" data-new-block-day aria-keyshortcuts="Shift+D" title="Block day · Shift+D in the timeline">Block day</a>
+                <a class="button button-secondary" asp-action="CreateBlock" asp-route-date="@selectedDate" data-new-block aria-keyshortcuts="Shift+B Shift+D" title="Block availability · Shift+B for a time range, Shift+D for a full day">Block availability</a>
             }
         </div>
     </header>
@@ -198,9 +197,8 @@
     @if (User.ManagesVenue() && Model.BlockForm is { Bays.Count: > 0 })
     {
         <dialog class="staff-booking-drawer staff-side-panel" data-create-block aria-labelledby="staff-block-title">
-            <header><h2 class="staff-panel-heading" id="staff-block-title">Block time</h2><form method="dialog"><button class="staff-icon-button" aria-label="Close block time"><partial name="_StaffIcon" model='"close"' /></button></form></header>
+            <header><h2 class="staff-panel-heading" id="staff-block-title">Block availability</h2><form method="dialog"><button class="staff-icon-button" aria-label="Close availability block"><partial name="_StaffIcon" model='"close"' /></button></form></header>
             <div class="staff-panel-body">
-            <p class="staff-create-hint">Keep one bay free for maintenance or another staff activity.</p>
             <partial name="_StaffBlockForm" model="Model.BlockForm" />
             </div>
         </dialog>

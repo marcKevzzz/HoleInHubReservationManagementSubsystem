@@ -1,6 +1,6 @@
 using System.Globalization;
-using HoleInHub.Data.Services;
 using HoleInHub.Data.Reservations;
+using HoleInHub.Data.Services;
 
 namespace HoleInHub.Business.Reservations;
 

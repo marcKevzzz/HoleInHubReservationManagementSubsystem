@@ -52,13 +52,13 @@ public sealed partial class AccountController
         var existing = await accounts.FindByGoogleSubjectAsync(info.ProviderKey, ct);
         if (existing is not null) { return await FinishGoogleAsync(AccountUser.From(existing)!, model.ReturnUrl); }
         if (await users.FindByEmailAsync(model.Email) is not null) { return await ExistingGoogleEmailAsync(model.ReturnUrl); }
-        var user = new AccountUser { Email = model.Email, GoogleSubject = info.ProviderKey, FirstName = model.FirstName.Trim(), LastName = model.LastName.Trim(), Phone = model.Phone.Trim(), EmailConfirmed = GoogleEmailIsAuthoritative(info.Principal) };
+        var user = new AccountUser { Email = model.Email, GoogleSubject = info.ProviderKey, FirstName = model.FirstName.Trim(), LastName = model.LastName.Trim(), Phone = HoleInHub.Business.Accounts.ContactRules.PhoneDigits(model.Phone), EmailConfirmed = GoogleEmailIsAuthoritative(info.Principal) };
         if (!(await users.CreateAsync(user)).Succeeded)
         {
             ModelState.AddModelError("", "Unable to create this account. Retry Google sign-in or use your existing sign-in method.");
             return View("GoogleSignUp", model);
         }
-        return await FinishGoogleAsync(user, model.ReturnUrl);
+        return await FinishGoogleAsync(user, model.ReturnUrl, created: true);
     }
 
     private async Task<ExternalLoginInfo?> GoogleInfoAsync()
@@ -80,7 +80,7 @@ public sealed partial class AccountController
         return RedirectToAction(nameof(SignIn), new { returnUrl = SafeReturnUrl(returnUrl) });
     }
 
-    private async Task<IActionResult> FinishGoogleAsync(AccountUser user, string? returnUrl)
+    private async Task<IActionResult> FinishGoogleAsync(AccountUser user, string? returnUrl, bool created = false)
     {
         if (!await signIn.CanSignInAsync(user) || await users.IsLockedOutAsync(user)) { return await GoogleFailed(); }
         if (!user.EmailConfirmed)
@@ -93,6 +93,7 @@ public sealed partial class AccountController
         await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
         await signIn.SignInAsync(user, false, "Google");
         TempData["PageArrival"] = true;
+        new HoleInHubReservationManagementSubsystem.ViewModels.ToastNotice("success", created ? "Account created" : user.WelcomeTitle, "Welcome to Hole In Hub.").Store(TempData);
         return LocalRedirect(SafeReturnUrl(returnUrl) ?? "/");
     }
 }

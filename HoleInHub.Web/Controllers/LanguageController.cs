@@ -11,8 +11,15 @@ public sealed class LanguageController : Controller
         if (culture is not ("en" or "ko")) { return BadRequest(); }
         Response.Cookies.Append(CookieRequestCultureProvider.DefaultCookieName,
             CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture)),
-            new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1), HttpOnly = true, IsEssential = true,
-                Secure = Request.IsHttps, SameSite = SameSiteMode.Lax, Path = "/" });
+            new CookieOptions
+            {
+                Expires = DateTimeOffset.UtcNow.AddYears(1),
+                HttpOnly = true,
+                IsEssential = true,
+                Secure = Request.IsHttps,
+                SameSite = SameSiteMode.Lax,
+                Path = "/"
+            });
         return LocalRedirect(returnUrl is { Length: <= 2048 } && Url.IsLocalUrl(returnUrl) ? returnUrl : "/");
     }
 }

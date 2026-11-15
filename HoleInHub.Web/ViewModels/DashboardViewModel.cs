@@ -22,7 +22,9 @@ public sealed class DashboardQuery
         DashboardMetrics.ValidateRange(to, to);
         var from = Mode == "today" ? to : Preset switch
         {
-            "7" => to.AddDays(-6), "30" => to.AddDays(-29), null or "" or "custom" => From ?? to.AddDays(-6),
+            "7" => to.AddDays(-6),
+            "30" => to.AddDays(-29),
+            null or "" or "custom" => From ?? to.AddDays(-6),
             _ => throw new ReservationValidationException("Choose a valid date preset.")
         };
         DashboardMetrics.ValidateRange(from, to);
@@ -35,8 +37,10 @@ public sealed record DashboardViewModel(DashboardSnapshot Data, string Mode, boo
     public IReadOnlyList<HoleInHub.Business.Activity.ActivityEntry> LatestActivity { get; init; } = [];
     private Dictionary<string, string?> Query => new()
     {
-        ["mode"] = Mode, ["date"] = Data.From.ToString("yyyy-MM-dd"),
-        ["from"] = Data.From.ToString("yyyy-MM-dd"), ["to"] = Data.To.ToString("yyyy-MM-dd")
+        ["mode"] = Mode,
+        ["date"] = Data.From.ToString("yyyy-MM-dd"),
+        ["from"] = Data.From.ToString("yyyy-MM-dd"),
+        ["to"] = Data.To.ToString("yyyy-MM-dd")
     };
     public string DashboardUrl => QueryHelpers.AddQueryString("/staff/dashboard", Query);
     public string SliceUrl(string kind, string? value = null, string? group = null, int page = 1)
@@ -57,7 +61,9 @@ public sealed record DashboardBookingsViewModel(DashboardViewModel Context, Dash
 {
     public string Title => Kind switch
     {
-        "day" => $"Sessions starting {Value}", "service" => $"{DashboardMetrics.ServiceLabel(Value ?? "")} bookings",
-        "hour" => $"Bookings overlapping {Value}:00–{int.Parse(Value!) + 1}:00", _ => "Scheduled reservations"
+        "day" => $"Sessions starting {Value}",
+        "service" => $"{DashboardMetrics.ServiceLabel(Value ?? "")} bookings",
+        "hour" => $"Bookings overlapping {Value}:00–{int.Parse(Value!) + 1}:00",
+        _ => "Scheduled reservations"
     };
 }

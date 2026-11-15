@@ -57,17 +57,32 @@ html:has(.staff-side-panel[open]) {overflow:hidden;scrollbar-gutter:stable}
 .staff-shell :is(.staff-workspace-heading h2,.review-section-heading h2,.review-section>h2,.attendance-heading h2) {font:600 1.05rem/1.4 var(--body);letter-spacing:0;text-transform:none}
 .staff-shell .review-attendance {border:0;border-radius:0;box-shadow:none}
 .staff-shell .staff-side-panel .review-attendance {padding:0}
-.staff-shell .staff-side-panel .review-attendance .staff-create-form {margin:0;gap:14px}
+.staff-shell .review-attendance .staff-create-form {gap:8px}
+.staff-shell .staff-side-panel .review-attendance .staff-create-form {margin:0;gap:8px}
 .staff-shell .review-attendance .validation-summary-valid {display:none}
-.staff-shell .review-attendance .attendance-confirm {align-items:center;margin:0}
-.staff-shell .review-attendance .attendance-confirm input {margin:0}
+.staff-shell .review-attendance .attendance-confirm {align-items:center;min-height:32px;gap:8px;margin:0;padding:0;background:transparent}
+.staff-shell .review-attendance .attendance-confirm input {width:16px;height:16px;min-height:16px;margin:0}
 .attendance-notes {border-block-start:1px solid var(--color-line)}
-.attendance-notes > summary {display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px 0;list-style:none}
+.attendance-notes > summary {display:flex;align-items:center;justify-content:space-between;width:100%;padding:8px 0;list-style:none}
 .attendance-notes > summary::-webkit-details-marker {display:none}
 .attendance-notes > summary::after {content:"";width:12px;height:12px;background:linear-gradient(currentColor,currentColor) center/12px 1px no-repeat,linear-gradient(currentColor,currentColor) center/1px 12px no-repeat}
 .attendance-notes[open] > summary::after {background:linear-gradient(currentColor,currentColor) center/12px 1px no-repeat}
 .staff-shell .staff-drawer-actions .attendance-notes[open] > summary {margin-bottom:0}
 .attendance-notes textarea {display:block;margin-top:0}
+.attendance-operation > summary {display:flex;align-items:center;justify-content:space-between;min-height:40px;cursor:pointer;font-size:.875rem;list-style:none}
+.attendance-operation > summary::-webkit-details-marker {display:none}
+.attendance-operation > summary::after {content:"";width:12px;height:12px;flex:none;background:linear-gradient(currentColor,currentColor) center/12px 1px no-repeat,linear-gradient(currentColor,currentColor) center/1px 12px no-repeat}
+.attendance-operation[open] > summary::after {background-size:12px 1px,1px 0}
+.staff-shell .attendance-operation .staff-create-form {margin-top:12px;gap:12px}
+.staff-shell .staff-side-panel .attendance-operation .staff-create-form {margin-top:12px;gap:12px}
+.staff-shell .attendance-operation .attendance-confirm {display:flex;background:transparent;padding:4px 0;margin:0;align-items:center;gap:8px;font-size:.75rem;font-weight:400;line-height:1.5}
+.staff-shell .attendance-operation .attendance-confirm input {width:16px;height:16px;min-height:16px;margin:0}
+.staff-shell .attendance-operation .attendance-confirm span {font-weight:400}
+.staff-shell .attendance-operation .button.review-danger {background:var(--color-error);border-color:var(--color-error);color:var(--color-paper)}
+.staff-shell .attendance-operation .button.review-danger:is(:hover,:focus-visible):not(:disabled) {background:var(--color-ink);border-color:var(--color-ink)}
+.staff-shell .attendance-operation input[type=datetime-local] {min-height:36px;font-size:.85rem}
+.attendance-operation .attendance-title {font-size:.8rem;color:var(--color-muted)}
+@media(prefers-reduced-motion:no-preference) {.attendance-operation > summary::after {transition:background-size .18s var(--ease)}}
 
 :where(.staff-shell) .staff-status {background:var(--color-staff-surface);color:var(--color-ink)}
 .staff-shell .staff-status[data-status="Completed"] {background:var(--color-staff-surface);color:var(--color-muted)}
@@ -149,8 +164,10 @@ html:has(.staff-side-panel[open]) {overflow:hidden;scrollbar-gutter:stable}
 .staff-nav-count[data-count-loading] {background:var(--color-line)}
 .staff-shell > main {position:relative}
 .staff-nav-loading {
-    position:absolute;inset:0;z-index:30;padding:inherit;background:var(--color-paper);
+    position:absolute;inset:0;z-index:30;padding:inherit;background:var(--color-staff-canvas);min-height:100dvh;
 }
+.staff-shell > main[aria-busy=true] > :not(.staff-nav-loading):not(template) {visibility:hidden}
+.staff-nav-loading .staff-page-skeleton {max-width:1440px;margin-inline:auto}
 .staff-nav-loading[hidden],.staff-review-popup-title[hidden],.staff-rail-tooltip[hidden] {display:none}
 @media (min-width:721px) {
     [data-staff-collapsed] .staff-rail-drawer {scrollbar-width:none}

@@ -51,6 +51,8 @@ public sealed partial class StaffAccessController(StaffPinAccess access, StaffPi
                     .. roles.Select(role => new Claim(ClaimTypes.Role, role))
                 ]);
                 logger.LogInformation("Staff PIN sign-in succeeded for {EmployeeId}.", employee.Id);
+                TempData["ResetStaffScroll"] = true;
+                new HoleInHubReservationManagementSubsystem.ViewModels.ToastNotice("success", employee.WelcomeTitle, "Your staff workspace is ready.").Store(TempData);
                 if (roles.Contains(StaffRoles.Manager)) { return RedirectToAction(nameof(LeadershipController.Dashboard), "Leadership"); }
                 return RedirectToAction("Index", "BookingReview");
             }
@@ -65,9 +67,10 @@ public sealed partial class StaffAccessController(StaffPinAccess access, StaffPi
     {
         logger.LogInformation("Workspace session ended for {EmployeeId}.", User.FindFirstValue(ClaimTypes.NameIdentifier));
         await HttpContext.SignOutAsync(StaffPinAccess.Scheme);
+        await signIn.SignOutAsync();
+        new HoleInHubReservationManagementSubsystem.ViewModels.ToastNotice("success", "Signed out", "See you next time.").Store(TempData);
         if (User.IsInRole(StaffRoles.Admin))
         {
-            await signIn.SignOutAsync();
             return RedirectToAction("SignIn", "Account");
         }
         return RedirectToAction(nameof(Index));

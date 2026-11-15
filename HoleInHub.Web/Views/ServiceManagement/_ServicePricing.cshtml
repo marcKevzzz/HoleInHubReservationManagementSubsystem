@@ -29,7 +29,7 @@
                 }
             </div>
             <template data-price-template="Bands"><partial name="_PricingRule" model='("__index__", new PricingBandForm(), (RentalPriceForm?)null)' /></template>
-            <button type="button" class="button button-secondary" data-add-price="Bands" data-action-icon="plus">Add rate band</button>
+            <button type="button" class="button button-secondary" data-add-price="Bands" data-action-icon="plus">Add rate band<partial name="_ButtonActionIcon" model='"plus"' /></button>
         </div>
         <div data-price-format="rental">
             <h3>Whole-shop price overrides</h3>
@@ -41,7 +41,7 @@
                 }
             </div>
             <template data-price-template="RentalOverrides"><partial name="_PricingRule" model='("__index__", (PricingBandForm?)null, new RentalPriceForm())' /></template>
-            <button type="button" class="button button-secondary" data-add-price="RentalOverrides" data-action-icon="plus">Add rental override</button>
+            <button type="button" class="button button-secondary" data-add-price="RentalOverrides" data-action-icon="plus">Add rental override<partial name="_ButtonActionIcon" model='"plus"' /></button>
         </div>
     </div>
 </details>

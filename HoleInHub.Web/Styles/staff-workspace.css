@@ -64,7 +64,7 @@
 .staff-timeline-track{position:relative;min-height:calc(6px + var(--lanes) * var(--lane-height));background-image:linear-gradient(to right,transparent calc(50% - 1px),color-mix(in srgb,var(--color-line) 50%,transparent) 50%,transparent 50%,transparent calc(100% - 1px),var(--color-line) 100%);background-size:calc(100% / var(--hours)) 100%}
 .staff-timeline-bar{position:absolute;z-index:1;left:var(--start);width:var(--span);top:calc(4px + var(--lane) * var(--lane-height));height:calc(var(--lane-height) - 4px);display:grid;grid-template-columns:minmax(0,1fr) auto;align-content:center;align-items:center;gap:2px 4px;padding:3px min(7px,var(--span) / 7);overflow:hidden;border-radius:3px;color:var(--color-ink);background:var(--color-staff-surface);font-size:.7rem;line-height:1.15;text-decoration:none}
 .staff-timeline-bar :is(.staff-booking-meta,small){grid-column:1/-1}
-.staff-timeline-bar .staff-icon{width:13px;height:13px}
+.staff-timeline-bar .staff-icon{width:17px;height:17px}
 .staff-timeline-bar :is(strong,.staff-booking-meta,small){min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .staff-timeline-bar:is(:focus-visible,:hover){z-index:3}
 a.staff-timeline-bar{cursor:pointer}a.staff-timeline-bar:hover{filter:brightness(.93)}
@@ -693,17 +693,17 @@ a.staff-timeline-bar{cursor:pointer}a.staff-timeline-bar:hover{filter:brightness
 [data-staff-schedule] .staff-lookup {width:min(32vw,320px)}
 .staff-shell .staff-workspace :is(input,select,textarea):focus-visible {outline:none;border-bottom-color:var(--color-green)}
 .staff-lookup .auth-input-wrap::after {height:1px}
-.staff-shell {--timeline-height:max(360px,calc(100dvh - 228px));--timeline-min-height:0px;--timeline-max-height:none;--timeline-axis-height:42px;--timeline-bay-width:72px;--timeline-row-min-height:72px}
+.staff-shell {--timeline-height:max(420px,calc(100dvh - 196px));--timeline-min-height:0px;--timeline-max-height:none;--timeline-axis-height:42px;--timeline-bay-width:72px;--timeline-row-min-height:84px}
 .staff-timeline-scroll,.staff-skeleton-timeline {height:var(--timeline-height);min-height:var(--timeline-min-height);max-height:var(--timeline-max-height)}
 .staff-timeline-scroll {scrollbar-width:thin;overscroll-behavior:contain;cursor:grab}
 .staff-timeline {--bay-width:var(--timeline-bay-width);display:grid;grid-template-rows:var(--timeline-axis-height);grid-auto-rows:minmax(var(--timeline-row-min-height),1fr);min-height:100%}
 .staff-timeline-row {min-height:0}
 .staff-timeline-label {z-index:10;cursor:default}
 .staff-timeline-axis {z-index:20}
-.staff-timeline-track {min-height:calc(var(--lanes) * 64px)}
+.staff-timeline-track {min-height:calc(var(--lanes) * var(--timeline-row-min-height))}
 .staff-timeline :is(.staff-timeline-hours,.staff-timeline-track) {translate:var(--pan-offset,0px) 0}
 .staff-timeline-bar {top:calc(var(--lane) * 100% / var(--lanes));height:calc(100% / var(--lanes));border:0;border-radius:0;padding-inline:8px}
-.staff-timeline-bar strong {font-size:.95rem;line-height:1.2}
+.staff-timeline-bar strong {font-size:1rem;line-height:1.25}
 .staff-drag-preview.is-selected {inset-block:2px;border-radius:5px;padding:8px;font-size:.85rem;font-weight:600;outline:2px solid var(--color-paper);outline-offset:-3px}
 .staff-booking-drawer[data-create-booking]::backdrop {background:color-mix(in srgb,var(--color-ink) 24%,transparent)}
 .staff-timeline-scroll.is-panning,.staff-timeline-scroll.is-panning :is(.staff-timeline-track,.staff-timeline-hours) {cursor:grabbing;user-select:none}
@@ -780,7 +780,7 @@ a.staff-timeline-bar{cursor:pointer}a.staff-timeline-bar:hover{filter:brightness
 }
 @media(max-width:640px) {
   [data-staff-schedule] .staff-lookup {width:100%}
-  .staff-shell {--timeline-bay-width:60px;--timeline-height:calc(100dvh - 260px);--timeline-min-height:340px}
+  .staff-shell {--timeline-bay-width:60px;--timeline-height:calc(100dvh - 228px);--timeline-min-height:380px}
   .staff-search-results[popover] {padding:16px}
   .staff-search-results .staff-booking-list-link {grid-template-columns:minmax(0,1fr);padding:16px 4px}
   .staff-search-results .staff-booking-list-link small {grid-column:1;grid-row:4;flex-direction:row;align-items:center;justify-content:space-between}

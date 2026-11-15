@@ -18,6 +18,7 @@
 @import "./staff-tiles.css";
 @import "./mobile.css";
 @import "./customer-language.css";
+@import "./staff-profile.css";
 @source "../Views";
 @source "../wwwroot/js";
 @theme { --color-account-placeholder:color-mix(in srgb, #60645d 88%, #fff); --color-error-line:color-mix(in srgb, #9b3027 65%, #fff); --color-control-line:#83877f; --color-error:#9b3027; --color-auth-shade:rgb(16 17 15 / 78%); --color-ink:#10110f; --color-paper:#fff; --color-green:#354f3b; --color-muted:#60645d; --color-line:#d5d7d1; --font-display:Oswald,"Arial Narrow",sans-serif; --font-body:Inter,Arial,sans-serif; }
@@ -1206,3 +1207,82 @@ button.flow-back{border:0;background:transparent;cursor:pointer}
 /* Autofill must lift the label even when the browser retains placeholder state. */
 .auth-page .account-inner .auth-input-wrap:has(input:is(:autofill,:-webkit-autofill)) label {transform:translateY(0);font-size:12px}
 .auth-page .account-inner form {margin-top:24px}
+
+/* Shared authentication rhythm and controls. */
+.auth-page .account-page{max-width:440px;padding:24px 0}
+.auth-page .account-inner h1{font-size:clamp(30px,3vw,42px);line-height:1.2;letter-spacing:-.02em;margin-bottom:12px}
+.auth-page .account-inner form{margin-top:20px}
+.auth-page .account-inner .field{gap:4px;margin-bottom:16px}
+.auth-page .account-inner .field input{min-height:56px;padding-top:24px;padding-bottom:8px}
+.auth-page .field-error{display:block;min-height:18px;padding-top:0;font-size:12px;line-height:1.5}
+.auth-page .field-error:empty{visibility:hidden}
+.auth-page .auth-input-wrap label{transition:none}
+.auth-page .account-inner .auth-input-wrap label{transform:translateY(24px)}
+.auth-intro,.staff-auth-intro{font-size:14px;line-height:1.6;margin-bottom:20px}
+.auth-page .button,.auth-google-button,.verification-shell .button,.staff-pin-slots span{border-radius:0;min-height:48px}
+.auth-page .auth-options{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 8px}
+.auth-page .auth-remember{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);min-height:44px;cursor:pointer}
+.auth-page .auth-remember input{width:16px;height:16px;accent-color:var(--green);flex:none}
+.auth-options .auth-recovery{margin:0;min-height:44px;display:flex;align-items:center;white-space:nowrap;font-size:12px}
+.auth-options .auth-recovery::after{bottom:calc(50% - .75em)}
+.auth-page .account-inner .auth-credentials .field{margin-bottom:8px}
+.auth-page .account-inner .auth-credentials .field-error{min-height:18px}
+.auth-page .auth-sign-in .field:has(input[name=Password]){margin-bottom:0}
+.auth-page .auth-options .auth-remember{margin:0;padding:0}
+.auth-credentials+.auth-google{margin-top:12px}
+.auth-credentials+.auth-google>p{margin-bottom:12px}
+.auth-credentials+.auth-google form{margin-top:0}
+.auth-google-button{transition:background-color .25s ease,border-color .25s ease,color .25s ease}
+.auth-google-button:hover{background:color-mix(in srgb,var(--green) 5%,var(--paper))}
+@media(prefers-reduced-motion:reduce){.auth-google-button{transition:none}}
+.auth-switch{margin-top:20px}
+.auth-name-fields{gap:16px}
+.auth-page .auth-hint{font-size:12px;line-height:1.6}
+.password-strength:not([hidden]){display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+.password-strength meter{height:8px;width:88px;accent-color:var(--green)}
+.password-strength meter::-webkit-meter-bar{background:var(--line);border:0;border-radius:0}
+.password-strength meter::-webkit-meter-optimum-value{background:var(--green)}
+.password-feedback{display:grid;grid-template-columns:minmax(0,1fr);min-height:18px}
+.password-feedback>*{grid-area:1/1}
+.password-feedback #password-guidance{display:none}
+.field:focus-within .password-feedback #password-guidance{display:block}
+.password-feedback:has(.field-error:not(:empty)) :is(#password-guidance,.password-strength),
+.password-feedback:has(.password-strength:not([hidden])) #password-guidance{display:none}
+.password-feedback .password-strength span{min-width:0}
+.staff-auth .account-inner h1{font-family:var(--display);font-size:clamp(25px,2.6vw,38px);white-space:nowrap}
+.staff-auth .account-page{max-width:500px}
+.staff-auth .staff-pin-field{margin-bottom:20px}
+.staff-pin-slots span{height:56px}
+.auth-page .account-inner .code-field{margin-top:8px;margin-bottom:20px;gap:10px}
+.code-entry{position:relative}
+.code-entry input{width:100%;font:inherit;font-size:24px;letter-spacing:.35em;caret-color:var(--green)}
+.code-slots:not([hidden]){display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:clamp(6px,1vw,10px);pointer-events:none}
+.code-slots span{display:grid;place-items:center;height:56px;border:1px solid var(--color-control-line);background:var(--paper);color:var(--ink);font-family:var(--body);font-size:24px;font-variant-numeric:tabular-nums}
+.code-slots [data-filled]{border-color:var(--green)}
+.code-entry[data-enhanced] input,.auth-page .account-inner .code-entry[data-enhanced] input{position:absolute;inset:0;width:100%;height:100%;padding:0;opacity:0;cursor:text}
+.code-entry:focus-within .code-slots [data-current]{outline:2px solid var(--green);outline-offset:2px}
+.code-entry:has([aria-invalid=true]) .code-slots span{border-color:var(--color-error)}
+.code-entry:has([aria-invalid=true]):focus-within .code-slots [data-current]{outline-color:var(--color-error)}
+.email-code-form .verification-actions{display:grid;justify-items:stretch;gap:8px}
+.email-code-form .verification-actions .button{width:100%;min-width:0}
+.email-code-form .verification-recipient,.auth-page .verification-recipient{margin:8px 0 24px}
+.email-code-form .verification-timing{font-size:12px;margin:8px 0 0}
+.verification-shell .booking-verification-page{max-width:488px;text-align:left;margin:0 auto;padding:32px 24px 48px}
+.verification-shell .booking-verification-page h1{font-size:clamp(30px,4vw,42px);line-height:1.2;letter-spacing:-.02em;margin:0 0 12px;text-transform:none}
+.verification-shell .verification-recipient{font-size:14px;line-height:1.6;margin:8px 0 24px}
+.verification-shell .field-error{font-size:12px;line-height:1.5;color:var(--color-error)}
+.verification-shell .field-error:empty{display:none}
+.verification-shell .code-field{display:grid;gap:10px;margin-bottom:20px}
+.verification-shell .code-field label{font-size:13px;color:var(--muted)}
+.verification-shell :focus-visible{outline:2px solid var(--green);outline-offset:4px}
+.auth-page [hidden],.verification-shell [hidden]{display:none!important}
+@media(max-width:800px){
+ .auth-page .account-page{padding:20px 0}
+ .auth-page .auth-main{padding:8px 24px 32px}
+ .staff-auth .auth-main{padding-top:32px}
+ .auth-page .account-inner h1{font-size:32px}
+ .staff-auth .account-inner h1{font-size:clamp(23px,5.3vw,34px)}
+ .auth-page .account-inner .field{margin-bottom:16px}
+ .staff-auth-links{flex-wrap:wrap}
+}
+@media(max-width:360px){.auth-options{flex-wrap:wrap}.auth-page .auth-options{gap:0}.auth-name-fields{gap:12px}}

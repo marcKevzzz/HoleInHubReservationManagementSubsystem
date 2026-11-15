@@ -10,6 +10,9 @@ namespace HoleInHubReservationManagementSubsystem.Controllers;
 [Authorize, ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class AccountHubController(UserManager<AccountUser> users, ReservationService reservations) : Controller
 {
+    [HttpGet("/notifications")]
+    public IActionResult Notifications() => View();
+
     [HttpGet("/transactions")]
     public async Task<IActionResult> Transactions(CancellationToken ct)
     {
@@ -56,7 +59,7 @@ public sealed class AccountHubController(UserManager<AccountUser> users, Reserva
 
         user.FirstName = model.FirstName.Trim();
         user.LastName = model.LastName.Trim();
-        user.Phone = model.Phone.Trim();
+        user.Phone = HoleInHub.Business.Accounts.ContactRules.PhoneDigits(model.Phone);
         var result = await users.UpdateAsync(user);
         if (!result.Succeeded)
         {

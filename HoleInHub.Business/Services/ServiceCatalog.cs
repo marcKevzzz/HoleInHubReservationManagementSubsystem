@@ -28,8 +28,11 @@ public sealed partial class ServiceCatalog(ServiceCatalogPersistence persistence
             x.Summary, x.Pricing is { } pricing ? Reservations.PricingRules.Summary(x.BookingService, pricing) : x.RateText, x.Details,
             "Request a booking", "/Reservations/Create?service=" + Uri.EscapeDataString(x.Id == x.BookingService ? x.BookingService : $"{x.BookingService}:{x.Id}"))
         {
-            MaxPax = x.MaxPax, Images = ImagePaths(x), DepositText = FormatDeposit(x.DepositType, x.DepositValue),
-            BookingService = x.BookingService, AvailabilityRules = x.AvailabilityRules
+            MaxPax = x.MaxPax,
+            Images = ImagePaths(x),
+            DepositText = FormatDeposit(x.DepositType, x.DepositValue),
+            BookingService = x.BookingService,
+            AvailabilityRules = x.AvailabilityRules
         }).ToArray();
     }
 }

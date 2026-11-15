@@ -10,26 +10,75 @@
     const mobile = window.matchMedia('(max-width: 900px)');
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
     const key = 'holeinhub-staff-sidebar';
+    const scrollKey = key + '-scroll';
+    const signedIn = root.getAttribute('data-staff-sign-in') === 'true';
+    let savedScroll = 0;
+    try {
+        if (signedIn) sessionStorage.removeItem(scrollKey);
+        else savedScroll = Math.max(0, Number(sessionStorage.getItem(scrollKey)) || 0);
+    } catch { /* Storage is optional. */ }
+    function saveScroll() {
+        try { sessionStorage.setItem(scrollKey, String(drawer.scrollTop)); } catch { /* Storage is optional. */ }
+    }
+    drawer.addEventListener('scroll', saveScroll, { passive: true });
     let desktopCollapsed = false;
     try { desktopCollapsed = sessionStorage.getItem(key) === 'collapsed'; } catch { /* Storage is optional. */ }
     const compact = () => !mobile.matches && desktopCollapsed;
-    const languageTrigger = rail.querySelector('.staff-language-trigger');
-    const languageOptions = document.getElementById('staff-language-options');
+    const userFooter = rail.querySelector('.staff-user-footer');
+    const userTrigger = rail.querySelector('.staff-user-trigger');
+    const userMenu = document.getElementById('staff-user-menu');
+    const scrollbar = rail.querySelector('[data-staff-rail-scrollbar]');
 
-    function placeLanguagePopup() {
-        if (!languageOptions?.matches(':popover-open')) return;
-        const anchor = languageTrigger.getBoundingClientRect();
+    function syncScrollbar() {
+        if (!scrollbar) return;
+        const { clientHeight, scrollHeight, scrollTop } = drawer;
+        scrollbar.hidden = drawer.inert || !clientHeight || scrollHeight <= clientHeight;
+        if (scrollbar.hidden) return;
+        const bounds = drawer.getBoundingClientRect();
+        const railBounds = rail.getBoundingClientRect();
+        const height = Math.max(24, clientHeight * clientHeight / scrollHeight);
+        const offset = (clientHeight - height) * scrollTop / (scrollHeight - clientHeight);
+        scrollbar.style.height = height + 'px';
+        scrollbar.style.left = bounds.right - railBounds.left - scrollbar.offsetWidth + 'px';
+        scrollbar.style.top = bounds.top - railBounds.top + offset + 'px';
+    }
+
+    if (scrollbar) {
+        drawer.addEventListener('scroll', syncScrollbar, { passive: true });
+        const resize = new ResizeObserver(syncScrollbar);
+        resize.observe(drawer);
+        resize.observe(drawer.firstElementChild);
+        let drag;
+        scrollbar.addEventListener('pointerdown', event => {
+            if (!event.isPrimary || event.button !== 0) return;
+            drag = { y: event.clientY, top: drawer.scrollTop };
+            scrollbar.setPointerCapture(event.pointerId);
+            event.preventDefault();
+        });
+        scrollbar.addEventListener('pointermove', event => {
+            if (!drag || !scrollbar.hasPointerCapture(event.pointerId)) return;
+            const travel = drawer.clientHeight - scrollbar.offsetHeight;
+            if (travel > 0) {
+                drawer.scrollTop = drag.top + (event.clientY - drag.y) * (drawer.scrollHeight - drawer.clientHeight) / travel;
+            }
+        });
+        scrollbar.addEventListener('lostpointercapture', () => { drag = null; });
+    }
+
+    function placeUserPopup() {
+        if (!userMenu?.matches(':popover-open')) return;
+        const anchor = userTrigger.getBoundingClientRect();
         const margin = 8;
         if (anchor.bottom <= 0 || anchor.top >= window.innerHeight) {
-            languageOptions.hidePopover();
+            userMenu.hidePopover();
             return;
         }
-        languageOptions.style.left = Math.max(margin, Math.min(anchor.right + margin,
-            window.innerWidth - languageOptions.offsetWidth - margin)) + 'px';
-        languageOptions.style.top = Math.max(margin, Math.min(anchor.top,
-            window.innerHeight - languageOptions.offsetHeight - margin)) + 'px';
+        userMenu.style.left = Math.max(margin, Math.min(compact() ? anchor.right + margin : anchor.left,
+            window.innerWidth - userMenu.offsetWidth - margin)) + 'px';
+        userMenu.style.top = Math.max(margin, Math.min(anchor.top - userMenu.offsetHeight - margin,
+            window.innerHeight - userMenu.offsetHeight - margin)) + 'px';
     }
-    languageOptions?.addEventListener('toggle', placeLanguagePopup);
+    userMenu?.addEventListener('toggle', placeUserPopup);
 
     const review = rail.querySelector('.staff-review-nav');
     const summary = review?.querySelector('summary');
@@ -102,17 +151,13 @@
     });
     rail.addEventListener('focusout', hideTooltip);
     rail.addEventListener('pointerdown', hideTooltip);
-    drawer.addEventListener('scroll', () => { hideTooltip(); placePopup(); placeLanguagePopup(); }, { passive: true });
-    window.addEventListener('resize', () => { hideTooltip(); placePopup(); placeLanguagePopup(); });
+    drawer.addEventListener('scroll', () => { hideTooltip(); placePopup(); placeUserPopup(); }, { passive: true });
+    window.addEventListener('resize', () => { hideTooltip(); placePopup(); placeUserPopup(); });
 
     function render(collapsed) {
         hideTooltip();
         closePopup();
-        if (languageOptions && typeof languageOptions.showPopover === 'function') {
-            if (languageOptions.matches(':popover-open')) languageOptions.hidePopover();
-            languageOptions.toggleAttribute('popover', compact());
-            languageTrigger.hidden = !compact();
-        }
+        if (userMenu?.matches(':popover-open')) userMenu.hidePopover();
         const label = mobile.matches
             ? (collapsed ? 'Open staff navigation' : 'Close staff navigation')
             : (collapsed ? 'Expand sidebar' : 'Collapse sidebar');
@@ -122,6 +167,8 @@
         main.inert = mobileOpen;
         if (backdrop) backdrop.hidden = !mobileOpen;
         drawer.inert = mobile.matches && collapsed;
+        syncScrollbar();
+        if (userFooter) userFooter.inert = mobile.matches && collapsed;
         toggle.setAttribute('aria-expanded', String(!collapsed));
         const localizedLabel = window.HoleInHubText?.t(label) ?? label;
         toggle.setAttribute('aria-label', localizedLabel);
@@ -134,10 +181,8 @@
     toggle.hidden = false;
     backdrop?.addEventListener('click', () => { render(true); toggle.focus(); });
     render(mobile.matches || desktopCollapsed);
-    const railScrollKey = () => key + (compact() ? '-compact-scroll' : '-scroll');
-    if (!mobile.matches) {
-        try { drawer.scrollTop = Number(sessionStorage.getItem(railScrollKey())) || 0; } catch { /* Storage is optional. */ }
-    }
+    drawer.scrollTop = savedScroll;
+    syncScrollbar();
     toggle.addEventListener('click', () => {
         root.setAttribute('data-staff-nav-interactive', '');
         const collapsed = toggle.getAttribute('aria-expanded') === 'true';
@@ -220,12 +265,16 @@
     const skeleton = main.querySelector('[data-staff-nav-loading]');
     const status = document.querySelector('[data-staff-nav-status]');
     let showTimer, resetTimer;
+    let loadingContent = [];
     function resetLoading() {
         clearTimeout(showTimer);
         clearTimeout(resetTimer);
         main.removeAttribute('aria-busy');
         status.textContent = '';
         skeleton.hidden = true;
+        skeleton.style.removeProperty('top');
+        for (const [element, inert] of loadingContent) element.inert = inert;
+        loadingContent = [];
     }
     rail.addEventListener('click', event => {
         const link = event.target.closest('a[href]');
@@ -236,24 +285,44 @@
             || url.href === window.location.href || url.hash) return;
         const template = main.querySelector('[data-staff-nav-template="' + link.dataset.navLayout + '"]');
         if (!template) return;
+        if (userMenu?.matches(':popover-open')) userMenu.hidePopover();
+        closePopup();
+        hideTooltip();
         resetLoading();
         skeleton.replaceChildren(template.content.cloneNode(true));
         status.textContent = 'Loading ' + (link.getAttribute('aria-label') || link.textContent.trim()) + '…';
         showTimer = setTimeout(() => {
+            loadingContent = [...main.children].filter(element => element !== skeleton && element.tagName !== 'TEMPLATE')
+                .map(element => [element, element.inert]);
+            for (const [element] of loadingContent) element.inert = true;
             main.setAttribute('aria-busy', 'true');
+            skeleton.style.top = Math.max(0, -main.getBoundingClientRect().top) + 'px';
             skeleton.hidden = false;
         }, 160);
         resetTimer = setTimeout(resetLoading, 15000);
     });
     window.addEventListener('pagehide', () => {
+        saveScroll();
         resetLoading();
         closePopup();
         hideTooltip();
-        if (!mobile.matches) {
-            try { sessionStorage.setItem(railScrollKey(), String(drawer.scrollTop)); } catch { /* Storage is optional. */ }
-        }
     });
-    window.addEventListener('pageshow', resetLoading);
+    window.addEventListener('pageshow', event => {
+        resetLoading();
+        if (signedIn && !event?.persisted) {
+            drawer.scrollTop = 0;
+            saveScroll();
+            window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        }
+        syncScrollbar();
+    });
+    document.getElementById('account-logout-form')?.addEventListener('submit', event => {
+        if (!event.submitter?.hasAttribute('data-confirm-logout')) return;
+        resetLoading();
+        closePopup();
+        hideTooltip();
+        if (mobile.matches) render(true);
+    });
 
     const badges = [...rail.querySelectorAll('[data-request-count]')];
     const notificationBadge = badges.find(badge => badge.dataset.requestCount === 'notifications');

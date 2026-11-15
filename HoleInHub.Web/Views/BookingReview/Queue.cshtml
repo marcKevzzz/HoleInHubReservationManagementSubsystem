@@ -27,11 +27,20 @@
     <div class="staff-date-controls review-toolbar @(cancellationPage ? "cancellation-toolbar" : null)">
         @if (cancellationPage)
         {
-            <nav class="review-sort" aria-label="Cancellation views">
-                <a href="@CancellationUrl(false, Model.Day, Model.Sort)" aria-current="@(cancelled ? "page" : null)">Cancelled bookings</a>
-                <a href="@CancellationUrl(true, Model.Day, Model.Sort)" aria-current="@(cancellationRequests ? "page" : null)">Pending requests</a>
-            </nav>
+            <form asp-action="Cancellations" method="get" class="staff-filter-form">
+                <input type="hidden" name="day" value="@Model.Day" />
+                <label class="staff-filter-field" for="cancellation-view">View</label>
+                <select id="cancellation-view" name="selection" data-cancellation-filter>
+                    <option value="cancelled-deadline" selected="@(cancelled && Model.Sort == "deadline")">Cancelled · recent sessions</option>
+                    <option value="cancelled-session" selected="@(cancelled && Model.Sort == "session")">Cancelled · session date</option>
+                    <option value="requests-deadline" selected="@(cancellationRequests && Model.Sort == "deadline")">Pending requests · deadline</option>
+                    <option value="requests-session" selected="@(cancellationRequests && Model.Sort == "session")">Pending requests · session date</option>
+                </select>
+                <noscript><button class="button" type="submit">Apply</button></noscript>
+            </form>
         }
+        else
+        {
         <div class="review-sort" role="group" aria-label="Sort reservations">
             <a href="@QueueUrl(Model.Day, "deadline")"
                aria-current="@(Model.Sort == "deadline" ? "true" : null)">
@@ -42,6 +51,7 @@
                 Session date
             </a>
         </div>
+        }
         <nav aria-label="Filter by session date">
             <div class="staff-date-stepper">
                 @if (selectedDay.DayNumber > DateOnly.MinValue.DayNumber + 1)

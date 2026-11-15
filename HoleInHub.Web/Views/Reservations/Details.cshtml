@@ -66,8 +66,9 @@
             else if (Model.RentalTotal is decimal total)
             {
                 <section class="booking-detail-section" aria-labelledby="booking-price">
-                    <h2 id="booking-price">@T("Booking total")</h2>
+                    <h2 id="booking-price">@T(Model.History.Any(item => item.Status == "Session extended") ? "Original booking amount" : "Booking total")</h2>
                     <p>₱@total.ToString("N2")</p>
+                    @if (Model.History.Any(item => item.Status == "Session extended")) { <p>@T("Contact the venue for additional time charges.")</p> }
                 </section>
             }
             @if (BookingRules.IsCoaching(Model.Service))

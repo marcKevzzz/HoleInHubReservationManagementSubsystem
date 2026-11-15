@@ -21,7 +21,7 @@ using Xunit;
 
 namespace HoleInHub.Tests.Web.Smoke;
 
-public sealed class StaffBlockHttpTests
+public sealed partial class StaffBlockHttpTests
 {
     private sealed class Clock : TimeProvider
     {
@@ -63,6 +63,33 @@ public sealed class StaffBlockHttpTests
         return client;
     }
 
+    [Theory]
+    [InlineData("Customer", HttpStatusCode.Forbidden)]
+    [InlineData("", HttpStatusCode.Unauthorized)]
+    public async Task WorkspaceProfileRejectsVisitorsWithoutAStaffSession(string role, HttpStatusCode status)
+    {
+        await using var factory = Factory("test_staff_profile_access");
+        using var client = Client(factory, role);
+        Assert.Equal(status, (await client.GetAsync("/staff/profile")).StatusCode);
+        Assert.Equal(status, (await client.PostAsync("/staff/profile/password", new FormUrlEncodedContent([]))).StatusCode);
+    }
+
+    [Theory]
+    [InlineData("Staff", "/staff")]
+    [InlineData("Manager", "/staff/dashboard")]
+    [InlineData("Admin", "/staff/dashboard")]
+    public async Task SignedInStaffCannotOpenSignInOrSignUp(string role, string destination)
+    {
+        await using var factory = Factory("test_account_guard");
+        using var client = Client(factory, role);
+        foreach (var page in new[] { "/account/sign-in", "/account/sign-up" })
+        {
+            var response = await client.GetAsync(page + "?returnUrl=%2Faccount%2Fsign-in");
+            Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+            Assert.Equal(destination, response.Headers.Location?.OriginalString);
+        }
+    }
+
     [Fact, Trait("Category", "Integration")]
     public async Task AdminCanPublishCoachingDaysThroughTheServiceEditor()
     {
@@ -82,12 +109,24 @@ public sealed class StaffBlockHttpTests
             var image = Regex.Match(editor, "name=\"Images\" value=\"([^\"]+)\"").Groups[1].Value;
             var form = new List<KeyValuePair<string, string>>(new Dictionary<string, string>
             {
-                ["__RequestVerificationToken"] = token, ["Id"] = "KpgaPro", ["Revision"] = "0",
-                ["CommandId"] = Guid.NewGuid().ToString("N"), ["Create"] = "false", ["Title"] = "KPGA pro coaching",
-                ["Summary"] = "Private coaching", ["RateText"] = "Package", ["Details"] = "First session",
-                ["BookingService"] = "KpgaPro", ["ActionLabel"] = "Request a booking", ["Active"] = "true", ["Images"] = image,
-                ["DepositType"] = "None", ["EditAvailability"] = "true", ["EditPricing"] = "true",
-                ["RateAmount"] = "15000", ["ClassCount"] = "8"
+                ["__RequestVerificationToken"] = token,
+                ["Id"] = "KpgaPro",
+                ["Revision"] = "0",
+                ["CommandId"] = Guid.NewGuid().ToString("N"),
+                ["Create"] = "false",
+                ["Title"] = "KPGA pro coaching",
+                ["Summary"] = "Private coaching",
+                ["RateText"] = "Package",
+                ["Details"] = "First session",
+                ["BookingService"] = "KpgaPro",
+                ["ActionLabel"] = "Request a booking",
+                ["Active"] = "true",
+                ["Images"] = image,
+                ["DepositType"] = "None",
+                ["EditAvailability"] = "true",
+                ["EditPricing"] = "true",
+                ["RateAmount"] = "15000",
+                ["ClassCount"] = "8"
             });
             foreach (var day in new[] { "2", "4" })
             {
@@ -193,6 +232,40 @@ public sealed class StaffBlockHttpTests
             await context.Database.GetCollection<OutboxRecord>("outbox").UpdateOneAsync(x => x.Id == "first",
                 Builders<OutboxRecord>.Update.Set(x => x.SentUtc, now));
             Assert.Equal(2, await service.CountUnreadAsync("test-admin", default));
+        }
+        finally { await context.Client.DropDatabaseAsync(database); }
+    }
+
+    [Fact, Trait("Category", "Integration")]
+    public async Task StaffNotificationsExcludeAccountEmailsAndStayReadAfterDeliveryUpdates()
+    {
+        var database = "test_staff_notices_" + Guid.NewGuid().ToString("N");
+        await using var factory = Factory(database);
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IMongoDbContext>();
+        var outbox = scope.ServiceProvider.GetRequiredService<OutboxPersistence>();
+        var service = scope.ServiceProvider.GetRequiredService<HoleInHub.Business.Accounts.NotificationDeliveryService>();
+        var now = new Clock().GetUtcNow().UtcDateTime;
+        try
+        {
+            await outbox.EnqueueAsync(new() { Id = "account-code", Recipient = "private@example.test", Subject = "Verify email", DueUtc = now.AddMinutes(-2) }, default);
+            await outbox.EnqueueAsync(new() { Id = "reservation-event", ReservationId = "booking-1", Recipient = "private@example.test", Subject = "Reservation request received", DueUtc = now.AddMinutes(-1) }, default);
+            await outbox.EnqueueAsync(new() { Id = "future-event", ReservationId = "booking-2", Subject = "Upcoming reservation", DueUtc = now.AddMinutes(10) }, default);
+            var page = await service.ListAsync("staff-one", null, 1, default, operational: true);
+            var notice = Assert.Single(page.Items);
+            Assert.Equal("reservation-event", notice.Id);
+            Assert.Equal(1, page.Unread);
+            Assert.Equal(0, await service.MarkRowsReadAsync("staff-one", [new(notice.Id, notice.ActivityTicks)], default, operational: true));
+            await context.Database.GetCollection<OutboxRecord>("outbox").UpdateOneAsync(x => x.Id == notice.Id,
+                Builders<OutboxRecord>.Update.Set(x => x.SentUtc, now));
+            Assert.Equal(0, await service.CountUnreadAsync("staff-one", default, operational: true));
+            Assert.Equal(1, await service.CountUnreadAsync("staff-two", default, operational: true));
+            using var staff = Client(factory, "Staff");
+            var html = await staff.GetStringAsync("/staff/notifications");
+            Assert.Contains("Reservation needs review", html);
+            Assert.DoesNotContain("private@example.test", html);
+            Assert.DoesNotContain("Attempts", html);
+            Assert.DoesNotContain("Email delivery", html);
         }
         finally { await context.Client.DropDatabaseAsync(database); }
     }
@@ -555,9 +628,15 @@ public sealed class StaffBlockHttpTests
             }
             await context.Database.GetCollection<ReservationRecord>("reservations").InsertOneAsync(new ReservationRecord
             {
-                AccountId = "resource-test", Email = "resource@example.test", Status = "Confirmed", Service = "VIP",
-                StartUtc = new DateTime(2026, 11, 11, 4, 0, 0, DateTimeKind.Utc), EndUtc = new DateTime(2026, 11, 11, 5, 0, 0, DateTimeKind.Utc),
-                ResourceIds = ["test-bay"], IdempotencyKey = "resource-test", SubmissionHash = "resource-test"
+                AccountId = "resource-test",
+                Email = "resource@example.test",
+                Status = "Confirmed",
+                Service = "VIP",
+                StartUtc = new DateTime(2026, 11, 11, 4, 0, 0, DateTimeKind.Utc),
+                EndUtc = new DateTime(2026, 11, 11, 5, 0, 0, DateTimeKind.Utc),
+                ResourceIds = ["test-bay"],
+                IdempotencyKey = "resource-test",
+                SubmissionHash = "resource-test"
             });
             form["active"] = "false";
             var blocked = await client.PostAsync("/admin/resources/active", new FormUrlEncodedContent(form));
@@ -610,9 +689,18 @@ public sealed class StaffBlockHttpTests
             var bookings = context.Database.GetCollection<ReservationRecord>("reservations");
             await bookings.InsertManyAsync(Enumerable.Range(0, 23).Select(i => new ReservationRecord
             {
-                AccountId = "dashboard-" + i, IdempotencyKey = "dashboard-" + i, SubmissionHash = "hash",
-                Reference = "HIH-DASH-" + i, FirstName = "Example", LastName = "Guest", Email = "private@example.test", Phone = "09179999999",
-                StartUtc = start, EndUtc = start.AddHours(2), Status = i == 22 ? "Cancelled" : "Confirmed", Service = "Regular",
+                AccountId = "dashboard-" + i,
+                IdempotencyKey = "dashboard-" + i,
+                SubmissionHash = "hash",
+                Reference = "HIH-DASH-" + i,
+                FirstName = "Example",
+                LastName = "Guest",
+                Email = "private@example.test",
+                Phone = "09179999999",
+                StartUtc = start,
+                EndUtc = start.AddHours(2),
+                Status = i == 22 ? "Cancelled" : "Confirmed",
+                Service = "Regular",
                 History = [new HistoryRecord { AtUtc = start.AddHours(-2).AddMinutes(i), Actor = "System", Status = i == 22 ? "Cancelled" : "Confirmed", EventType = i == 22 ? "ReservationCancelled" : "ReservationConfirmed" }],
                 ResourceIds = ["bay-2", "bay-3"]
             }));

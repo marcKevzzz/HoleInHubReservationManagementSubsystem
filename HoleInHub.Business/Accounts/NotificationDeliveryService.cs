@@ -6,7 +6,7 @@ using HoleInHub.Data.Reservations;
 namespace HoleInHub.Business.Accounts;
 
 public sealed record NotificationDeliveryItem(string Id, string Recipient, string Subject, string Status, int Attempts,
-    DateTime DueUtc, DateTime? LastAttemptUtc, DateTime? FinishedUtc, string? Failure, bool CanRetry, bool Unread, long ActivityTicks);
+    DateTime DueUtc, DateTime? LastAttemptUtc, DateTime? FinishedUtc, string? Failure, bool CanRetry, bool Unread, long ActivityTicks, string? ReservationId = null);
 
 public sealed record NotificationReadRow(string Id, long ActivityTicks);
 
@@ -22,32 +22,33 @@ public sealed class NotificationDeliveryService(OutboxPersistence outbox, Accoun
     private async Task<DateTime> ReadThroughAsync(string accountId, CancellationToken ct) =>
         await accounts.GetNotificationReadTimeAsync(accountId, ct) ?? DateTime.UnixEpoch;
 
-    public async Task<long> CountUnreadAsync(string accountId, CancellationToken ct) =>
-        await outbox.CountUnreadDeliveryAsync(AdminKey(accountId), await ReadThroughAsync(accountId, ct), ct);
+    public async Task<long> CountUnreadAsync(string accountId, CancellationToken ct, bool operational = false) =>
+        await outbox.CountUnreadDeliveryAsync(AdminKey(accountId), await ReadThroughAsync(accountId, ct), ct, operational, clock.GetUtcNow().UtcDateTime);
 
-    public async Task<long> MarkRowsReadAsync(string accountId, IReadOnlyList<NotificationReadRow> rows, CancellationToken ct)
+    public async Task<long> MarkRowsReadAsync(string accountId, IReadOnlyList<NotificationReadRow> rows, CancellationToken ct, bool operational = false)
     {
         var read = new Dictionary<string, DateTime>(StringComparer.Ordinal);
         foreach (var row in rows)
         {
             if (!ValidId(row.Id) || row.ActivityTicks <= DateTime.UnixEpoch.Ticks || row.ActivityTicks > DateTime.MaxValue.Ticks) { continue; }
             var through = new DateTime(row.ActivityTicks, DateTimeKind.Utc);
+            if (operational && through > clock.GetUtcNow().UtcDateTime) { continue; }
             if (through > read.GetValueOrDefault(row.Id)) { read[row.Id] = through; }
         }
-        if (read.Count > 0) { await outbox.MarkDeliveryRowsReadAsync(AdminKey(accountId), read, ct); }
-        return await CountUnreadAsync(accountId, ct);
+        if (read.Count > 0) { await outbox.MarkDeliveryRowsReadAsync(AdminKey(accountId), read, ct, operational); }
+        return await CountUnreadAsync(accountId, ct, operational);
     }
 
-    public async Task<NotificationDeliveryPage> ListAsync(string accountId, string? status, int page, CancellationToken ct)
+    public async Task<NotificationDeliveryPage> ListAsync(string accountId, string? status, int page, CancellationToken ct, bool operational = false)
     {
-        status = Filters.Contains(status) ? status! : "all";
+        status = operational ? "staff" : Filters.Contains(status) ? status! : "all";
         page = Math.Clamp(page, 1, 1000);
         var now = clock.GetUtcNow().UtcDateTime;
         var since = await ReadThroughAsync(accountId, ct);
         var adminKey = AdminKey(accountId);
         var rows = await outbox.ListDeliveryAsync(status, (page - 1) * PageSize, PageSize + 1, now, ct);
-        var unread = await outbox.CountUnreadDeliveryAsync(adminKey, since, ct);
-        return new(status, page, rows.Take(PageSize).Select(row => Map(row, now, since, adminKey)).ToArray(),
+        var unread = await outbox.CountUnreadDeliveryAsync(adminKey, since, ct, operational, now);
+        return new(status, page, rows.Take(PageSize).Select(row => Map(row, now, since, adminKey, operational)).ToArray(),
             page < 1000 && rows.Count > PageSize, unread);
     }
 
@@ -56,7 +57,7 @@ public sealed class NotificationDeliveryService(OutboxPersistence outbox, Accoun
 
     private static bool ValidId(string? id) => !string.IsNullOrWhiteSpace(id) && id.Length <= 512 && !id.Any(char.IsControl);
 
-    private static NotificationDeliveryItem Map(NotificationDeliveryRow row, DateTime now, DateTime since, string adminKey)
+    private static NotificationDeliveryItem Map(NotificationDeliveryRow row, DateTime now, DateTime since, string adminKey, bool operational)
     {
         var status = row.SentUtc is not null ? "Sent" : row.SuppressedUtc is not null ? "Suppressed" :
             row.Failed ? "Failed" : row.LeaseUntilUtc > now ? "Sending" : "Queued";
@@ -68,12 +69,12 @@ public sealed class NotificationDeliveryService(OutboxPersistence outbox, Accoun
             "DeliveryFailure" => "Delivery failed",
             _ => null
         };
-        var activity = new[] { row.DueUtc, row.LastAttemptUtc, row.SentUtc, row.FailedUtc, row.SuppressedUtc }.Max()!.Value;
+        var activity = operational ? row.DueUtc : new[] { row.DueUtc, row.LastAttemptUtc, row.SentUtc, row.FailedUtc, row.SuppressedUtc }.Max()!.Value;
         var rowReadThrough = row.ReadThroughByAdmin?.GetValueOrDefault(adminKey);
         return new(row.Id, row.Recipient, row.Subject, status, row.Attempts, row.DueUtc, row.LastAttemptUtc,
             row.SentUtc ?? row.SuppressedUtc ?? row.FailedUtc, failure,
             status == "Failed" && row.LeaseUntilUtc.GetValueOrDefault() <= now &&
             !row.ProtectedWithoutExpiry && (row.ExpiresUtc is null || row.ExpiresUtc > now),
-            activity > since && (rowReadThrough is null || activity > rowReadThrough), activity.Ticks);
+            activity > since && (rowReadThrough is null || activity > rowReadThrough), activity.Ticks, row.ReservationId);
     }
 }

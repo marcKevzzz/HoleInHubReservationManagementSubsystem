@@ -2,7 +2,7 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const vm=require('node:vm');
 const fs=require('node:fs');
-function setup(){
+function setup(withDay=true){
     const mode={value:'false',dataset:{},events:{},addEventListener(name,fn){this.events[name]=fn;}};
     const inputs=[{},{}],timed=inputs.map(input=>({querySelectorAll:()=>[input]}));
     const form={elements:{WholeDay:mode,ResourceId:{value:'bay-1',dispatchEvent(){}}},querySelectorAll:()=>timed,events:{},addEventListener(name,fn){this.events[name]=fn;}};
@@ -11,7 +11,7 @@ function setup(){
     let opened=0;
     const time={click(){opened++;mode.value='false';}};
     const day={events:{},addEventListener(name,fn){this.events[name]=fn;},click(){this.events.click({preventDefault(){}});}};
-    const page={dataset:{},events:{},querySelector:selector=>({'[data-new-block]':time,'[data-new-block-day]':day,'[data-create-block]':panel})[selector],addEventListener(name,fn){this.events[name]=fn;}};
+    const page={dataset:{},events:{},querySelector:selector=>({'[data-new-block]':time,'[data-new-block-day]':withDay?day:null,'[data-create-block]':panel})[selector],addEventListener(name,fn){this.events[name]=fn;}};
     const document={querySelectorAll:()=>[mode],querySelector:()=>page,addEventListener(){}};
     vm.runInNewContext(fs.readFileSync(require.resolve('../HoleInHub.Web/wwwroot/js/staff-block.js'),'utf8'),{document,Event,queueMicrotask});
     return {mode,form,inputs,timed,page,day,opened:()=>opened};
@@ -28,4 +28,10 @@ test('timeline shortcuts ignore typing and modifier combinations',()=>{
     assert.equal(press('B',true),false);assert.equal(press('D',false,{ctrlKey:true}),false);
     assert.equal(ui.opened(),0);assert.equal(press('B'),true);assert.equal(ui.opened(),1);
     assert.equal(press('D'),true);assert.equal(ui.mode.value,'true');assert.equal(ui.opened(),2);
+});
+test('the single block action retains the full-day shortcut without a separate day button',()=>{
+ const ui=setup(false);let prevented=false;
+ ui.page.events.keydown({key:'D',shiftKey:true,target:{closest:selector=>selector==='.staff-timeline-scroll'?{}:null},preventDefault(){prevented=true;}});
+ assert.equal(prevented,true);assert.equal(ui.opened(),1);assert.equal(ui.mode.value,'true');
+ assert.equal(ui.form.elements.ResourceId.value,'*');assert.equal(ui.inputs.every(input=>input.disabled),true);
 });

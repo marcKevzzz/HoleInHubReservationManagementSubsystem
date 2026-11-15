@@ -3,13 +3,28 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
+test('field help dismisses on Escape without dropping keyboard focus', () => {
+    const events = {}, attributes = {};
+    const help = { hasAttribute: name => name in attributes, setAttribute: (name, value) => attributes[name] = value,
+        removeAttribute: name => delete attributes[name], contains: () => false };
+    vm.runInNewContext(fs.readFileSync(require.resolve('../HoleInHub.Web/wwwroot/js/staff-panel.js'), 'utf8'), {
+        window: {}, document: { addEventListener: (name, callback) => events[name] = callback }
+    });
+    let prevented = false, stopped = false;
+    events.keydown({ key: 'Escape', target: { closest: () => help }, preventDefault() { prevented = true; }, stopPropagation() { stopped = true; } });
+    assert.equal(prevented, true); assert.equal(stopped, true);
+    assert.equal(help.hasAttribute('data-help-dismissed'), true);
+    events.focusin({ target: { closest: () => help } });
+    assert.equal(help.hasAttribute('data-help-dismissed'), false);
+});
+
 test('all panel loaders share an announced message and an aria-hidden five-row skeleton', () => {
     const node = () => ({ attributes: {}, children: [], setAttribute(name, value) { this.attributes[name] = value; },
         append(child) { this.children.push(child); }, replaceChildren(...children) { this.children = children; } });
     const body = node();
     const window = {};
     vm.runInNewContext(fs.readFileSync(require.resolve('../HoleInHub.Web/wwwroot/js/staff-panel.js'), 'utf8'), {
-        window, document: { createElement: node },
+        window, document: { createElement: node, addEventListener() {} },
     });
     for (const label of ['Loading activity…', 'Loading form…', 'Loading booking actions…']) {
         const { message, skeleton } = window.HoleInHubPanels.loading(body, label);

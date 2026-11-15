@@ -20,9 +20,16 @@ public sealed partial class ReservationPersistence
 {
     private static readonly System.Linq.Expressions.Expression<Func<ReservationRecord, DashboardRow>> DashboardProjection = x => new DashboardRow
     {
-        Id = x.Id, Reference = x.Reference, Guest = (x.FirstName ?? "") + " " + (x.LastName ?? ""),
-        Service = x.Service, Status = x.Status, StartUtc = x.StartUtc, EndUtc = x.EndUtc,
-        ResourceIds = x.ResourceIds, CancellationRequested = x.CancellationRequested, CheckedInUtc = x.CheckedInUtc
+        Id = x.Id,
+        Reference = x.Reference,
+        Guest = (x.FirstName ?? "") + " " + (x.LastName ?? ""),
+        Service = x.Service,
+        Status = x.Status,
+        StartUtc = x.StartUtc,
+        EndUtc = x.EndUtc,
+        ResourceIds = x.ResourceIds,
+        CancellationRequested = x.CancellationRequested,
+        CheckedInUtc = x.CheckedInUtc
     };
 
     // Explicit bound: callers reject an oversized range rather than reporting truncated totals.

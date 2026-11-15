@@ -14,7 +14,7 @@ public sealed class StaffBookingForm
     [Range(30, 840)] public int DurationMinutes { get; set; } = 30;
     [Required, StringLength(100)] public string FirstName { get; set; } = "";
     [Required, StringLength(100)] public string LastName { get; set; } = "";
-    [Required, StringLength(15)] public string Phone { get; set; } = "";
+    [Required, StringLength(16), RegularExpression(HoleInHub.Business.Accounts.ContactRules.PhonePattern, ErrorMessage = HoleInHub.Business.Accounts.ContactRules.PhoneError)] public string Phone { get; set; } = "";
     [Range(1, 80)] public int Attendees { get; set; } = 1;
     [Required] public string Source { get; set; } = "Walk-in";
     [Required, StringLength(100)] public string IdempotencyKey { get; set; } = "";

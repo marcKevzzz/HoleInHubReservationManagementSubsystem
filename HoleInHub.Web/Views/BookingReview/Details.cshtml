@@ -93,7 +93,7 @@
             @if (dial.Length > 0) { <a class="staff-link" href="tel:@dial">@displayPhone</a> }
             @if (!string.IsNullOrWhiteSpace(Model.Context.Email)) { <a class="staff-link" href="mailto:@Model.Context.Email">@Model.Context.Email</a> }
         </div>
-        <div><strong>@start.ToString("ddd, d MMM yyyy")</strong><span>@start.ToString("h:mm tt")–@(start.Date == end.Date ? end.ToString("h:mm tt") : end.ToString("d MMM, h:mm tt")) · @durationLabel</span><small>Manila time</small></div>
+        <div><strong>@start.ToString("ddd, d MMM yyyy")</strong><span>@start.ToString("h:mm tt")–@(start.Date == end.Date ? end.ToString("h:mm tt") : end.ToString("d MMM, h:mm tt")) · @durationLabel</span></div>
         <div><strong>@StaffReviewQueue.Bays(booking)</strong><span>@ReservationLabels.Service(booking.Service) · @booking.Attendees @(booking.Attendees == 1 ? "guest" : "guests")</span></div>
         <div class="review-time-left">
             @if (booking.Status == "Pending")
@@ -122,7 +122,7 @@
             <details class="review-section review-disclosure">
                 <summary>Booking details &amp; notes</summary>
                 <dl class="review-facts">
-                    <dt>When</dt><dd><strong>@start.ToString("ddd, d MMM yyyy")</strong><br />@start.ToString("h:mm tt")–@(start.Date == end.Date ? end.ToString("h:mm tt") : end.ToString("d MMM, h:mm tt")) · @durationLabel <small>Manila time</small></dd>
+                    <dt>When</dt><dd><strong>@start.ToString("ddd, d MMM yyyy")</strong><br />@start.ToString("h:mm tt")–@(start.Date == end.Date ? end.ToString("h:mm tt") : end.ToString("d MMM, h:mm tt")) · @durationLabel </dd>
                     <dt>Where</dt><dd>@StaffReviewQueue.Bays(booking) · @ReservationLabels.Service(booking.Service)</dd>
                     <dt>Arrived</dt><dd>@(booking.CheckedInUtc is DateTime arrived ? StaffReviewQueue.Local(arrived).ToString("d MMM yyyy, h:mm tt") : "Not recorded")</dd>
                     <dt>Departed</dt><dd>@(booking.CheckedOutUtc is DateTime departed ? StaffReviewQueue.Local(departed).ToString("d MMM yyyy, h:mm tt") : "Not recorded")</dd>
@@ -191,6 +191,13 @@
                         var time = StaffReviewQueue.Local(entry.AtUtc).ToString("d MMM yyyy, h:mm tt");
                         <li><strong>@label <small>· @actor</small></strong><time data-relative datetime="@entry.AtUtc.ToString("O")" title="@time Manila time" aria-label="@time Manila time">@time</time>
                             @if (!string.IsNullOrWhiteSpace(entry.Reason)) { <p>@entry.Reason</p> }
+                            @if (entry.AttendanceBefore is { } before && entry.AttendanceAfter is { } after)
+                            {
+                                <p>@before.Status → @after.Status</p>
+                                @if (before.EndUtc != after.EndUtc) { <p>Session end @StaffReviewQueue.Local(before.EndUtc).ToString("h:mm tt") → @StaffReviewQueue.Local(after.EndUtc).ToString("h:mm tt")</p> }
+                                <p>Arrival @(before.ArrivalUtc.HasValue ? StaffReviewQueue.Local(before.ArrivalUtc.Value).ToString("d MMM, h:mm tt") : "Not recorded") → @(after.ArrivalUtc.HasValue ? StaffReviewQueue.Local(after.ArrivalUtc.Value).ToString("d MMM, h:mm tt") : "Not recorded")</p>
+                                <p>Departure @(before.DepartureUtc.HasValue ? StaffReviewQueue.Local(before.DepartureUtc.Value).ToString("d MMM, h:mm tt") : "Not recorded") → @(after.DepartureUtc.HasValue ? StaffReviewQueue.Local(after.DepartureUtc.Value).ToString("d MMM, h:mm tt") : "Not recorded")</p>
+                            }
                         </li>
                     }
                 </ol>
