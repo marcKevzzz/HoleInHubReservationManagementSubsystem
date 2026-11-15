@@ -206,6 +206,24 @@
         syncType();
     }
 
+    const bookingRules = form.querySelector('[name=BookingService]');
+    const baySelection = form.querySelector('[data-bay-selection]');
+    if (bookingRules && baySelection) {
+        const selection = baySelection.querySelector('[type=checkbox]');
+        let explicitSelection = selection.dataset.explicit === 'true';
+        selection.addEventListener('change', () => { explicitSelection = true; });
+        const wholeShopNote = form.querySelector('[data-whole-shop-bays]');
+        function syncBaySelection() {
+            const wholeShop = bookingRules.value === 'WholeShop';
+            baySelection.hidden = wholeShop;
+            selection.disabled = wholeShop;
+            wholeShopNote.hidden = !wholeShop;
+            if (!explicitSelection) selection.checked = bookingRules.value !== 'KpgaGroup';
+        }
+        bookingRules.addEventListener('change', syncBaySelection);
+        syncBaySelection();
+    }
+
     const depositType = form.querySelector('[data-deposit-type]');
     const enabled = form.querySelector('[data-deposit-enabled]');
     const unit = form.querySelector('[data-deposit-unit]');

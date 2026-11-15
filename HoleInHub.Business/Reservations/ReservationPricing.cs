@@ -15,6 +15,12 @@ public sealed partial class ReservationService
         }
         var record = await ResolveBookingServiceAsync(service, serviceEntryId, ct);
         PreviewServiceInterval(record, date, startTime, durationMinutes, service);
+        if (service == "WholeShop")
+        {
+            var bays = await GetAvailabilityAsync(date, startTime, durationMinutes, service, ct, serviceEntryId);
+            if (bays.Count == 0 || bays.Any(bay => !bay.Available))
+            { throw new ReservationValidationException(BookingRules.WholeShopUnavailable, nameof(SubmitReservationRequest.StartTime)); }
+        }
         return PriceBooking(record, service, date, startTime, durationMinutes, bayCount);
     }
 
@@ -27,10 +33,10 @@ public sealed partial class ReservationService
         TimeOnly time, int duration, int bayCount) =>
         Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(new { quote, service, entryId, date, time, duration, bayCount })));
 
-    private static BookingPriceQuote ValidateQuote(ServiceCatalogRecord? entry, SubmitReservationRequest request)
+    private static BookingPriceQuote ValidateQuote(ServiceCatalogRecord? entry, SubmitReservationRequest request, int bayCount)
     {
-        var quote = PriceBooking(entry, request.Service, request.Date, request.StartTime, request.DurationMinutes, request.ResourceIds.Length);
-        var key = QuoteKey(quote, request.Service, request.ServiceEntryId, request.Date, request.StartTime, request.DurationMinutes, request.ResourceIds.Length);
+        var quote = PriceBooking(entry, request.Service, request.Date, request.StartTime, request.DurationMinutes, bayCount);
+        var key = QuoteKey(quote, request.Service, request.ServiceEntryId, request.Date, request.StartTime, request.DurationMinutes, bayCount);
         if (!string.IsNullOrEmpty(request.QuoteKey) && !string.Equals(request.QuoteKey, key, StringComparison.Ordinal))
         { throw new ReservationValidationException("The quote changed. Review the updated price and submit again."); }
         return quote;

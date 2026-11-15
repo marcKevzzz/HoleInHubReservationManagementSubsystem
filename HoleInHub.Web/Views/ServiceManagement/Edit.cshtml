@@ -1,7 +1,6 @@
 @using HoleInHub.Business.Services
 @model ServiceEditorForm
 @{ Layout = "_StaffLayout"; ViewData["Title"] = Model.Create ? "Add service" : "Edit service";
-    var typeNames = ServiceCatalog.BookingTypes.Select(ReservationLabels.Service).Concat(ViewData["BookingTypeNames"] as string[] ?? []).Append(Model.BookingTypeName).Where(name => !string.IsNullOrWhiteSpace(name) && name != "__new").Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
     if (string.IsNullOrWhiteSpace(Model.BookingTypeName)) { Model.BookingTypeName = ReservationLabels.Service(Model.BookingService); }
 }
 <section class="staff-workspace service-admin service-editor">
@@ -12,15 +11,10 @@
     </header>
     <form id="service-editor-form" asp-action="Save" method="post" enctype="multipart/form-data" data-service-editor class="service-editor-grid">
         <input type="hidden" name="Active" value="false" /><input asp-for="Id" type="hidden" /><input asp-for="Revision" type="hidden" /><input asp-for="CommandId" type="hidden" /><input asp-for="Create" type="hidden" />
-        <input asp-for="RateText" type="hidden" /><input asp-for="ActionLabel" type="hidden" /><input asp-for="Order" type="hidden" />
+        <input asp-for="RateText" type="hidden" /><input asp-for="ActionLabel" type="hidden" /><input asp-for="Order" type="hidden" /><input asp-for="BookingTypeName" type="hidden" />
         <input type="hidden" name="ImpactAcknowledgement" value="@Model.ImpactAcknowledgement" />
         <p class="service-field-error service-save-error" data-save-error role="alert"></p>
         <div asp-validation-summary="All" class="staff-error" role="alert"></div>
-        <nav class="flex flex-wrap gap-x-5 gap-y-2" aria-label="Service editor sections">
-            <a href="#service-details">Details</a>
-            <a href="#service-availability">Availability</a>
-            <a href="#service-pricing">Pricing</a>
-        </nav>
         <div id="service-details" class="service-editor-main service-composition">
             <section class="service-editor-section service-image-section">
                 <h2>Images</h2>
@@ -40,9 +34,13 @@
         <aside class="service-editor-options">
             <section class="service-editor-section">
 
-                <div class="service-editor-field"><label asp-for="BookingTypeName">Booking type</label><select asp-for="BookingTypeName" data-booking-type>@foreach (var name in typeNames) { <option value="@name">@name</option> }<option value="__new">Add new…</option></select></div>
-                <div class="auth-input-wrap" data-new-booking-type><input asp-for="NewBookingTypeName" maxlength="80" placeholder=" "/><label asp-for="NewBookingTypeName">New booking type</label><span asp-validation-for="NewBookingTypeName" data-error-for="NewBookingTypeName"></span></div>
-                <div class="service-editor-field"><label asp-for="BookingService">Bay allocation &amp; review rules</label><select asp-for="BookingService">@foreach (var type in ServiceCatalog.BookingTypes) { <option value="@type">@ReservationLabels.Service(type)</option> }</select></div>
+                <div class="service-editor-field"><div class="service-field-heading"><label asp-for="BookingService">Service type</label><partial name="_StaffHelp" model='("service-rules-help", "About service types", "Controls how this service reserves capacity and applies review deadlines. Whole-shop rentals require all active bays. Availability and pricing are configured below.")' /></div><select asp-for="BookingService">@foreach (var type in ServiceCatalog.BookingTypes) { <option value="@type">@ReservationLabels.Service(type)</option> }</select></div>
+                <div class="service-bay-toggle" data-bay-selection>
+                    <div class="service-bay-label"><label for="CustomerSelectsBays">Customer bay selection</label><partial name="_StaffHelp" model='("service-bay-help", "How bay selection works", "On: customers choose their bays. Off: one available bay that fits the group is assigned automatically. Whole-shop rentals always reserve all active bays.")' /></div>
+                    <label class="service-switch"><input id="CustomerSelectsBays" name="CustomerSelectsBays" type="checkbox" value="true" role="switch" checked="@(Model.CustomerSelectsBays ?? Model.BookingService != "KpgaGroup")" data-explicit="@(Model.CustomerSelectsBays.HasValue ? "true" : "false")" aria-describedby="service-bay-help" /><span class="service-switch-track" aria-hidden="true"></span></label>
+                    <input type="hidden" name="CustomerSelectsBays" value="false" />
+                </div>
+                <p class="service-field-help" data-whole-shop-bays hidden>Whole-shop bookings reserve all active bays.</p>
             </section>
             <section class="service-editor-section">
                 <label class="service-switch"><span>Deposit</span><input type="checkbox" role="switch" data-deposit-enabled checked="@(Model.DepositType != "None")" /><span class="service-switch-track" aria-hidden="true"></span></label>

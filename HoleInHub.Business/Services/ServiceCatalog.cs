@@ -9,6 +9,7 @@ public sealed record ServiceCatalogItem(string Id, string Title, string ImagePat
     public string[] Images { get; init; } = [];
     public string DepositText { get; init; } = "";
     public string BookingService { get; init; } = "";
+    public bool? CustomerSelectsBays { get; init; }
     public ServiceAvailabilityRule[]? AvailabilityRules { get; init; }
 }
 
@@ -32,6 +33,7 @@ public sealed partial class ServiceCatalog(ServiceCatalogPersistence persistence
             Images = ImagePaths(x),
             DepositText = FormatDeposit(x.DepositType, x.DepositValue),
             BookingService = x.BookingService,
+            CustomerSelectsBays = x.CustomerSelectsBays,
             AvailabilityRules = x.AvailabilityRules
         }).ToArray();
     }

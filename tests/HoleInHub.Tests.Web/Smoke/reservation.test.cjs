@@ -5,6 +5,26 @@ test('drag selection is contiguous in either direction',()=>{assert.deepEqual(ca
 test('bay drag selects either direction and rejects missing endpoints',()=>{assert.deepEqual(calendar.bayRange(['a','b','c'],'c','a'),['a','b','c']);assert.deepEqual(calendar.bayRange(['a','c'],'b','c'),[]);});
 
 test('prototype programs and rentals use their fixed schedules',()=>{assert.equal(calendar.serviceDayAllowed('KpgaGroup','2026-11-03'),true);assert.equal(calendar.serviceDayAllowed('KpgaGroup','2026-11-04'),false);assert.equal(calendar.serviceDayAllowed('KpgaPro','2026-11-05'),true);assert.deepEqual(calendar.fixedSessions('KpgaGroup','2026-11-03').map(x=>[x.start,x.duration]),[[900,60]]);assert.deepEqual(calendar.fixedSessions('WholeShop','2026-11-02').map(x=>[x.start,x.duration]),[[900,360],[660,780]]);});
+test('an occupied bay invalidates whole-shop time while ordinary bookings can use another bay',()=>{
+    const mixed=[{available:true},{available:false}];
+    assert.match(calendar.sessionIssue('WholeShop',mixed),/aren’t fully available/);
+    assert.equal(calendar.sessionIssue('Regular',mixed),'');
+    assert.match(calendar.sessionIssue('Regular',[{available:false}]),/No bays are available/);
+    assert.match(calendar.sessionIssue('WholeShop',[]),/aren’t fully available/);
+    assert.equal(calendar.sessionIssue('WholeShop',[{available:true}]),'');
+});
+test('whole-shop dates require at least one available session',()=>{
+    assert.equal(calendar.wholeShopDayAvailable(undefined),false);
+    assert.equal(calendar.wholeShopDayAvailable({sessions:[{available:false},{available:false}]}),false);
+    assert.equal(calendar.wholeShopDayAvailable({sessions:[{available:true},{available:false}]}),true);
+});
+test('switching services replaces Thursday with the nearest eligible Tuesday',()=>{
+    const tuesday=date=>calendar.serviceDayAllowed('KpgaGroup',date);
+    assert.equal(calendar.nearestDate('2026-11-26','2026-11-15',tuesday),'2026-11-24');
+    assert.equal(calendar.nearestDate('2026-11-26','2026-11-25',tuesday),'2026-12-01');
+    assert.equal(calendar.nearestDate('2026-11-24','2026-11-15',tuesday),'2026-11-24');
+    assert.equal(calendar.nearestDate('2026-11-26','2026-11-15',()=>false),null);
+});
 
 test('clicking any selected slot clears the range without moving to the next slot',()=>{for(const slot of [660,690,720])assert.deepEqual(calendar.extend(660,90,slot),{start:660,duration:0});assert.deepEqual(calendar.extend(660,30,660),{start:660,duration:0});assert.deepEqual(calendar.extend(NaN,30,720),{start:720,duration:60});});
 

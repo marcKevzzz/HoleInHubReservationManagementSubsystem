@@ -24,6 +24,7 @@ public sealed class ServiceCatalogRecord
     [BsonIgnoreIfNull] public ServicePricing? Pricing { get; set; }
     public string Details { get; set; } = "";
     public string BookingService { get; set; } = "";
+    [BsonIgnoreIfNull] public bool? CustomerSelectsBays { get; set; }
     public string BookingTypeName { get; set; } = "";
     [BsonIgnoreIfNull] public ServiceAvailabilityRule[]? AvailabilityRules { get; set; }
     public string Action { get; set; } = "Book";

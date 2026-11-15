@@ -15,6 +15,8 @@ public sealed record ServiceEdit(string Id, long Revision, string CommandId, boo
     string DepositType, decimal DepositValue, string[] Images)
 {
     public int? MaxPax { get; init; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public bool? CustomerSelectsBays { get; init; }
     public ServicePricing? Pricing { get; init; }
     public string BookingTypeName { get; init; } = "";
     public string[] ImageOrder { get; init; } = [];
@@ -38,7 +40,7 @@ public sealed partial class ServiceCatalog
         Guid.NewGuid().ToString("N"), false, record.Title, record.Summary, record.RateText, record.Details,
         record.BookingService, record.Action, record.ActionLabel, record.Order, record.Active,
         record.DepositType, record.DepositValue, ImagePaths(record))
-    { MaxPax = record.MaxPax, Pricing = record.Pricing, BookingTypeName = record.BookingTypeName, AvailabilityRules = record.AvailabilityRules };
+    { MaxPax = record.MaxPax, CustomerSelectsBays = record.CustomerSelectsBays, Pricing = record.Pricing, BookingTypeName = record.BookingTypeName, AvailabilityRules = record.AvailabilityRules };
     public async Task<IReadOnlyList<ServiceEdit>> GetAllAsync(CancellationToken ct) =>
         (await persistence.GetAllAsync(ct)).Select(Edit).ToArray();
     public async Task<ServiceEdit?> GetAsync(string id, CancellationToken ct) =>
@@ -176,6 +178,7 @@ public sealed partial class ServiceCatalog
             RateText = edit.RateText.Trim(),
             Pricing = edit.Pricing,
             BookingService = edit.BookingService,
+            CustomerSelectsBays = edit.BookingService == "WholeShop" ? null : edit.CustomerSelectsBays,
             AvailabilityRules = edit.AvailabilityRules,
             BookingTypeName = edit.BookingTypeName.Trim(),
             Action = edit.Action,

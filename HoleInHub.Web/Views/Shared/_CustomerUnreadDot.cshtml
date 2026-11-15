@@ -1,0 +1,14 @@
+@using System.Security.Claims
+@using HoleInHub.Business.Accounts
+@inject HoleInHub.Business.Reservations.ReservationService Reservations
+@if (User.Identity?.IsAuthenticated == true && !StaffRoles.Workspace.Any(User.IsInRole) && User.FindFirstValue(ClaimTypes.NameIdentifier) is { } accountId)
+{
+    const string unreadKey = "CustomerNotificationUnread";
+    if (Context.Items[unreadKey] is not bool)
+    {
+        Context.Items[unreadKey] = await Reservations.GetCustomerNotificationBadgeAsync(accountId, Context.RequestAborted) ?? false;
+    }
+    <span class="account-unread-badge" data-customer-unread hidden="@(Context.Items[unreadKey] is not true)">
+        <span class="account-unread-dot" aria-hidden="true"></span><span class="sr-only">@T("Unread notifications")</span>
+    </span>
+}

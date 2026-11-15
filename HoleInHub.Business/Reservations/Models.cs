@@ -55,7 +55,10 @@ public sealed record ReservationHistoryDto(string Status, DateTime AtUtc, string
     public AttendanceSnapshotDto? AttendanceAfter { get; init; }
 }
 public sealed record AttendanceSnapshotDto(string Status, DateTime StartUtc, DateTime EndUtc, DateTime? ArrivalUtc, DateTime? DepartureUtc);
-public sealed class ReservationValidationException(string message) : Exception(message);
+public sealed class ReservationValidationException(string message, string? field = null) : Exception(message)
+{
+    public string? Field { get; } = field;
+}
 public sealed class ReservationPolicy
 {
     public bool Approved { get; set; }
@@ -120,6 +123,11 @@ public static class BookingRules
     public static bool IsCoaching(string service) => service is "PhilippineCoach" or "KpgaPro" or "KpgaGroup";
     public static int ReviewMinutes(string service) => service == "Regular" ? 30 : 60;
     public static string ResourceService(string service) => service == "VIP" ? "VIP" : "Regular";
+    public static bool AssignsSingleBay(string service, bool? customerSelectsBays) =>
+        service != "WholeShop" && !(customerSelectsBays ?? service != "KpgaGroup");
+    public const string WholeShopUnavailable = "The bays aren’t fully available for this whole-shop session. Choose another date or time.";
+    public const string NoBaysAvailable = "No bays are available for this session. Choose another date or time.";
+    public const string NoBayFitsGroup = "No available bay fits your group for this session. Choose another time or change the guest count.";
     public static void ValidateWindow(string service, DateTime startUtc, DateTimeOffset now)
     {
         ValidateLeadTime(service, startUtc, now);

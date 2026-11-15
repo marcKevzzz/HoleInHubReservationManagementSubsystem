@@ -83,10 +83,11 @@ public sealed class ServiceCatalogTests(MongoDbFixture fixture) : IClassFixture<
         Assert.Single(saved.Images);
         var image = await catalog.ImageAsync(saved.Images[0].Split('/').Last(), default);
         Assert.Equal(png, image!.Content);
-        var update = saved with { CommandId = Guid.NewGuid().ToString("N"), Active = true, DepositType = "Percentage", DepositValue = 30 };
+        var update = saved with { CommandId = Guid.NewGuid().ToString("N"), Active = true, DepositType = "Percentage", DepositValue = 30, CustomerSelectsBays = false };
         await catalog.SaveAsync(update, [], "admin", default);
         var publicItem = Assert.Single(await catalog.GetActiveAsync(default), item => item.Id == id);
         Assert.Contains("30%", publicItem.DepositText);
+        Assert.False(publicItem.CustomerSelectsBays);
         Assert.Equal("/Reservations/Create?service=" + Uri.EscapeDataString($"Regular:{publicItem.Id}"), publicItem.ActionUrl);
         await Assert.ThrowsAsync<InvalidOperationException>(() => catalog.SaveAsync(update with
         { CommandId = Guid.NewGuid().ToString("N"), Title = "Stale" }, [], "admin", default));

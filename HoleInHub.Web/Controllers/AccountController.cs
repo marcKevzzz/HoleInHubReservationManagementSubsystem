@@ -78,7 +78,7 @@ public sealed partial class AccountController(UserManager<AccountUser> users, Si
                     ]);
                 }
                 TempData["PageArrival"] = true;
-                new ToastNotice("success", user.WelcomeTitle, "You’re signed in.").Store(TempData);
+                new ToastNotice("success", user.WelcomeTitle, "You’re signed in.", Icon: "sign-in").Store(TempData);
                 if (model.ReturnUrl is { } destination) { return LocalRedirect(destination); }
                 return isAdmin ? RedirectToAction(nameof(LeadershipController.Dashboard), "Leadership") : LocalRedirect("/");
             }
@@ -92,7 +92,7 @@ public sealed partial class AccountController(UserManager<AccountUser> users, Si
     {
         await HttpContext.SignOutAsync(StaffPinAccess.Scheme);
         await signIn.SignOutAsync();
-        new ToastNotice("success", "Signed out", "See you next time.").Store(TempData);
+        new ToastNotice("success", "Signed out", "See you next time.", Icon: "sign-out").Store(TempData);
         return Redirect("/");
     }
 

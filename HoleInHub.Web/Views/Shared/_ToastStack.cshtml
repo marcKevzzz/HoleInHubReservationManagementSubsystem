@@ -4,7 +4,7 @@
 <section class="toast-stack" data-toast-stack aria-label="Notifications" hidden="@(notice is null)">
     @if (notice is not null)
     {
-        <div class="toast-seed" data-toast-seed data-kind="@notice.Kind" role="status">
+        <div class="toast-seed" data-toast-seed data-kind="@notice.Kind" data-icon="@notice.Icon" role="status">
             <strong data-toast-title>@notice.Title</strong>
             @if (notice.Message is not null) { <p data-toast-message>@notice.Message</p> }
             @if (notice.Href is not null && notice.Action is not null)
@@ -22,7 +22,9 @@
     <span class="sr-only" data-toast-status role="status" aria-atomic="true"></span>
     <span class="sr-only" data-toast-alert role="alert" aria-atomic="true"></span>
     <template data-toast-action-icon><partial name="_StaffIcon" model='"arrow-up-right-compact"' /></template>
-    <template data-toast-icon="success"><partial name="_StaffIcon" model='"confirmed"' /></template>
+    <template data-toast-icon="success"><partial name="_StaffIcon" model='"completed"' /></template>
+    <template data-toast-icon="sign-in"><partial name="_StaffIcon" model='"checked-in"' /></template>
+    <template data-toast-icon="sign-out"><partial name="_StaffIcon" model='"logout"' /></template>
     <template data-toast-icon="info"><partial name="_StaffIcon" model='"info"' /></template>
     <template data-toast-icon="warning"><partial name="_StaffIcon" model='"alert"' /></template>
 </section>
