@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using HoleInHub.Business.Accounts;
 using HoleInHub.Business.Reservations;
 using HoleInHub.Web.Accounts;
 using HoleInHub.Web.ViewModels;
@@ -11,7 +13,28 @@ namespace HoleInHubReservationManagementSubsystem.Controllers;
 public sealed class AccountHubController(UserManager<AccountUser> users, ReservationService reservations) : Controller
 {
     [HttpGet("/notifications")]
-    public IActionResult Notifications() => View();
+    public async Task<IActionResult> Notifications(int page, CancellationToken ct)
+    {
+        if (StaffRoles.Workspace.Any(User.IsInRole)) { return Forbid(); }
+        return View(await reservations.GetCustomerNotificationsAsync(User.FindFirstValue(ClaimTypes.NameIdentifier)!, page, ct));
+    }
+
+    [HttpGet("/notifications/unread")]
+    public async Task<IActionResult> NotificationUnread(CancellationToken ct)
+    {
+        if (StaffRoles.Workspace.Any(User.IsInRole)) { return Forbid(); }
+        var unread = await reservations.GetCustomerNotificationBadgeAsync(User.FindFirstValue(ClaimTypes.NameIdentifier)!, ct);
+        return unread.HasValue ? Json(new { unread = unread.Value }) : StatusCode(StatusCodes.Status503ServiceUnavailable);
+    }
+
+    [HttpPost("/notifications/read-visible"), ValidateAntiForgeryToken, RequestSizeLimit(32768)]
+    public async Task<IActionResult> MarkNotificationsRead([FromForm] NotificationReadRow[] rows, CancellationToken ct)
+    {
+        if (StaffRoles.Workspace.Any(User.IsInRole)) { return Forbid(); }
+        if (!ModelState.IsValid || rows.Length is 0 or > ReservationService.CustomerNotificationPageSize) { return BadRequest(); }
+        var unread = await reservations.MarkCustomerNotificationsReadAsync(User.FindFirstValue(ClaimTypes.NameIdentifier)!, rows, ct);
+        return Json(new { unread });
+    }
 
     [HttpGet("/transactions")]
     public async Task<IActionResult> Transactions(CancellationToken ct)

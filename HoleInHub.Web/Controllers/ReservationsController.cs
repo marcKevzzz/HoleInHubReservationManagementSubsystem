@@ -20,9 +20,11 @@ public sealed class ReservationsController(ReservationService reservations, Gues
     IServiceCatalog catalog) : Controller
 {
     [AllowAnonymous] public IActionResult Availability() => NotFound();
-    [AllowAnonymous, HttpGet]
+    [AllowAnonymous, HttpGet, ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public async Task<IActionResult> CheckAvailability(DateOnly date, TimeOnly startTime, int durationMinutes, string service, CancellationToken ct)
     {
+        if (!ModelState.IsValid || date == DateOnly.MinValue)
+        { return BadRequest(new { message = CustomerText.T("Choose a valid date and time.") }); }
         var (type, entryId) = BookingChoice(service);
         try { return Json(await reservations.GetAvailabilityAsync(date, startTime, durationMinutes, type, ct, entryId)); }
         catch (ReservationValidationException error) { return BadRequest(new { message = CustomerText.Error(error.Message) }); }
@@ -33,10 +35,21 @@ public sealed class ReservationsController(ReservationService reservations, Gues
         var parts = (value ?? "").Split(':', 2);
         return (parts[0], parts.Length == 2 ? parts[1] : null);
     }
-    [AllowAnonymous, HttpGet]
+    [AllowAnonymous, HttpGet, ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> WholeShopCalendar(int year, int month, string? service, CancellationToken ct)
+    {
+        if (!ModelState.IsValid) { return BadRequest(); }
+        var (type, entryId) = BookingChoice(service ?? "WholeShop");
+        if (type != "WholeShop") { return BadRequest(); }
+        try { return Json(await reservations.GetWholeShopCalendarAsync(year, month, entryId, ct)); }
+        catch (ReservationValidationException error) { return BadRequest(new { message = CustomerText.Error(error.Message) }); }
+    }
+    [AllowAnonymous, HttpGet, ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public async Task<IActionResult> RentalQuote(DateOnly date, TimeOnly startTime, int durationMinutes, CancellationToken ct,
         string service = "WholeShop", int bayCount = 1)
     {
+        if (!ModelState.IsValid || date == DateOnly.MinValue)
+        { return BadRequest(new { message = CustomerText.T("Choose a valid date and time.") }); }
         var (type, entryId) = BookingChoice(service);
         try
         {
@@ -108,7 +121,7 @@ public sealed class ReservationsController(ReservationService reservations, Gues
         if (date.HasValue && startTime.HasValue || editDraft || recover)
         {
             try { await reservations.PreviewBookingIntervalAsync(model.Date, model.StartTime, model.DurationMinutes, model.Service, ct, model.ServiceEntryId); }
-            catch (ReservationValidationException error) { ModelState.AddModelError("", error.Message); }
+            catch (ReservationValidationException error) { ModelState.AddModelError(error.Field ?? "", error.Message); }
         }
         if (resourceId is not null && resources.Any(resource => resource.Id == resourceId && resource.Service == model.Service))
         {
@@ -255,8 +268,7 @@ public sealed class ReservationsController(ReservationService reservations, Gues
             throw new ReservationValidationException("Booking email links are not configured. Please contact the venue.");
         }
         var statusPath = account ? "/Reservations" : $"/Reservations/Status?token={access}";
-        var start = TimeZoneInfo.ConvertTimeToUtc(request.Date.ToDateTime(request.StartTime), ReservationRules.Manila);
-        var localStart = TimeZoneInfo.ConvertTimeFromUtc(start, ReservationRules.Manila);
+        var localStart = request.Date.ToDateTime(request.StartTime);
         var receipt = "protected:" + protection.CreateProtector("BookingEmail").Protect(
             $"Hi {request.FirstName.Trim()},\n\nYour reservation request has been received.\nReservation status: Pending\nExperience: {ReservationLabels.Service(request.Service)}\nSession: {localStart:dd MMM yyyy h:mm tt} (Asia/Manila)\nNumber of guests: {request.Attendees}\n\n" +
             (request.Service == "WholeShop" ? "Complete the 50% deposit before the deadline shown in your booking. No real money is collected.\n\n" : "Your request is awaiting staff approval. Review runs during operating hours and resumes at the next opening. Your selected bays are held while Pending. Check your booking for the review deadline. This email does not confirm your reservation.\n\n") +

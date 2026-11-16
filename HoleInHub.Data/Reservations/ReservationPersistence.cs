@@ -39,7 +39,8 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
             .Find(session, item => item.Id == (booking.ServiceEntryId ?? booking.Service) &&
                 item.BookingService == booking.Service && !item.Deleted).FirstOrDefaultAsync(ct)!;
     public async Task<ReservationRecord> InsertAsync(ReservationRecord record, CancellationToken ct, string? encryptedReceipt = null,
-        string? customerProfileId = null, Action<ReservationRecord, IReadOnlyList<ResourceRecord>>? validateCapacity = null)
+        string? customerProfileId = null, Action<ReservationRecord, IReadOnlyList<ResourceRecord>>? validateCapacity = null,
+        Func<ResourceRecord, bool>? automaticBay = null)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct); timeout.CancelAfter(TimeSpan.FromSeconds(15)); ct = timeout.Token;
         using var session = await context.Client.StartSessionAsync(cancellationToken: ct);
@@ -47,7 +48,8 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
         {
             return await session.WithTransactionAsync(async (s, token) =>
             {
-                await GuardAsync(s, record, token);
+                if (automaticBay is null) { await GuardAsync(s, record, token); }
+                else { await GuardCatalogAsync(s, token); }
                 var prior = await Reservations.Find(s, x => x.AccountId == record.AccountId && x.IdempotencyKey == record.IdempotencyKey).FirstOrDefaultAsync(token); if (prior != null)
                 {
                     return prior;
@@ -61,11 +63,24 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
                     { throw new AllocationConflictException("The service changed. Review its hours and price before submitting again."); }
                 }
                 var catalog = await Resources.Find(s, x => x.Active).ToListAsync(token);
+                var now = record.CreatedUtc == default ? DateTime.UtcNow : record.CreatedUtc;
+                if (automaticBay is not null)
+                {
+                    record.ResourceIds = [];
+                    foreach (var bay in catalog.Where(automaticBay).OrderBy(x => x.MaxTotalGuests).ThenBy(x => x.Id, StringComparer.Ordinal))
+                    {
+                        record.ResourceIds = [bay.Id];
+                        if (!await HasAllocationConflictAsync(record, s, token, now)) { break; }
+                        record.ResourceIds = [];
+                    }
+                    if (record.ResourceIds.Length == 0) { throw new AllocationConflictException("No bay could be assigned for this session.", sessionUnavailable: true); }
+                    await GuardAsync(s, record, token);
+                }
                 if (record.Service == "WholeShop")
                 {
                     if (record.PolicyVersion >= 2 && !record.ResourceIds.Order().SequenceEqual(catalog.Select(x => x.Id).Order()))
                     {
-                        throw new AllocationConflictException("The bay catalog changed. Reload and select the whole-shop session again.");
+                        throw new AllocationConflictException("The bay catalog changed. Reload and select the whole-shop session again.", sessionUnavailable: true);
                     }
                     record.ResourceIds = catalog.Select(x => x.Id).Order().ToArray();
                     await GuardAsync(s, record, token);
@@ -73,7 +88,7 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
 
                 if (record.ResourceIds.Length == 0 || record.ResourceIds.Any(id => !catalog.Any(r => r.Id == id && (record.Service == "WholeShop" || r.Service == (record.Service == "VIP" ? "VIP" : "Regular")))))
                 {
-                    throw new AllocationConflictException("One or more selected resources are unavailable for this service.");
+                    throw new AllocationConflictException("One or more selected resources are unavailable for this service.", sessionUnavailable: record.Service == "WholeShop");
                 }
 
                 if (record.PolicyVersion == 1 && !record.Participants.Select(x => x.ResourceId).Order().SequenceEqual(record.ResourceIds.Order()))
@@ -83,9 +98,9 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
                 var selected = catalog.Where(x => record.ResourceIds.Contains(x.Id)).ToArray();
                 validateCapacity?.Invoke(record, selected);
                 record.ResourceNames = selected.ToDictionary(x => x.Id, x => x.Name);
-                if (await HasAllocationConflictAsync(record, s, token, record.CreatedUtc == default ? DateTime.UtcNow : record.CreatedUtc))
+                if (await HasAllocationConflictAsync(record, s, token, now))
                 {
-                    throw new AllocationConflictException("These bays are no longer available. Please choose another time or bay.");
+                    throw new AllocationConflictException("These bays are no longer available. Please choose another time or bay.", sessionUnavailable: true);
                 }
 
                 if (record.EmailVerificationId != null)
@@ -302,7 +317,10 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
     public async Task<IReadOnlyList<ReservationRecord>> PendingAsync(DateTime now, CancellationToken ct) =>
         await Reservations.Find(x => x.Status == "Pending" && x.ReviewDeadlineUtc > now && (x.Service != "WholeShop" || x.PolicyVersion >= 1)).ToListAsync(ct);
 }
-public sealed class AllocationConflictException(string message) : Exception(message);
+public sealed class AllocationConflictException(string message, bool sessionUnavailable = false) : Exception(message)
+{
+    public bool SessionUnavailable { get; } = sessionUnavailable;
+}
 
 
 

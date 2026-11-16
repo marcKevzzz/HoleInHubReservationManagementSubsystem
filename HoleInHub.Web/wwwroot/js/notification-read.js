@@ -5,6 +5,7 @@
     const token = form.elements.__RequestVerificationToken.value;
     const visible = new Set();
     const pending = new Set();
+    const readingTimers = new Map();
     let timer;
     let sending = false;
 
@@ -16,21 +17,37 @@
         queueVisible();
     }, { threshold: [0, .01] }) : null;
 
-    for (const row of document.querySelectorAll('[data-unread-id]')) observer?.observe(row);
+    const unreadRow = '[data-unread-id]:not([data-unread-id=""])';
+    for (const row of document.querySelectorAll(unreadRow)) observer?.observe(row);
     for (const type of ['click', 'focusin']) document.addEventListener(type, event => {
-        const row = event.target.closest('[data-unread-id]');
+        const row = event.target.closest(unreadRow);
         if (!row || document.hidden) return;
         pending.add(row);
         if (!sending) void save();
     });
 
     function queueVisible() {
+        for (const [row, readingTimer] of readingTimers) {
+            if (document.hidden || !visible.has(row)) {
+                clearTimeout(readingTimer);
+                readingTimers.delete(row);
+            }
+        }
         if (document.hidden) return;
-        for (const row of visible) pending.add(row);
-        if (pending.size && !sending && !timer) timer = setTimeout(save, 180);
+        for (const row of visible) {
+            if (readingTimers.has(row) || pending.has(row)) continue;
+            readingTimers.set(row, setTimeout(() => {
+                readingTimers.delete(row);
+                if (document.hidden || !visible.has(row) || !row.dataset.unreadId) return;
+                pending.add(row);
+                if (!sending) void save();
+            }, 5000));
+        }
+        if (pending.size && !sending && !timer) void save();
     }
 
     async function save() {
+        clearTimeout(timer);
         timer = undefined;
         if (document.hidden || !pending.size) return;
 
@@ -52,6 +69,8 @@
                 observer?.unobserve(row);
                 visible.delete(row);
                 pending.delete(row);
+                clearTimeout(readingTimers.get(row));
+                readingTimers.delete(row);
                 row.querySelector('.notification-new')?.remove();
                 row.removeAttribute('data-unread-id');
             }

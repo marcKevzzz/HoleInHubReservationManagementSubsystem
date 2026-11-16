@@ -83,7 +83,7 @@
         }
     }
 
-    function show({ kind = 'info', title, message, href, action, autoDismiss, durationMs, replaceKey } = {}) {
+    function show({ kind = 'info', title, message, href, action, autoDismiss, durationMs, replaceKey, icon } = {}) {
         if (!title) return false;
         const modal = document.querySelector('dialog[open]');
         if (modal && !modal.contains(host)) {
@@ -98,8 +98,9 @@
         button.type = 'button';
         button.className = 'toast-dismiss';
         button.setAttribute('aria-label', 'Dismiss notification: ' + title);
-        const icon = host.querySelector('[data-toast-icon="' + (kind === 'error' ? 'warning' : kind) + '"]');
-        button.append(icon.content.cloneNode(true));
+        const iconKey = ['sign-in', 'sign-out'].includes(icon) ? icon : kind === 'error' ? 'warning' : kind;
+        const iconTemplate = host.querySelector('[data-toast-icon="' + iconKey + '"]');
+        button.append(iconTemplate.content.cloneNode(true));
         const copy = document.createElement('span');
         const headline = document.createElement('strong');
         headline.textContent = title;
@@ -226,7 +227,7 @@
     const seed = host.querySelector('[data-toast-seed]');
     if (seed) {
         const link = seed.querySelector('[data-toast-action]');
-        show({ kind: seed.dataset.kind, title: seed.querySelector('[data-toast-title]').textContent,
+        show({ kind: seed.dataset.kind, icon: seed.dataset.icon, title: seed.querySelector('[data-toast-title]').textContent,
             message: seed.querySelector('[data-toast-message]')?.textContent, href: link?.getAttribute('href'), action: link?.getAttribute('aria-label') });
         seed.remove();
     }

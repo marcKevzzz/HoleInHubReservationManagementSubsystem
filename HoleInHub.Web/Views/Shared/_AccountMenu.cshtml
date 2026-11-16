@@ -15,14 +15,15 @@
         <nav aria-label="@T("Account")">
             <a href="/my-reservations" class="account-menu-row prototype-link">@T("My reservations")</a>
             <a href="/transactions" class="account-menu-row prototype-link">@T("Transactions")</a>
-            <a href="/my-profile" class="account-menu-row prototype-link">@T("My profile")</a>
             @if (staff)
             {
+                <a href="/my-profile" class="account-menu-row prototype-link">@T("My profile")</a>
                 <a href="@(leadership ? "/staff/dashboard" : "/staff")" class="account-menu-row prototype-link">@T(workspaceLabel)</a>
             }
             else
             {
-                <a href="/notifications" class="account-menu-row prototype-link">@T("Notifications")</a>
+                <a href="/notifications" class="account-menu-row account-notification-link"><span class="prototype-link">@T("Notifications")</span><partial name="_CustomerUnreadDot" /></a>
+                <a href="/my-profile" class="account-menu-row prototype-link">@T("My profile")</a>
             }
         </nav>
         <form id="account-logout-form" method="post" action="/account/sign-out">

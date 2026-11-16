@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
@@ -51,6 +52,12 @@ public sealed partial class StaffBlockHttpTests
         }))
         .ConfigureTestServices(services =>
         {
+            // HTTP fixtures own their outbox state; the delivery worker would suppress their synthetic messages.
+            foreach (var worker in services.Where(service => service.ServiceType == typeof(IHostedService)
+                && service.ImplementationType == typeof(NotificationWorker)).ToArray())
+            {
+                services.Remove(worker);
+            }
             services.AddSingleton<TimeProvider>(new Clock());
             services.AddDataProtection().UseEphemeralDataProtectionProvider();
             services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, TestAuth>("BlockTest", _ => { });
