@@ -602,3 +602,45 @@ Contact the venue for additional time charges.|추가 이용 요금은 매장에
 Attendance corrected|출석 정보 수정
 
 Session extended|이용 시간 연장
+Updates about your reservations and deposits.|예약 및 예약금 변경 사항을 확인하세요.
+No notifications yet|아직 알림이 없습니다
+Booking updates will appear here after you make a reservation.|예약하시면 여기에 예약 관련 알림이 표시됩니다.
+Unread notifications|읽지 않은 알림 있음
+Unread notification|읽지 않은 알림
+Newer notifications|더 최근 알림
+Older notifications|이전 알림
+Request received|예약 요청 접수
+We’ll let you know when your booking is reviewed.|예약 검토가 완료되면 알려드리겠습니다.
+Reservation confirmed|예약 확정
+Your bay is reserved. View your booking for the session details.|베이 예약이 확정되었습니다. 예약에서 이용 시간과 세부 정보를 확인하세요.
+Request declined|예약 요청 거절
+This booking request could not be accepted.|이 예약 요청을 승인할 수 없었습니다.
+Request expired|예약 요청 만료
+The request expired before it could be confirmed.|확정되기 전에 예약 요청이 만료되었습니다.
+Reservation cancelled|예약 취소
+The reservation has been cancelled.|예약이 취소되었습니다.
+Cancellation declined|취소 요청 거절
+Your reservation is still scheduled.|기존 예약이 유지됩니다.
+Schedule updated|예약 일정 변경
+View the latest time and bay details for your reservation.|변경된 예약 시간과 베이를 확인하세요.
+Schedule change declined|일정 변경 요청 거절
+Your original reservation details still apply.|기존 예약 정보가 유지됩니다.
+Reservation marked no-show|예약 미방문 처리
+Contact the venue if you believe this was a mistake.|잘못 처리된 경우 매장에 문의해 주세요.
+View your reservation for the updated end time.|예약에서 변경된 종료 시간을 확인하세요.
+Deposit status updated|예약금 상태 변경
+View your booking for the simulated deposit result.|예약에서 모의 예약금 결제 결과를 확인하세요.
+The bays aren’t fully available for this whole-shop session. Choose another date or time.|이 시간에는 모든 베이를 이용할 수 없어 매장을 단독으로 예약할 수 없습니다. 다른 날짜나 시간을 선택해 주세요.
+No bays are available for this session. Choose another date or time.|이 시간에는 이용 가능한 베이가 없습니다. 다른 날짜나 시간을 선택해 주세요.
+No available bay fits your group for this session. Choose another time or change the guest count.|이 시간에는 인원에 맞는 베이가 없습니다. 다른 시간을 선택하거나 인원을 변경해 주세요.
+We’ll assign an available bay for your group.|인원에 맞는 이용 가능한 베이를 배정해 드립니다.
+Assigned automatically|자동 배정
+The quote could not be loaded. Choose your time again.|요금을 불러오지 못했습니다. 시간을 다시 선택해 주세요.
+If your service assigns a bay automatically, leave the bay selection empty.|베이가 자동 배정되는 서비스는 베이를 선택하지 않아도 됩니다.
+Retry availability|이용 가능 여부 다시 확인
+Calendar availability could not be loaded. Please retry.|예약 가능한 날짜를 불러오지 못했습니다. 다시 시도해 주세요.
+Only dates with an available whole-shop session can be selected.|매장 전체를 예약할 수 있는 시간이 있는 날짜만 선택할 수 있습니다.
+Checking available whole-shop dates…|매장 전체 예약이 가능한 날짜를 확인하고 있습니다…
+Choose an available whole-shop date in the calendar.|달력에서 매장 전체 예약이 가능한 날짜를 선택해 주세요.
+Date updated|예약 날짜 변경
+Selected the nearest available date for this service.|이 서비스에 가장 가까운 예약 가능한 날짜를 선택했습니다.

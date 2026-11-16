@@ -38,11 +38,13 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         var hash = Fingerprint(request, verifiedEmail);
         var prior = await persistence.ByKeyAsync(accountId, request.IdempotencyKey, ct); if (prior != null) { if (prior.SubmissionHash != hash) { throw new ReservationValidationException("This submission key was already used for another request. Reload the form."); } return Map(prior); }
         var entry = await ResolveBookingServiceAsync(request.Service, request.ServiceEntryId, ct);
+        var automaticBay = BookingRules.AssignsSingleBay(request.Service, entry?.CustomerSelectsBays);
+        ValidateBaySelection(request, automaticBay);
         ValidateServiceCapacity(entry, request.Attendees);
         var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime;
         effectivePolicy.ValidateCoverage(new DateTimeOffset(now), BookingRules.ReviewMinutes(request.Service));
         var (start, end) = PreviewServiceInterval(entry, request.Date, request.StartTime, request.DurationMinutes, request.Service);
-        var quote = ValidateQuote(entry, request);
+        var quote = ValidateQuote(entry, request, automaticBay ? 1 : request.ResourceIds.Length);
         BookingRules.ValidateWindow(request.Service, start, new DateTimeOffset(now));
         if (start <= now)
         {
@@ -74,7 +76,7 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
             ReviewDeadlineUtc = reviewDeadline,
             ReviewStartsUtc = reviewStart,
             ReviewAlertsUtc = reviewStart.HasValue ? alertMinutes.Select(minutes => ReviewClock.AddMinutes(new DateTimeOffset(now), minutes, effectivePolicy)).ToArray() : null,
-            ResourceIds = request.ResourceIds,
+            ResourceIds = automaticBay ? [] : request.ResourceIds,
             FirstName = request.FirstName.Trim(),
             LastName = request.LastName.Trim(),
             Phone = HoleInHub.Business.Accounts.ContactRules.PhoneDigits(request.Phone),
@@ -85,7 +87,20 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
             SubmissionHash = hash,
             History = [new HistoryRecord { EventType = "SubmissionCreated", ReservationStatus = "Pending", Status = "Pending", AtUtc = now, Actor = "Customer" }]
         };
-        try { var saved = await persistence.InsertAsync(record, ct, encryptedReceipt, validateCapacity: ValidateStoredCapacity); if (saved.SubmissionHash != hash) { throw new ReservationValidationException("This submission key was already used for another request."); } return Map(saved); } catch (AllocationConflictException e) { throw new ReservationValidationException(e.Message); }
+        try
+        {
+            var saved = await persistence.InsertAsync(record, ct, encryptedReceipt, validateCapacity: ValidateStoredCapacity,
+                automaticBay: automaticBay ? bay => bay.Service == BookingRules.ResourceService(request.Service)
+                    && MapResource(bay).MaxTotalGuests >= request.Attendees : null);
+            if (saved.SubmissionHash != hash) { throw new ReservationValidationException("This submission key was already used for another request."); }
+            return Map(saved);
+        }
+        catch (AllocationConflictException e) when (e.SessionUnavailable && request.Service == "WholeShop")
+        { throw new ReservationValidationException(BookingRules.WholeShopUnavailable, nameof(request.StartTime)); }
+        catch (AllocationConflictException e) when (e.SessionUnavailable && automaticBay)
+        { throw new ReservationValidationException(BookingRules.NoBayFitsGroup, nameof(request.StartTime)); }
+        catch (AllocationConflictException e)
+        { throw new ReservationValidationException(e.Message, e.SessionUnavailable ? nameof(request.ResourceIds) : null); }
     }
     private static string Fingerprint(SubmitReservationRequest request, string email)
     {
@@ -125,7 +140,7 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         {
             throw new ReservationValidationException(HoleInHub.Business.Accounts.ContactRules.PhoneError);
         }
-        if (!request.PrivacyAccepted || request.Notes?.Length > 1000 || request.ResourceIds == null || request.ResourceIds.Length is < 1 or > 8 || request.ResourceIds.Distinct().Count() != request.ResourceIds.Length || request.ResourceIds.Any(string.IsNullOrWhiteSpace) || request.Participants == null || string.IsNullOrWhiteSpace(request.IdempotencyKey) || request.IdempotencyKey.Length > 100)
+        if (!request.PrivacyAccepted || request.Notes?.Length > 1000 || request.ResourceIds == null || request.ResourceIds.Length > 8 || request.ResourceIds.Distinct().Count() != request.ResourceIds.Length || request.ResourceIds.Any(string.IsNullOrWhiteSpace) || request.Participants == null || string.IsNullOrWhiteSpace(request.IdempotencyKey) || request.IdempotencyKey.Length > 100)
         {
             throw new ReservationValidationException("Complete your contact details, consent, and bay selection.");
         }
@@ -138,6 +153,14 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         }
         else if (request.Attendees < 1) { throw new ReservationValidationException("Enter at least one guest."); }
     }
+
+    private static void ValidateBaySelection(SubmitReservationRequest request, bool automaticBay)
+    {
+        if (automaticBay && request.Participants.Length > 0)
+        { throw new ReservationValidationException("Enter a total guest count for automatic bay assignment.", nameof(request.Attendees)); }
+        if (!automaticBay && request.Service != "WholeShop" && request.ResourceIds.Length == 0)
+        { throw new ReservationValidationException("Select at least one available bay.", nameof(request.ResourceIds)); }
+    }
     public async Task ValidateSubmissionAsync(SubmitReservationRequest request, bool demoAllowed, CancellationToken ct)
     {
         await LoadOperationalPolicyAsync(ct);
@@ -145,17 +168,32 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         var now = (clock ?? TimeProvider.System).GetUtcNow();
         effectivePolicy.ValidateCoverage(now, BookingRules.ReviewMinutes(request.Service));
         var entry = await ResolveBookingServiceAsync(request.Service, request.ServiceEntryId, ct);
+        var automaticBay = BookingRules.AssignsSingleBay(request.Service, entry?.CustomerSelectsBays);
+        ValidateBaySelection(request, automaticBay);
         ValidateServiceCapacity(entry, request.Attendees);
         var (start, _) = PreviewServiceInterval(entry, request.Date, request.StartTime, request.DurationMinutes, request.Service);
-        ValidateQuote(entry, request);
         BookingRules.ValidateWindow(request.Service, start, now);
         GetReviewDeadline(request.Service, start, now);
         var available = await GetAvailabilityAsync(request.Date, request.StartTime, request.DurationMinutes, request.Service, ct, request.ServiceEntryId);
+        if (request.Service == "WholeShop" && (available.Count == 0 || available.Any(bay => !bay.Available)))
+        { throw new ReservationValidationException(BookingRules.WholeShopUnavailable, nameof(request.StartTime)); }
+        if (available.All(bay => !bay.Available))
+        { throw new ReservationValidationException(BookingRules.NoBaysAvailable, nameof(request.StartTime)); }
+        if (automaticBay)
+        {
+            var assigned = available.FirstOrDefault(bay => bay.Available && bay.Resource.MaxTotalGuests >= request.Attendees);
+            if (assigned is null)
+            { throw new ReservationValidationException(BookingRules.NoBayFitsGroup, nameof(request.StartTime)); }
+            ValidateBookingCapacity(request.Service, [assigned.Resource], request.Attendees, request.Participants);
+            ValidateQuote(entry, request, 1);
+            return;
+        }
         if (request.ResourceIds.Any(id => !available.Any(x => x.Resource.Id == id && x.Available)) ||
             (request.Service == "WholeShop" && available.Count != request.ResourceIds.Length))
         {
-            throw new ReservationValidationException("Your selected bays are unavailable. Choose another time or bay before submitting.");
+            throw new ReservationValidationException("Your selected bays are unavailable. Choose another time or bay before submitting.", nameof(request.ResourceIds));
         }
+        ValidateQuote(entry, request, request.ResourceIds.Length);
         ValidateBookingCapacity(request.Service, available.Where(bay => request.ResourceIds.Contains(bay.Resource.Id))
             .Select(bay => bay.Resource).ToArray(), request.Attendees, request.Participants);
     }

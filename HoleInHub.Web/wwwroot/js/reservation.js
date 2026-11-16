@@ -4,6 +4,22 @@ const ReservationCalendar = {
  startFits(service,date,minute,duration,now){return duration>=30&&minute+duration<=1440&&this.canStart(service,date,minute,now);},
  sessionRange(a,b){const range=this.range(a,b);return{...range,duration:range.duration};},
  scheduleReady(date,time,duration){return /^\d{4}-\d{2}-\d{2}$/.test(date)&&/^\d{2}:\d{2}(:00)?$/.test(time)&&Number(duration)>=30;},
+ sessionIssue(service,bays){
+  if(service==='WholeShop'&&(!bays.length||bays.some(bay=>!bay.available)))return 'The bays aren’t fully available for this whole-shop session. Choose another date or time.';
+  return bays.some(bay=>bay.available)?'':'No bays are available for this session. Choose another date or time.';
+ },
+ wholeShopDayAvailable(day){return Boolean(day?.sessions?.some(session=>session.available));},
+ nearestDate(anchor,today,available){
+  const start=Date.parse((anchor&&anchor>=today?anchor:today)+'T00:00:00Z');
+  if(!Number.isFinite(start))return null;
+  for(let offset=0;offset<=366;offset++){
+   for(const direction of offset?[1,-1]:[1]){
+    const date=new Date(start+offset*direction*86400000).toISOString().slice(0,10);
+    if(date>=today&&available(date))return date;
+   }
+  }
+  return null;
+ },
  period(minute){return minute<720?0:minute<1080?1:2;},
  validSelection(selection,now){
   if(!selection||!Number.isFinite(selection.savedAt)||selection.savedAt>now||now-selection.savedAt>1800000)return false;
@@ -33,6 +49,7 @@ if(typeof document!=='undefined')(()=>{
  const steps=[...form.querySelectorAll('.booking-step')],tabs=[...form.querySelectorAll('.step-tab')],error=document.querySelector('#booking-error'),status=document.querySelector('#availability-status'),inputs=[...form.querySelectorAll('[name=ResourceIds]')],field=name=>form.elements[name],today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
  const experience=()=>form.querySelector('[name=Service]:checked');
  const bookingType=()=>experience()?.dataset.bookingType ?? experience()?.value.split(':')[0];
+ const autoBay=()=>experience()?.dataset.autoBay==='true';
  const venueOpening=date=>new Date(date+'T00:00:00Z').getUTCDay()===1?660:600;
  function serviceWindows(date){
   const raw=experience()?.dataset.availability;
@@ -64,6 +81,88 @@ if(typeof document!=='undefined')(()=>{
  }
  const loadedAt=Date.now(),serverNow=Date.parse(form.dataset.nowUtc)||loadedAt,now=()=>new Date(serverNow+Date.now()-loadedAt),canStart=minute=>ReservationCalendar.canStart(bookingType(),field('Date').value,minute,now());
  let index=0,completed=0,month=field('Date').value.slice(0,7),pending,sequence=0,availabilityReady=false,quote=null,quoteSequence=0,quotePending=false,timePeriod=null,timeDrag=null,suppressTimeClick=false;
+ let sessionProblem='',availableCapacity=0,quoteError='';
+ const sessionStatus=document.querySelector('#session-availability');
+ function showSessionStatus(message,invalid=false){
+  sessionStatus.textContent=message;
+  sessionStatus.classList.toggle('booking-session-invalid',invalid);
+  document.querySelector('#time-slots').setAttribute('aria-invalid',String(invalid));
+ }
+ const monthAvailability=new Map();
+ let calendarRequest,calendarRequestKey,chooseWholeShopDate=false;
+ const calendarHelp=document.createElement('p');
+ calendarHelp.className='booking-session-status';calendarHelp.setAttribute('role','status');
+ document.querySelector('#booking-calendar').append(calendarHelp);
+ const calendarRetry=document.createElement('button');
+ calendarRetry.type='button';calendarRetry.className='account-text-link';calendarRetry.textContent=t('Retry availability');calendarRetry.hidden=true;
+ document.querySelector('#booking-calendar').append(calendarRetry);
+ const calendarKey=()=>experience().value+':'+month;
+ const wholeShopDay=date=>monthAvailability.get(experience().value+':'+date.slice(0,7))?.days?.find(day=>day.date===date);
+ function checkCalendar(){
+  if(bookingType()!=='WholeShop'){calendarHelp.textContent='';calendarRetry.hidden=true;return;}
+  const key=calendarKey(),cached=monthAvailability.get(key);
+  if(cached&&Date.now()-cached.at<20000){
+   calendarHelp.textContent=cached.failed?t('Calendar availability could not be loaded. Please retry.'):
+    t('Only dates with an available whole-shop session can be selected.');
+   calendarRetry.hidden=!cached.failed;return;
+  }
+  if(calendarRequestKey===key)return;
+  calendarRequest?.abort();calendarRequest=new AbortController();calendarRequestKey=key;
+  monthAvailability.delete(key);calendarHelp.textContent=t('Checking available whole-shop dates…');calendarRetry.hidden=true;
+  const [year,monthNumber]=month.split('-');
+  const query=new URLSearchParams({year,month:monthNumber,service:experience().value});
+  fetch('/Reservations/WholeShopCalendar?'+query,{signal:calendarRequest.signal})
+   .then(async response=>{if(!response.ok)throw new Error('Calendar unavailable');return response.json();})
+   .then(days=>{
+    monthAvailability.set(key,{at:Date.now(),days});
+    if(bookingType()==='WholeShop'&&calendarKey()===key){
+     if(chooseWholeShopDate){
+      const previous=field('Date').value;
+      const nearest=ReservationCalendar.nearestDate(previous,today,date=>ReservationCalendar.wholeShopDayAvailable(wholeShopDay(date)));
+      field('Date').value=nearest||'';
+      chooseWholeShopDate=false;
+      if(nearest){
+       const session=wholeShopDay(nearest).sessions.find(item=>item.available);
+       field('StartTime').value=timeValue(session.startMinute);field('DurationMinutes').value=session.duration;
+       if(nearest!==previous)window.HoleInHubToasts?.show({kind:'info',title:t('Date updated'),message:t('Selected the nearest available date for this service.'),replaceKey:'booking-date'});
+       refresh();
+      }else refresh();
+     }
+     const selected=wholeShopDay(field('Date').value);
+     const minute=minuteValue(field('StartTime').value),duration=Number(field('DurationMinutes').value);
+     if(selected&&!selected.sessions.some(session=>session.available&&session.startMinute===minute&&session.duration===duration)){
+      field('StartTime').value='';refresh();
+     }
+    }
+   })
+   .catch(error=>{if(error.name!=='AbortError')monthAvailability.set(key,{at:Date.now(),failed:true});})
+   .finally(()=>{
+    if(calendarRequestKey===key){calendarRequestKey=null;if(bookingType()==='WholeShop'&&calendarKey()===key){calendar();slots();summary();}}
+   });
+ }
+ calendarRetry.onclick=()=>{monthAvailability.delete(calendarKey());calendar();slots();};
+ function serviceDateAvailable(date){
+  if(date<today||!serviceDayAllowed(bookingType(),date))return false;
+  const fixed=fixedSessions(bookingType(),date);
+  if(fixed.length)return fixed.some(slot=>ReservationCalendar.startFits(bookingType(),date,slot.start,slot.duration,now()));
+  for(let minute=venueOpening(date);minute<1440;minute+=30){
+   if(allowsInterval(date,minute,30)&&ReservationCalendar.startFits(bookingType(),date,minute,30,now()))return true;
+  }
+  return false;
+ }
+ function alignServiceDate(){
+  chooseWholeShopDate=bookingType()==='WholeShop';
+  const previous=field('Date').value;
+  const nearest=ReservationCalendar.nearestDate(previous,today,serviceDateAvailable);
+  field('Date').value=nearest||'';
+  const start=minuteValue(field('StartTime').value),duration=Number(field('DurationMinutes').value);
+  if(!nearest||nearest!==previous||!allowsInterval(nearest,start,duration)||!ReservationCalendar.startFits(bookingType(),nearest,start,duration,now()))field('StartTime').value='';
+  if(nearest){
+   month=nearest.slice(0,7);
+   if(chooseWholeShopDate)monthAvailability.delete(calendarKey());
+   if(nearest!==previous)window.HoleInHubToasts?.show({kind:'info',title:t('Date updated'),message:t('Selected the nearest available date for this service.'),replaceKey:'booking-date'});
+  }
+ }
  const contactFields=[...form.querySelectorAll('.booking-contact input:not([type=hidden]),.booking-contact textarea')];
  function contactFeedback(input){const feedback=document.getElementById(input.getAttribute('aria-describedby'));if(!feedback)return;input.setAttribute('aria-invalid',String(!input.validity.valid));feedback.textContent=input.validity.valid?'':input.type==='tel'&&input.validity.patternMismatch?(window.HoleInHubText?.t(window.HoleInHubContacts.error(input.value))??window.HoleInHubContacts.error(input.value)):input.validationMessage;}
  contactFields.forEach(input=>{let timer;input.addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(()=>contactFeedback(input),450);});input.addEventListener('blur',()=>{clearTimeout(timer);contactFeedback(input);});input.addEventListener('invalid',()=>contactFeedback(input));});
@@ -71,8 +170,8 @@ if(typeof document!=='undefined')(()=>{
  const minuteValue=value=>{const [h,m]=value.split(':').map(Number);return h*60+m;};
  const timeLabel=n=>new Intl.DateTimeFormat(locale,{hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}).format(new Date('2026-01-01T00:00:00+08:00').getTime()+n*60000);
  const selected=()=>inputs.filter(x=>x.checked&&!x.disabled);
- function summary(){const bayCapacity=selected().reduce((sum,input)=>sum+Number(input.dataset.maxGuests),0);const serviceCap=Number(experience()?.dataset.maxPax)||(bookingType()==='KpgaGroup'?8:Infinity);field('Attendees').max=String(Math.min(bayCapacity||Number.MAX_SAFE_INTEGER,serviceCap,640));const choice=form.querySelector('[name=Service]:checked'),service=choice.closest('label').querySelector('strong').textContent;document.querySelector('#selection-service').textContent=service;const image=document.querySelector('#selection-image');image.src=choice.closest('label').querySelector('img').getAttribute('src');image.alt=service;const pairs=[['Date',field('Date').value?new Intl.DateTimeFormat(locale,{dateStyle:'long',timeZone:'Asia/Manila'}).format(new Date(field('Date').value+'T12:00:00+08:00')):t('Choose a date')],['Time',field('StartTime').value?`${timeLabel(minuteValue(field('StartTime').value))}–${timeLabel(minuteValue(field('StartTime').value)+Number(field('DurationMinutes').value))}`:t('Choose your hours')],['Duration',`${Number(field('DurationMinutes').value)/60} ${Number(field('DurationMinutes').value)===60?t('hour'):t('hours')}`],['Bays',selected().map(x=>x.closest('label').querySelector('strong').textContent).join(', ')||t('Choose your bays')],['Guests',field('Attendees').value],[t('Guest name'),`${field('FirstName').value} ${field('LastName').value}`.trim()||t('Your details')]];if(quote){const money=new Intl.NumberFormat(locale,{style:'currency',currency:'PHP'});pairs.push([t('Booking total'),money.format(quote.rentalTotal)]);if(quote.depositAmount>0)pairs.push([t('Deposit'),money.format(quote.depositAmount)]);}else{pairs.push([t('Indicative rate'),choice.closest('label').querySelector('.service-rate').dataset.rate]);}for(const selector of ['#live-selection','#review-selection']){const target=document.querySelector(selector);target.replaceChildren();for(const [label,value]of (selector==='#review-selection'?[['Experience',service],...pairs]:pairs)){const row=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=t(label);dd.textContent=value;row.append(dt,dd);target.append(row);}}}
- function calendar(){const title=document.querySelector('#calendar-month'),days=document.querySelector('#calendar-days');title.textContent=new Intl.DateTimeFormat(locale,{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(month+'-01T00:00:00Z'));days.replaceChildren();for(const name of [t('Sun'),t('Mon'),t('Tue'),t('Wed'),t('Thu'),t('Fri'),t('Sat')]){const el=document.createElement('span');el.className='weekday';el.textContent=t(name);days.append(el);}for(const date of ReservationCalendar.monthDays(month)){if(!date){days.append(document.createElement('span'));continue;}const b=document.createElement('button');b.type='button';b.textContent=Number(date.slice(-2));b.disabled=date<today||!serviceDayAllowed(bookingType(),date);b.classList.toggle('selected',date===field('Date').value);b.setAttribute('aria-pressed',String(date===field('Date').value));b.setAttribute('aria-label',new Intl.DateTimeFormat(locale,{dateStyle:'full',timeZone:'UTC'}).format(new Date(date+'T12:00:00Z')));if(date===today)b.setAttribute('aria-current','date');b.onclick=()=>{field('Date').value=date;timePeriod=null;const fixed=fixedSessions(bookingType(),date);if(fixed.length){const choice=fixed.find(x=>ReservationCalendar.canStart(bookingType(),date,x.start,now()));field('StartTime').value=choice?timeValue(choice.start):'';field('DurationMinutes').value=(choice||fixed[0]).duration;}inputs.forEach(x=>x.checked=false);calendar();slots();summary();refresh();};days.append(b);}document.querySelector('#previous-month').disabled=month<=today.slice(0,7);}
+ function summary(){const bayCapacity=autoBay()?availableCapacity:selected().reduce((sum,input)=>sum+Number(input.dataset.maxGuests),0);const serviceCap=Number(experience()?.dataset.maxPax)||(bookingType()==='KpgaGroup'?8:Infinity);field('Attendees').max=String(Math.min(bayCapacity||Number.MAX_SAFE_INTEGER,serviceCap,640));const choice=form.querySelector('[name=Service]:checked'),service=choice.closest('label').querySelector('strong').textContent;document.querySelector('#selection-service').textContent=service;const image=document.querySelector('#selection-image');image.src=choice.closest('label').querySelector('img').getAttribute('src');image.alt=service;const pairs=[['Date',field('Date').value?new Intl.DateTimeFormat(locale,{dateStyle:'long',timeZone:'Asia/Manila'}).format(new Date(field('Date').value+'T12:00:00+08:00')):t('Choose a date')],['Time',field('StartTime').value?`${timeLabel(minuteValue(field('StartTime').value))}–${timeLabel(minuteValue(field('StartTime').value)+Number(field('DurationMinutes').value))}`:t('Choose your hours')],['Duration',`${Number(field('DurationMinutes').value)/60} ${Number(field('DurationMinutes').value)===60?t('hour'):t('hours')}`],['Bays',autoBay()?t('Assigned automatically'):selected().map(x=>x.closest('label').querySelector('strong').textContent).join(', ')||t('Choose your bays')],['Guests',field('Attendees').value],[t('Guest name'),`${field('FirstName').value} ${field('LastName').value}`.trim()||t('Your details')]];if(quote){const money=new Intl.NumberFormat(locale,{style:'currency',currency:'PHP'});pairs.push([t('Booking total'),money.format(quote.rentalTotal)]);if(quote.depositAmount>0)pairs.push([t('Deposit'),money.format(quote.depositAmount)]);}else{pairs.push([t('Indicative rate'),choice.closest('label').querySelector('.service-rate').dataset.rate]);}for(const selector of ['#live-selection','#review-selection']){const target=document.querySelector(selector);target.replaceChildren();for(const [label,value]of (selector==='#review-selection'?[['Experience',service],...pairs]:pairs)){const row=document.createElement('div'),dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=t(label);dd.textContent=value;row.append(dt,dd);target.append(row);}}}
+ function calendar(){checkCalendar();const title=document.querySelector('#calendar-month'),days=document.querySelector('#calendar-days');title.textContent=new Intl.DateTimeFormat(locale,{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(month+'-01T00:00:00Z'));days.replaceChildren();for(const name of [t('Sun'),t('Mon'),t('Tue'),t('Wed'),t('Thu'),t('Fri'),t('Sat')]){const el=document.createElement('span');el.className='weekday';el.textContent=t(name);days.append(el);}for(const date of ReservationCalendar.monthDays(month)){if(!date){days.append(document.createElement('span'));continue;}const b=document.createElement('button');b.type='button';b.textContent=Number(date.slice(-2));b.disabled=date<today||!serviceDayAllowed(bookingType(),date)||(bookingType()==='WholeShop'&&!ReservationCalendar.wholeShopDayAvailable(wholeShopDay(date)));b.classList.toggle('selected',!b.disabled&&date===field('Date').value);b.setAttribute('aria-pressed',String(!b.disabled&&date===field('Date').value));b.setAttribute('aria-label',new Intl.DateTimeFormat(locale,{dateStyle:'full',timeZone:'UTC'}).format(new Date(date+'T12:00:00Z')));if(date===today)b.setAttribute('aria-current','date');b.onclick=()=>{field('Date').value=date;timePeriod=null;const fixed=fixedSessions(bookingType(),date);if(fixed.length){const choice=fixed.find(x=>ReservationCalendar.canStart(bookingType(),date,x.start,now()));field('StartTime').value=choice?timeValue(choice.start):'';field('DurationMinutes').value=(choice||fixed[0]).duration;}inputs.forEach(x=>x.checked=false);calendar();slots();summary();refresh();};days.append(b);}document.querySelector('#previous-month').disabled=month<=today.slice(0,7);}
  function slots(){
   const target=document.querySelector('#time-slots'),tabs=document.querySelector('#time-period-tabs');target.replaceChildren();tabs.replaceChildren();
   const date=field('Date').value,service=bookingType(),opening=new Date(date+'T00:00:00Z').getUTCDay()===1?660:600,duration=Number(field('DurationMinutes').value)||60;
@@ -94,7 +193,7 @@ if(typeof document!=='undefined')(()=>{
   const options=fixed.length?fixed:Array.from({length:(1440-opening)/30},(_,i)=>({start:opening+i*30,duration:30,label:timeLabel(opening+i*30)})).filter(option=>ReservationCalendar.period(option.start)===timePeriod);
   for(const option of options){
    const button=document.createElement('button');button.type='button';button.className='time-slot';button.textContent=t(option.label);
-   button.disabled=!ReservationCalendar.startFits(service,date,option.start,option.duration,now()) || !allowsInterval(date,option.start,option.duration);
+   button.disabled=!ReservationCalendar.startFits(service,date,option.start,option.duration,now()) || !allowsInterval(date,option.start,option.duration) || service==='WholeShop'&&!wholeShopDay(date)?.sessions.some(session=>session.available&&session.startMinute===option.start&&session.duration===option.duration);
    const currentStart=minuteValue(field('StartTime').value),active=fixed.length?currentStart===option.start:option.start>=currentStart&&option.start<currentStart+duration;
    button.classList.toggle('selected',active&&!button.disabled);button.setAttribute('aria-pressed',String(active&&!button.disabled));
    button.dataset.minute=option.start;
@@ -120,13 +219,49 @@ if(typeof document!=='undefined')(()=>{
  }
  window.addEventListener('pointerup',()=>{if(!timeDrag)return;suppressTimeClick=timeDrag.moved;timeDrag=null;if(suppressTimeClick)refresh();setTimeout(()=>suppressTimeClick=false,0);});
  window.addEventListener('pointercancel',()=>{if(timeDrag?.moved)refresh();timeDrag=null;});window.addEventListener('blur',()=>{if(timeDrag?.moved)refresh();timeDrag=null;});
- async function refresh(){pending?.abort();pending=new AbortController();const token=++sequence;availabilityReady=false;quoteSequence++;quotePending=false;quote=null;field('QuoteKey').value='';inputs.forEach(x=>{x.disabled=true;x.closest('label').hidden=bookingType()!=='WholeShop'&&x.dataset.service!==(bookingType()==='VIP'?'VIP':'Regular');});if(!ReservationCalendar.scheduleReady(field('Date').value,field('StartTime').value,field('DurationMinutes').value)){inputs.forEach(input=>input.checked=false);status.textContent=t('Choose a date and start time to check availability.');summary();return;}status.textContent=t('Checking your selected session…');const query=new URLSearchParams({date:field('Date').value,startTime:field('StartTime').value,durationMinutes:field('DurationMinutes').value,service:experience().value});try{const response=await fetch('/Reservations/CheckAvailability?'+query,{signal:pending.signal});if(!response.ok){const problem=await response.json();throw Error(problem.message||t('Choose a valid session within venue opening hours.'));}const data=await response.json();if(token!==sequence)return;for(const input of inputs){const item=data.find(x=>x.resource.id===input.value);input.disabled=!item?.available;const label=input.closest('label');label.classList.toggle('unavailable',input.disabled);label.querySelector('.resource-status').textContent=item?.available?t('Available for your session'):t('Unavailable');if(input.disabled)input.checked=false;}if(bookingType()==='WholeShop'){const free=data.length===inputs.length&&data.every(x=>x.available);inputs.forEach(x=>{x.checked=free;x.disabled=!free;});}availabilityReady=true;status.textContent=bookingType()==='WholeShop'?(selected().length===inputs.length?t('All active bays are available together.'):t('Whole-shop rental is unavailable for this session. Choose another time.')):(data.some(x=>x.available)?t('Available bays for your complete session.'):t('No bays available for this session. Choose another time.'));summary();void updateQuote();}catch(e){if(e.name==='AbortError'||token!==sequence)return;status.textContent=e.message==='Failed to fetch'?'Availability could not be loaded. Please retry.':t(e.message);summary();}}
+ async function refresh(){
+  pending?.abort();pending=new AbortController();const token=++sequence;
+  availabilityReady=false;sessionProblem='';availableCapacity=0;quoteSequence++;quotePending=false;quote=null;quoteError='';field('QuoteKey').value='';
+  inputs.forEach(input=>{input.disabled=true;input.closest('label').hidden=autoBay()||bookingType()!=='WholeShop'&&input.dataset.service!==(bookingType()==='VIP'?'VIP':'Regular');});
+  if(!ReservationCalendar.scheduleReady(field('Date').value,field('StartTime').value,field('DurationMinutes').value)){
+   inputs.forEach(input=>input.checked=false);status.textContent='';showSessionStatus('');summary();return;
+  }
+  error.textContent='';showSessionStatus(t('Checking your selected session…'));
+  const query=new URLSearchParams({date:field('Date').value,startTime:field('StartTime').value,durationMinutes:field('DurationMinutes').value,service:experience().value});
+  try{
+   const response=await fetch('/Reservations/CheckAvailability?'+query,{signal:pending.signal});
+   if(!response.ok){const problem=await response.json().catch(()=>null);throw Error(problem?.message||t('Choose a valid session within venue opening hours.'));}
+   const data=await response.json();if(token!==sequence)return;
+   const wholeShop=bookingType()==='WholeShop';
+   sessionProblem=t(ReservationCalendar.sessionIssue(bookingType(),data));
+   if(wholeShop&&!sessionProblem&&(data.length!==inputs.length||data.some(bay=>!inputs.some(input=>input.value===bay.resource.id)))){
+    sessionProblem=t('The bay catalog changed. Reload and select the whole-shop session again.');
+   }
+   availableCapacity=Math.max(0,...data.filter(bay=>bay.available).map(bay=>bay.resource.maxTotalGuests));
+   for(const input of inputs){
+    const item=data.find(bay=>bay.resource.id===input.value);
+    input.disabled=autoBay()||!item?.available||(wholeShop&&Boolean(sessionProblem));
+    input.closest('label').classList.toggle('unavailable',!item?.available);
+    input.closest('label').querySelector('.resource-status').textContent=item?.available?t('Available for your session'):t('Unavailable');
+    if(wholeShop||input.disabled)input.checked=wholeShop&&!sessionProblem;
+   }
+   availabilityReady=true;
+   if(wholeShop&&sessionProblem){monthAvailability.delete(calendarKey());calendar();slots();}
+   const message=sessionProblem||t(wholeShop?'All active bays are available together.':autoBay()?'We’ll assign an available bay for your group.':'Available bays for your complete session.');
+   status.textContent=message;showSessionStatus(message,Boolean(sessionProblem));summary();void updateQuote();
+  }catch(e){
+   if(e.name==='AbortError'||token!==sequence)return;
+   sessionProblem=e.message==='Failed to fetch'?t('Availability could not be loaded. Please retry.'):t(e.message);
+   status.textContent=sessionProblem;showSessionStatus(sessionProblem,true);summary();
+  }
+ }
  async function updateQuote(){
   const token=++quoteSequence;
-  const bayCount=selected().length;
+  const bayCount=autoBay()?1:selected().length;
   field('QuoteKey').value='';
   quote=null;
-  quotePending=availabilityReady&&bayCount>0&&(bookingType()!=='WholeShop'||form.dataset.demoPayments==='true');
+  quoteError='';
+  quotePending=availabilityReady&&!sessionProblem&&bayCount>0&&(bookingType()!=='WholeShop'||form.dataset.demoPayments==='true');
   summary();
   if(!quotePending)return;
   const query=new URLSearchParams({date:field('Date').value,startTime:field('StartTime').value,durationMinutes:field('DurationMinutes').value,service:experience().value,bayCount});
@@ -138,14 +273,43 @@ if(typeof document!=='undefined')(()=>{
    quote=result;
    field('QuoteKey').value=result.quoteKey;
   }catch(error){
-   if(token===quoteSequence)status.textContent=error.message;
+   if(token===quoteSequence){quoteError=error.message;status.textContent=quoteError;}
   }finally{
    if(token===quoteSequence){quotePending=false;summary();}
   }
  }
- function validate(step){error.textContent='';if(bookingType()==='WholeShop'&&form.dataset.demoPayments!=='true'){error.textContent=t('Whole-shop online checkout is unavailable. Contact the venue.');return false;}if(step===3){contactFields.forEach(contactFeedback);const invalid=ReservationCalendar.invalidFields(contactFields);if(invalid.length){invalid[0].focus();return false;}return true;}if(step===1){const date=field('Date').value,start=minuteValue(field('StartTime').value),duration=Number(field('DurationMinutes').value),opening=new Date(date+'T00:00:00Z').getUTCDay()===1?660:600;if(!serviceDayAllowed(bookingType(),date)){error.textContent='Choose an available program date in the calendar.';return false;}if(!date||!field('StartTime').value||date<today||!Number.isFinite(start)||start<opening||start+duration>1440||duration<30||!canStart(start)||!allowsInterval(date,start,duration)){error.textContent='Choose a later start with the full review window and at least 30 minutes within opening hours.';return false;}}if(step===2&&selected().length&&!quote){error.textContent=quotePending?t('Wait for the quote to finish loading.'):t('The quote could not be loaded. Select your bays again to retry.');return false;}if(step===2&&(!availabilityReady||!selected().length)){error.textContent=availabilityReady?'Select at least one available bay.':'Wait for availability to load, or choose another time.';return false;}for(const input of steps[step].querySelectorAll('input,select,textarea'))if(!input.disabled&&!input.reportValidity())return false;return true;}
- function show(next,focus=true){index=next;const shopPolicy=document.getElementById('whole-shop-policy');if(shopPolicy)shopPolicy.hidden=bookingType()!=='WholeShop';document.querySelector('#pending-policy').hidden=bookingType()==='WholeShop';for(const id of ['booking-submit','booking-verify-required']){const button=document.getElementById(id);if(button){button.hidden=index!==4;if(id==='booking-submit')button.disabled=bookingType()==='WholeShop'&&form.dataset.demoPayments!=='true';}}const note=document.querySelector('#service-capacity-note');note.hidden=['Regular','VIP'].includes(bookingType());note.textContent=bookingType()==='WholeShop'&&form.dataset.demoPayments!=='true'?t('Whole-shop online checkout is unavailable. Contact the venue.'):bookingType()==='WholeShop'?'All active bays are held together. The 50% simulated deposit must succeed within 60 minutes. No real money is collected.':'Staff must record coach confirmation and approve the bay within 60 minutes. Remaining package sessions are arranged with the venue.';document.querySelector('#bay-selection-help').textContent=bookingType()==='WholeShop'?'All active bays are selected together for exclusive use. If any bay is unavailable, choose a different session.':'Choose one bay or bring your group together across several. Click a bay or drag across available bays to select several.';steps.forEach((s,i)=>s.hidden=i!==index);tabs.forEach((tab,i)=>{tab.disabled=i>completed;tab.classList.toggle('current',i===index);tab.classList.toggle('complete',i<index);if(i===index)tab.setAttribute('aria-current','step');else tab.removeAttribute('aria-current');});document.querySelector('#step-back').hidden=index===0;document.querySelector('#step-next').hidden=index===4;summary();window.ScrollTrigger?.refresh();if(focus){const heading=steps[index].querySelector('legend');heading.tabIndex=-1;heading.focus({preventScroll:true});if(!matchMedia('(prefers-reduced-motion: reduce)').matches){window.HoleInHubMotion?.enter(steps[index],{y:12,opacity:.5,duration:.4});const smoother=window.ScrollSmoother?.get();if(smoother)smoother.scrollTo(120,true);else window.scrollTo({top:120,behavior:'smooth'});}}}
- document.querySelector('#previous-month').onclick=()=>{month=ReservationCalendar.shiftMonth(month,-1);calendar();};document.querySelector('#next-month').onclick=()=>{month=ReservationCalendar.shiftMonth(month,1);calendar();};document.querySelector('#step-back').onclick=()=>show(index-1);document.querySelector('#step-next').onclick=()=>{if(validate(index)){completed=Math.max(completed,index+1);show(index+1);}};tabs.forEach((tab,i)=>tab.onclick=()=>{if(i<=completed)show(i);});form.addEventListener('input',summary);form.addEventListener('change',event=>{if(event.target.name==='ResourceIds'&&bookingType()==='WholeShop')inputs.forEach(x=>x.checked=!x.disabled);if(event.target.name==='ResourceIds')void updateQuote();if(['Service','Date','StartTime','DurationMinutes'].includes(event.target.name)){if(event.target.name==='Service'||event.target.name==='Date'){timePeriod=null;const fixed=fixedSessions(bookingType(),field('Date').value);if(fixed.length){const choice=fixed.find(x=>canStart(x.start));field('StartTime').value=choice?timeValue(choice.start):'';field('DurationMinutes').value=(choice||fixed[0]).duration;}else if(event.target.name==='Service'||Number(field('DurationMinutes').value)>840)field('DurationMinutes').value=60;}inputs.forEach(x=>x.checked=false);calendar();slots();refresh();}summary();});form.addEventListener('invalid',event=>{const i=steps.indexOf(event.target.closest('.booking-step'));if(i>=0&&i!==index)show(i);},true);form.addEventListener('submit',event=>{if(event.submitter?.name==='intent')return;for(let i=0;i<4;i++)if(!validate(i)){event.preventDefault();show(i);return;}const submit=document.querySelector('#booking-submit');if(submit){submit.disabled=true;submit.setAttribute('aria-busy','true');}});
+ function validate(step){
+  error.textContent='';
+  if(bookingType()==='WholeShop'&&form.dataset.demoPayments!=='true'){
+   error.textContent=t('Whole-shop online checkout is unavailable. Contact the venue.');return false;
+  }
+  if(step===1){
+   const date=field('Date').value,start=minuteValue(field('StartTime').value),duration=Number(field('DurationMinutes').value);
+   if(!date||!field('StartTime').value){showSessionStatus(t('Choose a date and start time to check availability.'),true);return false;}
+   if(bookingType()==='WholeShop'&&!ReservationCalendar.wholeShopDayAvailable(wholeShopDay(date))){
+    showSessionStatus(t('Choose an available whole-shop date in the calendar.'),true);return false;
+   }
+   if(!serviceDayAllowed(bookingType(),date)){showSessionStatus(t('Choose an available program date in the calendar.'),true);return false;}
+   if(date<today||!Number.isFinite(start)||start<venueOpening(date)||start+duration>1440||duration<30||!canStart(start)||!allowsInterval(date,start,duration)){
+    showSessionStatus(t('Choose a later start with the full review window and at least 30 minutes within opening hours.'),true);return false;
+   }
+   if(sessionProblem||!availabilityReady){showSessionStatus(sessionProblem||t('Checking your selected session…'),Boolean(sessionProblem));return false;}
+  }
+  if(step===2&&autoBay())return true;
+  if(step===2&&!selected().length){error.textContent=t('Select at least one available bay.');return false;}
+  if(step===3){
+   contactFields.forEach(contactFeedback);
+   const invalid=ReservationCalendar.invalidFields(contactFields);
+   if(invalid.length){invalid[0].focus();return false;}
+  }
+  if((step===2||step===3&&autoBay())&&!quote){
+   error.textContent=quoteError||t(quotePending?'Wait for the quote to finish loading.':autoBay()?'The quote could not be loaded. Choose your time again.':'The quote could not be loaded. Select your bays again to retry.');return false;
+  }
+  for(const input of steps[step].querySelectorAll('input,select,textarea'))if(!input.disabled&&!input.reportValidity())return false;
+  return true;
+ }
+ function show(next,focus=true){index=next===2&&autoBay()?1:next;const shopPolicy=document.getElementById('whole-shop-policy');if(shopPolicy)shopPolicy.hidden=bookingType()!=='WholeShop';document.querySelector('#pending-policy').hidden=bookingType()==='WholeShop';for(const id of ['booking-submit','booking-verify-required']){const button=document.getElementById(id);if(button){button.hidden=index!==4;if(id==='booking-submit')button.disabled=bookingType()==='WholeShop'&&form.dataset.demoPayments!=='true';}}const note=document.querySelector('#service-capacity-note');note.hidden=['Regular','VIP'].includes(bookingType());note.textContent=bookingType()==='WholeShop'&&form.dataset.demoPayments!=='true'?t('Whole-shop online checkout is unavailable. Contact the venue.'):bookingType()==='WholeShop'?'All active bays are held together. The 50% simulated deposit must succeed within 60 minutes. No real money is collected.':'Staff must record coach confirmation and approve the bay within 60 minutes. Remaining package sessions are arranged with the venue.';document.querySelector('#bay-selection-help').textContent=bookingType()==='WholeShop'?'All active bays are selected together for exclusive use. If any bay is unavailable, choose a different session.':'Choose one bay or bring your group together across several. Click a bay or drag across available bays to select several.';steps.forEach((s,i)=>s.hidden=i!==index);tabs.forEach((tab,i)=>{tab.hidden=autoBay()&&i===2;tab.querySelector(".step-tab-num").textContent=String((autoBay()&&i>2?i:i+1)).padStart(2,"0");tab.disabled=i>completed;tab.classList.toggle('current',i===index);tab.classList.toggle('complete',i<index);if(i===index)tab.setAttribute('aria-current','step');else tab.removeAttribute('aria-current');});document.querySelector('#step-back').hidden=index===0;document.querySelector('#step-next').hidden=index===4;summary();window.ScrollTrigger?.refresh();if(focus){const heading=steps[index].querySelector('legend');heading.tabIndex=-1;heading.focus({preventScroll:true});if(!matchMedia('(prefers-reduced-motion: reduce)').matches){window.HoleInHubMotion?.enter(steps[index],{y:12,opacity:.5,duration:.4});const smoother=window.ScrollSmoother?.get();if(smoother)smoother.scrollTo(120,true);else window.scrollTo({top:120,behavior:'smooth'});}}}
+ document.querySelector('#previous-month').onclick=()=>{month=ReservationCalendar.shiftMonth(month,-1);calendar();};document.querySelector('#next-month').onclick=()=>{month=ReservationCalendar.shiftMonth(month,1);calendar();};document.querySelector('#step-back').onclick=()=>show(index===3&&autoBay()?1:index-1);document.querySelector('#step-next').onclick=()=>{if(validate(index)){const next=index===1&&autoBay()?3:index+1;completed=Math.max(completed,next);show(next);}};tabs.forEach((tab,i)=>tab.onclick=()=>{if(i<=completed)show(i);});form.addEventListener('input',summary);form.addEventListener('change',event=>{if(event.target.name==='ResourceIds'&&bookingType()==='WholeShop')inputs.forEach(x=>x.checked=!x.disabled);if(event.target.name==='ResourceIds')void updateQuote();if(['Service','Date','StartTime','DurationMinutes'].includes(event.target.name)){if(event.target.name==='Service')alignServiceDate();if(event.target.name==='Service'||event.target.name==='Date'){timePeriod=null;const fixed=fixedSessions(bookingType(),field('Date').value);if(fixed.length){const choice=fixed.find(x=>canStart(x.start));field('StartTime').value=choice?timeValue(choice.start):'';field('DurationMinutes').value=(choice||fixed[0]).duration;}else if(event.target.name==='Service'||Number(field('DurationMinutes').value)>840)field('DurationMinutes').value=60;}inputs.forEach(x=>x.checked=false);calendar();slots();refresh();}summary();});form.addEventListener('invalid',event=>{const i=steps.indexOf(event.target.closest('.booking-step'));if(i>=0&&i!==index)show(i);},true);form.addEventListener('submit',event=>{if(event.submitter?.name==='intent')return;for(let i=0;i<4;i++)if(!validate(i)){event.preventDefault();show(i);return;}const submit=document.querySelector('#booking-submit');if(submit){submit.disabled=true;submit.setAttribute('aria-busy','true');}});
  const authDialog=document.querySelector('#booking-auth-dialog');
  authDialog?.addEventListener('close',()=>window.ScrollSmoother?.get()?.paused(Boolean(document.querySelector('dialog:modal, #site-menu[open]'))));
  function continueAsGuest(){try{sessionStorage.setItem('holeinhub-guest-mode','true');}catch{}authDialog?.close();}

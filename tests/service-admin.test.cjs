@@ -46,7 +46,7 @@ class Element {
     addEventListener(name,fn){this.events[name]=fn;}
     querySelector(selector){return this.map?.[selector];}
 }
-function setup(count, enhance=false, motion, reduced=false, layout=false){
+function setup(count, enhance=false, motion, reduced=false, layout=false, bayChoice){
     const gallery=new Element(), add=new Element(), uploads=new Element(), error=new Element();
     gallery.querySelectorAll=()=>Array.from({length:count},(_,i)=>({dataset:{path:'/media/image'+i},querySelector:()=>({src:'/media/image'+i})}));
     const deposit=new Element(), enabled=new Element(), unit=new Element(), wrap=new Element(), amount=new Element();unit.value='Peso';wrap.map={input:amount};
@@ -56,12 +56,37 @@ function setup(count, enhance=false, motion, reduced=false, layout=false){
     if(enhance){unit.options=rateUnit.options=[{value:'Peso',textContent:'₱'},{value:'Percentage',textContent:'%'}];form.querySelectorAll=()=>[unit,rateUnit];}
     form.map={'[data-deposit-type]':deposit,'[data-deposit-enabled]':enabled,'[data-deposit-unit]':unit,'[data-deposit-value]':wrap,'[name=RateAmount]':rate,'[name=RateUnit]':rateUnit,'[data-service-gallery]':gallery,'[data-image-add]':add,'[data-service-uploads]':uploads,'[data-images-error]':error};
     form.map['[data-booking-type]']=typePicker;form.map['[data-new-booking-type]']=newType;
+    const bookingRules=new Element(),baySelection=new Element(),baySwitch=new Element(),wholeShopNote=new Element();
+    bookingRules.value='Regular';baySwitch.checked=bayChoice??true;baySwitch.dataset.explicit=typeof bayChoice==='boolean'?'true':'false';
+    baySelection.map={'[type=checkbox]':baySwitch};
+    Object.assign(form.map,{'[name=BookingService]':bookingRules,'[data-bay-selection]':baySelection,'[data-whole-shop-bays]':wholeShopNote});
     const resizeCallbacks=[];
     if(layout){const details=new Element();details.getBoundingClientRect=()=>({bottom:600+(enabled.checked?100:0)+(typePicker.value==='__new'?80:0)});gallery.getBoundingClientRect=()=>({top:100});wrap.getBoundingClientRect=()=>({height:100});newType.getBoundingClientRect=()=>({height:80});form.map['.service-detail-fields']=details;}
     class Transfer{constructor(){this.files=[];this.items={add:file=>this.files.push(file)};}}
     vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../HoleInHub.Web/wwwroot/js/service-admin.js'),'utf8'),{document:{addEventListener(){},querySelector:s=>s==='[data-service-editor]'?form:s==='[data-image-viewer]'?viewer:null,createElement:()=>new Element()},window:{innerWidth:1200,gsap:motion,matchMedia:()=>({matches:reduced}),addEventListener(){}},ResizeObserver:class{constructor(callback){resizeCallbacks.push(callback);}observe(){}},DataTransfer:Transfer,URL:{revokeObjectURL(){},createObjectURL:()=>'/blob/new'},Event:class {constructor(type){this.type=type;}},HTMLElement:Element});
-    return {gallery,viewer,enabled,unit,amount,amountWrap:wrap,deposit,uploads,error,form,rate,typePicker,newType,newTypeInput,resize:()=>resizeCallbacks.forEach(callback=>callback())};
+    return {gallery,viewer,enabled,unit,amount,amountWrap:wrap,deposit,uploads,error,form,rate,typePicker,newType,newTypeInput,bookingRules,baySelection,baySwitch,wholeShopNote,resize:()=>resizeCallbacks.forEach(callback=>callback())};
 }
+
+test('bay selection switch follows defaults until changed and whole-shop always uses all bays',()=>{
+    const ui=setup(1);
+    ui.bookingRules.value='KpgaGroup';ui.bookingRules.events.change();
+    assert.equal(ui.baySwitch.checked,false);
+    ui.bookingRules.value='VIP';ui.bookingRules.events.change();
+    assert.equal(ui.baySwitch.checked,true);
+    ui.baySwitch.checked=false;ui.baySwitch.events.change();
+    ui.bookingRules.value='Regular';ui.bookingRules.events.change();
+    assert.equal(ui.baySwitch.checked,false);
+    ui.bookingRules.value='WholeShop';ui.bookingRules.events.change();
+    assert.equal(ui.baySwitch.disabled,true);assert.equal(ui.baySelection.hidden,true);assert.equal(ui.wholeShopNote.hidden,false);
+    ui.bookingRules.value='VIP';ui.bookingRules.events.change();
+    assert.equal(ui.baySwitch.disabled,false);assert.equal(ui.baySwitch.checked,false);
+});
+
+test('saved bay selection remains explicit when reservation rules change',()=>{
+    const ui=setup(1,false,undefined,false,false,false);
+    ui.bookingRules.value='VIP';ui.bookingRules.events.change();
+    assert.equal(ui.baySwitch.checked,false);
+});
 test('image composition fills the base details column without growing for optional fields',()=>{
     const ui=setup(1,false,undefined,true,true);ui.resize();
     assert.equal(ui.gallery.style['--service-gallery-height'],'500px');

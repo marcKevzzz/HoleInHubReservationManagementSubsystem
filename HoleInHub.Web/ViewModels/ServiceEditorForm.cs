@@ -45,6 +45,7 @@ public sealed partial class ServiceEditorForm
     [DisplayFormat(ConvertEmptyStringToNull = false), StringLength(160)] public string RateText { get; set; } = "";
     [DisplayFormat(ConvertEmptyStringToNull = false), StringLength(12000)] public string Details { get; set; } = "";
     [Required] public string BookingService { get; set; } = "Regular";
+    public bool? CustomerSelectsBays { get; set; }
     [DisplayFormat(ConvertEmptyStringToNull = false), StringLength(80)] public string BookingTypeName { get; set; } = "";
     [DisplayFormat(ConvertEmptyStringToNull = false), StringLength(80)] public string NewBookingTypeName { get; set; } = "";
     [Required] public string Action { get; set; } = "Book";
@@ -79,6 +80,7 @@ public sealed partial class ServiceEditorForm
         BookingService, "Book", "Request a booking", Order, Active, DepositType, DepositValue, Images)
         {
             MaxPax = MaxPax,
+            CustomerSelectsBays = BookingService == "WholeShop" ? null : CustomerSelectsBays,
             Pricing = pricing,
             ImageOrder = ImageOrder,
             BookingTypeName = typeName,
@@ -90,6 +92,7 @@ public sealed partial class ServiceEditorForm
     public static ServiceEditorForm From(ServiceEdit item) => new ServiceEditorForm
     {
         MaxPax = item.MaxPax,
+        CustomerSelectsBays = item.CustomerSelectsBays,
         Availability = (item.AvailabilityRules ?? ServiceAvailabilityRules.Defaults(item.BookingService)).Select(ServiceAvailabilityRow.From).ToList(),
         RateUnit = "Peso",
         Id = item.Id,

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 
 namespace HoleInHubReservationManagementSubsystem.ViewModels;
 
-public sealed record ToastNotice(string Kind, string Title, string? Message = null, string? Href = null, string? Action = null)
+public sealed record ToastNotice(string Kind, string Title, string? Message = null, string? Href = null, string? Action = null, string? Icon = null)
 {
     private const string Key = "ToastNotice";
 

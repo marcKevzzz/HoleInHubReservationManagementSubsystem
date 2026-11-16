@@ -59,6 +59,7 @@ public sealed class ReservationRecord
     public string IdempotencyKey { get; set; } = "";
     [BsonElement("PayloadHash")] public string SubmissionHash { get; set; } = "";
     public List<HistoryRecord> History { get; set; } = [];
+    [BsonIgnoreIfNull] public int[]? CustomerReadHistory { get; set; }
 }
 
 public sealed class HistoryRecord

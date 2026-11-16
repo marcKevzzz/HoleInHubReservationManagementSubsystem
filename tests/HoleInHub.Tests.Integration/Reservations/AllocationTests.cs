@@ -15,6 +15,80 @@ public sealed class AllocationTests(MongoDbFixture fixture) : IClassFixture<Mong
         Assert.True(fixture.IsServerAvailable, "Start the MongoDB replica set."); var context = fixture.CreateDbContext(); await new Migration_002_Reservations().UpAsync(context.Database, default); return (new ReservationPersistence(context), context);
     }
     private static ReservationRecord Request(string[] ids, string service = "Regular") => new() { AccountId = Guid.NewGuid().ToString("N"), Email = "customer@example.test", IdempotencyKey = Guid.NewGuid().ToString("N"), SubmissionHash = "test", StartUtc = new DateTime(2026, 11, 3, 4, 0, 0, DateTimeKind.Utc), EndUtc = new DateTime(2026, 11, 3, 5, 0, 0, DateTimeKind.Utc), CreatedUtc = DateTime.UtcNow, ReviewDeadlineUtc = DateTime.UtcNow.AddMinutes(30), ResourceIds = ids, Service = service };
+
+    [Fact]
+    public async Task LessonAssignsAnAvailableRegularBayAndItsHoldPreventsWholeShopCheckout()
+    {
+        var (store, context) = await Setup();
+        var policy = Options.Create(new ReservationPolicy
+        {
+            Approved = true,
+            DurationsApproved = true,
+            ReviewStart = TimeSpan.FromHours(10),
+            ReviewEnd = TimeSpan.FromHours(22),
+            ReviewDays = [1, 2],
+            StaffEmails = ["staff@example.test"],
+            DemoPaymentsEnabled = true
+        });
+        var service = new ReservationService(store, new OutboxPersistence(context), policy, new AllocationClock());
+        var date = new DateOnly(2026, 11, 17);
+        var start = new TimeOnly(15, 0);
+        await context.Database.GetCollection<ScheduleBlock>("schedule_blocks").InsertOneAsync(new()
+        {
+            Id = "maintenance",
+            ResourceIds = ["bay-1"],
+            StartUtc = new DateTime(2026, 11, 17, 7, 0, 0, DateTimeKind.Utc),
+            EndUtc = new DateTime(2026, 11, 17, 8, 0, 0, DateTimeKind.Utc)
+        });
+        var lesson = new SubmitReservationRequest
+        {
+            Service = "KpgaGroup",
+            Date = date,
+            StartTime = start,
+            Attendees = 6,
+            FirstName = "Casey",
+            LastName = "Player",
+            Phone = "09123456789",
+            PrivacyAccepted = true,
+            IdempotencyKey = "lesson-program"
+        };
+        await service.ValidateSubmissionAsync(lesson, false, default);
+        var booked = await service.SubmitAsync(lesson, "customer", "customer@example.test", default);
+        Assert.Equal("bay-2", Assert.Single(booked.ResourceIds));
+        Assert.Empty(lesson.ResourceIds);
+        Assert.Equal(booked.Id, (await service.SubmitAsync(lesson, "customer", "customer@example.test", default)).Id);
+        await context.Database.GetCollection<ScheduleBlock>("schedule_blocks").InsertOneAsync(new()
+        {
+            Id = "morning-only",
+            ResourceIds = ["bay-1"],
+            StartUtc = new DateTime(2026, 11, 18, 2, 0, 0, DateTimeKind.Utc),
+            EndUtc = new DateTime(2026, 11, 18, 7, 0, 0, DateTimeKind.Utc)
+        });
+        var calendar = await service.GetWholeShopCalendarAsync(2026, 11, null, default);
+        Assert.All(calendar.Single(day => day.Date == date).Sessions, session => Assert.False(session.Available));
+        var followingDay = calendar.Single(day => day.Date == date.AddDays(1));
+        Assert.True(followingDay.Sessions.Single(session => session.StartMinute == 900).Available);
+        Assert.False(followingDay.Sessions.Single(session => session.StartMinute == 600).Available);
+        await context.Database.GetCollection<ScheduleBlock>("schedule_blocks").UpdateOneAsync(x => x.Id == "maintenance",
+            Builders<ScheduleBlock>.Update.Set(x => x.ReleasedUtc, new AllocationClock().GetUtcNow().UtcDateTime));
+
+        var conflict = await Assert.ThrowsAsync<ReservationValidationException>(() =>
+            service.GetQuoteAsync(date, start, 360, "WholeShop", null, 8, true, default));
+        Assert.Equal(BookingRules.WholeShopUnavailable, conflict.Message);
+        Assert.Equal(nameof(SubmitReservationRequest.StartTime), conflict.Field);
+        lesson.Service = "WholeShop";
+        lesson.DurationMinutes = 360;
+        lesson.IdempotencyKey = "whole-shop";
+        lesson.ResourceIds = (await service.GetCatalogAsync(default)).Select(bay => bay.Id).ToArray();
+        var writeConflict = await Assert.ThrowsAsync<ReservationValidationException>(() =>
+            service.SubmitAsync(lesson, "customer", "customer@example.test", default, demoAllowed: true));
+        Assert.Equal(BookingRules.WholeShopUnavailable, writeConflict.Message);
+    }
+
+    private sealed class AllocationClock : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => new(2026, 11, 16, 4, 0, 0, TimeSpan.Zero);
+    }
     [Fact]
     public async Task StaffScheduleUsesManilaDayAndShowsSharedBookingsAndTargetedBlocks()
     {

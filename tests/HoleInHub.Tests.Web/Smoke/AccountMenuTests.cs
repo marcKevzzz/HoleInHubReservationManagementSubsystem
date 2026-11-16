@@ -1,11 +1,18 @@
+using System.Net;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
+using System.Text.RegularExpressions;
+using HoleInHub.Data.Context;
+using HoleInHub.Data.Reservations;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MongoDB.Driver;
 using Xunit;
 
 namespace HoleInHub.Tests.Web.Smoke;
@@ -68,7 +75,7 @@ public sealed class AccountMenuTests
     }
 
     [Fact]
-    public async Task CustomerGetsTheNotificationsEntryAndComingSoonPage()
+    public async Task CustomerMenuListsNotificationsBetweenTransactionsAndProfile()
     {
         await using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services => services.AddAuthentication("MenuTest")
@@ -78,8 +85,75 @@ public sealed class AccountMenuTests
         var html = await client.GetStringAsync("/");
         Assert.Contains("href=\"/notifications\"", html);
         Assert.DoesNotContain("Admin workspace", html);
-        var page = await client.GetStringAsync("/notifications");
-        Assert.Contains("Coming soon", page);
+        Assert.True(html.IndexOf("href=\"/transactions\"", StringComparison.Ordinal) < html.IndexOf("href=\"/notifications\"", StringComparison.Ordinal));
+        Assert.True(html.IndexOf("href=\"/notifications\"", StringComparison.Ordinal) < html.IndexOf("href=\"/my-profile\"", StringComparison.Ordinal));
+    }
+
+    [Fact, Trait("Category", "Integration")]
+    public async Task CustomerInboxOnlyShowsOwnedEventsAndPersistsReadState()
+    {
+        var database = "test_inbox_" + Guid.NewGuid().ToString("N");
+        await using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder => builder.UseEnvironment("Testing")
+            .ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["MongoDb:ConnectionString"] = "mongodb://localhost:27017/?replicaSet=rs0",
+                ["MongoDb:ReplicaSetName"] = "rs0",
+                ["MongoDb:DatabaseName"] = database
+            })).ConfigureTestServices(services => services.AddAuthentication("MenuTest")
+                .AddScheme<AuthenticationSchemeOptions, MenuAuthenticationHandler>("MenuTest", _ => { })));
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost"), AllowAutoRedirect = false });
+        client.DefaultRequestHeaders.Add("X-Menu-Role", "Customer");
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IMongoDbContext>();
+        var records = context.Database.GetCollection<ReservationRecord>("reservations");
+        var time = new DateTime(2026, 11, 15, 3, 0, 0, DateTimeKind.Utc);
+        var owned = new ReservationRecord
+        {
+            AccountId = "menu-test",
+            Reference = "OWNED-INBOX",
+            History = [
+            new() { EventType = "SubmissionCreated", AtUtc = time },
+            new() { EventType = "ReservationConfirmed", AtUtc = time.AddMinutes(1) },
+            new() { EventType = "AttendanceCorrected", AtUtc = time.AddMinutes(2), Reason = "Private staff note" }
+        ]
+        };
+        var other = new ReservationRecord { AccountId = "someone-else", Reference = "PRIVATE-INBOX", History = [new() { EventType = "ReservationConfirmed", AtUtc = time }] };
+        try
+        {
+            Assert.Contains("No notifications yet", await client.GetStringAsync("/notifications"));
+            Assert.Equal("{\"unread\":false}", await client.GetStringAsync("/notifications/unread"));
+            await records.InsertManyAsync([owned, other]);
+            Assert.Equal("{\"unread\":true}", await client.GetStringAsync("/notifications/unread"));
+            var page = await client.GetStringAsync("/notifications");
+            Assert.Contains("Reservation confirmed", page);
+            Assert.Contains("Request received", page);
+            Assert.Contains("OWNED-INBOX", page);
+            Assert.DoesNotContain("PRIVATE-INBOX", page);
+            Assert.DoesNotContain("Private staff note", page);
+            Assert.DoesNotContain("data-customer-unread hidden", page);
+            var csrf = WebUtility.HtmlDecode(Regex.Match(page, "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"").Groups[1].Value);
+            async Task<string> ReadAsync(string id, int index, DateTime at)
+            {
+                using var response = await client.PostAsync("/notifications/read-visible", new FormUrlEncodedContent(new Dictionary<string, string>
+                {
+                    ["__RequestVerificationToken"] = csrf,
+                    ["rows[0].Id"] = $"{id}:{index}",
+                    ["rows[0].ActivityTicks"] = at.Ticks.ToString()
+                }));
+                response.EnsureSuccessStatusCode();
+                return await response.Content.ReadAsStringAsync();
+            }
+
+            Assert.Equal("{\"unread\":1}", await ReadAsync(other.Id, 0, time));
+            Assert.Null((await records.Find(x => x.Id == other.Id).SingleAsync()).CustomerReadHistory);
+            Assert.Equal("{\"unread\":1}", await ReadAsync(owned.Id, 1, time.AddMinutes(1)));
+            Assert.Equal("{\"unread\":0}", await ReadAsync(owned.Id, 0, time));
+            Assert.Equal("{\"unread\":false}", await client.GetStringAsync("/notifications/unread"));
+            var refreshed = await client.GetStringAsync("/notifications");
+            Assert.DoesNotMatch("data-unread-id=\"[^\"]+\"", refreshed);
+            Assert.Contains("data-customer-unread hidden", refreshed);
+        }
+        finally { await context.Client.DropDatabaseAsync(database); }
     }
 
     private sealed class MenuAuthenticationHandler(IOptionsMonitor<AuthenticationSchemeOptions> options,

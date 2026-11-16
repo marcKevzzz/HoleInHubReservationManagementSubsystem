@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
+using HoleInHub.Business.Accounts;
 using HoleInHub.Web.Accounts;
 using HoleInHub.Web.ViewModels;
 using Microsoft.AspNetCore.Authentication;
@@ -91,9 +92,9 @@ public sealed partial class AccountController
             if (!(await users.UpdateAsync(user)).Succeeded) { return await GoogleFailed(); }
         }
         await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
-        await signIn.SignInAsync(user, false, "Google");
+        await signIn.SignInAsync(user, CustomerSession(!user.Roles.Any(StaffRoles.Workspace.Contains)), "Google");
         TempData["PageArrival"] = true;
-        new HoleInHubReservationManagementSubsystem.ViewModels.ToastNotice("success", created ? "Account created" : user.WelcomeTitle, "Welcome to Hole In Hub.").Store(TempData);
+        new HoleInHubReservationManagementSubsystem.ViewModels.ToastNotice("success", created ? "Account created" : user.WelcomeTitle, "Welcome to Hole In Hub.", Icon: created ? null : "sign-in").Store(TempData);
         return LocalRedirect(SafeReturnUrl(returnUrl) ?? "/");
     }
 }
