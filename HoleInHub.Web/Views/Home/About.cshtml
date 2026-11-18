@@ -1,11 +1,56 @@
-@{ViewData["Title"]="About";var chapters=new[]{("01","SIMULATOR SUITES","THE ROUND STARTS IN THE BAY","Start with one bay and work through your bag, or take turns playing a round with friends. The venue has five regular simulator bays and two VIP bays. Larger groups can request sessions across multiple bays.","venue-overview"),("02","SOCIAL SPACES","STAY FOR THE COMPANY","The lounge shares the floor with the simulators. Take a seat while someone else plays, talk through the shot you nearly made, or stay together after the round ends. It gives the group a place to gather even when only some of you are playing.","social-seating"),("03","COACHING & CLINICS","BUILD A SWING OF YOUR OWN","A first lesson can begin with grip and setup. If you already play, bring the part of your game you want to work on. The venue offers individual coaching and KPGA programs, including a small-group format.","coaching"),("04","GATHERINGS & EVENTS","MAKE THE VENUE YOURS","A family round and a team outing call for different amounts of space. Reserve multiple bays for a group session, or choose a whole-shop rental for exclusive use. The whole-shop options include a half-day block and a full-day block.","family-play")};}
-<div class="page-content venue-page venue-about">
-    <header class="venue-heading">
-        <h1 data-venue-title>ABOUT HOLE IN HUB</h1>
-        <p data-motion="load">On the third floor of the EK Building in Quezon City, Hole In Hub Golf &amp; Lounge brings the game indoors. The bays are where you take your swings. The lounge is where you compare them. Come to practise one shot, take your first lesson or spend an evening playing with friends.</p>
-    </header>
+@{
+    ViewData["Title"] = "About";
+    ViewData["HideFooter"] = true;
+    var stories = new (string Title, string Description, string Image, string Alt, bool FullBleed)[]
+    {
+        ("Private Events", "Bring family or colleagues for a round together. Reserve multiple bays or request exclusive use of the venue for a half day or a full day.", "family-play", "A group playing indoor golf together", true),
+        ("Simulator Bays", "Work through your bag or take turns playing a round with friends. There are five regular simulator bays and two VIP bays. Larger groups can request multiple bays.", "venue-overview", "Indoor golf simulator bays at Hole In Hub", false),
+        ("The Lounge", "The lounge shares the floor with the simulators. Take a seat while someone else plays, or stay together after the round ends.", "social-seating", "Lounge seating beside the simulators", false),
+        ("Coaching", "Start with grip and setup or work on a specific part of your game. Hole In Hub offers individual coaching and KPGA programs, including small-group lessons.", "coaching", "A coach helping a player with their setup", false),
+    };
+}
+<div class="page-content venue-page venue-about about-story-window" role="region" aria-label="Explore Hole In Hub" tabindex="0">
+    <div class="about-stories">
+        <header class="about-panel">
+            <img src="/media/facebook/venue-tour-poster.webp" alt="Guests gathered at Hole In Hub" fetchpriority="high" />
+            <div class="about-panel-copy">
+            <h1>ABOUT HOLE IN HUB</h1>
+            <p>Play a round indoors, take your first lesson, or catch up with friends in the lounge. Find Hole In Hub Golf &amp; Lounge on the third floor of the EK Building in Quezon City.</p>
+            </div>
+        </header>
+
+        @foreach (var story in stories)
+        {
+            <section class="about-panel @(story.FullBleed ? "about-panel-full" : null) @(story.Image == "social-seating" ? "about-panel-inset about-lounge" : story.Image == "coaching" ? "about-panel-inset about-coaching" : null)">
+                <img src="/media/facebook/@(story.Image).webp" alt="@story.Alt" loading="lazy" />
+                <div class="about-panel-copy">
+                    <h2>@story.Title</h2>
+                    <p>@story.Description</p>
+                    @if (story.Image == "social-seating")
+                    {
+                        <img class="about-support-photo" src="/media/facebook/lounge-guests.jpg" alt="Guests watching a round from the lounge seating" width="1080" height="1350" loading="lazy" />
+                    }
+                    else if (story.Image == "coaching")
+                    {
+                        <img class="about-support-photo" src="/media/facebook/coaching-graduates.jpg" alt="Junior golfers holding their certificates beside their coach" width="1428" height="1785" loading="lazy" />
+                    }
+                </div>
+            </section>
+        }
+        <section class="about-panel">
+            <img src="/media/facebook/golf-and-desserts-poster.webp" alt="Golf and desserts at Hole In Hub" loading="lazy" />
+            <div class="about-panel-copy about-ending">
+                <h2>
+                    <span>YOUR ROUND</span><br /><span>STARTS HERE</span>
+                </h2>
+                <p>Step onto the turf and into your next round in Quezon City.</p>
+                <a class="button" href="/Reservations/Create">RESERVE A BAY</a>
+                <a class="about-ending-word" href="/Reservations/Create" aria-label="RESERVE A BAY">PLAY</a>
+            </div>
+        </section>
+    </div>
 </div>
-<div class="heritage-page"><div class="heritage-track" tabindex="0" aria-label="Explore the Hole In Hub experience">@foreach(var chapter in chapters){<section class="heritage-group"><div class="heritage-copy"><span>@chapter.Item2</span><h2>@chapter.Item3</h2><p>@chapter.Item4</p><strong aria-hidden="true">@chapter.Item1</strong></div><img src="/media/facebook/@(chapter.Item5).webp" alt="@chapter.Item2"/></section>}<section class="heritage-copy heritage-end"><h2>YOUR ROUND STARTS HERE</h2><p>Step onto the turf and into your next round in Quezon City.</p><a class="button" href="/Reservations/Create">RESERVE A BAY</a><strong aria-hidden="true">PLAY</strong></section></div></div>
-<div class="page-content venue-page venue-about-end">
-    <div class="venue-next" data-motion="reveal"><h2>Find us in Quezon City</h2><a class="button button-secondary" href="/contacts">Hours &amp; directions</a></div>
-</div>
+
+@section Scripts {
+    <script src="~/js/about.js" asp-append-version="true"></script>
+}

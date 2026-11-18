@@ -1,3 +1,5 @@
+using HoleInHub.Data.Context;
+using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Text.RegularExpressions;
 using FluentAssertions;
@@ -10,7 +12,7 @@ namespace HoleInHub.Tests.Web.Smoke;
 public sealed class PublicPagesSmokeTests : IClassFixture<WebApplicationFactory<Program>>
 {
     private readonly HttpClient _client;
-    public PublicPagesSmokeTests(WebApplicationFactory<Program> factory) { _client = factory.WithWebHostBuilder(builder => builder.ConfigureLogging(logging => logging.ClearProviders())).CreateClient(); }
+    public PublicPagesSmokeTests(WebApplicationFactory<Program> factory) { _client = factory.WithWebHostBuilder(builder => builder.UseEnvironment("Testing").ConfigureLogging(logging => logging.ClearProviders()).ConfigureServices(services => services.AddSingleton<IMongoDbContext>(new ServiceUnavailableTests.OfflineContext()))).CreateClient(); }
     [Theory]
     [InlineData("/Home/About", "ABOUT HOLE IN HUB")]
     [InlineData("/Home/Gallery", "Gallery")]

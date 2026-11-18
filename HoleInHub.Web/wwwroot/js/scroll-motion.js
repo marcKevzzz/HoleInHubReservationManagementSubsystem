@@ -5,7 +5,8 @@
 
     gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
     const media = gsap.matchMedia();
-    media.add('(min-width: 701px) and (prefers-reduced-motion: no-preference)', () => {
+    const minimumWidth = content.querySelector('.about-story-window') ? 801 : 701;
+    media.add(`(min-width: ${minimumWidth}px) and (prefers-reduced-motion: no-preference)`, () => {
         const smoother = ScrollSmoother.create({ wrapper, content, smooth: .9, effects: true });
         if (document.querySelector('dialog:modal, #site-menu[open]')) smoother.paused(true, true);
         return () => smoother.kill();
