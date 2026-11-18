@@ -1,0 +1,38 @@
+@{ var policyContactEmail = ViewData["PolicyContactEmail"] as string ?? "holeinhub@gmail.com"; }
+<p>@T("These terms govern your use of the Hole In Hub Golf & Lounge website and reservation system. By submitting a booking request or creating an account, you agree to them.")</p>
+
+<h3>@T("Services")</h3>
+<p>@T("We offer regular simulator bays (Bay 1 to Bay 5), VIP bays (VIP 1 and VIP 2), golf coaching, and whole-shop rentals. Coaching uses regular bays, and a whole-shop rental reserves every active bay exclusively. You may browse services and availability without signing in. Availability reflects recorded reservations and configured schedules, and does not detect physical occupancy.")</p>
+
+<h3>@T("Reservations")</h3>
+<ul>
+    <li>@T("Sessions last at least 30 minutes, in 30-minute increments, and must fit within operating hours.")</li>
+    <li>@T("Whole-shop rentals are available as a half day (3:00 PM to 9:00 PM) or from opening to midnight.")</li>
+    <li>@T("Online bookings require at least 30 minutes' notice for regular bays and 60 minutes for other services. There is no limit on how far ahead you may book.")</li>
+    <li>@T("A multi-bay booking is a single reservation. All requested bays are allocated together, or the request is declined.")</li>
+</ul>
+
+<h3>@T("Booking Process")</h3>
+<p>@T("To book online, verify your email with a one-time code, or sign in with a verified account. You will receive a receipt showing your request as") <strong>@T("Pending")</strong>. @T("When an ordinary online request is submitted, the requested bays are held for you immediately. Browsing alone, or an unverified draft, holds nothing.")</p>
+<p>@T("Our staff review requests during staffed operating hours. The review window is 30 minutes for regular bays and 60 minutes for VIP and coaching, and it pauses when we are closed. A booking is confirmed only when staff approve it and you receive a confirmation email. Coaching also requires confirmation from the coach.")</p>
+<p>@T("If a decision is not made in time, the bay hold is released and your request remains Pending, marked overdue. Staff may still confirm it before the session if the bays remain available, decline it, or send you a link to rebook. Requests that are never decided expire at the session start time.")</p>
+
+<h3>@T("Cancellations and Changes")</h3>
+<p>@T("You may cancel a Pending or Confirmed booking online up to one hour before the session begins.")</p>
+<p>@T("Confirmed regular and VIP customers may request a new schedule or duration at least one hour before the current start. One request may be open at a time, and the service, number of bays, and number of guests must stay the same. Staff approve a change only if the new slot is available, and your original booking remains in place until approval.")</p>
+
+<h3>@T("Whole-Shop Rentals and Deposits")</h3>
+<p>@T("Whole-shop rentals require a 50% deposit, due within 60 minutes of your request. When live payment integration is available, payment is processed through our point-of-sale system. A missing or failed payment response does not count as a verified deposit.")</p>
+<p>@T("When the reservation site is running in demonstration mode, deposit activity is simulated and no real money is collected. Any live payment flow will identify the applicable payment instructions before collection.")</p>
+
+<h3>@T("Arrival and No-Shows")</h3>
+<p>@T("Confirmed bookings are held for one hour after the start time, or until the scheduled end if sooner. Staff may contact you during this time and decide whether to mark a no-show and release the bay. Late arrival does not extend your end time. Extensions require availability and staff approval.")</p>
+
+<h3>@T("Accounts and Status Links")</h3>
+<p>@T("Public sign-up creates customer accounts only. Verification codes expire after 10 minutes, allow five attempts, and may be resent after one minute. Your booking status link is private, so please do not share it. You are responsible for the accuracy of your email address and the security of your account.")</p>
+
+<h3>@T("Communications")</h3>
+<p>@T("We send confirmation emails after approval and a reminder approximately 15 minutes before your session. Delivery depends on a valid email address and our email provider. Our chatbot gives predefined answers to basic questions. It cannot approve bookings, and only staff confirmation is binding.")</p>
+
+<h3>@T("Contact")</h3>
+<p>@T("For questions about these terms or a specific reservation, contact") <a href="mailto:@policyContactEmail">@policyContactEmail</a>.</p>

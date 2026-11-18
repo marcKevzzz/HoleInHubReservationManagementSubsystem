@@ -7,43 +7,26 @@ const heritage=root.querySelector('.heritage-page');if(heritage){const container
 root.querySelectorAll('.feature-grid article').forEach(article=>{const fig=document.createElement('figure');article.replaceWith(fig);fig.append(article);const img=article.querySelector('img'),frame=document.createElement('div');frame.className='photo-frame';img.before(frame);frame.append(img);});
 root.querySelectorAll('h1,h2').forEach(h=>{const walk=document.createTreeWalker(h,NodeFilter.SHOW_TEXT),texts=[];while(walk.nextNode())texts.push(walk.currentNode);texts.forEach(text=>{const fragment=document.createDocumentFragment();text.textContent.split(/(\s+)/).forEach(word=>{if(!word.trim()){fragment.append(document.createTextNode(word));return;}const wrap=document.createElement('span'),inner=document.createElement('span');wrap.className='split-word-wrap';inner.className='split-word';inner.textContent=word;wrap.append(inner);fragment.append(wrap);});text.replaceWith(fragment);});});
 
-function initVideoControl(video, preference) {
-  video.tabIndex = 0;
-  video.setAttribute('role', 'button');
-  video.title = 'Click or press Space to pause or play the background video';
-  let manualPause = false;
-  const sync = () => video.setAttribute('aria-label', video.paused ? 'Play background video' : 'Pause background video');
-  const toggle = () => {
-    manualPause = !video.paused;
-    if (video.paused) video.play().catch(sync);
-    else video.pause();
+function initBackgroundVideo(video, preference) {
+  if (video.controls) return () => {};
+  video.removeAttribute('role');
+  video.removeAttribute('tabindex');
+  video.removeAttribute('title');
+  video.setAttribute('aria-hidden', 'true');
+  let isVisible = false;
+  const syncPlayback = () => {
+    if (!isVisible || preference.matches) video.pause();
+    else video.play().catch(() => {});
   };
-  const parentClick = event => {
-    if (event.target !== video && !event.target.closest('a,button,input,select,textarea')) toggle();
-  };
-  const keydown = event => {
-    if (event.key === ' ' || event.key === 'Enter') { event.preventDefault(); toggle(); }
-  };
-  const preferenceChange = () => { if (preference.matches) video.pause(); };
-  video.addEventListener('click', toggle);
-  video.parentElement.addEventListener('click', parentClick);
-  video.addEventListener('keydown', keydown);
-  video.addEventListener('play', sync);
-  video.addEventListener('pause', sync);
+  const preferenceChange = () => syncPlayback();
   preference.addEventListener('change', preferenceChange);
-  sync();
   const observer = new IntersectionObserver(([entry]) => {
-    if (!entry.isIntersecting) video.pause();
-    else if (!preference.matches && !manualPause) video.play().catch(sync);
-  });
+    isVisible = entry.isIntersecting;
+    syncPlayback();
+  }, { threshold: 0.01 });
   observer.observe(video);
   return () => {
     observer.disconnect();
-    video.removeEventListener('click', toggle);
-    video.parentElement.removeEventListener('click', parentClick);
-    video.removeEventListener('keydown', keydown);
-    video.removeEventListener('play', sync);
-    video.removeEventListener('pause', sync);
     preference.removeEventListener('change', preferenceChange);
   };
 }
@@ -54,9 +37,12 @@ function animatePage(root) {
   let media;
   const context = gsap.context(() => {
     media = gsap.matchMedia();
-    media.add({ motion: '(prefers-reduced-motion: no-preference)', desktop: '(min-width: 701px)' }, ({ conditions }) => {
-      if (!conditions.motion) return;
+    media.add({ motion: '(prefers-reduced-motion: no-preference)', desktop: '(min-width: 701px)', galleryDesktop: '(min-width: 901px)' }, ({ conditions }) => {
+      if (!conditions.motion) {
+        return;
+      }
       const desktop = conditions.desktop;
+      const galleryDesktop = conditions.galleryDesktop;
       const heroes = root.querySelectorAll('.hero'); heroes.forEach((section,index)=>{if(index>0){section.querySelector('.hero-content')?.classList.replace('hero-content','statement-content');}}); const hero = root.querySelector('.hero');
       const revealHeading = (element, entrance = false) => {
         const words = element.querySelectorAll('.split-word');
@@ -98,7 +84,7 @@ function animatePage(root) {
 
       root.querySelectorAll('[data-venue-title]').forEach(element => revealHeading(element, true));
 
-      root.querySelectorAll('.intro h2,.mosaic-copy h2,.statement h2,.venue-promotions h2,.about-teaser h2,.final-cta h2,.contact-gallery h2')
+      root.querySelectorAll('.intro h2:not(#home-experience-heading),.mosaic-copy h2,.statement h2,.venue-promotions h2,.about-teaser h2,.final-cta h2,.contact-gallery h2')
         .forEach(element => revealHeading(element));
 
       if (hero) {
@@ -166,22 +152,22 @@ function animatePage(root) {
       });
 
       // Editorial figures: animate scale in ONCE on scroll (no scroll out, matching user specification, no border-radius)
-      root.querySelectorAll('.editorial figure').forEach((fig, index) => {
+      root.querySelectorAll('.editorial:not(.homepage-editorial) figure').forEach((fig, index) => {
         const frame = fig.querySelector('.photo-frame');
         const image = frame?.querySelector('img');
         if (!frame || !image || frame.hasAttribute('data-parallax') || frame.hasAttribute('data-motion')) return;
 
-        window.HoleInHubMotion.reveal(frame, { trigger: fig, start: 'top 85%', scale: .82, y: 0, duration: 1.1 });
+        window.HoleInHubMotion.reveal(frame, { trigger: fig, start: 'top 88%', scale: .96, y: 0, duration: 0.65 });
 
         // Keep parallax effect inside the image matching scrub speed - increased parallax depth
-        window.HoleInHubMotion.parallax(image, { trigger: fig, depth: 18, scrub: 0.2 });
+        window.HoleInHubMotion.parallax(image, { trigger: fig, depth: 5, scrub: 0.45 });
 
         // Desktop vertical staggered float - increased parallax travel
         if (desktop) {
           gsap.fromTo(fig, { y: index % 2 ? 65 : 95 }, {
-            y: index % 2 ? -65 : -95,
+            y: index % 2 ? -8 : -10,
             ease: 'none',
-            scrollTrigger: { trigger: fig, start: 'top bottom', end: 'bottom top', scrub: 0.8 },
+            scrollTrigger: { trigger: fig, start: 'top bottom', end: 'bottom top', scrub: 1.1 },
           });
         }
       });
@@ -229,15 +215,15 @@ function animatePage(root) {
         }
       }
 
-      // Venue promotions: animate images similar to gallery images, with stagger
+      // Venue promotions: bring the cards in gently and let the poster images settle into place.
       const venuePromos = root.querySelector('.venue-promotions');
-      const promoGrid = root.querySelector('.promotion-grid');
-      if (venuePromos && promoGrid) {
+      const promoCards = venuePromos ? Array.from(venuePromos.querySelectorAll('.promotion-card')) : [];
+      if (venuePromos && promoCards.length) {
         const headerItems = venuePromos.querySelectorAll('.eyebrow, .promotion-note');
         if (headerItems.length) {
           gsap.from(headerItems, {
-            y: 20,
-            opacity: 1,
+            y: 22,
+            opacity: 0,
             duration: 0.8,
             stagger: 0.1,
             ease: 'power3.out',
@@ -249,139 +235,245 @@ function animatePage(root) {
           });
         }
 
-        const figures = Array.from(promoGrid.querySelectorAll('figure'));
-        if (figures.length) {
-          // Staggered entrance matching gallery image animation (from opacity: 0 to opacity: 1)
-          gsap.fromTo(figures.map(figure => figure.querySelector("img")),
-            { opacity: 0 },
+        promoCards.forEach((card, index) => {
+          const imageFrame = card.querySelector('.promotion-card-image-frame');
+          gsap.fromTo(card,
+            { y: 34, opacity: 0, scale: 0.985 },
             {
+              y: 0,
               opacity: 1,
+              scale: 1,
               duration: 0.9,
-              stagger: 0.16,
+              delay: index * 0.12,
               ease: 'power3.out',
-              scrollTrigger: {
-                trigger: promoGrid,
-                start: 'top 88%',
-                once: true,
-              }
+              scrollTrigger: { trigger: card, start: 'top 84%', once: true }
             }
           );
-
-          // Staggered captions matching gallery info
-          const captions = Array.from(promoGrid.querySelectorAll('figcaption'));
-          if (captions.length) {
-            gsap.from(captions, {
-              y: 18,
-              opacity: 1,
-              duration: 0.85,
-              stagger: 0.16,
-              delay: 0.12,
-              ease: 'power3.out',
-              scrollTrigger: {
-                trigger: promoGrid,
-                start: 'top 88%',
-                once: true,
+          if (imageFrame) {
+            gsap.fromTo(imageFrame,
+              { scale: 1.02, yPercent: 0.5 },
+              {
+                scale: 1,
+                yPercent: 0,
+                duration: 0.9,
+                delay: index * 0.08 + 0.04,
+                ease: 'power2.out',
+                scrollTrigger: { trigger: card, start: 'top 82%', once: true }
               }
+            );
+          }
+        });
+      }
+
+      // Home experience: reveal the floating mosaic one image at a time.
+      const museum = root.querySelector('.museum-experience');
+      if (museum) {
+        const exhibits = Array.from(museum.querySelectorAll('[data-museum-item]'));
+        const intro = museum.querySelector('[data-museum-copy]');
+
+        if (intro) {
+          const introItems = intro.querySelectorAll('.eyebrow, h2, p:not(.eyebrow), .museum-gallery-link');
+          if (introItems.length) {
+            gsap.from(introItems, {
+              y: 12,
+              opacity: 0.9,
+              duration: 0.75,
+              stagger: 0.07,
+              ease: 'power2.out',
+              scrollTrigger: { trigger: intro, start: 'top 86%', once: true }
             });
           }
+        }
 
-          // Subtle parallax on the images inside matching gallery
-          figures.forEach((fig) => {
-            const img = fig.querySelector('img');
-            if (img) {
-              window.HoleInHubMotion.parallax(img, { trigger: fig, depth: 3, scrub: 0.25 });
-            }
+        exhibits.forEach((exhibit, index) => {
+          const direction = index % 2 === 0 ? 1 : -1;
+          const finalOpacity = Number.parseFloat(window.getComputedStyle(exhibit).opacity) || 1;
+
+          gsap.fromTo(exhibit, {
+            x: direction * 12,
+            y: 10,
+            scale: 0.985,
+            opacity: finalOpacity * 0.55,
+          }, {
+            x: 0,
+            y: 0,
+            scale: 1,
+            opacity: finalOpacity,
+            duration: 0.9,
+            delay: index * 0.045,
+            ease: 'power2.out',
+            scrollTrigger: { trigger: exhibit, start: 'top 90%', once: true }
+          });
+
+          const image = exhibit.querySelector('img');
+          if (!image) return;
+          if (galleryDesktop) {
+            gsap.fromTo(image,
+              { yPercent: 2.5, scale: 1.035 },
+              {
+                yPercent: -1.5,
+                scale: 1.015,
+                ease: 'none',
+                scrollTrigger: { trigger: exhibit, start: 'top bottom', end: 'bottom top', scrub: 0.45 }
+              }
+            );
+          }
+        });
+
+        if (galleryDesktop && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+          const floatTargets = exhibits.map((exhibit, index) => ({
+            x: gsap.quickTo(exhibit, 'x', { duration: 0.85, ease: 'power3.out' }),
+            y: gsap.quickTo(exhibit, 'y', { duration: 0.85, ease: 'power3.out' }),
+            depth: Number(exhibit.dataset.floatDepth) || 10,
+            xDirection: index % 2 === 0 ? -1 : 1,
+            yDirection: index % 3 === 0 ? 1 : -1
+          }));
+
+          const moveWithPointer = event => {
+            const bounds = museum.getBoundingClientRect();
+            if (!bounds.width || !bounds.height) return;
+            const pointerX = ((event.clientX - bounds.left) / bounds.width - 0.5) * 2;
+            const pointerY = ((event.clientY - bounds.top) / bounds.height - 0.5) * 2;
+            floatTargets.forEach(target => {
+              target.x(pointerX * target.depth * target.xDirection);
+              target.y(pointerY * target.depth * 0.65 * target.yDirection);
+            });
+          };
+          const resetFloat = () => floatTargets.forEach(target => { target.x(0); target.y(0); });
+
+          museum.addEventListener('pointermove', moveWithPointer, { passive: true });
+          museum.addEventListener('pointerleave', resetFloat, { passive: true });
+          cleanup.push(() => {
+            museum.removeEventListener('pointermove', moveWithPointer);
+            museum.removeEventListener('pointerleave', resetFloat);
           });
         }
       }
 
-      // Heritage Mosaic Teaser on Home page (matching Spyker Cars floating scattered images, crisp edges)
-      const mosaic = root.querySelector('.about-teaser-mosaic');
-      if (mosaic) {
-        const items = Array.from(mosaic.querySelectorAll('.mosaic-item'));
-        if (items.length) {
-          // 1. Entrance animation: animate in smoothly once, preserving CSS class opacity hierarchy
-          items.forEach((item, idx) => {
-            const targetOpacity = parseFloat(window.getComputedStyle(item).opacity) || 1;
-            gsap.fromTo(item,
-              { scale: 0.82, opacity: 0, y: 32 },
-              {
-                opacity: targetOpacity,
-                scale: 1, y: 0,
-                duration: 1.1,
-                delay: (idx % 3) * 0.08,
-                ease: 'power3.out',
-                clearProps: 'opacity',
-                scrollTrigger: {
-                  trigger: mosaic,
-                  start: 'top 85%',
-                  once: true,
-                }
-              }
-            );
+      const experiencePhotos = Array.from(root.querySelectorAll('[data-experience-photo]'));
+      experiencePhotos.forEach((photo, index) => {
+        gsap.from(photo, {
+          y: 16,
+          opacity: 0.9,
+          duration: 0.82,
+          delay: index * 0.07,
+          ease: 'power2.out',
+          scrollTrigger: { trigger: photo, start: 'top 88%', once: true }
+        });
+      });
+
+      const experienceIntro = root.querySelector('[data-experience-intro]');
+      if (experienceIntro) {
+        gsap.from(experienceIntro, {
+          y: 12,
+          opacity: 0.92,
+          duration: 0.78,
+          ease: 'power2.out',
+          scrollTrigger: { trigger: experienceIntro, start: 'top 88%', once: true }
+        });
+      }
+
+      const experienceGallery = root.querySelector('[data-experience-gallery]');
+      const galleryViewport = experienceGallery?.querySelector('[data-experience-gallery-viewport]');
+      const galleryTrack = experienceGallery?.querySelector('[data-experience-gallery-track]');
+      const galleryCards = galleryTrack ? Array.from(galleryTrack.querySelectorAll('[data-gallery-card]')) : [];
+      const galleryLinks = experienceGallery ? Array.from(experienceGallery.querySelectorAll('[data-gallery-target]')) : [];
+      const galleryCurrent = experienceGallery?.querySelector('[data-gallery-current]');
+
+      if (experienceGallery && galleryViewport && galleryTrack && galleryCards.length > 1) {
+        let galleryTrigger;
+        let activeGalleryIndex = -1;
+        const setActiveGalleryIndex = value => {
+          const index = Math.max(0, Math.min(galleryCards.length - 1, value));
+          if (index === activeGalleryIndex) return;
+          activeGalleryIndex = index;
+          galleryCards.forEach((card, cardIndex) => card.classList.toggle('is-focused', cardIndex === index));
+          galleryLinks.forEach((link, linkIndex) => {
+            if (linkIndex === index) link.setAttribute('aria-current', 'true');
+            else link.removeAttribute('aria-current');
           });
+          if (galleryCurrent) galleryCurrent.textContent = String(index + 1).padStart(2, '0');
+        };
 
-          // 2. Vertical scroll parallax on .mosaic-inner (restrained subtle travel on smaller images)
-          items.forEach((item, idx) => {
-            const inner = item.querySelector('.mosaic-inner') || item;
-            const isSmall = item.classList.contains('mosaic-img-top-left') ||
-                            item.classList.contains('mosaic-img-mid-right') ||
-                            item.classList.contains('mosaic-img-bot-left');
-            const maxTravel = isSmall ? 24 : 44;
-            const yOffset = (idx % 2 === 0 ? -1 : 1) * maxTravel;
-            gsap.fromTo(inner,
-              { y: yOffset },
-              {
-                y: -yOffset,
-                ease: 'none',
-                scrollTrigger: {
-                  trigger: mosaic,
-                  start: 'top bottom',
-                  end: 'bottom top',
-                  scrub: 0.35,
-                }
-              }
-            );
-          });
-
-          // 3. Gentle cursor follow on inner images (throttled with rAF for 60fps performance)
-          let cursorFrame = 0;
-          let mouseX = 0;
-          let mouseY = 0;
-          const onMouseMove = (e) => {
-            mouseX = Math.max(-1, Math.min(1, e.clientX / window.innerWidth * 2 - 1));
-            mouseY = Math.max(-1, Math.min(1, e.clientY / window.innerHeight * 2 - 1));
-
-            if (!cursorFrame) {
-              cursorFrame = requestAnimationFrame(() => {
-                cursorFrame = 0;
-                items.forEach((item, idx) => {
-                  const img = item.querySelector('img') || item;
-                  const depth = ((idx % 3) + 1) * 9;
-                  gsap.to(img, {
-                    x: mouseX * depth,
-                    y: mouseY * depth,
-                    duration: 1.2,
-                    ease: 'power2.out',
-                    overwrite: 'auto'
-                  });
-                });
-              });
-            }
-          };
-
-          if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
-            const resetCursor = () => items.forEach(item => gsap.to(item.querySelector('img'), { x: 0, y: 0, duration: 1.2, ease: 'power2.out', overwrite: 'auto' }));
-            window.addEventListener('mousemove', onMouseMove, { passive: true });
-            document.addEventListener('mouseleave', resetCursor);
-            cleanup.push(() => {
-              cancelAnimationFrame(cursorFrame);
-              window.removeEventListener('mousemove', onMouseMove);
-              document.removeEventListener('mouseleave', resetCursor);
-              items.forEach(item => gsap.set(item.querySelector('img'), { clearProps: 'transform' }));
-            });
+        const navigateToGalleryCard = index => {
+          const targetIndex = Math.max(0, Math.min(galleryCards.length - 1, index));
+          if (desktop && galleryTrigger) {
+            const scrollPosition = galleryTrigger.start + (galleryTrigger.end - galleryTrigger.start) * targetIndex / (galleryCards.length - 1);
+            const smoother = window.ScrollSmoother?.get();
+            if (smoother) smoother.scrollTo(scrollPosition, true);
+            else window.scrollTo({ top: scrollPosition, behavior: 'smooth' });
+            return;
           }
+          galleryCards[targetIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+          setActiveGalleryIndex(targetIndex);
+        };
+
+        if (desktop) {
+          experienceGallery.classList.add('experience-gallery-enhanced');
+          cleanup.push(() => experienceGallery.classList.remove('experience-gallery-enhanced'));
+          const getGalleryDistance = () => Math.max(0, galleryTrack.scrollWidth - galleryViewport.clientWidth);
+          const galleryTimeline = gsap.timeline({
+            scrollTrigger: {
+              trigger: galleryViewport,
+              start: 'top top+=104',
+              end: () => `+=${getGalleryDistance()}`,
+              pin: galleryViewport,
+              scrub: 0.72,
+              snap: {
+                snapTo: 1 / (galleryCards.length - 1),
+                duration: { min: 0.15, max: 0.45 },
+                delay: 0.06,
+                ease: 'power1.inOut',
+              },
+              anticipatePin: 1,
+              invalidateOnRefresh: true,
+              onUpdate: self => setActiveGalleryIndex(Math.round(self.progress * (galleryCards.length - 1))),
+              onRefresh: self => setActiveGalleryIndex(Math.round(self.progress * (galleryCards.length - 1))),
+            }
+          });
+          galleryTimeline.to(galleryTrack, { x: () => -getGalleryDistance(), duration: 1, ease: 'none' });
+          galleryTrigger = galleryTimeline.scrollTrigger;
+        } else {
+          let galleryScrollFrame = 0;
+          const updateMobileGalleryFocus = () => {
+            galleryScrollFrame = 0;
+            const viewportCenter = galleryViewport.getBoundingClientRect().left + galleryViewport.clientWidth / 2;
+            let nearestIndex = 0;
+            let nearestDistance = Number.POSITIVE_INFINITY;
+            galleryCards.forEach((card, index) => {
+              const bounds = card.getBoundingClientRect();
+              const distance = Math.abs(bounds.left + bounds.width / 2 - viewportCenter);
+              if (distance < nearestDistance) { nearestDistance = distance; nearestIndex = index; }
+            });
+            setActiveGalleryIndex(nearestIndex);
+          };
+          const onMobileGalleryScroll = () => {
+            if (!galleryScrollFrame) galleryScrollFrame = requestAnimationFrame(updateMobileGalleryFocus);
+          };
+          galleryViewport.addEventListener('scroll', onMobileGalleryScroll, { passive: true });
+          cleanup.push(() => {
+            galleryViewport.removeEventListener('scroll', onMobileGalleryScroll);
+            if (galleryScrollFrame) cancelAnimationFrame(galleryScrollFrame);
+          });
         }
+
+        galleryLinks.forEach((link, index) => {
+          const onNavigate = event => {
+            event.preventDefault();
+            navigateToGalleryCard(index);
+          };
+          link.addEventListener('click', onNavigate);
+          cleanup.push(() => link.removeEventListener('click', onNavigate));
+        });
+
+        const onGalleryKeydown = event => {
+          if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+          event.preventDefault();
+          navigateToGalleryCard(activeGalleryIndex + (event.key === 'ArrowRight' ? 1 : -1));
+        };
+        galleryViewport.addEventListener('keydown', onGalleryKeydown);
+        cleanup.push(() => galleryViewport.removeEventListener('keydown', onGalleryKeydown));
+        setActiveGalleryIndex(0);
       }
 
       // About Page: Horizontal scroll timeline on desktop, vertical scroll animation on mobile
@@ -972,7 +1064,7 @@ document.querySelectorAll('.spyker-footer-nav a,.spyker-footer-right a')
 let dispose;
 let disposed = false;
 const disposeComponents = window.HoleInHubMotion.mount(root);
-const videoCleanup = [...root.querySelectorAll('video')].map(video => initVideoControl(video, reduced));
+const videoCleanup = [...root.querySelectorAll('video')].map(video => initBackgroundVideo(video, reduced));
 const refresh = () => ScrollTrigger.refresh();
 document.fonts.ready.then(() => {
   if (disposed) return;

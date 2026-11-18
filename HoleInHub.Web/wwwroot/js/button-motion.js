@@ -2,7 +2,7 @@
 (() => {
     const active = new WeakMap();
     const mounted = new WeakMap();
-    const selector = '.button, .flow-back, button.staff-hover-link, nav[aria-label$="pages"] a, .dashboard-pagination a';
+    const selector = '.button, .flow-back, [data-button-motion], button.staff-hover-link, nav[aria-label$="pages"] a, .dashboard-pagination a';
     const actionIcons = {
         plus: 'M12 4v16M4 12h16',
         save: 'm5 12 4 4 10-10',
