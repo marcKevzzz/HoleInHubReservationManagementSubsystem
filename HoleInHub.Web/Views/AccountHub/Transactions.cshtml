@@ -4,7 +4,6 @@
 <div class="page-content account-hub">
     <partial name="_AccountNavigation" />
     <header class="account-heading" data-motion="load"><h1>@T("TRANSACTIONS")</h1></header>
-    <p class="account-demo-note">@T("No money is collected.")</p>
     @if (Model.Count == 0) { <div class="account-empty" data-motion="load"><h2>@T("No transactions yet.")</h2><p>@T("Whole-shop deposit activity will appear here.")</p><a href="/my-reservations">@T("View your reservations")</a></div> }
     else { <div class="account-transactions" data-motion="load">@foreach (var booking in Model) {
         <article class="account-transaction">

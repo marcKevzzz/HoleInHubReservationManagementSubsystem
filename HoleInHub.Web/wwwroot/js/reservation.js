@@ -45,6 +45,54 @@ const ReservationCalendar = {
 if (typeof module !== 'undefined') module.exports = ReservationCalendar;
 if (typeof document !== 'undefined') (() => {
   const t = window.HoleInHubText?.t ?? (text => text), locale = window.HoleInHubText?.locale ?? 'en-PH';
+  const change = document.querySelector('[data-change-schedule]');
+  if (change) {
+    const calendar = document.querySelector('#booking-calendar');
+    const date = change.elements.Date;
+    const today = new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10);
+    const title = calendar.querySelector('#calendar-month');
+    const days = calendar.querySelector('#calendar-days');
+    const previous = calendar.querySelector('#previous-month');
+    const next = calendar.querySelector('#next-month');
+    let month = (date.value || today).slice(0, 7);
+    function render() {
+      title.textContent = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric', timeZone: 'UTC' })
+        .format(new Date(month + '-01T00:00:00Z'));
+      days.replaceChildren();
+      for (const weekday of ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']) {
+        const label = document.createElement('span');
+        label.className = 'weekday';
+        label.textContent = t(weekday);
+        days.append(label);
+      }
+      for (const day of ReservationCalendar.monthDays(month)) {
+        const cell = document.createElement(day ? 'button' : 'span');
+        if (day) {
+          cell.type = 'button';
+          cell.textContent = Number(day.slice(-2));
+          cell.disabled = day < today;
+          cell.classList.toggle('selected', date.value === day);
+          cell.setAttribute('aria-pressed', String(date.value === day));
+          cell.setAttribute('aria-label', new Intl.DateTimeFormat(locale, { dateStyle: 'full', timeZone: 'UTC' })
+            .format(new Date(day + 'T00:00:00Z')));
+          cell.addEventListener('click', () => {
+            date.value = day;
+            render();
+            days.querySelector('.selected')?.focus();
+          });
+        }
+        days.append(cell);
+      }
+      previous.disabled = month <= today.slice(0, 7);
+    }
+    previous.addEventListener('click', () => { month = ReservationCalendar.shiftMonth(month, -1); render(); });
+    next.addEventListener('click', () => { month = ReservationCalendar.shiftMonth(month, 1); render(); });
+    date.addEventListener('change', () => { month = (date.value || today).slice(0, 7); render(); });
+    date.min = today;
+    render();
+    calendar.hidden = false;
+    return;
+  }
   const form = document.querySelector('#reservation-form'); if (!form) return;
   const steps = [...form.querySelectorAll('.booking-step')], tabs = [...form.querySelectorAll('.step-tab')], error = document.querySelector('#booking-error'), status = document.querySelector('#availability-status'), inputs = [...form.querySelectorAll('[name=ResourceIds]')], field = name => form.elements[name], today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   const experience = () => form.querySelector('[name=Service]:checked');
@@ -164,24 +212,38 @@ if (typeof document !== 'undefined') (() => {
     }
   }
   const contactFields = [...form.querySelectorAll('.booking-contact input:not([type=hidden]),.booking-contact textarea')];
-  const submitLabelQuery = matchMedia('(min-width:1041px)');
-  function syncSubmitLabel() {
-    const button = document.querySelector('#booking-submit');
-    if (!button) return;
-    const label = submitLabelQuery.matches ? button.dataset.submitWeb : button.dataset.submitMobile;
-    if (button.getAttribute('aria-label') === label) return;
-    if (window.HoleInHubButtons?.setLabel) window.HoleInHubButtons.setLabel(button, label);
-    else button.textContent = label;
+  const phone = field('Phone');
+  const country = form.querySelector('#PhoneCountry');
+  const phonePattern = new RegExp('^(?:' + phone.dataset.phonePattern + ')$');
+  const savedPhone = ProfilePhone.saved(phone.value);
+  country.value = savedPhone.country;
+  phone.value = savedPhone.national;
+  country.disabled = false;
+  country.hidden = false;
+  country.dispatchEvent(new Event('change', { bubbles: true }));
+  country.addEventListener('change', () => { if (phone.value) contactFeedback(phone); });
+  function blockInvalidPhoneText(event, text) {
+    if (text && /[^0-9+ ()-]/.test(text)) event.preventDefault();
   }
-  if (document.readyState !== 'complete') document.addEventListener('DOMContentLoaded', syncSubmitLabel, { once: true });
-  else syncSubmitLabel();
-  submitLabelQuery.addEventListener('change', syncSubmitLabel);
+  phone.addEventListener('beforeinput', event => {
+    if (!event.isComposing) blockInvalidPhoneText(event, event.data);
+  });
+  phone.addEventListener('paste', event => blockInvalidPhoneText(event, event.clipboardData?.getData('text')));
+  function cleanPhoneInput(event) {
+    if (!event.isComposing) phone.value = phone.value.replace(/[^0-9+ ()-]/g, '');
+  }
+  phone.addEventListener('input', cleanPhoneInput);
+  phone.addEventListener('compositionend', cleanPhoneInput);
+  form.addEventListener('formdata', event => {
+    event.formData.set('Phone', ProfilePhone.full(country.value, phone.value));
+  });
+
   function contactError(input) {
     const value = input.value.trim();
     if (['FirstName', 'LastName'].includes(input.name)) {
       if (!value) return t(input.name === 'FirstName' ? 'Enter your first name.' : 'Enter your last name.');
       if (!/^[\p{L}\p{M}][\p{L}\p{M} .,’'\-]*$/u.test(value) || [...value.matchAll(/\p{L}/gu)].length < 2)
-        return t('Use at least two letters; numbers are not allowed.');
+        return t('Enter at least two letters. Leave out numbers.');
     }
     if (input.name === 'Attendees') {
       if (!value) return t('Enter the number of guests.');
@@ -194,9 +256,16 @@ if (typeof document !== 'undefined') (() => {
       if (!value) return t('Enter your email address.');
       if (input.validity.typeMismatch) return t('Enter a valid email address.');
     }
-    if (input.type === 'tel' && input.validity.patternMismatch)
-      return window.HoleInHubText?.t(window.HoleInHubContacts.error(input.value)) ?? window.HoleInHubContacts.error(input.value);
-    if (input.validity.valueMissing) return input.name === 'PrivacyAccepted' ? t('Please accept the privacy policy.') : input.validationMessage;
+    if (input === phone) {
+      if (!value) return t('Enter your mobile number.');
+      if (/[^0-9+ ()-]/.test(value)) return t('Use digits for your mobile number.');
+      const rule = ProfilePhone.countries[country.value];
+      if (value.startsWith('+') && !value.replace(/[^0-9+]/g, '').startsWith('+' + rule.code))
+        return t('Select the country code that matches your mobile number.');
+      if (!ProfilePhone.fits(country.value, value) || !phonePattern.test(ProfilePhone.full(country.value, value)))
+        return t('Check your mobile number and country code.');
+    }
+    if (input.validity.valueMissing) return input.name === 'PrivacyAccepted' ? t('Accept the privacy policy to continue.') : input.validationMessage;
     if (input.validity.tooLong) return t('This field is too long.');
     return '';
   }
@@ -369,7 +438,7 @@ if (typeof document !== 'undefined') (() => {
       }
       availabilityReady = true;
       if (wholeShop && sessionProblem) { monthAvailability.delete(calendarKey()); calendar(); slots(); }
-      const message = sessionProblem || t(wholeShop ? 'All active bays are available together.' : autoBay() ? 'We’ll assign an available bay for your group.' : 'Available bays for your complete session.');
+      const message = sessionProblem || (wholeShop ? t('All active bays are available together.') : autoBay() ? t('We’ll assign an available bay for your group.') : '');
       status.textContent = message; showSessionStatus(message, Boolean(sessionProblem)); summary(); void updateQuote();
     } catch (e) {
       if (e.name === 'AbortError' || token !== sequence) return;
@@ -401,7 +470,7 @@ if (typeof document !== 'undefined') (() => {
     }
   }
   function showMissingToast(message) {
-    window.HoleInHubToasts?.show({ kind: 'warning', title: t('Missing information'), message, autoDismiss: true, durationMs: 5000, replaceKey: 'booking-validation' });
+    window.HoleInHubToasts?.show({ kind: 'warning', title: t('Check your reservation details'), message, autoDismiss: true, durationMs: 5000, replaceKey: 'booking-validation' });
   }
   function shakeFields(fields) {
     fields.forEach(input => { const target = input.closest('.field,.booking-privacy') || input; target.classList.remove('field--shake'); void target.offsetWidth; target.classList.add('field--shake'); });
@@ -435,23 +504,7 @@ if (typeof document !== 'undefined') (() => {
       const invalid = ReservationCalendar.invalidFields(contactFields);
       if (invalid.length) {
         shakeFields(invalid);
-        const invalidNames = new Set(invalid.map(input => input.name));
-        const details = [];
-        if (invalidNames.has('FirstName') && invalidNames.has('LastName')) details.push(t('Names (2+ letters)'));
-        else {
-          if (invalidNames.has('FirstName')) details.push(t('First name (2+ letters)'));
-          if (invalidNames.has('LastName')) details.push(t('Last name (2+ letters)'));
-        }
-        for (const input of invalid) {
-          if (['FirstName', 'LastName'].includes(input.name)) continue;
-          details.push(({
-            Phone: t('Phone'),
-            Email: t('Email'),
-            Attendees: t('Guests (digits only)'),
-            PrivacyAccepted: t('Privacy')
-          })[input.name] || input.labels?.[0]?.textContent?.replace('*', '').trim() || input.name);
-        }
-        showMissingToast(t('Fix:') + ' ' + details.join(', ') + '.');
+        showMissingToast(invalid[0].validationMessage);
         invalid[0].focus(); return false;
       }
     }
@@ -462,7 +515,7 @@ if (typeof document !== 'undefined') (() => {
     if (missing.length) { shakeFields(missing); showMissingToast(t('Please complete the highlighted fields.')); missing[0].focus(); return false; }
     return true;
   }
-  function show(next, focus = true) { index = next === 2 && autoBay() ? 1 : next; form.classList.toggle('is-review-step', index === 4); const shopPolicy = document.getElementById('whole-shop-policy'); if (shopPolicy) shopPolicy.hidden = bookingType() !== 'WholeShop'; const wholeShop = bookingType() === 'WholeShop'; document.querySelector('#pending-policy').hidden = wholeShop; document.querySelector('#review-policy-tip').hidden = wholeShop; for (const id of ['booking-submit', 'booking-verify-required']) { const button = document.getElementById(id); if (button) { button.hidden = index !== 4; if (id === 'booking-submit') button.disabled = wholeShop && form.dataset.demoPayments !== 'true'; } } const note = document.querySelector('#service-capacity-note'); note.hidden = ['Regular', 'VIP'].includes(bookingType()); note.textContent = bookingType() === 'WholeShop' && form.dataset.demoPayments !== 'true' ? t('Whole-shop online checkout is unavailable. Contact the venue.') : bookingType() === 'WholeShop' ? t('All active bays are held together. The 50% simulated deposit must succeed within 60 minutes. No real money is collected.') : t('Staff must record coach confirmation and approve the bay within 60 minutes. Remaining package sessions are arranged with the venue.'); document.querySelector('#bay-selection-help').textContent = bookingType() === 'WholeShop' ? t('All active bays are selected together for exclusive use. If any bay is unavailable, choose a different session.') : t('Choose one bay or bring your group together across several. Click a bay or drag across available bays to select several.'); steps.forEach((s, i) => s.hidden = i !== index); tabs.forEach((tab, i) => { tab.hidden = autoBay() && i === 2; tab.querySelector(".step-tab-num").textContent = String((autoBay() && i > 2 ? i : i + 1)).padStart(2, "0"); tab.disabled = i > completed; tab.classList.toggle('current', i === index); tab.classList.toggle('complete', i < index); if (i === index) tab.setAttribute('aria-current', 'step'); else tab.removeAttribute('aria-current'); }); document.querySelector('#step-back').hidden = index === 0; document.querySelector('#step-next').hidden = index === 4; summary(); window.ScrollTrigger?.refresh(); if (focus) { const heading = steps[index].querySelector('legend'); heading.tabIndex = -1; heading.focus({ preventScroll: true }); if (!matchMedia('(prefers-reduced-motion: reduce)').matches) { window.HoleInHubMotion?.enter(steps[index], { y: 12, opacity: .5, duration: .4 }); const smoother = window.ScrollSmoother?.get(); if (smoother) smoother.scrollTo(120, true); else window.scrollTo({ top: 120, behavior: 'smooth' }); } } }
+  function show(next, focus = true) { index = next === 2 && autoBay() ? 1 : next; form.classList.toggle('is-review-step', index === 4); const shopPolicy = document.getElementById('whole-shop-policy'); if (shopPolicy) shopPolicy.hidden = bookingType() !== 'WholeShop'; const wholeShop = bookingType() === 'WholeShop'; document.querySelector('#coaching-policy-tip').hidden = wholeShop || ['Regular', 'VIP'].includes(bookingType()); document.querySelector('#review-policy-tip').hidden = wholeShop; for (const id of ['booking-submit', 'booking-verify-required']) { const button = document.getElementById(id); if (button) { button.hidden = index !== 4; if (id === 'booking-submit') button.disabled = wholeShop && form.dataset.demoPayments !== 'true'; } } const note = document.querySelector('#service-capacity-note'); note.hidden = !wholeShop; note.textContent = form.dataset.demoPayments !== 'true' ? t('Whole-shop online checkout is unavailable. Contact the venue.') : t('All active bays are held together. The 50% simulated deposit must succeed within 60 minutes. No real money is collected.'); document.querySelector('#bay-selection-help').textContent = bookingType() === 'WholeShop' ? t('All active bays are selected together for exclusive use. If any bay is unavailable, choose a different session.') : t('Choose one bay or bring your group together across several. Click a bay or drag across available bays to select several.'); steps.forEach((s, i) => s.hidden = i !== index); tabs.forEach((tab, i) => { tab.hidden = autoBay() && i === 2; tab.querySelector(".step-tab-num").textContent = String((autoBay() && i > 2 ? i : i + 1)).padStart(2, "0"); tab.disabled = i > completed; tab.classList.toggle('current', i === index); tab.classList.toggle('complete', i < index); if (i === index) tab.setAttribute('aria-current', 'step'); else tab.removeAttribute('aria-current'); }); document.querySelector('#step-back').hidden = index === 0; document.querySelector('#step-next').hidden = index === 4; summary(); window.ScrollTrigger?.refresh(); if (focus) { const heading = steps[index].querySelector('legend'); heading.tabIndex = -1; heading.focus({ preventScroll: true }); if (!matchMedia('(prefers-reduced-motion: reduce)').matches) { window.HoleInHubMotion?.enter(steps[index], { y: 12, opacity: .5, duration: .4 }); const smoother = window.ScrollSmoother?.get(); if (smoother) smoother.scrollTo(120, true); else window.scrollTo({ top: 120, behavior: 'smooth' }); } } }
   let stepTransition = 0;
   function transitionTo(next) {
     const target = next === 2 && autoBay() ? 1 : next;

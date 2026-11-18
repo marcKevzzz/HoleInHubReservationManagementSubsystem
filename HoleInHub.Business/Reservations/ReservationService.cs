@@ -305,8 +305,9 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         try
         {
             await LoadOperationalPolicyAsync(ct);
-            return await persistence.TransitionAsync(id, action, actor, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime, effectivePolicy.StaffEmails, ct, reason?.Trim() ?? "", expectedRevision, rebookUrl,
-                confirmParticipants: (record, selected) => ConfirmParticipants(record, selected, participants));
+            var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime;
+            return await persistence.TransitionAsync(id, action, actor, now, effectivePolicy.StaffEmails, ct, reason?.Trim() ?? "", expectedRevision, rebookUrl,
+                confirmParticipants: (record, selected) => ConfirmParticipants(record, selected, participants, now));
         }
         catch (AllocationConflictException error) { throw new ReservationValidationException(error.Message); }
     }

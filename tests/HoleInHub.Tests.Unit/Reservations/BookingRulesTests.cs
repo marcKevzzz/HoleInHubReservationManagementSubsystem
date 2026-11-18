@@ -5,6 +5,26 @@ namespace HoleInHub.Tests.Unit.Reservations;
 
 public sealed class BookingRulesTests
 {
+
+    [Theory]
+    [InlineData(1, 1, 0, 0, 0)]
+    [InlineData(7, 4, 3, 0, 0)]
+    [InlineData(10, 4, 4, 1, 1)]
+    public void OverdueApprovalFillsPlayerSpotsBeforeNonPlayers(int guests, int firstPlayers, int secondPlayers,
+        int firstNonPlayers, int secondNonPlayers)
+    {
+        ResourceDto[] bays =
+        [
+            new("one", "Bay 1", "Regular") { MaxPlayers = 4, MaxNonPlayers = 1 },
+            new("two", "Bay 2", "Regular") { MaxPlayers = 4 }
+        ];
+        var assigned = BookingRules.AssignOverdueParticipants(bays, guests);
+        Assert.Equal((firstPlayers, firstNonPlayers), (assigned[0].Players, assigned[0].NonPlayers));
+        Assert.Equal((secondPlayers, secondNonPlayers), (assigned[1].Players, assigned[1].NonPlayers));
+        BookingRules.ValidateParticipants("Regular", bays, assigned, allowEmptyBays: true);
+        Assert.Throws<ReservationValidationException>(() => BookingRules.AssignOverdueParticipants(bays, 14));
+    }
+
     [Fact]
     public void HalfHourSessionIsAccepted()
     {

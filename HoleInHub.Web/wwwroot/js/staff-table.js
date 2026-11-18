@@ -1,5 +1,5 @@
 (() => {
-    function closeButton(dialog) {
+    function closeButton(dialog, dismiss = () => dialog.close()) {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'staff-icon-button panel-close';
@@ -7,12 +7,38 @@
         button.setAttribute('aria-label', label);
         button.title = label;
         button.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>';
-        button.addEventListener('click', () => dialog.close());
+        button.addEventListener('click', dismiss);
         return button;
     }
     function confirmDecision(form, title, trigger, restore, context) {
         const dialog = document.createElement('dialog');
         dialog.className = 'staff-row-details staff-workspace review-confirmation staff-detail-panel';
+
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        let opening;
+        let closing = false;
+        function dismiss() {
+            if (closing) return;
+            if (reducedMotion.matches || typeof dialog.animate !== 'function') {
+                dialog.close();
+                return;
+            }
+            closing = true;
+            const start = getComputedStyle(dialog).transform;
+            opening?.cancel();
+            dialog.animate([{ transform: start }, { transform: 'translateX(100%)' }],
+                { duration: 220, easing: 'ease-in', fill: 'forwards' }).finished.then(() => dialog.close());
+        }
+        dialog.addEventListener('cancel', event => {
+            event.preventDefault();
+            dismiss();
+        });
+        dialog.addEventListener('click', event => {
+            if (event.target !== dialog) return;
+            const bounds = dialog.getBoundingClientRect();
+            if (event.clientX < bounds.left || event.clientX >= bounds.right ||
+                event.clientY < bounds.top || event.clientY >= bounds.bottom) dismiss();
+        });
         if (form.closest('.schedule-change-review')) dialog.classList.add('schedule-change-review');
         const heading = document.createElement('h2');
         heading.id = 'review-confirmation-title';
@@ -23,7 +49,7 @@
         cancel.className = 'button button-secondary';
         cancel.textContent = window.HoleInHubText?.t('Cancel') ?? 'Cancel';
         cancel.autofocus = true;
-        cancel.addEventListener('click', () => dialog.close());
+        cancel.addEventListener('click', dismiss);
         const footer = document.createElement('div');
         footer.className = 'review-confirmation-actions';
         footer.append(cancel);
@@ -37,7 +63,7 @@
         }
         const header = document.createElement('header');
         header.className = 'staff-detail-panel-heading';
-        header.append(heading, closeButton(dialog));
+        header.append(heading, closeButton(dialog, dismiss));
         dialog.append(header);
         if (context) dialog.append(context);
         dialog.append(form);
@@ -49,6 +75,10 @@
         (document.querySelector('.staff-shell') || document.body).append(dialog);
         window.HoleInHubButtons?.mount(dialog);
         dialog.showModal();
+        if (!reducedMotion.matches && typeof dialog.animate === 'function') {
+            opening = dialog.animate([{ transform: 'translateX(100%)' }, { transform: 'none' }],
+                { duration: 220, easing: 'ease-out' });
+        }
     }
     document.addEventListener('toggle', event => {
         const action = event.target;

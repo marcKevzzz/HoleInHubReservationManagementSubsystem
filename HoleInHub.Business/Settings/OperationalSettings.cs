@@ -70,7 +70,7 @@ public sealed class OperationalSettings(SystemSettingsPersistence persistence, I
         ReviewStart = TimeSpan.FromMinutes(edit.ReviewStartMinutes),
         ReviewEnd = TimeSpan.FromMinutes(edit.ReviewEndMinutes),
         ReviewDays = edit.ReviewDays,
-        StaffEmails = edit.StaffEmails,
+        StaffEmails = string.IsNullOrWhiteSpace(deployment.StaffEmailOverride) ? edit.StaffEmails : [deployment.StaffEmailOverride],
         DemoPaymentsEnabled = deployment.DemoPaymentsEnabled
     };
     public async Task<ReservationPolicy> PolicyAsync(CancellationToken ct) => Apply(await GetAsync(ct), defaults.Value);

@@ -61,7 +61,7 @@
                               asp-route-returnToQueue="@(ViewData["QueueActions"] is true && Model.Queue.Filter is ("cancellations" or "cancellation-requests") ? "true" : null)" method="post">
                             <input type="hidden" name="expectedRevision" value="@booking.Revision" />
                             <p>@action.Consequence @(Model.Context.HasEmail ? "The customer will be notified by email." : "Contact the guest by phone to share the outcome.")</p>
-                            @if (action.Key == "approve" && booking.Participants.Length == 0 && (booking.Attendees != 1 || booking.ResourceIds.Length != 1))
+                            @if (action.Key == "approve" && !overdue && booking.Participants.Length == 0 && (booking.Attendees != 1 || booking.ResourceIds.Length != 1))
                             {
                                 <fieldset>
                                     <legend>Confirm the breakdown for @booking.Attendees guests</legend>

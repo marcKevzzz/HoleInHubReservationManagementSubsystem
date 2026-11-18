@@ -3,9 +3,9 @@
 <div class="page-content services-page" data-services-page data-refresh-url="@Url.Action("ServiceCatalog", "Home")">
     <header class="services-heading">
         <h1 data-venue-title>@T("MORE WAYS")<br />@T("TO PLAY")</h1>
-        <div data-motion="stagger"><p>@T("Find your next round, make time for a lesson, or bring the whole group.")</p><p class="services-note">@T("All rates are indicative and subject to venue confirmation. Bay bookings require venue approval; coaching also requires coach confirmation.")</p></div>
+        <div data-motion="stagger"><p>@T("Find your next round, make time for a lesson, or bring the whole group.")</p></div>
     </header>
-    <div class="services-update" role="status" aria-live="polite" data-services-status>@(ViewData["CatalogUnavailable"] is true ? T("Services are temporarily unavailable. We’ll try again shortly, or contact the venue for current offerings.") : T("Current offerings from the venue."))</div>
+    <div class="services-update" role="status" aria-live="polite" data-services-status>@(ViewData["CatalogUnavailable"] is true ? T("Services are temporarily unavailable. We’ll try again shortly, or contact the venue for current offerings.") : null)</div>
     <section class="services-catalog" aria-label="Services and packages" data-services-catalog data-motion-scope>
         <partial name="_ServiceCatalog" model="Model" />
     </section>

@@ -376,11 +376,13 @@ public sealed class ReservationsController(ReservationService reservations, Gues
         }
 
         var accepted = await reservations.ReviewAsync(booking.Id, "request-cancellation", "Customer", ct);
-        TempData["BookingMessage"] = !accepted
+        var message = !accepted
             ? "Online cancellation is available until one hour before the session for Pending or Confirmed bookings."
             : booking.Service == "WholeShop"
                 ? "Cancellation requested. Your booking remains allocated until staff approves. Deposit refunds are arranged with the venue."
                 : "Reservation cancelled. Any remaining bay hold has been released.";
+        var title = !accepted ? "Cancellation unavailable" : booking.Service == "WholeShop" ? "Cancellation requested" : "Reservation cancelled";
+        new ToastNotice(accepted ? "success" : "warning", CustomerText.T(title), CustomerText.T(message)).Store(TempData);
         return ViewData["GuestAccess"] is true ? RedirectToAction("Details", "GuestReservations", new { id }) : RedirectToAction(nameof(Status), new { id, token });
     }
 
@@ -415,7 +417,7 @@ public sealed class ReservationsController(ReservationService reservations, Gues
             {
                 await reservations.RequestScheduleChangeAsync(new(booking.Id, form.ExpectedRevision!.Value, form.CommandId,
                     form.Date!.Value, form.StartTime!.Value, form.DurationMinutes, form.Reason), "Customer", ct);
-                TempData["BookingMessage"] = "Change requested. Your original booking stays reserved until staff approves.";
+                new ToastNotice("success", CustomerText.T("Change requested"), CustomerText.T("Your original booking stays reserved until staff approves.")).Store(TempData);
                 return ViewData["GuestAccess"] is true ? RedirectToAction("Details", "GuestReservations", new { id })
                     : RedirectToAction(nameof(Status), new { id, token });
             }

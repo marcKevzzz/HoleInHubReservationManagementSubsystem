@@ -1644,3 +1644,6 @@ button.flow-back{border:0;background:transparent;cursor:pointer}
   .site-header .menu-links > a:hover, .site-header .menu-links > a:focus-visible {
     opacity: 1
   }
+
+.site-header .menu-panel .menu-links { gap: clamp(9px, 1.8vh, 20px); }
+.site-header .menu-panel .menu-links > a { font-size: clamp(27px, 4.8vh, 43px) !important; }

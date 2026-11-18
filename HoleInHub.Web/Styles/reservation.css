@@ -19,7 +19,7 @@ Reservation page — consolidated stylesheet (replaces the stacked overrides)
   }
 
   .reservation-studio :focus-visible {
-    outline: 2px solid var(--rs-green);
+    outline: 1.5px solid var(--rs-green);
     outline-offset: 3px
   }
 
@@ -267,7 +267,7 @@ Reservation page — consolidated stylesheet (replaces the stacked overrides)
   }
 
   .reservation-studio .service-option:has(input:focus-visible) {
-    outline: 2px solid var(--rs-green);
+    outline: 1.5px solid var(--rs-green);
     outline-offset: 3px
   }
 /* Tablet + mobile: two columns, image on top, radio over the image */
@@ -583,7 +583,7 @@ Reservation page — consolidated stylesheet (replaces the stacked overrides)
   }
 
   .reservation-studio .resource-option:has(input:focus-visible) {
-    outline: 2px solid var(--rs-green);
+    outline: 1.5px solid var(--rs-green);
     outline-offset: 3px
   }
 
@@ -619,7 +619,7 @@ Reservation page — consolidated stylesheet (replaces the stacked overrides)
 .reservation-studio .fields-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px 28px;
+  gap: 16px 28px;
   margin-top: 8px
 }
 
@@ -645,12 +645,12 @@ Reservation page — consolidated stylesheet (replaces the stacked overrides)
     border: 0;
     border-bottom: 1px solid var(--rs-line);
     border-radius: 0;
-    background: transparent linear-gradient(var(--rs-green),var(--rs-green)) no-repeat left bottom/0 2px;
+    background: transparent;
     box-shadow: none;
     color: var(--rs-ink);
     font: inherit;
     font-size: 15px;
-    transition: background-size .3s ease,border-color .2s ease
+    transition: border-color .2s ease
   }
 
   .reservation-studio .auth-input-wrap textarea {
@@ -664,8 +664,7 @@ Reservation page — consolidated stylesheet (replaces the stacked overrides)
 
   .reservation-studio .auth-input-wrap :is(input,textarea):focus {
     outline: 0;
-    border-bottom-color: var(--rs-green);
-    background-size: 100% 2px
+    border-bottom-color: var(--rs-green)
   }
 
   .reservation-studio .auth-input-wrap input[type=number] {
@@ -711,14 +710,14 @@ Reservation page — consolidated stylesheet (replaces the stacked overrides)
 
 .reservation-studio .field-error {
   display: block;
-  min-height: 20px;
-  padding-top: 4px;
+  min-height: 18px;
+  padding-top: 1px;
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.4;
   color: var(--rs-error)
 }
 
-.reservation-studio .field-error:empty {display:none}
+.reservation-studio .field-error:empty {visibility:hidden}
 
 .reservation-studio .field--shake {
   animation: rs-shake .38s ease-in-out
@@ -1249,7 +1248,7 @@ Reservation page — consolidated stylesheet (replaces the stacked overrides)
 
     .reservation-studio .fields-grid {
       grid-template-columns: 1fr;
-      gap: 8px
+      gap: 14px
     }
 
     .reservation-studio .reservation-summary {display:none}
@@ -1313,7 +1312,7 @@ Reservation page — consolidated stylesheet (replaces the stacked overrides)
   }
 
   .reservation-studio .is-review-step .booking-main > .actions {
-    grid-column: 2;
+    grid-column: 1 / -1;
     order: 3;
     align-self: start;
     padding-top: 12px
@@ -1463,20 +1462,7 @@ Reservation page — consolidated stylesheet (replaces the stacked overrides)
       background: none
     }
 
-    .reservation-studio .is-review-step .reservation-summary .summary {
-      display: block;
-      padding: 16px 24px 18px;
-      border-top: 1px solid var(--rs-line)
-    }
-
-      .reservation-studio .is-review-step .reservation-summary .summary h3 {
-        margin: 0;
-        font-size: 18px
-      }
-
-      .reservation-studio .is-review-step .reservation-summary .summary dl {
-        display: none
-      }
+    .reservation-studio .is-review-step .reservation-summary .summary { display: none; }
   /* policy note */
   .reservation-studio #pending-policy, .reservation-studio #whole-shop-policy {
     margin-top: 20px;
@@ -1960,3 +1946,45 @@ body:has(.reservation-studio) .site-header .header-actions .header-action {
     width: 100%
   }
 }
+
+.reservation-studio .step-tab { justify-content: center; text-align: center; }
+.reservation-studio .booking-contact .profile-phone-field {
+    position: relative;
+    border-bottom: 1px solid var(--rs-line);
+    margin: 0;
+    transition: border-color .2s ease;
+}
+.reservation-studio .booking-contact .profile-phone-field:hover { border-bottom-color: var(--rs-muted); }
+.reservation-studio .booking-contact .profile-phone-field:focus-within { border-bottom-color: var(--rs-green); }
+.reservation-studio .booking-contact .profile-phone-field:has(input[aria-invalid=true]) {
+    border-bottom-color: var(--color-error-line, var(--rs-error));
+}
+.reservation-studio :is(.auth-input-wrap, .profile-phone-field)::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0;
+    height: 1.5px;
+    background: var(--rs-green);
+    transform: scaleX(0);
+    transform-origin: right;
+    pointer-events: none;
+}
+.reservation-studio :is(.auth-input-wrap, .profile-phone-field):focus-within::after {
+    transform: scaleX(1);
+    transform-origin: left;
+}
+.reservation-studio .profile-phone-field::after { bottom: -1px; }
+.reservation-studio .profile-phone-field > .auth-input-wrap { flex: 1; min-width: 0; }
+.reservation-studio .profile-phone-field .auth-input-wrap input {
+    border: 0;
+    min-height: 59px;
+    padding-bottom: 8px;
+}
+.reservation-studio .profile-phone-field .auth-input-wrap::after { display: none; }
+.reservation-studio .is-review-step #step-back { margin-inline-start: 0; justify-self: start; }
+.reservation-studio .actions #booking-submit { font-size: .875rem; padding-inline: 20px; }
+@media (prefers-reduced-motion: no-preference) {
+    .reservation-studio .profile-phone-field::after { transition: transform .35s var(--ease); }
+}
+.reservation-studio #availability-status:empty { display: none; }
+.reservation-studio #coaching-policy-tip[hidden] { display: none; }

@@ -101,7 +101,7 @@ function animatePage(root) {
       root.querySelectorAll('.venue-contact > section').forEach(section => {
         const entrance = gsap.timeline({
           defaults: { ease: 'none' },
-          scrollTrigger: { trigger: section, start: 'top 88%', end: 'top 48%', scrub: .8 },
+          scrollTrigger: { trigger: section, start: 'top 90%', end: 'top 75%', scrub: .25 },
         })
           .from(section.querySelectorAll('h2 .split-word'), { yPercent: 110, duration: .85, stagger: .05 }, 0)
           .from(section.querySelectorAll('dl > div, p, address, .venue-icon, .button, .venue-social-link'), {

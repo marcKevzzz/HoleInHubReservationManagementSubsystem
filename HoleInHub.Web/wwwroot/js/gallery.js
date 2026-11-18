@@ -10,55 +10,98 @@
     const copy = dialog.querySelector('.gallery-story-copy');
     const closeButton = dialog.querySelector('.gallery-story-close');
     const filters = gallery.querySelector('.gallery-filters');
-    const archive = gallery.querySelector('.gallery-archive');
-    const cards = [...archive.querySelectorAll('[data-gallery-story]')];
+    const sections = gallery.querySelectorAll('[data-gallery-category]');
+    const cards = gallery.querySelectorAll('[data-gallery-story]');
+    const categoryGrids = [...gallery.querySelectorAll('[data-gallery-category] .gallery-masonry')]
+        .map(grid => ({ grid, cards: [...grid.children] }));
+    const allGrid = document.createElement('div');
+    allGrid.className = 'gallery-group gallery-masonry gallery-all';
+    filters.after(allGrid);
+
+    function showCategory(category) {
+        const showAll = category === 'All';
+        allGrid.hidden = !showAll;
+        sections.forEach(section => {
+            section.hidden = showAll || section.dataset.galleryCategory !== category;
+        });
+        categoryGrids.forEach(({ grid, cards }) => {
+            (showAll ? allGrid : grid).append(...cards);
+        });
+    }
+
+    showCategory('All');
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
     let opener, timeline, closing = false;
-    let pinMedia;
     const bounds = element => {
         const { top, left, width, height } = element.getBoundingClientRect();
         return { top, left, width, height };
     };
 
-    function mountPins() {
-        if (!window.gsap || !window.ScrollTrigger || archive.classList.contains('gallery-filtered')) return;
-        pinMedia = gsap.matchMedia();
-        pinMedia.add('(min-width: 701px) and (prefers-reduced-motion: no-preference)', () => {
-            archive.classList.add('gallery-pinned');
-            archive.querySelectorAll('.gallery-editorial').forEach(section => {
-                const side = section.querySelector('.gallery-sticky');
-                const stack = section.querySelector('.gallery-stack');
-                ScrollTrigger.create({
-                    trigger: side,
-                    start: 'top 112px',
-                    end: () => '+=' + Math.max(0, stack.offsetHeight - side.offsetHeight),
-                    pin: true,
-                    pinSpacing: false,
-                    invalidateOnRefresh: true,
-                });
-            });
-            return () => archive.classList.remove('gallery-pinned');
+    function fitMasonryCard(card) {
+        const height = card.getBoundingClientRect().height;
+        if (height) {
+            const gap = parseFloat(getComputedStyle(card).marginBottom);
+            // Each implicit grid row is one pixel, including the space below the card.
+            card.style.gridRowEnd = `span ${Math.ceil(height + gap)}`;
+        }
+    }
+
+    if (window.ResizeObserver) {
+        gallery.querySelectorAll('.gallery-masonry').forEach(grid => grid.classList.add('is-packed'));
+        const observer = new ResizeObserver(entries => entries.forEach(({ target }) => fitMasonryCard(target)));
+        cards.forEach(card => {
+            fitMasonryCard(card);
+            observer.observe(card);
         });
     }
 
-    mountPins();
-    window.addEventListener('pagehide', event => { if (!event.persisted) pinMedia?.revert(); });
     filters.hidden = false;
+    const tabs = [...filters.querySelectorAll('[data-gallery-filter]')];
+    let hoveredTab;
+
+    function positionIndicator() {
+        const tab = hoveredTab ?? filters.querySelector('[aria-pressed="true"]');
+        const { left, width } = tab.getBoundingClientRect();
+        const x = left - filters.getBoundingClientRect().left + filters.scrollLeft;
+        filters.style.setProperty('--gallery-indicator-x', `${x}px`);
+        filters.style.setProperty('--gallery-indicator-width', `${width}px`);
+    }
+
+    filters.addEventListener('pointerover', event => {
+        if (event.pointerType === 'touch') return;
+        hoveredTab = event.target.closest('[data-gallery-filter]');
+        positionIndicator();
+    });
+    filters.addEventListener('pointerleave', () => {
+        hoveredTab = null;
+        positionIndicator();
+    });
+    filters.addEventListener('scroll', () => {
+        filters.style.setProperty('--gallery-filters-scroll', `${filters.scrollLeft}px`);
+    }, { passive: true });
+    if (window.ResizeObserver) {
+        const indicatorObserver = new ResizeObserver(positionIndicator);
+        [filters, ...tabs].forEach(tab => indicatorObserver.observe(tab));
+    }
+    positionIndicator();
+
     filters.addEventListener('click', event => {
         const filter = event.target.closest('[data-gallery-filter]');
         if (!filter) return;
         const category = filter.dataset.galleryFilter;
         if (filter.getAttribute('aria-pressed') === 'true') return;
-        pinMedia?.revert();
-        archive.classList.toggle('gallery-filtered', category !== 'All');
-        cards.forEach(card => { card.hidden = category !== 'All' && card.dataset.category !== category; });
+        showCategory(category);
         filters.querySelector('[aria-pressed="true"]').setAttribute('aria-pressed', 'false');
         filter.setAttribute('aria-pressed', 'true');
-        mountPins();
+        positionIndicator();
+        if (window.ResizeObserver) cards.forEach(fitMasonryCard);
         window.ScrollTrigger?.refresh();
+
+        const images = gallery.querySelectorAll('.gallery-group:not([hidden]) .gallery-frame');
+        window.HoleInHubMotion?.enter(images, { y: 16, opacity: 1 });
     });
 
-    archive.addEventListener('click', event => {
+    gallery.addEventListener('click', event => {
         const card = event.target.closest('[data-gallery-story]');
         if (!card || event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
         event.preventDefault();

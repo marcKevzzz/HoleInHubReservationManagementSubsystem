@@ -49,10 +49,6 @@
     else if (booking.Status == "Confirmed")
     {
         <button class="button" type="button" disabled>Check-in unavailable</button>
-        @if (now < AttendanceRules.CheckInOpens(booking.StartUtc))
-        {
-            <p class="attendance-note">Check-in opens one hour before the reservation.</p>
-        }
     }
     else
     {
