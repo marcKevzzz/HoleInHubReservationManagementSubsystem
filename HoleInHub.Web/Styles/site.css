@@ -1493,10 +1493,10 @@ button.flow-back{border:0;background:transparent;cursor:pointer}
 .home-page .venue-promotions .promotion-card-visual{position:relative;display:block;isolation:isolate;aspect-ratio:4/5;overflow:hidden;margin:0;background:var(--green);cursor:default}
 .home-page .venue-promotions .promotion-card-image-frame{position:absolute;inset:0;display:block}
 .home-page .venue-promotions .promotion-card-image-frame img{display:block;width:100%;height:100%;object-fit:contain;transition:transform .8s cubic-bezier(.2,.7,.2,1)}
-.home-page .venue-promotions .promotion-hover-info{position:absolute;z-index:2;inset:auto 12px 12px;display:grid;gap:10px;max-height:calc(100% - 24px);overflow-y:auto;padding:18px 19px;border:0;color:var(--paper);background:var(--ink);background:color-mix(in srgb,var(--ink) 80%,transparent);backdrop-filter:blur(22px) saturate(1.25);-webkit-backdrop-filter:blur(22px) saturate(1.25);box-shadow:0 14px 34px rgb(0 0 0 / 13%);opacity:0;visibility:hidden;pointer-events:none;transform:translateY(10px)}
+.home-page .venue-promotions .promotion-hover-info{position:absolute;z-index:2;inset:auto 0 0;display:grid;gap:10px;max-height:100%;overflow-y:auto;padding:44px 19px 18px;color:var(--paper);background:linear-gradient(to top,var(--ink) 15%,color-mix(in srgb,var(--ink) 80%,transparent) 64%,transparent);opacity:0;visibility:hidden;pointer-events:none;transform:translateY(10px)}
 .home-page .venue-promotions .promotion-info-label{margin:0;color:rgb(255 255 255 / 72%);font-family:var(--display);font-size:9px;letter-spacing:.17em}
 .home-page .venue-promotions .promotion-hover-info>p:not(.promotion-info-label){margin:0;font-size:13px;line-height:1.65}
-.home-page .venue-promotions .promotion-services-link{display:inline-flex;width:max-content;max-width:100%;min-height:40px;align-items:center;justify-content:center;gap:12px;margin-top:4px;padding:8px 13px;border-radius:999px;color:var(--ink);background:rgb(255 255 255 / 92%);font-family:var(--display);font-size:9px;letter-spacing:.12em;text-decoration:none;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.home-page .venue-promotions .promotion-services-link{display:inline-flex;width:max-content;max-width:100%;min-height:40px;justify-content:space-between;gap:16px;margin-top:4px;padding:8px 13px;border-radius:0;border-color:var(--paper);color:var(--ink);background:var(--paper);font-size:10px;text-decoration:none}
 .home-page .venue-promotions .promotion-services-link:focus-visible{outline:2px solid var(--paper);outline-offset:4px}
 .home-page .venue-promotions .promotion-card-visual:is(:hover,:focus-visible,:focus-within) .promotion-hover-info{opacity:1;visibility:visible;pointer-events:auto;transform:translateY(0)}
 .home-page .venue-promotions .promotion-card-visual:focus-visible{outline:2px solid var(--green);outline-offset:4px}
@@ -1506,12 +1506,12 @@ button.flow-back{border:0;background:transparent;cursor:pointer}
 .home-page .venue-promotions .promotion-card-caption>p:last-child{margin:0;color:var(--muted);font-size:13px;line-height:1.7}
 @media(hover:hover){
   .home-page .venue-promotions .promotion-card-visual:hover .promotion-card-image-frame img{transform:scale(1.015)}
-  .home-page .venue-promotions .promotion-services-link:hover{background:rgb(255 255 255 / 98%);transform:translateY(-1px)}
-  .home-page .homepage-editorial figure:hover .photo-frame img{transform:scale(1.025)}
+  .home-page .venue-promotions .promotion-services-link:is(:hover,:focus-visible){background:var(--ink);color:var(--paper)}
 }
 @media(prefers-reduced-motion:no-preference){
   .home-page .venue-promotions .promotion-hover-info{transition:opacity .3s ease,transform .3s ease,visibility .3s ease}
-  .home-page .venue-promotions .promotion-services-link,.home-page .venue-promotions .promotion-card-image-frame img,.home-page .homepage-editorial .photo-frame img{transition:background-color .2s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
+  .home-page .venue-promotions .promotion-services-link,.home-page .venue-promotions .promotion-card-image-frame img{transition:background-color .2s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
+  .home-page .homepage-editorial .photo-frame img{transition:scale .7s cubic-bezier(.2,.7,.2,1)}
 }
 @media(max-width:900px){
   .home-page .venue-promotions{padding:72px 40px}
@@ -1563,7 +1563,7 @@ button.flow-back{border:0;background:transparent;cursor:pointer}
 .home-page .experience-gallery-navigation a:focus-visible,.home-page .experience-gallery-viewport:focus-visible{outline:2px solid var(--green);outline-offset:4px}
 @media(prefers-reduced-motion:no-preference){
   .home-page .experience-gallery-card,.home-page .experience-gallery-image img{transition:transform .65s cubic-bezier(.2,.7,.2,1),scale .65s cubic-bezier(.2,.7,.2,1),box-shadow .45s ease}
-  .home-page .experience-gallery-card:is(:hover,:focus-visible,:focus-within){z-index:2;transform:scale(.96);box-shadow:0 32px 90px rgb(0 0 0 / 20%)}
+  .home-page .experience-gallery-card:is(:hover,:focus-visible,:focus-within){z-index:2;transform:scale(.96);box-shadow:0 15px 36px rgb(0 0 0 / 20%)}
   .home-page .experience-gallery-card.is-focused:is(:hover,:focus-visible,:focus-within){transform:scale(1.02)}
   .home-page .experience-gallery-image img{transition:scale .8s cubic-bezier(.2,.7,.2,1)}
   .home-page .experience-gallery-card:is(:hover,:focus-visible,:focus-within) .experience-gallery-image img{scale:1.055}
@@ -1645,3 +1645,21 @@ button.flow-back{border:0;background:transparent;cursor:pointer}
 
 .spyker-footer-nav{gap:14px!important}
 .spyker-footer-nav a{font-size:clamp(22px,2vw,30px)!important;line-height:1.45}
+
+.home-page .homepage-editorial .photo-frame img { scale: 1.3; }
+@media (hover: hover) {
+  .home-page .homepage-editorial figure:hover .photo-frame img { scale: 1.34; }
+}
+.home-page .experience-gallery-controls { margin-top: 0; }
+.home-page .experience-gallery-card { translate: none; }
+.home-page .experience-gallery-viewport {
+  --experience-gallery-card-width: min(68vw, 900px, max(200px, calc((100svh - 270px) * 1.6)));
+  height: clamp(320px, calc(100svh - 160px), 720px);
+}
+@media (max-width: 700px) {
+  .home-page .experience-gallery-viewport {
+    --experience-gallery-card-width: min(82vw, 390px);
+    height: calc(var(--experience-gallery-card-width) * 1.25 + 112px);
+    min-height: 0;
+  }
+}

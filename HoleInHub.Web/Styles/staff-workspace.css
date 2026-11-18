@@ -511,14 +511,17 @@ a.staff-timeline-bar{cursor:pointer}a.staff-timeline-bar:hover{filter:brightness
 .review-detail .review-side{grid-column:1;grid-row:1;position:static;max-height:none;overflow:visible;align-content:start}
 .review-detail .review-main{grid-column:2;grid-row:1;align-content:start}
 .review-detail .review-section{padding:20px;border-radius:8px}
-.review-detail .attendance-operation[data-attendance-operation=correct]{background:transparent}
-.review-detail .review-disclosure{background:transparent;border:0;border-bottom:1px solid var(--color-line);border-radius:0;padding:0}
+.review-detail :is(.review-disclosure,.attendance-operation){background:transparent;border:0;border-bottom:1px solid var(--color-line);border-radius:0;padding:0}
 .review-disclosure > summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;list-style:none;font-size:.9rem;font-weight:600}
 .review-disclosure > summary::-webkit-details-marker{display:none}
 .review-disclosure > summary::after{content:"+";font-size:1.2rem;color:var(--color-muted)}
 .review-disclosure[open] > summary::after{content:"−"}
 .review-disclosure > summary span{margin-left:auto;color:var(--color-muted);font-size:.75rem;font-weight:400}
-.review-detail .review-disclosure > :not(summary){margin-bottom:16px}
+.review-detail :is(.review-disclosure,.attendance-operation) > :not(summary){margin-bottom:16px}
+.review-detail .attendance-operation > summary{gap:12px;padding:14px 0;font-size:.9rem;font-weight:600}
+.review-detail :is(.review-disclosure,.attendance-operation) > summary:focus-visible{outline:2px solid var(--color-green);outline-offset:3px}
+.staff-shell .review-detail .attendance-operation > .staff-create-form{margin-top:0}
+.review-detail .attendance-operation .staff-create-form > .button{justify-self:end;max-width:100%}
 .review-primary-actions{display:grid;gap:10px;margin-top:14px}
 .review-detail .review-action{border:0;padding:0;margin:0}
 .review-detail .review-action summary{justify-content:center}

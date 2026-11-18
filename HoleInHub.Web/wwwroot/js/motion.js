@@ -409,6 +409,9 @@ function animatePage(root) {
 
       const experiencePhotos = Array.from(root.querySelectorAll('[data-experience-photo]'));
       experiencePhotos.forEach((photo, index) => {
+        window.HoleInHubMotion.parallax(photo.querySelector('.photo-frame img'), {
+          trigger: photo, depth: desktop ? 14 : 9,
+        });
         gsap.from(photo, {
           y: 16,
           opacity: 0.9,
@@ -431,7 +434,8 @@ function animatePage(root) {
       }
 
       const experienceGallery = root.querySelector('[data-experience-gallery]');
-      const galleryViewport = experienceGallery?.querySelector('[data-experience-gallery-viewport]');
+      const galleryPanel = experienceGallery?.querySelector('[data-experience-gallery-panel]');
+      const galleryViewport = galleryPanel?.querySelector('[data-experience-gallery-viewport]');
       const galleryTrack = experienceGallery?.querySelector('[data-experience-gallery-track]');
       const galleryCards = galleryTrack ? Array.from(galleryTrack.querySelectorAll('[data-gallery-card]')) : [];
       const galleryLinks = experienceGallery ? Array.from(experienceGallery.querySelectorAll('[data-gallery-target]')) : [];
@@ -471,10 +475,10 @@ function animatePage(root) {
           const getGalleryDistance = () => Math.max(0, galleryTrack.scrollWidth - galleryViewport.clientWidth);
           const galleryTimeline = gsap.timeline({
             scrollTrigger: {
-              trigger: galleryViewport,
+              trigger: galleryPanel,
               start: 'top top+=104',
               end: () => `+=${getGalleryDistance()}`,
-              pin: galleryViewport,
+              pin: galleryPanel,
               scrub: 0.72,
               snap: {
                 snapTo: 1 / (galleryCards.length - 1),
