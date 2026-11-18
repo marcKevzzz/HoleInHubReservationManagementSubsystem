@@ -455,7 +455,7 @@ a.staff-timeline-bar{cursor:pointer}a.staff-timeline-bar:hover{filter:brightness
 .review-row-actions{display:flex;gap:4px}
 .review-row-actions a{min-width:var(--staff-control-size);padding:0;border:1px solid var(--color-line);border-radius:4px}
 .staff-shell .review-row-actions :is(a,button){--row-action-color:var(--color-green);border:0;border-radius:6px;background:transparent;color:var(--row-action-color)}
-.staff-shell .review-row-actions [data-queue-decision]:is([data-queue-decision="reject"],[data-queue-decision="keep"],[data-queue-decision="decline-change"]){--row-action-color:var(--color-error)}
+.staff-shell .review-row-actions [data-queue-decision]:is([data-queue-decision="reject"],[data-queue-decision="cancel"],[data-queue-decision="decline-change"]){--row-action-color:var(--color-error)}
 .staff-shell .review-row-actions :is(a,button):is(:hover,:focus-visible){background:color-mix(in srgb,var(--row-action-color) 12%,var(--color-paper));color:var(--row-action-color)}
 @media(prefers-reduced-motion:no-preference){
   .review-row-actions :is(a,button){transition:background-color .18s var(--ease),color .18s var(--ease)}
@@ -500,7 +500,11 @@ a.staff-timeline-bar{cursor:pointer}a.staff-timeline-bar:hover{filter:brightness
 .review-section-heading:has(> a:only-child){justify-content:flex-end}
 .review-mini-track{height:12px;background:var(--color-staff-surface);border-radius:3px}
 .review-mini-slot{border-radius:2px}
-.review-row-actions:has(button) .review-view-link:not(:focus){position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);padding:0;border:0}
+.staff-shell .booking-queue-table .review-row-actions .queue-action{width:auto;height:auto;min-height:36px;padding:6px 8px;text-align:start;font-size:.8rem;line-height:1.25}
+.booking-queue-table .review-row-actions{flex-wrap:wrap}
+@media(min-width:961px){
+  .booking-queue-table .review-row{grid-template-columns:minmax(0,1.2fr) minmax(0,1.35fr) minmax(0,1fr) minmax(0,1.05fr) 11rem}
+}
 .review-action-dialog .review-header-action > form{position:static;width:auto}
 .review-booking-summary > div{display:grid;align-content:start;gap:5px;font-size:.9rem;overflow-wrap:anywhere}
 .review-detail .review-booking-summary h2{font:600 1.35rem/1.25 var(--body);margin:0}

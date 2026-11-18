@@ -6,24 +6,24 @@
     var date = Model.ScheduleDate;
     var fromQueue = Model.FromQueue ? "true" : null;
     var closes = booking.Service == "WholeShop" ? booking.ReviewDeadlineUtc : booking.StartUtc;
-    var open = booking.Status == "Pending" && closes > now;
+    var open = booking.Status == "Pending" && !booking.CancellationRequested && closes > now;
     var overdue = ReservationService.IsReviewOverdue(booking, now);
     var coaching = BookingRules.IsCoaching(booking.Service);
-    var canApprove = open && booking.Service != "WholeShop" && !booking.CancellationRequested && (!coaching || booking.CoachConfirmed) && !Model.Context.HasConflict;
+    var canApprove = open && booking.Service != "WholeShop" && (!coaching || booking.CoachConfirmed) && !Model.Context.HasConflict;
     var canReviewCancellation = booking.CancellationRequested && booking.Status is "Pending" or "Confirmed";
     var actions = new (string Key, string Label, string Consequence, bool Show)[]
     {
         ("approve", "Approve booking", "This confirms the reservation and keeps the selected bays reserved.", canApprove),
         ("reject", "Reject booking", "This declines the request and releases any remaining bay hold.", open),
         ("reschedule", "Request reschedule", "This closes the original request and emails the customer a link to choose another time.",
-            open && overdue && Model.Context.HasConflict && Model.Context.HasEmail && !booking.CancellationRequested),
+            open && overdue && Model.Context.HasConflict && Model.Context.HasEmail),
         ("coach", "Record coach confirmation", "This records the coach’s agreement. Venue approval is a separate step.", open && coaching && !booking.CoachConfirmed),
-        ("cancel", "Approve cancellation", "This cancels the reservation and releases its bay hold.", canReviewCancellation),
-        ("keep", "Decline cancellation", "The reservation stays in place.", canReviewCancellation)
+        ("cancel", "Cancel reservation", "This cancels the reservation and releases its bay hold.", canReviewCancellation),
+        ("keep", "Keep reservation", "The reservation stays in place.", canReviewCancellation)
     };
 }
             <section class="review-section review-decision" data-review-closes="@(open ? closes.ToString("O") : null)">
-                <h2>@(canReviewCancellation ? "Cancellation decision" : open ? "Review decision" : "Booking status")</h2>
+                <h2>@(canReviewCancellation ? "Cancel this reservation?" : open ? "Review decision" : "Booking status")</h2>
                 @if (open)
                 {
                     <p class="staff-error" data-review-closed hidden>Review has closed. Refresh the booking for its latest status.</p>
@@ -41,11 +41,10 @@
                     <p class="staff-empty">No booking review decision is pending.</p>
                 }
                 <div class="review-primary-actions" data-primary-actions>
-                @foreach (var action in actions.Where(x => x.Show).OrderBy(x => canReviewCancellation
-                    ? x.Key switch { "cancel" => 0, "keep" => 1, _ => 2 }
-                    : x.Key is "reject" or "keep" ? 1 : 0))
+                @foreach (var action in actions.Where(x => x.Show).OrderBy(x => x.Key == "reject"))
                 {
-                    var decline = action.Key is "reject" or "keep";
+                    var needsReason = action.Key is "reject" or "keep";
+                    var destructive = action.Key is "reject" or "cancel";
                     var icon = action.Key switch
                     {
                         "approve" or "coach" => "confirmed",
@@ -54,10 +53,10 @@
                         _ => "close"
                     };
                     <details class="review-action review-header-action" data-pending-action="@(action.Key is "approve" or "reject" or "coach" or "reschedule" ? "" : null)">
-                        <summary class="button @(decline ? "review-danger" : action.Key == "approve" ? "" : "button-secondary")"><partial name="_StaffIcon" model="@icon" /> @action.Label</summary>
+                        <summary class="button @(destructive ? "review-danger" : action.Key == "approve" ? "" : "button-secondary")"><partial name="_StaffIcon" model="@icon" /> @action.Label</summary>
                         <form asp-action="Decide" asp-route-id="@booking.Id" asp-route-date="@date" asp-route-fromQueue="@fromQueue"
                               asp-route-filter="@(Model.FromQueue ? Model.Queue.Filter : null)" asp-route-day="@Model.Queue.Day"
-                              asp-route-sort="@(Model.FromQueue ? Model.Queue.Sort : null)"
+                              asp-route-page="@(Model.Queue.Page > 1 ? Model.Queue.Page : (int?)null)" asp-route-sort="@(Model.FromQueue ? Model.Queue.Sort : null)"
                               asp-route-returnToQueue="@(ViewData["QueueActions"] is true && Model.Queue.Filter is ("cancellations" or "cancellation-requests") ? "true" : null)" method="post">
                             <input type="hidden" name="expectedRevision" value="@booking.Revision" />
                             <p>@action.Consequence @(Model.Context.HasEmail ? "The customer will be notified by email." : "Contact the guest by phone to share the outcome.")</p>
@@ -85,12 +84,12 @@
                                     <option>Bay unavailable</option><option>Outside operating hours</option><option>Can’t reach customer</option><option>Other</option>
                                 </select>
                             }
-                            @if (decline)
+                            @if (needsReason)
                             {
                                 <label for="reason-@action.Key">@(action.Key == "reject" ? "Details (required for Other)" : "Reason")</label>
                                 <textarea id="reason-@action.Key" name="reason" rows="3" maxlength="@(action.Key == "reject" ? 970 : 1000)" required="@(action.Key == "keep")"></textarea>
                             }
-                            <button class="button @(decline ? "review-danger" : "")" name="decision" value="@action.Key" type="submit">Confirm @action.Label.ToLowerInvariant()</button>
+                            <button class="button @(destructive ? "review-danger" : "")" name="decision" value="@action.Key" type="submit">@(canReviewCancellation ? action.Label : $"Confirm {action.Label.ToLowerInvariant()}")</button>
                         </form>
                     </details>
                 }

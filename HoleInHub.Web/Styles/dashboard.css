@@ -49,6 +49,11 @@
 .dashboard-section-heading>span,.dashboard-section-heading>a {font-size:.75rem;color:var(--color-muted);font-variant-numeric:tabular-nums}
 .dashboard-section-heading>a {color:var(--color-green)}
 .dashboard-chart-frame {position:relative;height:230px;min-width:0}
+@media (min-width:721px) {
+    .dashboard-chart {display:flex;flex-direction:column}
+    .dashboard-chart .dashboard-chart-frame {flex:1 0 230px}
+    .dashboard-chart canvas {position:absolute;inset:0}
+}
 .dashboard-page details:not(.dashboard-period)>summary {font-size:.75rem;color:var(--color-muted);cursor:pointer;padding-block:12px;width:fit-content}
 .dashboard-page details:not(.dashboard-period)>summary:hover {color:var(--color-green)}
 .dashboard-chart details {margin-top:8px}

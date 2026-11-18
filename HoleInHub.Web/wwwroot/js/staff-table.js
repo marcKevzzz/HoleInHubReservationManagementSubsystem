@@ -47,7 +47,8 @@
         const cancel = document.createElement('button');
         cancel.type = 'button';
         cancel.className = 'button button-secondary';
-        cancel.textContent = window.HoleInHubText?.t('Cancel') ?? 'Cancel';
+        const dismissLabel = form.querySelector('button[value="cancel"], button[value="keep"]') ? 'Back' : 'Cancel';
+        cancel.textContent = window.HoleInHubText?.t(dismissLabel) ?? dismissLabel;
         cancel.autofocus = true;
         cancel.addEventListener('click', dismiss);
         const footer = document.createElement('div');

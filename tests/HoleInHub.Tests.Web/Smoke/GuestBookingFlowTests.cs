@@ -258,9 +258,13 @@ public sealed class GuestBookingFlowTests
     }
 
     [Theory]
-    [InlineData("approve", "Confirmed")]
-    [InlineData("reject", "Rejected")]
-    public async Task GuestSubmissionStaffDecisionAndCancellationKeepStatusCapacityAndNotificationsConsistent(string decision, string expected)
+    [InlineData("Regular", "approve", "Confirmed")]
+    [InlineData("Regular", "reject", "Rejected")]
+    [InlineData("VIP", "approve", "Confirmed")]
+    [InlineData("PhilippineCoach", "approve", "Confirmed")]
+    [InlineData("KpgaPro", "approve", "Confirmed")]
+    [InlineData("KpgaGroup", "approve", "Confirmed")]
+    public async Task GuestSubmissionStaffDecisionAndCancellationKeepStatusCapacityAndNotificationsConsistent(string bookingService, string decision, string expected)
     {
         var database = "hih_process_acceptance_" + Guid.NewGuid().ToString("N");
         using var certificate = StaffPinAccessTests.DesktopCertificate(TestNow);
@@ -278,12 +282,28 @@ public sealed class GuestBookingFlowTests
         try
         {
             await Seed(context); using var guest = Client(factory);
-            var submitted = await Verify(guest, context, scope.ServiceProvider, Form(await guest.GetStringAsync("/Reservations/Create")));
+            var form = Form(await guest.GetStringAsync("/Reservations/Create"), bookingService);
+            var service = scope.ServiceProvider.GetRequiredService<ReservationService>();
+            if (bookingService == "VIP")
+            {
+                form["ResourceIds"] = (await service.GetCatalogAsync(default)).First(bay => bay.Service == "VIP").Id;
+            }
+            if (BookingRules.IsCoaching(bookingService))
+            {
+                if (bookingService == "KpgaGroup") { form.Remove("ResourceIds"); }
+                var date = TestNow.AddDays(1);
+                while (date.DayOfWeek != DayOfWeek.Tuesday) { date = date.AddDays(1); }
+                form["Date"] = date.ToString("yyyy-MM-dd");
+                form["StartTime"] = "15:00";
+            }
+            var submitted = await Verify(guest, context, scope.ServiceProvider, form);
             var link = submitted.Headers.Location!.ToString();
             var record = await context.Database.GetCollection<ReservationRecord>("reservations").Find(FilterDefinition<ReservationRecord>.Empty).SingleAsync();
-            var service = scope.ServiceProvider.GetRequiredService<ReservationService>();
             Assert.Equal("Pending", record.Status);
-            Assert.False((await service.GetAvailabilityAsync(DateOnly.FromDateTime(record.StartUtc.AddHours(8)), TimeOnly.FromDateTime(record.StartUtc.AddHours(8)), 60, "Regular", default)).Single(x => x.Resource.Id == "bay-2").Available);
+            async Task<bool> BayAvailable() => (await service.GetAvailabilityAsync(DateOnly.FromDateTime(record.StartUtc.AddHours(8)),
+                TimeOnly.FromDateTime(record.StartUtc.AddHours(8)), 60, BookingRules.ResourceService(bookingService), default))
+                .Single(x => x.Resource.Id == record.ResourceIds.Single()).Available;
+            Assert.False(await BayAvailable());
             Assert.Equal(HttpStatusCode.Redirect, (await guest.GetAsync("/BookingReview/Details/" + record.Id)).StatusCode);
             Assert.Equal(HttpStatusCode.Redirect, (await guest.GetAsync("/BookingReview?reference=" + record.Reference)).StatusCode);
             var users = scope.ServiceProvider.GetRequiredService<UserManager<AccountUser>>();
@@ -308,6 +328,16 @@ public sealed class GuestBookingFlowTests
             Assert.Contains($"data-reference=\"{record.Reference}\"", guestSearch);
             Assert.DoesNotContain(record.Email, workspace);
             var review = await staffClient.GetStringAsync("/BookingReview/Details/" + record.Id);
+            if (BookingRules.IsCoaching(bookingService))
+            {
+                Assert.DoesNotContain("Confirm approve booking", review);
+                var coach = await staffClient.PostAsync("/BookingReview/Decide/" + record.Id, new FormUrlEncodedContent(new Dictionary<string, string>
+                {
+                    ["__RequestVerificationToken"] = Csrf(review), ["expectedRevision"] = record.Revision.ToString(), ["decision"] = "coach"
+                }));
+                Assert.Equal(HttpStatusCode.Redirect, coach.StatusCode);
+                review = await staffClient.GetStringAsync(coach.Headers.Location);
+            }
             Assert.Equal(HttpStatusCode.Redirect, (await guest.GetAsync($"/staff/reservations/{record.Id}/actions")).StatusCode);
             var quickActions = await staffClient.GetStringAsync($"/staff/reservations/{record.Id}/actions");
             Assert.DoesNotContain("<html", quickActions);
@@ -357,7 +387,7 @@ public sealed class GuestBookingFlowTests
                 Assert.Equal("Cancelled", updated.Status);
                 Assert.Contains("Cancelled", await guest.GetStringAsync(link));
             }
-            Assert.True((await service.GetAvailabilityAsync(DateOnly.FromDateTime(record.StartUtc.AddHours(8)), TimeOnly.FromDateTime(record.StartUtc.AddHours(8)), 60, "Regular", default)).Single(x => x.Resource.Id == "bay-2").Available);
+            Assert.True(await BayAvailable());
         }
         finally { await context.Client.DropDatabaseAsync(database); }
     }

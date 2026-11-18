@@ -60,7 +60,11 @@ public sealed record StaffReviewQueue(IReadOnlyList<ReservationDto> Items, strin
 }
 
 public sealed record StaffReviewDetail(StaffReviewContext Context, StaffReviewQueue Queue, IReadOnlyList<StaffScheduleBay> Bays,
-    bool FromQueue, string? ScheduleDate, string? Previous, string? Next, StaffAttendanceForm? AttendanceForm = null);
+    bool FromQueue, string? ScheduleDate, string? Previous, string? Next, StaffAttendanceForm? AttendanceForm = null)
+{
+    public int PreviousPage { get; init; }
+    public int NextPage { get; init; }
+}
 
 public sealed record StaffDeadline(DateTime Due, DateTime Now, bool Deposit)
 {

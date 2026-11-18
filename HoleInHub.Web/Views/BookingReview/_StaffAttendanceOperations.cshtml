@@ -19,7 +19,7 @@
     <details class="review-section attendance-operation" open="@(saved is not null)">
         <summary>@action.Title</summary>
         <form asp-action="Attendance" asp-route-id="@booking.Id" asp-route-date="@Model.ScheduleDate"
-              asp-route-fromQueue="@Model.FromQueue" asp-route-filter="@Model.Queue.Filter" asp-route-day="@Model.Queue.Day" asp-route-sort="@Model.Queue.Sort"
+              asp-route-fromQueue="@Model.FromQueue" asp-route-filter="@Model.Queue.Filter" asp-route-day="@Model.Queue.Day" asp-route-page="@(Model.Queue.Page > 1 ? Model.Queue.Page : (int?)null)" asp-route-sort="@Model.Queue.Sort"
               method="post" class="staff-create-form" data-attendance-form>
             <input type="hidden" name="Action" value="@action.Key" />
             <input type="hidden" name="ExpectedRevision" value="@(saved?.ExpectedRevision ?? booking.Revision)" />

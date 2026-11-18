@@ -447,7 +447,14 @@ public sealed partial class StaffBlockHttpTests
                 Assert.DoesNotContain("href=\"/staff/review-queue/cancellation-requests", pending);
                 Assert.DoesNotContain(booking.Reference, await admin.GetStringAsync("/staff/cancellations"));
             }
-            var actions = await admin.GetStringAsync($"/staff/reservations/{booking.Id}/actions?filter={section}&day=2026-11-11&sort=session");
+            var actions = await admin.GetStringAsync($"/staff/reservations/{booking.Id}/actions?filter={section}&day=2026-11-11&sort=session&page=3");
+            if (booking.CancellationRequested)
+            {
+                Assert.Contains("Cancel this reservation?", actions);
+                Assert.Contains(">Cancel reservation</button>", actions);
+                Assert.Contains(">Keep reservation</button>", actions);
+                Assert.DoesNotContain("value=\"reject\"", actions);
+            }
             var formAction = WebUtility.HtmlDecode(Regex.Match(actions, "action=\"([^\"]*?/Decide(?:Change)?[^\"]*)\"").Groups[1].Value);
             Assert.Contains("returnToQueue=true", formAction, StringComparison.OrdinalIgnoreCase);
             var token = WebUtility.HtmlDecode(Regex.Match(actions, "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"").Groups[1].Value);
@@ -464,6 +471,7 @@ public sealed partial class StaffBlockHttpTests
             Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
             var destination = new Uri(new Uri("https://localhost"), response.Headers.Location!);
             Assert.Equal(destinationPath, destination.AbsolutePath);
+            Assert.Contains("page=3", destination.Query);
             Assert.Contains("day=2026-11-11", destination.Query);
             Assert.Contains("sort=session", destination.Query);
             if (booking.CancellationRequested) { Assert.Contains("view=requests", destination.Query); }
