@@ -181,6 +181,18 @@ public sealed class ReservationsController(ReservationService reservations, Gues
         request.Participants = [];
         var session = GuestSession();
         request.Email = request.Email?.Trim().ToLowerInvariant();
+        var submittedEmail = request.Email ?? "";
+        if (User.Identity?.IsAuthenticated != true
+            && (submittedEmail.Length == 0 || submittedEmail.Length > 254
+                || !System.Net.Mail.MailAddress.TryCreate(submittedEmail, out var emailAddress)
+                || emailAddress.Address != submittedEmail))
+        {
+            ModelState.AddModelError(nameof(request.Email), "Enter a valid email address.");
+        }
+        if (request.Attendees is < 1 or > 640)
+        {
+            ModelState.AddModelError(nameof(request.Attendees), "Enter a guest count from 1 to 640.");
+        }
         if (ModelState.IsValid)
         {
             try

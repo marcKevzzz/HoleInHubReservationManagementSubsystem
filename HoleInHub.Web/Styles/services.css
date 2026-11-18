@@ -49,9 +49,9 @@
 
 .service-entry {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 64px;
-  padding: 48px 0;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr);
+  gap: clamp(32px, 5vw, 72px);
+  padding: clamp(48px, 6vw, 80px) 0;
   border-bottom: 1px solid var(--color-line);
   align-items: center;
 }
@@ -65,6 +65,7 @@
 
 .service-entry-copy {
   min-width: 0;
+  max-width: 620px;
 }
 
 .service-entry h2 {
@@ -78,10 +79,12 @@
 .service-entry-summary {
   max-width: 52ch;
   margin-bottom: 24px;
+  font-size: clamp(17px, 1.3vw, 19px);
+  line-height: 1.65;
 }
 
 .service-entry-rate {
-  font-size: 23px;
+  font-size: clamp(24px, 2vw, 27px);
   color: var(--color-green);
   font-variant-numeric: tabular-nums;
   line-height: 1.4;
@@ -97,7 +100,7 @@
 
 .service-entry-details {
   white-space: pre-line;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   line-height: 1.8;
   max-width: 60ch;
   margin-bottom: 24px;
@@ -116,6 +119,12 @@
   white-space: normal;
   justify-content: space-between;
   text-align: left;
+}
+
+.services-page .service-entry-copy > .button {
+  display: flex;
+  width: fit-content;
+  margin-left: auto;
 }
 
   .services-page .button span {
@@ -183,11 +192,143 @@
   .service-gallery-track > img {
     width: 100%;
     flex: 0 0 100%;
-    aspect-ratio: 3/2;
+    aspect-ratio: 4/3;
     height: auto;
     object-fit: cover;
     scroll-snap-align: start;
   }
+
+@media (min-width: 761px) and (max-width: 1000px) {
+  .services-heading {
+    gap: 28px;
+  }
+
+  .service-entry {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 28px;
+    padding-block: 48px;
+  }
+
+  .service-entry h2 {
+    font-size: clamp(28px, 3.5vw, 36px);
+  }
+
+  .service-entry-rate {
+    font-size: 21px;
+  }
+}
+
+@media (max-width: 760px) {
+  .page-content.services-page {
+    padding: 125px 20px 64px;
+  }
+
+  .services-heading {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+    margin-bottom: 30px;
+  }
+
+  .services-heading h1 {
+    max-width: 12ch;
+    font-size: clamp(38px, 10vw, 58px);
+    line-height: 1.02;
+  }
+
+  .services-heading > div > p:first-child {
+    margin-bottom: 12px;
+    font-size: 17px;
+    line-height: 1.55;
+  }
+
+  .services-update {
+    padding-block: 12px;
+    line-height: 1.55;
+  }
+
+  .service-entry {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding-block: 28px 34px;
+  }
+
+  .service-gallery-track > img {
+    aspect-ratio: 16 / 10;
+  }
+
+  .service-entry-copy {
+    max-width: none;
+    padding-top: 22px;
+  }
+
+  .service-entry h2 {
+    max-width: 18ch;
+    margin-bottom: 12px;
+    font-size: clamp(28px, 7.5vw, 38px);
+    line-height: 1.12;
+    text-wrap: balance;
+  }
+
+  .service-entry-capacity {
+    margin-bottom: 8px;
+    color: var(--color-muted);
+    font-size: 13px;
+  }
+
+  .service-entry-summary {
+    max-width: 56ch;
+    margin-bottom: 18px;
+    font-size: 17px;
+    line-height: 1.7;
+  }
+
+  .service-entry-rate {
+    margin-bottom: 16px;
+    font-size: clamp(22px, 5.8vw, 26px);
+    line-height: 1.35;
+    overflow-wrap: normal;
+  }
+
+  .service-entry-details,
+  .service-entry-deposit {
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  .service-entry-details {
+    margin-bottom: 20px;
+  }
+
+  .services-page .service-entry .button {
+    width: fit-content;
+    min-width: min(220px, 100%);
+    min-height: 48px;
+    margin-top: 4px;
+  }
+
+  .services-contact {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    margin-top: 40px;
+    padding-top: 28px;
+    border-top: 1px solid var(--color-line);
+  }
+
+  .services-contact h2 {
+    grid-row: auto;
+    font-size: clamp(28px, 7vw, 36px);
+  }
+
+  .services-contact .button {
+    justify-self: end;
+    margin-top: 4px;
+  }
+}
+
+.services-contact .button {
+  justify-self: end;
+}
 
 .service-gallery-controls {
   display: flex;
