@@ -323,7 +323,7 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
     }
 
     [HttpGet]
-    public async Task<IActionResult> Details(string id, string? date, bool fromQueue, string? filter, string? day, string? sort, CancellationToken ct, string? customerId = null, string? customerView = null, int customerPage = 1)
+    public async Task<IActionResult> Details(string id, string? date, bool fromQueue, string? filter, string? day, string? sort, CancellationToken ct, string? customerId = null, string? customerView = null, int customerPage = 1, int page = 1)
     {
         ViewData["CustomerId"] = customerId is { Length: > 0 and <= 100 } ? customerId : null;
         ViewData["CustomerView"] = customerView == "upcoming" ? "upcoming" : null;
@@ -334,21 +334,35 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
             return NotFound();
         }
         ViewData["ChangeBays"] = (await reservations.GetCatalogAsync(ct)).Where(bay => bay.Service == context.Booking.Service).ToArray();
-        var queue = fromQueue ? await LoadQueueAsync(filter, day, sort, ct)
+        var queue = fromQueue ? await LoadQueueAsync(filter, day, sort, ct, Math.Clamp(page, 1, 1000))
             : new StaffReviewQueue([], StaffReviewQueue.DefaultSection, null, "deadline", clock.GetUtcNow().UtcDateTime);
         var ids = queue.Visible.Select(x => x.Id).ToList();
         var position = ids.IndexOf(id);
         var startDay = DateOnly.FromDateTime(StaffReviewQueue.Local(context.Booking.StartUtc));
         var bays = await reservations.GetStaffScheduleAsync(startDay, ct);
+        var previous = position > 0 ? ids[position - 1] : null;
+        var next = position + 1 < ids.Count ? ids[position + 1] : null;
+        var previousPage = queue.Page;
+        var nextPage = queue.Page;
+        if (position == 0 && queue.Page > 1)
+        {
+            previousPage--;
+            previous = (await LoadQueueAsync(filter, day, sort, ct, previousPage)).Items.LastOrDefault()?.Id;
+        }
+        if (position >= 0 && position == ids.Count - 1 && queue.HasMore)
+        {
+            nextPage++;
+            next = (await LoadQueueAsync(filter, day, sort, ct, nextPage)).Items.FirstOrDefault()?.Id;
+        }
         return View(new StaffReviewDetail(context, queue, bays.Where(bay => context.Booking.ResourceIds.Contains(bay.Id)).ToArray(), fromQueue, date,
-            position > 0 ? ids[position - 1] : null, position + 1 < ids.Count ? ids[position + 1] : null));
+            previous, next) { PreviousPage = previousPage, NextPage = nextPage });
     }
 
     [HttpGet("/staff/reservations/{id}/actions")]
-    public async Task<IActionResult> Actions(string id, string? date, string? filter, string? day, string? sort, CancellationToken ct, bool drawer = false)
+    public async Task<IActionResult> Actions(string id, string? date, string? filter, string? day, string? sort, CancellationToken ct, bool drawer = false, int page = 1)
     {
         ViewData["QueueActions"] = !drawer;
-        var result = await Details(id, date, !drawer, filter, day, sort, ct);
+        var result = await Details(id, date, !drawer, filter, day, sort, ct, page: page);
         return result is ViewResult { Model: StaffReviewDetail detail }
             ? PartialView(drawer ? "_StaffDrawerActions" : "_ReviewDecision", detail) : result;
     }
@@ -356,7 +370,7 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> DecideChange(string id, string proposalId, long? expectedRevision,
         string decision, string[] resources, string? reason, string? date, CancellationToken ct,
-        bool fromQueue = false, string? day = null, string? sort = null, bool returnToQueue = false)
+        bool fromQueue = false, string? day = null, string? sort = null, bool returnToQueue = false, int? page = null)
     {
         var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(actor)) { return Forbid(); }
@@ -373,18 +387,18 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
             var title = approved ? "Schedule change approved" : "Schedule change declined";
             var message = $"{receipt.Reference} · {(approved ? interval : $"Original time kept: {interval}")}";
             new ToastNotice("success", title, message).Store(TempData);
-            if (queueAction) { return RedirectToRoute("staff-review-section", new { section = "changes", date, day, sort }); }
+            if (queueAction) { return RedirectToRoute("staff-review-section", new { section = "changes", date, day, sort, page }); }
         }
         catch (ReservationValidationException error)
         {
             new ToastNotice("warning", "Schedule change not saved", error.Message).Store(TempData);
         }
-        return RedirectToAction(nameof(Details), new { id, date, fromQueue, filter = fromQueue ? "changes" : null, day, sort });
+        return RedirectToAction(nameof(Details), new { id, date, fromQueue, filter = fromQueue ? "changes" : null, day, sort, page });
     }
 
     [HttpPost("/staff/reservations/{id}/attendance"), ValidateAntiForgeryToken]
     public async Task<IActionResult> Attendance(string id, StaffAttendanceForm form, string? date, CancellationToken ct,
-        bool fromQueue = false, string? filter = null, string? day = null, string? sort = null)
+        bool fromQueue = false, string? filter = null, string? day = null, string? sort = null, int? page = null)
     {
         var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(actor)) { return Forbid(); }
@@ -413,21 +427,21 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
                         _ => new ToastNotice("success", "Guest checked out", "Remaining bay time was released.")
                     };
                     toast.Store(TempData);
-                    return RedirectToAction(nameof(Details), new { id, date, fromQueue, filter, day, sort });
+                    return RedirectToAction(nameof(Details), new { id, date, fromQueue, filter, day, sort, page });
                 }
                 ModelState.AddModelError("", "This action is unavailable for the current state, session time or bay availability. Review the latest booking details.");
             }
             catch (ReservationValidationException error) { ModelState.AddModelError("", error.Message); }
         }
-        var page = await Details(id, date, fromQueue, filter, day, sort, ct);
-        return page is ViewResult { Model: StaffReviewDetail detail }
-            ? View("Details", detail with { AttendanceForm = form }) : page;
+        var resultPage = await Details(id, date, fromQueue, filter, day, sort, ct, page: page ?? 1);
+        return resultPage is ViewResult { Model: StaffReviewDetail detail }
+            ? View("Details", detail with { AttendanceForm = form }) : resultPage;
     }
 
     [HttpPost, ValidateAntiForgeryToken]
     public async Task<IActionResult> Decide(string id, string decision, string? reason, string? reasonChoice, string? date, bool fromQueue,
         string? filter, string? day, string? sort, long? expectedRevision, CancellationToken ct, bool returnToQueue = false,
-        BayParticipants[]? participants = null)
+        BayParticipants[]? participants = null, int? page = null)
     {
         if (!expectedRevision.HasValue || expectedRevision.Value < 0) { return BadRequest(); }
         var actor = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -468,13 +482,13 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
             toast.Store(TempData);
             if (changed && fromQueue && returnToQueue && filter is ("cancellations" or "cancellation-requests") && (decision is "cancel" or "keep"))
             {
-                return RedirectToAction(nameof(Cancellations), new { date, day, sort, view = filter == "cancellation-requests" ? "requests" : null });
+                return RedirectToAction(nameof(Cancellations), new { date, day, sort, page, view = filter == "cancellation-requests" ? "requests" : null });
             }
         }
         catch (ReservationValidationException error)
         {
             new ToastNotice("warning", "Decision not saved", error.Message).Store(TempData);
         }
-        return RedirectToAction(nameof(Details), new { id, date, fromQueue = fromQueue ? true : (bool?)null, filter, day, sort });
+        return RedirectToAction(nameof(Details), new { id, date, fromQueue = fromQueue ? true : (bool?)null, filter, day, sort, page });
     }
 }

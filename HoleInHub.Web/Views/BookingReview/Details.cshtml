@@ -46,7 +46,7 @@
             }
             else if (Model.FromQueue && Model.Queue.Filter is ("cancellations" or "cancellation-requests"))
             {
-                <a class="flow-back" asp-action="Cancellations" asp-route-date="@date" asp-route-day="@Model.Queue.Day" asp-route-sort="@Model.Queue.Sort"
+                <a class="flow-back" asp-action="Cancellations" asp-route-date="@date" asp-route-day="@Model.Queue.Day" asp-route-page="@(Model.Queue.Page > 1 ? Model.Queue.Page : (int?)null)" asp-route-sort="@Model.Queue.Sort"
                    asp-route-view="@(Model.Queue.Filter == "cancellation-requests" ? "requests" : null)">
                     <partial name="_BackArrow" /> Back to cancellations
                 </a>
@@ -54,7 +54,7 @@
             else if (Model.FromQueue)
             {
                 <a class="flow-back" asp-route="staff-review-section" asp-route-section="@Model.Queue.Filter"
-                   asp-route-date="@date" asp-route-day="@Model.Queue.Day" asp-route-sort="@Model.Queue.Sort">
+                   asp-route-date="@date" asp-route-day="@Model.Queue.Day" asp-route-page="@(Model.Queue.Page > 1 ? Model.Queue.Page : (int?)null)" asp-route-sort="@Model.Queue.Sort">
                     <partial name="_BackArrow" /> Back to review queue
                 </a>
             }
@@ -66,12 +66,12 @@
         @if (Model.FromQueue)
         {
             <nav aria-label="Adjacent review requests">
-                @foreach (var (id, label) in new[] { (Model.Previous, "‹ Previous"), (Model.Next, "Next ›") })
+                @foreach (var (id, label, page) in new[] { (Model.Previous, "‹ Previous", Model.PreviousPage), (Model.Next, "Next ›", Model.NextPage) })
                 {
                     if (id is not null)
                     {
                         <a class="staff-link" asp-action="Details" asp-route-id="@id" asp-route-fromQueue="true" asp-route-date="@date"
-                           asp-route-filter="@Model.Queue.Filter" asp-route-day="@Model.Queue.Day" asp-route-sort="@Model.Queue.Sort">@label</a>
+                           asp-route-filter="@Model.Queue.Filter" asp-route-day="@Model.Queue.Day" asp-route-page="@(page > 1 ? page : (int?)null)" asp-route-sort="@Model.Queue.Sort">@label</a>
                     }
                 }
             </nav>

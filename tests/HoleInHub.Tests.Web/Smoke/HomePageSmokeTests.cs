@@ -32,7 +32,7 @@ public sealed class HomePageSmokeTests : IClassFixture<WebApplicationFactory<Pro
 
 
     [Fact]
-    public async Task GetPrivacyPage_ReturnsOk()
+    public async Task LegacyPrivacyRoute_DisplaysPolicyWhenSettingsAreUnavailable()
     {
         // Act
         var response = await _client.GetAsync("/Home/Privacy");
@@ -40,6 +40,7 @@ public sealed class HomePageSmokeTests : IClassFixture<WebApplicationFactory<Pro
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var content = await response.Content.ReadAsStringAsync();
-        content.Should().Contain("RESERVATION INFORMATION").And.NotContain("private connection details");
+        response.RequestMessage!.RequestUri!.AbsolutePath.Should().Be("/policies");
+        content.Should().Contain("id=\"privacy-title\"").And.Contain("Privacy Policy").And.NotContain("private connection details");
     }
 }

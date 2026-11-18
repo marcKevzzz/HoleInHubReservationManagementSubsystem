@@ -99,7 +99,7 @@ public sealed class GuestRecoveryTests
             Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/Reservations/Status/other")).StatusCode);
             Assert.Equal(HttpStatusCode.Redirect, (await client.GetAsync("/my-profile")).StatusCode);
             var detail = await client.GetStringAsync("/guest/reservations/details/own"); Assert.Contains("Back to your reservations", detail);
-            Assert.Contains("href=\"/guest/reservations/details/own\"", detail);
+            Assert.Contains("href=\"/guest/reservations/details/own\"", history);
             var cancelUrl = WebUtility.HtmlDecode(Regex.Match(detail, "action=\"(/Reservations/RequestCancellation/[^\"]+)\"").Groups[1].Value);
             Assert.Equal("/Reservations/RequestCancellation/own?guest=true", cancelUrl);
             var cancel = await client.PostAsync(cancelUrl, new FormUrlEncodedContent(new Dictionary<string, string> { ["__RequestVerificationToken"] = Csrf(detail) }));

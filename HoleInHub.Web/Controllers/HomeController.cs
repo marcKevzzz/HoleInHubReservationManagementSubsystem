@@ -39,15 +39,7 @@ public class HomeController(IServiceCatalog catalog, HoleInHub.Business.Settings
         { return StatusCode(StatusCodes.Status503ServiceUnavailable); }
     }
 
-    public async Task<IActionResult> Privacy(CancellationToken ct)
-    {
-        try
-        {
-            if (settings is not null && (await settings.GetAsync(ct)).PoliciesPublished) { return Redirect("/policies#privacy"); }
-        }
-        catch (Exception error) when (ServiceAvailability.Translate(error) is not null) { return View(); }
-        return View();
-    }
+    public IActionResult Privacy() => Redirect("/policies#privacy");
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()

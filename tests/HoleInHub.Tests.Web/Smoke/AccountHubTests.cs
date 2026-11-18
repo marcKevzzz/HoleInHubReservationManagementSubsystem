@@ -104,7 +104,7 @@ public sealed class AccountHubIdentityTests
             Assert.Contains("₱20,000.00", WebUtility.HtmlDecode(transactions));
             Assert.DoesNotContain("OTHER-DEMO", transactions);
             Assert.DoesNotContain("ORDINARY-BOOKING", transactions);
-            Assert.Contains("No money is collected", transactions);
+            Assert.DoesNotContain("No money is collected", transactions);
         }
         finally { await context.Client.DropDatabaseAsync(database); }
     }

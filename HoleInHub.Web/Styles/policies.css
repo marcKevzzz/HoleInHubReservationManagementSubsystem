@@ -1,0 +1,251 @@
+.venue-policies [id] { scroll-margin-top: 1.5rem; }
+.venue-policies .policy-copy { white-space: pre-line; }
+
+.venue-policies > h1 { margin-bottom: 24px; font-family: var(--display); font-size: clamp(38px, 5vw, 58px); line-height: 1.1; letter-spacing: .025em; text-transform: uppercase; }
+.policy-tabs { display: flex; gap: clamp(18px, 3vw, 34px); overflow-x: auto; margin: 0 0 28px; padding: 0 0 4px; border: 0; scrollbar-width: thin; }
+.policy-tabs a { position: relative; flex: 0 0 auto; min-height: 44px; display: inline-flex; align-items: center; padding: 0; border: 0; color: var(--muted); font-family: var(--display); font-size: 12px; letter-spacing: .055em; text-decoration: none; text-transform: uppercase; }
+.policy-tabs a[aria-selected="true"] { color: var(--ink); }
+.policy-tabs a[aria-selected="true"]::after { transform: scaleX(1); transform-origin: left; }
+.policy-panels { max-width: 920px; margin-inline: auto; }
+.policy-panel { padding: clamp(24px, 4.5vw, 56px); border: 0; background: transparent; box-shadow: none; }
+.policy-panel h2 { margin: 0 0 28px; padding: 0; border: 0; font-family: var(--display); font-size: clamp(27px, 3.4vw, 38px); font-weight: 400; line-height: 1.2; letter-spacing: .035em; text-transform: uppercase; }
+.policy-panel h3, .cookie-policy-dialog-content h3, .legal-policy-dialog-content h3 { display: block; max-width: 100%; margin: 30px 0 10px; padding: 0; border: 0; color: var(--ink); background: transparent; font-family: var(--display); font-size: 22px; font-weight: 500; line-height: 1.3; letter-spacing: .045em; text-transform: uppercase; }
+.policy-panel p { margin: 0 0 18px; font-size: 16px; line-height: 1.8; overflow-wrap: anywhere; }
+.policy-panel > p:first-of-type { color: var(--ink); font-size: 17px; }
+.policy-panel ul { display: grid; gap: 10px; margin: 0 0 22px; padding-left: 22px; list-style: disc; }
+.policy-panel li { padding-left: 3px; font-size: 16px; line-height: 1.7; }
+.policy-panel li::marker { color: currentColor; }
+.policy-panel a { text-decoration: underline; text-underline-offset: 3px; }
+.policy-panel[hidden] { display: none !important; }
+.venue-policies .policy-panel:focus-visible { outline: 0; outline-offset: 0; box-shadow: none; }
+
+/* Keep the legal links stacked even though the site footer's default nav wraps in a row. */
+footer.spyker-footer .spyker-footer-right > nav.cookie-policy-nav {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+footer.spyker-footer .spyker-footer-right > nav.cookie-policy-nav > :is(a, button),
+footer.spyker-footer .spyker-footer-right > a.prototype-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    pointer-events: auto;
+}
+
+/* The underline is decorative and must not intercept clicks on the policy toggle. */
+.prototype-link::after { pointer-events: none; }
+
+.spyker-footer-right { gap: 0; }
+.spyker-footer-right p { margin-top: 20px; }
+
+.cookie-popout {
+    position: fixed;
+    z-index: 120;
+    right: clamp(16px, 2.5vw, 36px);
+    bottom: clamp(16px, 2.5vw, 36px);
+    width: min(400px, calc(100vw - 32px));
+    max-height: min(78dvh, 620px);
+    overflow: auto;
+    padding: 24px;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    box-shadow: 0 14px 48px rgb(16 17 15 / 22%);
+    font-family: var(--body);
+    font-size: 12px;
+    line-height: 1.55;
+    transform-origin: right bottom;
+}
+
+.cookie-popout[hidden],
+.cookie-preferences[hidden],
+.cookie-popout-actions[hidden] { display: none; }
+
+.cookie-intro {
+    margin: 0 0 12px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.cookie-detail {
+    margin: 0 0 14px;
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.cookie-inline-link {
+    display: inline;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+    line-height: inherit;
+    letter-spacing: inherit;
+    cursor: pointer;
+}
+
+.cookie-popout-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.cookie-popout .cookie-button,
+.cookie-policy-dialog .cookie-button {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    height: auto;
+    justify-content: center;
+    padding: 10px 8px;
+    gap: 0;
+    font-size: 11px;
+    white-space: normal;
+}
+
+.cookie-button:active { transform: scale(.985); }
+
+.cookie-preferences { margin-top: 16px; }
+.cookie-preferences h3 { margin: 0 0 4px; font-size: 13px; font-weight: 600; }
+.cookie-preferences > p { margin: 0 0 12px; color: var(--muted); font-size: 11px; }
+.cookie-preference { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.cookie-preference-copy { min-width: 0; }
+.cookie-preference-heading { display: flex; align-items: center; gap: 7px; }
+.cookie-preference-heading label { font-size: 12px; }
+.cookie-tooltip-wrap { position: relative; display: inline-flex; }
+.cookie-tooltip-trigger { display: inline-flex; width: 18px; height: 18px; align-items: center; justify-content: center; border: 1px solid var(--muted); border-radius: 50%; color: var(--muted); font-size: 11px; line-height: 1; cursor: help; }
+.cookie-tooltip { position: absolute; z-index: 2; right: 0; bottom: calc(100% + 8px); width: min(230px, 70vw); padding: 8px 10px; color: var(--paper); background: var(--ink); font-size: 11px; opacity: 0; visibility: hidden; transition: opacity .16s ease; }
+.cookie-tooltip-wrap:hover .cookie-tooltip, .cookie-tooltip-wrap:focus-within .cookie-tooltip { opacity: 1; visibility: visible; }
+.cookie-popout .cookie-tooltip, .cookie-policy-dialog .cookie-tooltip { position: fixed; top: var(--cookie-tooltip-y, 50%); right: auto; bottom: auto; left: var(--cookie-tooltip-x, calc(100% + 8px)); width: var(--cookie-tooltip-width, min(230px, 70vw)); transform: translateY(-50%); pointer-events: none; }
+.cookie-switch { appearance: none; position: relative; flex: 0 0 auto; width: 36px; height: 20px; border: 1px solid var(--muted); border-radius: 999px; background: #e5e6e3; cursor: pointer; transition: background-color .18s ease, border-color .18s ease; }
+.cookie-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: white; box-shadow: 0 1px 2px rgb(0 0 0 / 20%); transition: transform .18s ease; }
+.cookie-switch:checked { border-color: var(--green); background: var(--green); }
+.cookie-switch:checked::after { transform: translateX(16px); }
+.cookie-switch:disabled { cursor: not-allowed; opacity: .7; }
+.cookie-switch:focus-visible, .cookie-tooltip-trigger:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
+.cookie-preference-actions { margin-top: 12px; }
+
+.cookie-policy-modal {
+    position: fixed;
+    z-index: 140;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+}
+
+.cookie-policy-modal[hidden] { display: none; }
+body.cookie-policy-modal-open { overflow: hidden; }
+.cookie-policy-backdrop { position: absolute; inset: 0; background: rgb(16 17 15 / 62%); backdrop-filter: blur(2px); }
+.cookie-policy-dialog {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    width: min(760px, calc(100vw - 40px));
+    max-height: min(82dvh, 780px);
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    box-shadow: 0 24px 80px rgb(0 0 0 / 32%);
+}
+
+.cookie-policy-dialog-header,
+.cookie-policy-dialog-footer { display: flex; align-items: center; justify-content: space-between; padding: 18px 26px; }
+.cookie-policy-dialog-header { gap: 16px; min-height: 84px; border-bottom: 1px solid var(--line); }
+.cookie-policy-dialog-header h2, .legal-policy-dialog-header h2 { margin: 0; font-family: var(--display); font-size: clamp(23px, 3vw, 32px); font-weight: 400; line-height: 1.2; letter-spacing: .045em; text-transform: uppercase; }
+.cookie-policy-dialog-close, .legal-policy-dialog-close { display: grid; flex: 0 0 44px; width: 44px; min-width: 44px; height: 44px; min-height: 44px; place-items: center; padding: 0; border: 0; color: var(--ink); background: transparent; font-family: var(--body); font-size: 30px; font-weight: 300; line-height: 1; text-decoration: none; cursor: pointer; }
+.cookie-policy-dialog-close:is(:hover,:focus-visible), .legal-policy-dialog-close:is(:hover,:focus-visible) { color: var(--ink); background: transparent; border: 0; opacity: .65; }
+.cookie-policy-dialog-content { min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 24px 26px; font-size: 13px; line-height: 1.7; }
+.cookie-policy-dialog-content > p { margin: 0 0 14px; }
+.cookie-policy-choice { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 14px; padding: 16px 0; border-top: 1px solid var(--line); }
+.cookie-policy-choice-copy { min-width: 0; }
+.cookie-policy-choice .cookie-preference-heading { align-items: center; flex-wrap: wrap; }
+.cookie-policy-choice .cookie-preference-heading label { font-size: 13px; }
+.cookie-policy-choice .cookie-preference-heading em { color: var(--muted); font-size: 11px; font-style: normal; }
+.cookie-policy-choice p { margin: 7px 0 0; color: var(--muted); font-size: 12px; line-height: 1.65; }
+.cookie-policy-choice > .cookie-switch { margin-top: 2px; }
+.cookie-policy-dialog-footer { justify-content: flex-end; border-top: 1px solid var(--line); }
+.cookie-policy-dialog-footer .cookie-button { width: auto; min-width: 150px; max-width: 240px; }
+
+.legal-policy-modal {
+    position: fixed;
+    z-index: 150;
+    inset: 0;
+    display: none;
+    place-items: center;
+    padding: 24px;
+}
+.legal-policy-modal:is(:target, .is-open) { display: grid; }
+body.legal-policy-open { overflow: hidden; }
+.legal-policy-backdrop { position: absolute; inset: 0; background: rgb(16 17 15 / 64%); backdrop-filter: blur(2px); }
+.legal-policy-dialog {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    width: min(800px, calc(100vw - 48px));
+    max-height: 95dvh;
+    overflow: hidden;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    box-shadow: 0 28px 88px color-mix(in srgb, var(--ink) 34%, transparent);
+}
+.legal-policy-dialog-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 84px; padding: 18px 26px; color: var(--ink); background: var(--paper); border-bottom: 1px solid var(--line); }
+.legal-policy-dialog-content { min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; padding: 30px clamp(22px, 4vw, 48px) 38px; font-size: 16px; line-height: 1.8; }
+.legal-policy-dialog-content > p:first-child { color: var(--ink); font-size: 17px; }
+.legal-policy-dialog-content p { margin: 0 0 20px; }
+.legal-policy-dialog-content ul { display: grid; gap: 9px; margin: 0 0 20px; padding-left: 22px; list-style: disc; }
+.legal-policy-dialog-content li { padding-left: 3px; }
+.legal-policy-dialog-content a { text-decoration: underline; text-underline-offset: 3px; }
+.auth-policy-notice { display: block; margin: 18px 0 20px; color: var(--muted); font-size: 12px; line-height: 1.8; }
+.auth-policy-notice a { color: var(--ink); font-family: inherit; font-size: inherit; font-weight: 600; line-height: inherit; letter-spacing: inherit; text-decoration: none; }
+.auth-policy-notice a:is(:hover,:focus-visible) { color: var(--green); }
+
+@media (max-width: 700px) {
+    .policy-tabs { gap: 20px; }
+    .policy-panel { padding: 24px 18px; }
+    .cookie-popout { right: 12px; bottom: 12px; width: min(400px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 18px; overscroll-behavior: contain; }
+    .cookie-policy-modal, .legal-policy-modal { padding: 12px; }
+    .cookie-policy-dialog { width: calc(100vw - 24px); max-height: calc(100dvh - 24px); }
+    .legal-policy-dialog { width: calc(100vw - 24px); }
+    .cookie-policy-dialog-header, .legal-policy-dialog-header { min-height: 72px; padding: 14px 18px; }
+    .cookie-policy-dialog-header h2, .legal-policy-dialog-header h2 { font-size: 22px; }
+    .cookie-policy-dialog-content, .legal-policy-dialog-content { min-height: 0; padding: 20px 18px 24px; }
+}
+
+@media (max-width: 520px) {
+    .venue-policies > h1 { margin-bottom: 18px; }
+    .policy-tabs { gap: 18px; margin-bottom: 18px; }
+    .policy-tabs a { min-height: 40px; font-size: 11px; }
+    .policy-panel { padding: 20px 12px; }
+    .policy-panel h2 { margin-bottom: 22px; font-size: 26px; }
+    .policy-panel h3, .cookie-policy-dialog-content h3, .legal-policy-dialog-content h3 { margin-top: 24px; font-size: 19px; }
+    .policy-panel p { font-size: 14px; line-height: 1.75; }
+    .policy-panel li { font-size: 14px; line-height: 1.7; }
+    .cookie-popout { padding: 16px; }
+    .cookie-policy-dialog-header, .legal-policy-dialog-header { padding: 12px 16px; }
+    .cookie-policy-dialog-header h2, .legal-policy-dialog-header h2 { font-size: 21px; }
+    .cookie-policy-dialog-content { padding: 16px; font-size: 12px; }
+    .legal-policy-dialog-content { padding: 16px; font-size: 14px; }
+    .cookie-policy-choice { gap: 8px; }
+    .cookie-popout .cookie-button { min-height: 44px; padding-inline: 8px; font-size: 12px; }
+    .cookie-policy-dialog-footer { padding: 14px 16px; }
+    .cookie-policy-dialog-footer .cookie-button { width: 100%; min-width: 0; max-width: none; }
+    .cookie-popout .cookie-tooltip, .cookie-policy-dialog .cookie-tooltip { width: var(--cookie-tooltip-width, min(200px, calc(100vw - 32px))); }
+}
+
+@media (max-width: 380px) {
+    .cookie-popout .cookie-popout-actions { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .policy-tabs a, .cookie-button, .cookie-tooltip, .cookie-switch, .cookie-switch::after { transition: none; }
+}
+
+#legal-privacy-dialog .legal-policy-dialog-content > h3:first-of-type { margin-top: 0; }

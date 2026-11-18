@@ -139,3 +139,22 @@
 .account-inbox-pager a{color:var(--color-green);text-decoration:underline;text-underline-offset:4px}
 @media(prefers-reduced-motion:no-preference){.account-inbox-link{transition:background-color .18s var(--ease)}}
 @media(max-width:540px){.account-inbox-link,.account-inbox-empty{gap:10px;padding-inline:8px;grid-template-columns:32px minmax(0,1fr) auto}.account-inbox-icon{width:32px;height:32px}.account-inbox-side{gap:6px}.account-inbox-side>.staff-icon{display:none}}
+
+:is(.account-navigation, .account-reservation-tabs)[data-hover-indicator] { position: relative; }
+:is(.account-navigation, .account-reservation-tabs)[data-hover-indicator] a { border-bottom-color: transparent; }
+:is(.account-navigation, .account-reservation-tabs)[data-hover-indicator]::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: var(--account-indicator-width, 0px);
+    height: 1px;
+    background: var(--color-ink);
+    transform: translateX(var(--account-indicator-x, 0px));
+    pointer-events: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+    :is(.account-navigation, .account-reservation-tabs)[data-hover-indicator]::after {
+        transition: width .22s ease, transform .22s ease;
+    }
+}

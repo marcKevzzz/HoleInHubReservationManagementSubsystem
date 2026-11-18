@@ -1,0 +1,35 @@
+@{ var policyContactEmail = ViewData["PolicyContactEmail"] as string ?? "holeinhub@gmail.com"; }
+<h3>@T("Information We Collect")</h3>
+<p>@T("When you create an account or submit a reservation request, we collect:")</p>
+<ul>
+    <li>@T("your name, email address, and contact number")</li>
+    <li>@T("the services you select, your preferred date and time, and your attendance count")</li>
+    <li>@T("booking details, such as who is making the reservation and any notes you provide")</li>
+    <li>@T("account and verification information, including one-time email codes and your sign-in method")</li>
+    <li>@T("payment references and deposit status associated with a point-of-sale transaction when that integration is used. The current demonstration payment flow does not collect real money. We do not store card numbers.")</li>
+</ul>
+<p>@T("When staff create a booking on your behalf by phone, in person, or through messaging, they enter the details you provide. Conversations on Viber, SMS, Instagram, and Facebook remain on those platforms under their own policies.")</p>
+
+<h3>@T("How We Use Your Information")</h3>
+<p>@T("We use your information to:")</p>
+<ul>
+    <li>@T("process, confirm, change, and cancel reservations, and prevent double bookings")</li>
+    <li>@T("verify your email address and protect your account")</li>
+    <li>@T("send reservation confirmations, reminders, and account messages such as password recovery")</li>
+    <li>@T("coordinate payments and deposits with our point-of-sale system")</li>
+    <li>@T("maintain your reservation history and prepare internal reports on bookings, service use, and peak periods")</li>
+</ul>
+<p>@T("Availability and required-field checks may be automated. Ordinary reservation requests are reviewed by staff; coaching also needs coach confirmation. We use personal information as needed to provide or prepare the service you request, meet legal obligations, protect the service, or act on your consent where consent is required.")</p>
+
+<h3>@T("How We Share Your Information")</h3>
+<p>@T("Authorized Hole In Hub staff may access reservation and account details to manage bookings and provide service. We use service providers for application hosting, data storage, security, and transactional email. Payment references and deposit status may be shared with or received from the point-of-sale system. We may also disclose information when required by law or needed to establish, exercise, or defend legal claims.")</p>
+
+<h3>@T("Retention and Security")</h3>
+<p>@T("We retain personal information only for as long as needed for the purposes described here, legitimate business operations, applicable legal obligations, or legal claims. Verification challenges expire under their configured time limits. Retention periods differ by record type; there is not yet a single approved deletion period for reservation and account records.")</p>
+<p>@T("We use administrative, technical, and physical safeguards intended to protect personal information. Please keep your account credentials and private booking links secure. No online service can guarantee absolute security.")</p>
+
+<h3>@T("Your Privacy Rights")</h3>
+<p>@T("Subject to applicable law, you may ask to be informed about, access, correct, or object to the processing of your personal information, or request its blocking, erasure, or portability. You may withdraw consent for optional cookies using Customize.") @T("To make a privacy request, contact") <a href="mailto:@policyContactEmail">@policyContactEmail</a>. @T("You may also raise a complaint with the") <a href="https://privacy.gov.ph/data-subject-rights/">@T("National Privacy Commission of the Philippines")</a>.</p>
+
+<h3>@T("Changes to This Policy")</h3>
+<p>@T("We may update this Privacy Policy when our practices or legal requirements change. The current version will be posted on this page.")</p>

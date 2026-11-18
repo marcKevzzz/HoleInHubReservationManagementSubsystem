@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using HoleInHub.Business.Accounts;
+using HoleInHub.Business.Services;
 using HoleInHub.Business.Settings;
 using HoleInHub.Web.Accounts;
 using HoleInHubReservationManagementSubsystem.ViewModels;
@@ -48,12 +49,20 @@ public sealed class SettingsController(OperationalSettings settings) : Controlle
     }
 }
 [AllowAnonymous, ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class VenuePoliciesController(OperationalSettings settings) : Controller
+public sealed class VenuePoliciesController(OperationalSettings settings, ILogger<VenuePoliciesController> logger) : Controller
 {
     [HttpGet("/policies")]
     public async Task<IActionResult> Index(CancellationToken ct)
     {
-        var current = await settings.GetAsync(ct);
-        return View("~/Views/Settings/Policies.cshtml", current.PoliciesPublished ? current : null);
+        try
+        {
+            var current = await settings.GetAsync(ct);
+            return View("~/Views/Settings/Policies.cshtml", current.PoliciesPublished ? current : null);
+        }
+        catch (Exception error) when (!ct.IsCancellationRequested && ServiceAvailability.Translate(error) is not null)
+        {
+            logger.LogWarning("Venue settings are unavailable; rendering the local public policy copy.");
+            return View("~/Views/Settings/Policies.cshtml", model: null);
+        }
     }
 }

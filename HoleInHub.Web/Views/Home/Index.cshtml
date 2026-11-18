@@ -1,11 +1,127 @@
-@{ ViewData["Title"]="Home"; }
-<section class="hero"><video muted loop playsinline preload="metadata" poster="/media/facebook/hero-optimized-poster.webp"><source src="/media/facebook/hero-quality.mp4" type="video/mp4"/></video><div class="hero-shade"></div><div class="hero-content"><p class="eyebrow">@T("A NEW WAY TO PLAY")</p><h1>@T("YOUR NEXT ROUND.")<br/>@T("STARTS HERE.")</h1><a class="button" href="/Home/About">@T("EXPLORE THE EXPERIENCE") <span aria-hidden="true">→</span></a></div></section>
-<section class="editorial-copy"><p class="eyebrow">@T("THE HOLE IN HUB EXPERIENCE")</p><h2>@T("PURE PLAY.")<br/>@T("GOOD COMPANY.")</h2><p>@T("A round of golf. A space to unwind. A reason to get together. Hole In Hub brings virtual golf simulators and a lounge experience into one indoor destination in Quezon City.")</p></section>
-<section class="homepage-editorial editorial">
-    <figure class="editorial-one"><div class="photo-frame"><img src="/media/facebook/venue-overview.webp" alt="Hole In Hub simulator bays" loading="lazy"/></div><figcaption><span>@T("THE SIMULATOR BAYS")</span><p>@T("Step onto the turf and into your next round. Five regular bays and two VIP bays make room for your game.")</p></figcaption></figure>
-    <figure class="editorial-two"><div class="photo-frame"><img src="/media/facebook/social-seating.webp" alt="Seating beside the simulator bays" loading="lazy"/></div><figcaption><span>@T("ROOM TO UNWIND")</span><p>@T("Take a little time between swings. Private spaces and the lounge make room for the moments beyond the game.")</p></figcaption></figure>
-    <figure class="editorial-three"><div class="photo-frame"><img src="/media/facebook/family-play.webp" alt="Family golf session" loading="lazy"/></div><figcaption><span>@T("BETTER TOGETHER")</span><p>@T("Bring your people. Reserve multiple bays together under one reservation.")</p></figcaption></figure>
+@{ ViewData["Title"] = T("Home"); }
+<section class="hero"><video muted loop playsinline preload="metadata" poster="/media/facebook/hero-optimized-poster.webp"><source src="/media/facebook/hero-quality.mp4" type="video/mp4"/></video><div class="hero-shade"></div><div class="hero-content"><p class="eyebrow">@T("A NEW WAY TO PLAY")</p><h1>@T("SWING BY.")<br/>@T("STAY AWHILE.")</h1><a class="button" href="/Home/About">@T("EXPLORE THE EXPERIENCE") <span aria-hidden="true">→</span></a></div></section>
+<section class="editorial-copy" data-experience-intro>
+    <p class="eyebrow">@T("THE HOLE IN HUB EXPERIENCE")</p>
+    <h2>@T("PLAY YOUR ROUND.")<br/>@T("MAKE IT YOURS.")</h2>
+    <p>@T("Indoor golf, expert coaching, and a relaxed lounge come together at Hole In Hub in Quezon City. Play, practise, and enjoy time with your group.")</p>
 </section>
-<section class="program-section"><header><p class="eyebrow">@T("MORE WAYS TO PLAY")</p><h2>@T("OFFERS & COACHING")</h2><p>@T("Discover the programs shown in the venue's supplied posters. Confirm current dates, rates, availability, and terms with the venue.")</p></header><div class="program-posters"><figure><img src="/media/facebook/coaching-programs.webp" alt="Philippine and KPGA professional coaching options" loading="lazy"/><figcaption>@T("Get coached by the pros")</figcaption></figure><figure><img src="/media/facebook/kpga-lessons.webp" alt="KPGA small group lesson program" loading="lazy"/><figcaption>@T("Build your next round")</figcaption></figure><figure><img src="/media/facebook/junior-golf-second.webp" alt="Junior golf program poster" loading="lazy"/><figcaption>@T("Start a lifelong game")</figcaption></figure></div></section>
-<section class="program-mosaic"><div class="mosaic-picture mosaic-a mosaic-img-top-center"><div class="mosaic-inner"><img src="/media/facebook/coaching.webp" alt="Golf coaching" loading="lazy"/></div></div><div class="mosaic-picture mosaic-b mosaic-img-top-left"><div class="mosaic-inner"><img src="/media/facebook/junior-golf-third.webp" alt="Junior golf program" loading="lazy"/></div></div><div class="mosaic-picture mosaic-c mosaic-img-top-right"><div class="mosaic-inner"><img src="/media/facebook/social-seating.webp" alt="Lounge seating" loading="lazy"/></div></div><div class="mosaic-picture mosaic-d mosaic-img-mid-left"><div class="mosaic-inner"><img src="/media/facebook/family-play.webp" alt="Family golf session" loading="lazy"/></div></div><div class="mosaic-picture mosaic-e mosaic-img-bot-right"><div class="mosaic-inner"><img src="/media/facebook/coaching-programs.webp" alt="Coaching programs" loading="lazy"/></div></div><div class="mosaic-picture mosaic-f mosaic-img-mid-right"><div class="mosaic-inner"><img src="/media/facebook/venue-overview.webp" alt="Simulator bays at Hole In Hub" loading="lazy"/></div></div><div class="mosaic-picture mosaic-g mosaic-img-bot-left"><div class="mosaic-inner"><img src="/media/facebook/kpga-lessons.webp" alt="Golf lessons" loading="lazy"/></div></div><div class="mosaic-copy"><p class="eyebrow">@T("GOLF & LOUNGE")</p><h2>@T("LEARN. PLAY.")<br/>@T("COME TOGETHER.")</h2><p>@T("From first swings to friendly challenges, discover the programs and experiences at Hole In Hub.")</p><a class="button" href="/Home/About">@T("EXPLORE THE PROGRAMS") <span aria-hidden="true">→</span></a></div></section>
+<section class="homepage-editorial editorial">
+    <figure class="editorial-one" data-experience-photo><div class="photo-frame"><img src="/media/facebook/venue-overview.webp" alt="@T("Hole In Hub's indoor golf simulator bays.")" loading="lazy"/></div><figcaption><span>@T("THE SIMULATOR BAYS")</span><p>@T("Choose from five regular bays and two VIP bays. Play virtual courses, practise your swing, or start a friendly match.")</p></figcaption></figure>
+    <figure class="editorial-two" data-experience-photo><div class="photo-frame"><img src="/media/facebook/social-seating.webp" alt="@T("Seating and lounge space beside the simulator bays.")" loading="lazy"/></div><figcaption><span>@T("ROOM TO UNWIND")</span><p>@T("Relax between turns in a comfortable lounge, with private spaces and refreshments close to the game.")</p></figcaption></figure>
+    <figure class="editorial-three" data-experience-photo><div class="photo-frame"><img src="/media/facebook/family-play.webp" alt="@T("A family sharing a golf session at Hole In Hub.")" loading="lazy"/></div><figcaption><span>@T("BETTER TOGETHER")</span><p>@T("Bring friends or family, take turns at the simulator, and share an easygoing day of indoor golf.")</p></figcaption></figure>
+</section>
+<section class="program-section venue-promotions" aria-labelledby="home-promotions-title">
+    <header class="promotion-heading">
+        <div>
+            <p class="eyebrow">@T("MORE WAYS TO PLAY")</p>
+            <h2 id="home-promotions-title">@T("OFFERS & COACHING")</h2>
+        </div>
+        <p class="promotion-note">@T("Compare bay rates, explore coaching packages, or find a welcoming first golf program for kids. Open any card for a quick summary.")</p>
+    </header>
+    <div class="promotion-card-grid">
+        <article class="promotion-card" id="offer-rates">
+            <figure class="promotion-card-visual" tabindex="0" aria-describedby="offer-rates-info">
+                <div class="promotion-card-image-frame"><img src="/media/facebook/offers-rates.jpg" alt="@T("Hole In Hub weekday, weekend, holiday, and VIP hourly bay rates.")" loading="lazy" /></div>
+                <div class="promotion-hover-info" id="offer-rates-info">
+                    <p class="promotion-info-label">@T("BAY RATES")</p>
+                    <p>@T("Flexible hourly rates for standard and VIP bays, with weekday and weekend options.")</p>
+                    <a class="button promotion-services-link" href="/Home/Services">@T("VIEW SERVICES") <span aria-hidden="true">→</span></a>
+                </div>
+            </figure>
+            <div class="promotion-card-caption">
+                <p class="promotion-card-category">@T("RATE GUIDE")</p>
+                <h3>@T("Find the right time to play.")</h3>
+                <p>@T("Compare regular and VIP bay rates before you book.")</p>
+            </div>
+        </article>
+        <article class="promotion-card" id="offer-coaching">
+            <figure class="promotion-card-visual" tabindex="0" aria-describedby="offer-coaching-info">
+                <div class="promotion-card-image-frame"><img src="/media/facebook/offers-coaching.jpg" alt="@T("KPGA coaching package options at Hole In Hub.")" loading="lazy" /></div>
+                <div class="promotion-hover-info" id="offer-coaching-info">
+                    <p class="promotion-info-label">@T("COACHING PACKAGES")</p>
+                    <p>@T("Choose a single lesson or a multi-session package to build your game with a coach.")</p>
+                    <a class="button promotion-services-link" href="/Home/Services">@T("VIEW SERVICES") <span aria-hidden="true">→</span></a>
+                </div>
+            </figure>
+            <div class="promotion-card-caption">
+                <p class="promotion-card-category">@T("COACHING")</p>
+                <h3>@T("Build confidence with a coach.")</h3>
+                <p>@T("Pick a single lesson or a multi-session package for focused practice.")</p>
+            </div>
+        </article>
+        <article class="promotion-card" id="offer-junior-golf">
+            <figure class="promotion-card-visual" tabindex="0" aria-describedby="offer-junior-golf-info">
+                <div class="promotion-card-image-frame"><img src="/media/facebook/junior-golf.jpg" alt="@T("Four-week beginner golf program for children ages six to thirteen.")" loading="lazy" /></div>
+                <div class="promotion-hover-info" id="offer-junior-golf-info">
+                    <p class="promotion-info-label">@T("JUNIOR GOLF")</p>
+                    <p>@T("A four-week beginner golf program for kids ages six to thirteen. Ask about the next enrollment period.")</p>
+                    <a class="button promotion-services-link" href="/Home/Services">@T("VIEW SERVICES") <span aria-hidden="true">→</span></a>
+                </div>
+            </figure>
+            <div class="promotion-card-caption">
+                <p class="promotion-card-category">@T("JUNIOR GOLF")</p>
+                <h3>@T("A fun first step into golf.")</h3>
+                <p>@T("A beginner-friendly introduction for kids ages six to thirteen.")</p>
+            </div>
+        </article>
+    </div>
+</section>
+<section class="experience-gallery" data-experience-gallery aria-labelledby="experience-gallery-title">
+    <header class="experience-gallery-heading">
+        <div>
+            <p class="eyebrow">@T("GOLF & LOUNGE")</p>
+            <h2 id="experience-gallery-title">@T("GOOD GOLF.")<br/>@T("GOOD COMPANY.")</h2>
+        </div>
+        <div class="experience-gallery-intro">
+            <p>@T("Take your time between turns. Explore our simulator bays, lounge seating, coaching, and family-friendly play, all in one welcoming place.")</p>
+            <a class="button" href="/Home/About">@T("EXPLORE THE PROGRAMS") <span aria-hidden="true">→</span></a>
+        </div>
+    </header>
+    <div class="experience-gallery-panel" data-experience-gallery-panel>
+    <div class="experience-gallery-viewport" data-experience-gallery-viewport tabindex="0" aria-label="@T("Golf and lounge photos. Scroll or use the photo links to explore.")">
+        <div class="experience-gallery-track" data-experience-gallery-track>
+            <figure class="experience-gallery-card is-focused" id="golf-lounge-photo-1" data-gallery-card>
+                <div class="experience-gallery-image"><img src="/media/facebook/lounge-1.jpg" alt="@T("Guests sharing a golf session in the Hole In Hub lounge.")" loading="eager"/></div>
+                <figcaption><span>01 / @T("THE LOUNGE")</span><h3>@T("Good swings. Great company.")</h3><p>@T("Gather for a relaxed game with room to talk, take turns, and celebrate every shot.")</p></figcaption>
+            </figure>
+            <figure class="experience-gallery-card" id="golf-lounge-photo-2" data-gallery-card>
+                <div class="experience-gallery-image"><img src="/media/facebook/lounge-2.jpg" alt="@T("Comfortable lounge seating beside a simulator bay.")" loading="eager"/></div>
+                <figcaption><span>02 / @T("LOUNGE SEATING")</span><h3>@T("Your spot between shots.")</h3><p>@T("Settle into the lounge between turns, with the game always close by.")</p></figcaption>
+            </figure>
+            <figure class="experience-gallery-card" id="golf-lounge-photo-3" data-gallery-card>
+                <div class="experience-gallery-image"><img src="/media/facebook/lounge-3.jpg" alt="@T("Friends enjoying the Hole In Hub lounge.")" loading="eager"/></div>
+                <figcaption><span>03 / @T("GOOD COMPANY")</span><h3>@T("Make it a group thing.")</h3><p>@T("Bring friends or colleagues together for a shared game and an easygoing visit.")</p></figcaption>
+            </figure>
+            <figure class="experience-gallery-card" id="golf-lounge-photo-4" data-gallery-card>
+                <div class="experience-gallery-image"><img src="/media/facebook/coaching.webp" alt="@T("A golf coach guiding a player at a simulator bay.")" loading="eager"/></div>
+                <figcaption><span>04 / @T("COACHING")</span><h3>@T("Find your next best swing.")</h3><p>@T("Work on your swing with guided practice suited to your goals and experience.")</p></figcaption>
+            </figure>
+            <figure class="experience-gallery-card" id="golf-lounge-photo-5" data-gallery-card>
+                <div class="experience-gallery-image"><img src="/media/facebook/family-play.webp" alt="@T("A family playing golf together at Hole In Hub.")" loading="eager"/></div>
+                <figcaption><span>05 / @T("FAMILY PLAY")</span><h3>@T("First swings, family smiles.")</h3><p>@T("Make a first golf session friendly and fun, with everyone taking a turn.")</p></figcaption>
+            </figure>
+            <figure class="experience-gallery-card" id="golf-lounge-photo-6" data-gallery-card>
+                <div class="experience-gallery-image"><img src="/media/facebook/venue-overview.webp" alt="@T("Overview of Hole In Hub simulator bays and lounge.")" loading="eager"/></div>
+                <figcaption><span>06 / @T("THE VENUE")</span><h3>@T("Your round, your way.")</h3><p>@T("Choose from regular and VIP simulator bays for practice, play, and group gatherings.")</p></figcaption>
+            </figure>
+            <figure class="experience-gallery-card" id="golf-lounge-photo-7" data-gallery-card>
+                <div class="experience-gallery-image"><img src="/media/facebook/social-seating.webp" alt="@T("Guests relaxing in the Hole In Hub social seating area.")" loading="eager"/></div>
+                <figcaption><span>07 / @T("SOCIAL SEATING")</span><h3>@T("Stay for the good company.")</h3><p>@T("Enjoy the lounge before or after your round, with space to catch up together.")</p></figcaption>
+            </figure>
+        </div>
+    </div>
+    <div class="experience-gallery-controls">
+        <p class="experience-gallery-count"><span data-gallery-current aria-live="polite">01</span><span aria-hidden="true"> / </span><span>07</span></p>
+        <nav class="experience-gallery-navigation" aria-label="@T("Choose a golf and lounge photo")">
+            <a href="#golf-lounge-photo-1" data-gallery-target="0" aria-label="@T("Photo 1: Lounge")" aria-current="true">01</a>
+            <a href="#golf-lounge-photo-2" data-gallery-target="1" aria-label="@T("Photo 2: Lounge seating")">02</a>
+            <a href="#golf-lounge-photo-3" data-gallery-target="2" aria-label="@T("Photo 3: Good company")">03</a>
+            <a href="#golf-lounge-photo-4" data-gallery-target="3" aria-label="@T("Photo 4: Coaching")">04</a>
+            <a href="#golf-lounge-photo-5" data-gallery-target="4" aria-label="@T("Photo 5: Family play")">05</a>
+            <a href="#golf-lounge-photo-6" data-gallery-target="5" aria-label="@T("Photo 6: The venue")">06</a>
+            <a href="#golf-lounge-photo-7" data-gallery-target="6" aria-label="@T("Photo 7: Social seating")">07</a>
+        </nav>
+    </div>
+    </div>
+</section>
 <section class="hero"><video muted loop playsinline preload="none" poster="/media/facebook/statement-optimized-poster.webp"><source src="/media/facebook/statement-quality.mp4" type="video/mp4"/></video><div class="hero-shade"></div><div class="hero-content"><h2>@T("MORE THAN")<br/>@T("A ROUND.")</h2><p>@T("A shared experience. From the first swing to the last conversation.")</p><a class="button" href="/Reservations/Create">@T("RESERVE A BAY →")</a></div></section>
