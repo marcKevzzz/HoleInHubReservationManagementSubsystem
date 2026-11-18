@@ -12,6 +12,11 @@
         function sync() {
             options=[...select.options];index=Math.max(0,select.selectedIndex);
             text.textContent=options[index]?.textContent || 'Choose an option';trigger.disabled=select.disabled;trigger.tabIndex=nativeTabIndex;
+            if (options[index]?.dataset?.flag) {
+                const flag=document.createElement('img');flag.src=options[index].dataset.flag;flag.alt='';flag.width=22;flag.height=16;
+                text.replaceChildren(flag,document.createTextNode(options[index].dataset.selectedLabel || options[index].textContent));
+                trigger.setAttribute('aria-label',label+': '+options[index].textContent.trim());
+            } else trigger.setAttribute('aria-label',label);
             trigger.setAttribute('aria-required',String(select.required));wrapper.hidden=select.hidden;
             [...menu.children].forEach((button,i)=>{button.setAttribute('aria-selected',String(i===select.selectedIndex));});
         }
@@ -24,7 +29,17 @@
         }
         function open() {if(select.disabled)return;opened?.close();sync();menu.showPopover?.();wrapper.dataset.open='true';trigger.setAttribute('aria-expanded','true');opened={select,close,position};position();menu.children[index]?.focus({preventScroll:true});}
         function choose(i) {if(!options[i] || options[i].disabled || options[i].parentElement?.disabled)return;select.selectedIndex=i;select.dispatchEvent(new Event('change',{bubbles:true}));sync();close(true);}
-        function rebuild() {menu.replaceChildren(...[...select.options].map((option,i)=>{const button=document.createElement('button');button.type='button';button.tabIndex=-1;button.setAttribute('role','option');button.textContent=option.textContent;button.disabled=option.disabled || Boolean(option.parentElement?.disabled);button.addEventListener('click',()=>choose(i));return button;}));sync();}
+        function rebuild() {
+            menu.replaceChildren(...[...select.options].map((option,i)=>{
+                const button=document.createElement('button');button.type='button';button.tabIndex=-1;button.setAttribute('role','option');button.textContent=option.textContent;
+                if (option.dataset?.flag) {
+                    const flag=document.createElement('img');flag.src=option.dataset.flag;flag.alt='';flag.width=22;flag.height=16;
+                    button.replaceChildren(flag,document.createTextNode(option.dataset.selectedLabel || option.textContent));
+                    button.setAttribute('aria-label',option.textContent.trim());
+                }
+                button.disabled=option.disabled || Boolean(option.parentElement?.disabled);button.addEventListener('click',()=>choose(i));return button;
+            }));sync();
+        }
         trigger.addEventListener('click',()=>wrapper.dataset.open==='true'?close():open());
         wrapper.addEventListener('keydown',event=>{
             if(event.key==='Escape'){event.preventDefault();close(true);return;}

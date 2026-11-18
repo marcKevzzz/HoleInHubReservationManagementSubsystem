@@ -21,7 +21,7 @@ public sealed class PublicPagesSmokeTests : IClassFixture<WebApplicationFactory<
     [Theory]
     [InlineData("/Home/About", "ABOUT HOLE IN HUB")]
     [InlineData("/Home/Gallery", "Gallery")]
-    [InlineData("/Home/Contacts", "CONTACT & LOCATION")]
+    [InlineData("/Home/Contacts", "Contact Us")]
     [InlineData("/Home/Services", "MORE WAYS TO PLAY")]
     public async Task Public_page_contains_real_content(string path, string heading)
     {

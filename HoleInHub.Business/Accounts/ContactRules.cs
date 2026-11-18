@@ -14,4 +14,14 @@ public static class ContactRules
         && Regex.Matches(value, @"\p{L}", RegexOptions.CultureInvariant).Count >= 2;
     public static bool IsPhone(string? value) => value is not null && Regex.IsMatch(value, @"\A" + PhonePattern + @"\z", RegexOptions.CultureInvariant);
     public static string PhoneDigits(string? value) => new((value ?? "").Where(char.IsAsciiDigit).ToArray());
+    public static bool IsCountryPhone(string country, string? value)
+    {
+        var (code, maximum) = country switch
+        {
+            "PH" => ("63", 10), "KR" => ("82", 10), "CN" => ("86", 11),
+            "US" => ("1", 10), "JP" => ("81", 10), _ => ("", 0)
+        };
+        var digits = PhoneDigits(value);
+        return maximum > 0 && IsPhone(value) && digits.StartsWith(code, StringComparison.Ordinal) && digits.Length <= code.Length + maximum;
+    }
 }
