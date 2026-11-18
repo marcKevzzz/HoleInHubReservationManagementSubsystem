@@ -1,21 +1,69 @@
 @model HoleInHub.Business.Settings.SettingsEdit
-@{ViewData["Title"]="Venue policies";}
-<section class="page-content venue-policies">
-    <h1>Venue policies</h1>
-    @if (Model is null)
-    {
-        <p>General information for Hole In Hub Golf &amp; Lounge. Contact the front desk for current terms.</p>
-    }
-    else
-    {
-        <p>@Model.VenueName</p>
-    }
-    <h2 id="booking">Booking &amp; cancellation</h2>
-    <p>@(Model?.BookingPolicy ?? SettingsForm.DefaultBookingPolicy)</p>
-    <h2 id="privacy">Privacy</h2>
-    <p>@(Model?.PrivacyPolicy ?? SettingsForm.DefaultPrivacyPolicy)</p>
-    <h2 id="rules">Venue rules</h2>
-    <p>@(Model?.VenueRules ?? SettingsForm.DefaultVenueRules)</p>
-    @if (!string.IsNullOrWhiteSpace(Model?.ContactEmail)) { <p>Email: <a href="mailto:@Model.ContactEmail">@Model.ContactEmail</a></p> }
-    @if (!string.IsNullOrWhiteSpace(Model?.ContactPhone)) { <p>Phone: @Model.ContactPhone</p> }
+@{
+    ViewData["Title"] = T("Policies");
+    var venueName = string.IsNullOrWhiteSpace(Model?.VenueName) ? "Hole In Hub Golf & Lounge" : Model.VenueName;
+    var contactEmail = string.IsNullOrWhiteSpace(Model?.ContactEmail) ? "holeinhub@gmail.com" : Model.ContactEmail;
+}
+<section class="page-content venue-policies" data-policy-tabs>
+    <h1>@T("Policies")</h1>
+    <nav class="policy-tabs" data-policy-tablist aria-label="@T("Legal policies")">
+        <a class="prototype-link" href="#cookies" data-policy-tab>@T("Cookie Policy")</a>
+        <a class="prototype-link" href="#privacy" data-policy-tab>@T("Privacy Policy")</a>
+        <a class="prototype-link" href="#terms" data-policy-tab>@T("Terms and Conditions")</a>
+        <a class="prototype-link" href="#rules" data-policy-tab>@T("Venue Policies")</a>
+    </nav>
+
+    <div class="policy-panels">
+        <section class="policy-panel" id="cookies" data-policy-panel aria-labelledby="cookies-title">
+            <h2 id="cookies-title">@T("Cookie Policy")</h2>
+            <p>@F("{0} (\"we,\" \"our,\" or \"us\") uses cookies on our website to keep it secure and functional, to remember your preferences, and, with your consent, to understand how the site is used.", venueName)</p>
+            <p>@T("This Cookie Policy explains what cookies are, how we use them, and the choices you have.")</p>
+            <h3>@T("What are cookies?")</h3>
+            <p>@T("Cookies are small text files placed on your device when you visit a website. They help the site work efficiently, remember your preferences, and provide information about how visitors use it.")</p>
+            <h3>@T("How we use cookies")</h3>
+            <p>@T("We group the cookies we use into three categories. Essential cookies are always active. Functional and Analytics cookies are off by default and are used only if you turn them on.")</p>
+            <p><strong>@T("Essential cookies (always active).")</strong> @T("Essential cookies enable core website functions, including security, account authentication, session management, and the reservation process.")</p>
+            <p><strong>@T("Functional cookies.")</strong> @T("Functional cookies store your preferences, such as your language selection and ‘Remember Me’ sign-in option, so that future visits are more convenient. They are used only with your consent. If you decline them, the website still works, but you may need to sign in or choose your language again on each visit.")</p>
+            <p><strong>@T("Analytics cookies.")</strong> @T("Analytics cookies help us understand how visitors interact with our website, so that we can improve its performance, content, and services. They are used only with your consent.")</p>
+        </section>
+
+        <section class="policy-panel" id="privacy" data-policy-panel aria-labelledby="privacy-title">
+            <h2 id="privacy-title">@T("Privacy Policy")</h2>
+            <partial name="_PrivacyPolicyBody" />
+        </section>
+
+        <section class="policy-panel" id="terms" data-policy-panel aria-labelledby="terms-title">
+            <h2 id="terms-title">@T("Terms and Conditions")</h2>
+            <partial name="_TermsPolicyBody" />
+        </section>
+
+        <section class="policy-panel" id="rules" data-policy-panel aria-labelledby="rules-title">
+            <h2 id="rules-title">@T("Venue Policies")</h2>
+            <h3>@T("Opening hours")</h3>
+            <p>@T("The venue is open Monday from 11:00 AM to midnight and Tuesday through Sunday from 10:00 AM to midnight. All times are Asia/Manila time. The available booking times shown on the website control on holidays, special events, and temporary closures.")</p>
+
+            <h3>@T("Bay and guest capacity")</h3>
+            <p>@T("Each bay accommodates up to six players. Total guest capacity is up to eight guests in a Regular bay and up to ten guests in a VIP bay. Your reservation confirmation and the limit shown for the selected service control. Coaching uses a Regular bay. A whole-shop rental reserves all active bays.")</p>
+
+            <h3>@T("Arrival and session time")</h3>
+            <p>@T("Please arrive ready to use the bay at your confirmed start time. A late arrival does not automatically extend the scheduled end time. Any extension requires staff approval and available capacity. Staff manage attendance and no-show decisions; a booking is not automatically marked as a no-show by the website.")</p>
+
+            <h3>@T("Equipment and conduct")</h3>
+            <p>@T("Use simulators and other venue equipment carefully and follow staff instructions. Keep the bay safe for your group and other guests, and tell staff promptly if equipment is damaged or not working. Staff may pause use of equipment when needed for safety, maintenance, or proper operation.")</p>
+
+            <h3>@T("Changes and cancellations")</h3>
+            <p>@T("Online cancellation and change rules are described in the Terms and Conditions and in your booking status. Whole-shop rental changes or cancellations must be reviewed by venue staff because they involve the full venue allocation and a separate deposit process.")</p>
+
+            <p>@T("For questions about these rules, contact") <a href="mailto:@contactEmail">@contactEmail</a>.</p>
+            @if (!string.IsNullOrWhiteSpace(Model?.VenueRules) && Model.VenueRules != SettingsForm.DefaultVenueRules)
+            {
+                <h3>@T("Additional venue rules")</h3>
+                <p class="policy-copy">@Model.VenueRules</p>
+            }
+        </section>
+    </div>
 </section>
+
+@section Scripts {
+    <script src="~/js/policy-tabs.js" asp-append-version="true"></script>
+}

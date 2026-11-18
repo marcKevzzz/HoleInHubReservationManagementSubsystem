@@ -1,0 +1,21 @@
+<div id="legal-terms-modal" class="legal-policy-modal" data-legal-modal="terms">
+    <div class="legal-policy-backdrop" data-legal-backdrop aria-hidden="true"></div>
+    <section id="legal-terms-dialog" class="legal-policy-dialog" role="dialog" aria-modal="true" aria-labelledby="legal-terms-title" tabindex="-1">
+        <header class="legal-policy-dialog-header">
+            <h2 id="legal-terms-title">@T("Terms and Conditions")</h2>
+            <a class="legal-policy-dialog-close" href="#main-content" data-legal-close aria-label="@T("Close terms and conditions")">&times;</a>
+        </header>
+        <div class="legal-policy-dialog-content"><partial name="_TermsPolicyBody" /></div>
+    </section>
+</div>
+
+<div id="legal-privacy-modal" class="legal-policy-modal" data-legal-modal="privacy">
+    <div class="legal-policy-backdrop" data-legal-backdrop aria-hidden="true"></div>
+    <section id="legal-privacy-dialog" class="legal-policy-dialog" role="dialog" aria-modal="true" aria-labelledby="legal-privacy-title" tabindex="-1">
+        <header class="legal-policy-dialog-header">
+            <h2 id="legal-privacy-title">@T("Privacy Policy")</h2>
+            <a class="legal-policy-dialog-close" href="#main-content" data-legal-close aria-label="@T("Close privacy policy")">&times;</a>
+        </header>
+        <div class="legal-policy-dialog-content"><partial name="_PrivacyPolicyBody" /></div>
+    </section>
+</div>

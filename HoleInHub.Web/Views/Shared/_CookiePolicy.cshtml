@@ -1,0 +1,118 @@
+<aside id="cookie-policy-popout" class="cookie-popout" data-cookie-popout role="region" aria-labelledby="cookie-policy-title" tabindex="-1">
+    <h2 id="cookie-policy-title" class="sr-only">@T("Cookie Policy")</h2>
+    <p class="cookie-intro">@T("We use essential cookies to run this site. You can choose whether optional functional and analytics cookies may be used.")</p>
+    <p class="cookie-detail">@T("Essential cookies support sign-in, reservations, security, and your language choice.") <a class="cookie-inline-link prototype-link" href="/policies#cookies" data-cookie-policy-open aria-haspopup="dialog" aria-controls="cookie-policy-dialog" aria-expanded="false">@T("Cookie Policy")</a></p>
+    <div class="cookie-popout-actions" data-cookie-actions>
+        <button class="button button-secondary cookie-button" type="button" data-cookie-customize data-no-icon>@T("Customize")</button>
+        <button class="button cookie-button" type="button" data-cookie-accept data-no-icon>@T("Accept")</button>
+    </div>
+    <section class="cookie-preferences" data-cookie-preferences hidden aria-labelledby="cookie-preferences-title">
+        <h3 id="cookie-preferences-title" tabindex="-1">@T("Customize your cookie preferences")</h3>
+        <p>@T("Choose which optional cookies you allow. Essential cookies stay active.")</p>
+        <div class="cookie-preference">
+            <div class="cookie-preference-copy">
+                <div class="cookie-preference-heading">
+                    <label for="cookie-essential">@T("Essential cookies")</label>
+                    <span class="cookie-tooltip-wrap">
+                        <button class="cookie-tooltip-trigger" type="button" aria-label="@T("More information about essential cookies")" aria-describedby="cookie-essential-tooltip">i</button>
+                        <span class="cookie-tooltip" role="tooltip" id="cookie-essential-tooltip">@T("Essential cookies are required for sign-in, security, and core site features.")</span>
+                    </span>
+                </div>
+            </div>
+            <input class="cookie-switch" id="cookie-essential" type="checkbox" role="switch" checked disabled />
+        </div>
+        <div class="cookie-preference">
+            <div class="cookie-preference-copy">
+                <div class="cookie-preference-heading">
+                    <label for="cookie-functional">@T("Functional cookies")</label>
+                    <span class="cookie-tooltip-wrap">
+                        <button class="cookie-tooltip-trigger" type="button" aria-label="@T("More information about functional cookies")" aria-describedby="cookie-functional-tooltip">i</button>
+                        <span class="cookie-tooltip" role="tooltip" id="cookie-functional-tooltip">@T("Functional cookies remember your language and sign-in preferences.")</span>
+                    </span>
+                </div>
+            </div>
+            <input class="cookie-switch" id="cookie-functional" type="checkbox" role="switch" data-cookie-pref="functional" />
+        </div>
+        <div class="cookie-preference">
+            <div class="cookie-preference-copy">
+                <div class="cookie-preference-heading">
+                    <label for="cookie-analytics">@T("Analytics cookies")</label>
+                    <span class="cookie-tooltip-wrap">
+                        <button class="cookie-tooltip-trigger" type="button" aria-label="@T("More information about analytics cookies")" aria-describedby="cookie-analytics-tooltip">i</button>
+                        <span class="cookie-tooltip" role="tooltip" id="cookie-analytics-tooltip">@T("Analytics cookies help us understand how visitors use the site.")</span>
+                    </span>
+                </div>
+            </div>
+            <input class="cookie-switch" id="cookie-analytics" type="checkbox" role="switch" data-cookie-pref="analytics" />
+        </div>
+        <div class="cookie-popout-actions cookie-preference-actions">
+            <button class="button button-secondary cookie-button" type="button" data-cookie-back data-no-icon>@T("Back")</button>
+            <button class="button cookie-button" type="button" data-cookie-save data-no-icon>@T("Save preferences")</button>
+        </div>
+    </section>
+</aside>
+
+<div class="cookie-policy-modal" data-cookie-policy-modal hidden>
+    <div class="cookie-policy-backdrop" data-cookie-policy-close aria-hidden="true"></div>
+    <section id="cookie-policy-dialog" class="cookie-policy-dialog" role="dialog" aria-modal="true" aria-labelledby="cookie-policy-dialog-title" tabindex="-1">
+        <header class="cookie-policy-dialog-header">
+            <h2 id="cookie-policy-dialog-title">@T("Cookie Policy")</h2>
+            <button class="cookie-policy-dialog-close" type="button" data-cookie-policy-close aria-label="@T("Close cookie policy")">&times;</button>
+        </header>
+        <div class="cookie-policy-dialog-content">
+            <p>@T("Hole In Hub Golf & Lounge (\"we,\" \"our,\" or \"us\") uses cookies on our website to keep it secure and functional, to remember your preferences, and, with your consent, to understand how the site is used.")</p>
+            <p>@T("This Cookie Policy explains what cookies are, how we use them, and the choices you have.")</p>
+
+            <h3>@T("What are cookies?")</h3>
+            <p>@T("Cookies are small text files placed on your device when you visit a website. They help the site work efficiently, remember your preferences, and provide information about how visitors use it.")</p>
+
+            <h3>@T("How we use cookies")</h3>
+            <p>@T("We group the cookies we use into three categories. Essential cookies are always active. Functional and Analytics cookies are off by default and are used only if you turn them on.")</p>
+
+            <div class="cookie-policy-choice">
+                <div class="cookie-policy-choice-copy">
+                    <div class="cookie-preference-heading">
+                        <label for="cookie-policy-essential"><strong>@T("Essential cookies")</strong> <em>@T("(always active)")</em></label>
+                        <span class="cookie-tooltip-wrap">
+                            <button class="cookie-tooltip-trigger" type="button" aria-label="@T("More information about essential cookies")" aria-describedby="cookie-policy-essential-tooltip">i</button>
+                            <span class="cookie-tooltip" role="tooltip" id="cookie-policy-essential-tooltip">@T("Sign-in session, security protection, guest booking access, and language choice.")</span>
+                        </span>
+                    </div>
+                    <p>@T("Essential cookies enable core website functions, including security, account authentication, session management, and the reservation process.")</p>
+                </div>
+                <input class="cookie-switch" id="cookie-policy-essential" type="checkbox" role="switch" checked disabled aria-label="@T("Essential cookies are always active")" />
+            </div>
+
+            <div class="cookie-policy-choice">
+                <div class="cookie-policy-choice-copy">
+                    <div class="cookie-preference-heading">
+                        <label for="cookie-policy-functional"><strong>@T("Functional cookies")</strong></label>
+                        <span class="cookie-tooltip-wrap">
+                            <button class="cookie-tooltip-trigger" type="button" aria-label="@T("More information about functional cookies")" aria-describedby="cookie-policy-functional-tooltip">i</button>
+                            <span class="cookie-tooltip" role="tooltip" id="cookie-policy-functional-tooltip">@T("Remember Me sign-in and language preference.")</span>
+                        </span>
+                    </div>
+                    <p>@T("Functional cookies store your preferences, such as your language selection and ‘Remember Me’ sign-in option, so that future visits are more convenient. They are used only with your consent. If you decline them, the website still works, but you may need to sign in or choose your language again on each visit.")</p>
+                </div>
+                <input class="cookie-switch" id="cookie-policy-functional" type="checkbox" role="switch" data-cookie-policy-pref="functional" aria-label="@T("Functional cookies")" />
+            </div>
+
+            <div class="cookie-policy-choice">
+                <div class="cookie-policy-choice-copy">
+                    <div class="cookie-preference-heading">
+                        <label for="cookie-policy-analytics"><strong>@T("Analytics cookies")</strong></label>
+                        <span class="cookie-tooltip-wrap">
+                            <button class="cookie-tooltip-trigger" type="button" aria-label="@T("More information about analytics cookies")" aria-describedby="cookie-policy-analytics-tooltip">i</button>
+                            <span class="cookie-tooltip" role="tooltip" id="cookie-policy-analytics-tooltip">@T("Page visits and how visitors move through the site.")</span>
+                        </span>
+                    </div>
+                    <p>@T("Analytics cookies help us understand how visitors interact with our website, so that we can improve its performance, content, and services. They are used only with your consent.")</p>
+                </div>
+                <input class="cookie-switch" id="cookie-policy-analytics" type="checkbox" role="switch" data-cookie-policy-pref="analytics" aria-label="@T("Analytics cookies")" />
+            </div>
+        </div>
+        <footer class="cookie-policy-dialog-footer">
+            <button class="button cookie-button" type="button" data-cookie-policy-save data-no-icon>@T("Save preferences")</button>
+        </footer>
+    </section>
+</div>

@@ -15,8 +15,8 @@ public sealed class SettingsPresentationTests
         var settings = new SettingsEdit { BookingPolicy = "Venue-approved wording" };
         var form = SettingsForm.From(settings);
         Assert.Equal(settings.BookingPolicy, form.BookingPolicy);
-        Assert.Contains("Account and reservation forms collect", form.PrivacyPolicy);
-        Assert.Contains("Opening hours", form.VenueRules);
+        Assert.Contains("INFORMATION AND PURPOSES", form.PrivacyPolicy);
+        Assert.Contains("OPENING HOURS AND CAPACITY", form.VenueRules);
         Assert.False(form.PoliciesPublished);
         Assert.Equal("", settings.PrivacyPolicy);
     }

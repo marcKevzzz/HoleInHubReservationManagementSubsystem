@@ -54,27 +54,17 @@
 
 		@if (ViewData["HideFooter"] is not true)
 		{
-			<footer class="site-footer spyker-footer">
-    <div class="spyker-footer-inner">
-        <div class="spyker-footer-brand"><a href="/" class="brand" aria-label="@T("Hole In Hub home")"><img src="~/media/brand/wordmark-hq.webp" alt="Hole In Hub" /></a></div>
-        <div class="spyker-footer-center">
-            <nav class="spyker-footer-nav" aria-label="@T("Footer navigation")">
-                <a href="/">@T("Home")</a><a href="/Home/About">@T("About")</a><a href="/Home/Gallery">@T("Gallery")</a><a href="/Home/Services">@T("Services")</a><a href="/Home/Contacts">@T("Contacts")</a>
-            </nav>
-            <partial name="_SocialLinks" />
-        </div>
-        <div class="spyker-footer-right">
-            <a href="/Home/Privacy">@T("Privacy")</a><a href="/policies">@T("Venue policies")</a><a href="/Home/Contacts">@T("Get in touch")</a>
-            <p>&copy; @DateTime.UtcNow.Year Hole In Hub Golf &amp; Lounge</p>
-        </div>
-    </div>
-</footer>
+			<footer class="site-footer spyker-footer"><div class="spyker-footer-inner"><div class="spyker-footer-brand"><a href="/" class="brand" aria-label="@T("Hole In Hub home")"><img src="~/media/brand/wordmark-hq.webp" alt="Hole In Hub"/></a></div><div class="spyker-footer-center"><nav class="spyker-footer-nav" aria-label="@T("Footer navigation")"><a href="/">@T("Home")</a><a href="/Home/About">@T("About")</a><a href="/Home/Gallery">@T("Gallery")</a><a href="/Home/Services">@T("Services")</a><a href="/Home/Contacts">@T("Contacts")</a></nav><partial name="_SocialLinks" /></div><div class="spyker-footer-right"><nav class="cookie-policy-nav" aria-label="@T("Policies")"><button class="cookie-policy-toggle prototype-link" type="button" data-cookie-toggle aria-controls="cookie-policy-popout" aria-expanded="true">@T("Cookie Policy")</button><a class="prototype-link" href="/policies#privacy">@T("Privacy Policy")</a><a class="prototype-link" href="/policies#terms">@T("Terms and Conditions")</a><a class="prototype-link" href="/policies#rules">@T("Venue Policies")</a></nav><a class="prototype-link" href="/Home/Contacts">@T("Get in touch")</a><p>&copy; @DateTime.UtcNow.Year Hole In Hub Golf &amp; Lounge</p></div></div></footer>
 		}
 	</div>
 </div>
 
+<partial name="_CookiePolicy" />
+<partial name="_LegalPolicyDialogs" />
 <partial name="_ToastStack" />
 <script src="~/js/vendor/gsap.min.js" asp-append-version="true"></script>
+<script src="~/js/cookie-policy.js" asp-append-version="true"></script>
+<script src="~/js/legal-policy-dialogs.js" asp-append-version="true"></script>
 <script src="~/js/ui-motion.js" asp-append-version="true"></script>
 <script src="~/js/mobile-viewport.js" asp-append-version="true"></script>
 <script src="~/js/button-motion.js" asp-append-version="true"></script>
