@@ -110,14 +110,30 @@
             {
                 <p>@(Model.Service == "WholeShop" ? "Awaiting the simulated 50% deposit." : "Awaiting staff review.") @T("This request does not confirm your reservation.")</p>
                 <dl class="booking-deadline"><dt>@(Model.Service == "WholeShop" ? T("Payment deadline") : T("Review deadline")) · Asia/Manila</dt><dd>@TimeZoneInfo.ConvertTimeFromUtc(Model.ReviewDeadlineUtc, ReservationRules.Manila).ToString("dd MMM yyyy h:mm tt")</dd></dl>
-                @if (overdue)
-                {
-                    <p>@T("The bay hold has been released. Staff can still review this request before the session starts. Confirmation depends on availability.")</p>
-                }
-                else if (Model.Service != "WholeShop" && Model.ReviewStartsUtc is { } begins)
-                {
-                    <p>@(begins > DateTime.UtcNow ? F("Staff review begins {0} Manila time.", TimeZoneInfo.ConvertTimeFromUtc(begins, ReservationRules.Manila).ToString("ddd, d MMM, h:mm tt")) : "The review clock pauses outside operating hours and resumes at the next opening.") @T("Your selected bays are held until the review deadline.")</p>
-                }
+                <div class="booking-pending-help" data-booking-tooltip>
+                    <button type="button" aria-expanded="false" aria-describedby="details-pending-guidance">
+                        <span class="booking-pending-help-icon" aria-hidden="true">i</span>
+                        <span>@T("Review timing and bay hold details")</span>
+                    </button>
+                    <span id="details-pending-guidance" class="booking-pending-tooltip" role="tooltip">
+                        @if (overdue)
+                        {
+                            @T("The bay hold has been released. Staff can still review this request before the session starts. Confirmation depends on availability.")
+                        }
+                        else if (Model.Service == "WholeShop")
+                        {
+                            @T("Your deposit must be recorded before the deadline to confirm this reservation.")
+                        }
+                        else if (Model.ReviewStartsUtc is { } begins && begins > DateTime.UtcNow)
+                        {
+                            @F("Staff review begins {0} Manila time.", TimeZoneInfo.ConvertTimeFromUtc(begins, ReservationRules.Manila).ToString("ddd, d MMM, h:mm tt")) @T("Your selected bays are held until the review deadline.")
+                        }
+                        else
+                        {
+                            @T("The review clock pauses outside operating hours and resumes at the next opening.") @T("Your selected bays are held until the review deadline.")
+                        }
+                    </span>
+                </div>
             }
             <div class="booking-status-actions">
                 @if (Model.Service == "WholeShop" && Model.Status == "Pending" && ViewData["DemoPayments"] is true)
@@ -175,4 +191,12 @@
             }
         </aside>
     </div>
+    @if (ViewData["GuestAccess"] is true)
+    {
+        <a class="button button-secondary booking-return-link" data-icon-left href="/guest/reservations">@T("Back to your reservations")</a>
+    }
+    else if (User.Identity?.IsAuthenticated == true)
+    {
+        <a class="button button-secondary booking-return-link" data-icon-left href="/my-reservations">@T("Back to My Reservations")</a>
+    }
 </div>
