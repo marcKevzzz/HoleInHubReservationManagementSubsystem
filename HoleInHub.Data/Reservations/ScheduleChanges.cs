@@ -51,13 +51,15 @@ public sealed partial class ReservationPersistence
         }, new TransactionOptions(readConcern: ReadConcern.Snapshot, writeConcern: WriteConcern.WMajority), ct);
     }
 
-    public async Task DecideScheduleChangeAsync(string id, string proposalId, long revision, bool approve,
-        string[] resources, string actor, string reason, DateTime now, CancellationToken ct, ScheduleChangeRecord? directMove = null)
+    public async Task<(string Reference, DateTime StartUtc, DateTime EndUtc)> DecideScheduleChangeAsync(string id, string proposalId, long revision, bool approve,
+        string[] resources, string actor, string reason, DateTime now, CancellationToken ct, ScheduleChangeRecord? directMove = null,
+        bool vipUpgrade = false, Action<ReservationRecord, IReadOnlyList<ResourceRecord>>? validateCapacity = null,
+        Action<ReservationRecord, HoleInHub.Data.Services.ServiceCatalogRecord?>? validateSession = null)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeout.CancelAfter(TimeSpan.FromSeconds(15));
         using var session = await context.Client.StartSessionAsync(cancellationToken: timeout.Token);
-        await session.WithTransactionAsync(async (s, token) =>
+        return await session.WithTransactionAsync(async (s, token) =>
         {
             var booking = await Reservations.Find(s, x => x.Id == id).FirstOrDefaultAsync(token)
                 ?? throw new AllocationConflictException("This booking is no longer available.");
@@ -65,7 +67,7 @@ public sealed partial class ReservationPersistence
             if (directMove is not null && prior is not null)
             {
                 if (prior.CommandHash != directMove.PayloadHash) { throw new AllocationConflictException("This move was submitted with different details. Reload the schedule."); }
-                return true;
+                return (booking.Reference, booking.StartUtc, booking.EndUtc);
             }
             if (directMove is not null && booking.ScheduleChange?.Status == "Pending")
             {
@@ -105,7 +107,10 @@ public sealed partial class ReservationPersistence
                 {
                     throw new AllocationConflictException("The booking is no longer eligible for this change. Decline the request or reload its latest details.");
                 }
-                var catalog = await Resources.Find(s, x => x.Active && x.Service == booking.Service).ToListAsync(token);
+                if (vipUpgrade && (directMove is null || booking.Service != "Regular" || booking.ResourceIds.Length != 1))
+                { throw new AllocationConflictException("Only a confirmed single-bay Regular move can upgrade to VIP."); }
+                var destinationService = vipUpgrade ? "VIP" : booking.Service;
+                var catalog = await Resources.Find(s, x => x.Active && x.Service == destinationService).ToListAsync(token);
                 if (resources.Length != booking.ResourceIds.Length || resources.Distinct().Count() != resources.Length
                     || resources.Any(resource => !catalog.Any(bay => bay.Id == resource)))
                 {
@@ -120,11 +125,29 @@ public sealed partial class ReservationPersistence
                     await guards.UpdateOneAsync(s, new BsonDocument("_id", key), new BsonDocument("$inc", new BsonDocument("version", 1)),
                         new UpdateOptions { IsUpsert = true }, token);
                 }
+                booking.Service = destinationService;
+                if (vipUpgrade) { booking.ServiceEntryId = null; }
                 booking.StartUtc = proposal.StartUtc;
                 booking.EndUtc = proposal.EndUtc;
+                if (validateSession is not null)
+                {
+                    var service = await ReadAllocationServiceAsync(s, booking, token);
+                    validateSession(booking, service);
+                }
                 booking.ResourceIds = resources;
-                booking.ResourceNames = catalog.Where(bay => resources.Contains(bay.Id)).ToDictionary(bay => bay.Id, bay => bay.Name);
-                if (await HasReviewConflictAsync(booking, token, s))
+                var selected = catalog.Where(bay => resources.Contains(bay.Id)).ToArray();
+                booking.ResourceNames = selected.ToDictionary(bay => bay.Id, bay => bay.Name);
+                if (booking.Participants.Length > 0)
+                {
+                    foreach (var participant in booking.Participants)
+                    {
+                        var index = Array.IndexOf(proposal.OriginalResourceIds, participant.ResourceId);
+                        if (index < 0) { throw new AllocationConflictException("The recorded guest breakdown no longer matches the original bays."); }
+                        participant.ResourceId = resources[index];
+                    }
+                }
+                validateCapacity?.Invoke(booking, selected);
+                if (await HasReviewConflictAsync(booking, token, s, now))
                 {
                     throw new AllocationConflictException("The proposed bays are unavailable. The original booking is unchanged.");
                 }
@@ -148,20 +171,17 @@ public sealed partial class ReservationPersistence
                 });
             if (approve)
             {
-                update = update.Set(x => x.StartUtc, booking.StartUtc).Set(x => x.EndUtc, booking.EndUtc)
+                update = update.Set(x => x.Service, booking.Service).Set(x => x.ServiceEntryId, booking.ServiceEntryId)
+                    .Set(x => x.StartUtc, booking.StartUtc).Set(x => x.EndUtc, booking.EndUtc)
                     .Set(x => x.ResourceIds, booking.ResourceIds).Set(x => x.ResourceNames, booking.ResourceNames);
                 if (booking.Participants.Length > 0)
                 {
-                    foreach (var participant in booking.Participants)
-                    {
-                        participant.ResourceId = resources[Array.IndexOf(proposal.OriginalResourceIds, participant.ResourceId)];
-                    }
                     update = update.Set(x => x.Participants, booking.Participants);
                 }
             }
             await Reservations.UpdateOneAsync(s, Builders<ReservationRecord>.Filter.Eq(x => x.Id, id) & AtRevision(revision), update, cancellationToken: token);
             await NotifyAsync(s, booking, $"change:{proposal.Id}:{proposal.Status}", approve ? "Schedule change approved" : "Schedule change declined", token);
-            return true;
+            return (booking.Reference, booking.StartUtc, booking.EndUtc);
         }, new TransactionOptions(readConcern: ReadConcern.Snapshot, writeConcern: WriteConcern.WMajority), timeout.Token);
     }
 }

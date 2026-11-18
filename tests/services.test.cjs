@@ -10,7 +10,7 @@ function setup() {
     let interval;
     let calls = 0;
     let response = { ok: true, text: async () => '<article>Updated offering</article>' };
-    const catalog = { innerHTML: '<article>Last good offering</article>', focused: false, contains() { return this.focused; } };
+    const catalog = { addEventListener() {}, innerHTML: '<article>Last good offering</article>', focused: false, contains() { return this.focused; } };
     const status = { textContent: '' };
     const page = { dataset: { refreshUrl: '/Home/ServiceCatalog' }, querySelector: selector => selector.includes('catalog') ? catalog : status };
     const document = { hidden: false, activeElement: {}, querySelector: () => page, addEventListener: (name, fn) => events[name] = fn };

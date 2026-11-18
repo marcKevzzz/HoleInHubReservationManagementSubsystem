@@ -1,6 +1,10 @@
 @{var current = ViewData["AccountPage"] as string;}
-<nav class="account-navigation" aria-label="Your account">
-    <a href="/my-reservations" aria-current="@(current == "reservations" ? "page" : null)">My reservations</a>
-    <a href="/transactions" aria-current="@(current == "transactions" ? "page" : null)">Transactions</a>
-    <a href="/my-profile" aria-current="@(current == "profile" ? "page" : null)">My profile</a>
+<nav class="account-navigation" aria-label="@T("Your account")">
+    <a href="/my-reservations" aria-current="@(current == "reservations" ? "page" : null)">@T("My reservations")</a>
+    <a href="/transactions" aria-current="@(current == "transactions" ? "page" : null)">@T("Transactions")</a>
+    @if (!HoleInHub.Business.Accounts.StaffRoles.Workspace.Any(User.IsInRole))
+    {
+        <a href="/notifications" class="account-notification-link" aria-current="@(current == "notifications" ? "page" : null)">@T("Notifications")<partial name="_CustomerUnreadDot" /></a>
+    }
+    <a href="/my-profile" aria-current="@(current == "profile" ? "page" : null)">@T("My profile")</a>
 </nav>

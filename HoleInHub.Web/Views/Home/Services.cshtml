@@ -2,13 +2,13 @@
 @{ ViewData["Title"] = "Services and packages"; }
 <div class="page-content services-page" data-services-page data-refresh-url="@Url.Action("ServiceCatalog", "Home")">
     <header class="services-heading">
-        <h1 data-venue-title>MORE WAYS<br />TO PLAY</h1>
-        <div data-motion="stagger"><p>Find your next round, make time for a lesson, or bring the whole group.</p><p class="services-note">All rates are indicative and subject to venue confirmation. Bay bookings require venue approval; coaching also requires coach confirmation.</p></div>
+        <h1 data-venue-title>@T("MORE WAYS")<br />@T("TO PLAY")</h1>
+        <div data-motion="stagger"><p>@T("Find your next round, make time for a lesson, or bring the whole group.")</p><p class="services-note">@T("All rates are indicative and subject to venue confirmation. Bay bookings require venue approval; coaching also requires coach confirmation.")</p></div>
     </header>
-    <div class="services-update" role="status" aria-live="polite" data-services-status>@(ViewData["CatalogUnavailable"] is true ? "Services are temporarily unavailable. We’ll try again shortly, or contact the venue for current offerings." : "Current offerings from the venue.")</div>
+    <div class="services-update" role="status" aria-live="polite" data-services-status>@(ViewData["CatalogUnavailable"] is true ? T("Services are temporarily unavailable. We’ll try again shortly, or contact the venue for current offerings.") : T("Current offerings from the venue."))</div>
     <section class="services-catalog" aria-label="Services and packages" data-services-catalog data-motion-scope>
         <partial name="_ServiceCatalog" model="Model" />
     </section>
-    <aside class="services-contact" data-motion="reveal"><h2>LET’S PLAN YOUR VISIT</h2><p>Need help choosing a bay or arranging a private event? Speak with the venue about your group and preferred date.</p><a class="button" href="/Home/Contacts">CONTACT THE VENUE <span aria-hidden="true">→</span></a></aside>
+    <aside class="services-contact" data-motion="reveal"><h2>@T("LET’S PLAN YOUR VISIT")</h2><p>@T("Need help choosing a bay or arranging a private event? Speak with the venue about your group and preferred date.")</p><a class="button" href="/Home/Contacts">@T("CONTACT THE VENUE") <span aria-hidden="true">→</span></a></aside>
 </div>
 @section Scripts { <script src="~/js/services.js" asp-append-version="true"></script> }

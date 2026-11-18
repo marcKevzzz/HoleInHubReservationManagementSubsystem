@@ -47,18 +47,20 @@ public sealed class BookingRulesTests
     public void CapacityIncludesNonPlayers(string id, int players, int guests, bool allowed)
     {
         var counts = new[] { new BayParticipants { ResourceId = id, Players = players, NonPlayers = guests } };
+        var bay = new ResourceDto(id, "Bay", id == "vip-7" ? "VIP" : "Regular");
         if (allowed)
         {
-            BookingRules.ValidateParticipants("Regular", [id], counts);
+            BookingRules.ValidateParticipants("Regular", [bay], counts);
         }
         else
         {
-            Assert.Throws<ReservationValidationException>(() => BookingRules.ValidateParticipants("Regular", [id], counts));
+            Assert.Throws<ReservationValidationException>(() => BookingRules.ValidateParticipants("Regular", [bay], counts));
         }
     }
     [Fact]
     public void EverySelectedBayNeedsCounts() => Assert.Throws<ReservationValidationException>(() =>
-        BookingRules.ValidateParticipants("Regular", ["bay-2", "bay-3"], [new BayParticipants { ResourceId = "bay-2", Players = 1 }]));
+        BookingRules.ValidateParticipants("Regular", [new("bay-2", "Bay 2", "Regular"), new("bay-3", "Bay 3", "Regular")],
+            [new BayParticipants { ResourceId = "bay-2", Players = 1 }]));
     [Theory]
     [InlineData(3, 360, 40000)]
     [InlineData(3, 840, 60000)]
@@ -89,8 +91,21 @@ public sealed class BookingRulesTests
     [InlineData("Regular", "bay-2", 0, false)]
     public void TotalGuestCountIncludesNonPlayers(string service, string bay, int guests, bool allowed)
     {
-        if (allowed) { BookingRules.ValidateGuests(service, [bay], guests); }
-        else { Assert.Throws<ReservationValidationException>(() => BookingRules.ValidateGuests(service, [bay], guests)); }
+        var resource = new ResourceDto(bay, "Bay", service);
+        if (allowed) { BookingRules.ValidateGuests(service, [resource], guests); }
+        else { Assert.Throws<ReservationValidationException>(() => BookingRules.ValidateGuests(service, [resource], guests)); }
+    }
+
+    [Fact]
+    public void ConfiguredCapacityUsesCatalogTypeAndLimits()
+    {
+        var bay = new ResourceDto("studio", "Studio", "VIP") { MaxPlayers = 4, MaxTotalGuests = 9, MaxNonPlayers = 1 };
+        BookingRules.ValidateGuests("VIP", [bay], 9);
+        Assert.Throws<ReservationValidationException>(() => BookingRules.ValidateGuests("VIP", [bay], 10));
+        Assert.Throws<ReservationValidationException>(() => BookingRules.ValidateGuests("KpgaGroup", [bay], 9));
+        BookingRules.ValidateParticipants("VIP", [bay], [new() { ResourceId = bay.Id, Players = 4, NonPlayers = 1 }]);
+        Assert.Throws<ReservationValidationException>(() => BookingRules.ValidateParticipants("VIP", [bay],
+            [new() { ResourceId = bay.Id, Players = 4, NonPlayers = 2 }]));
     }
     [Theory]
     [InlineData("Pending", true)]

@@ -4,12 +4,12 @@ const vm = require('node:vm');
 const fs = require('node:fs');
 const path = require('node:path');
 const source = fs.readFileSync(path.join(__dirname, '../HoleInHub.Web/wwwroot/js/page-transitions.js'), 'utf8');
-function setup(reduced = false, storageFails = false, skipPageTransition = false) {
+function setup(reduced = false, storageFails = false, skipPageTransition = false, pathname = '/') {
     const events = {}, windowEvents = {}, navigations = [], stored = [];
     const cover = { setAttribute() {}, remove() { this.removed = true; } };
     const html = { dataset: { skipPageTransition: String(skipPageTransition) }, classList: { contains: () => false, remove() {} }, style: { removeProperty() {} } };
     const gsap = { fromTo(_, __, values) { values.onComplete(); return { kill() {} }; } };
-    const location = { href: 'https://example.test/', origin: 'https://example.test', pathname: '/', search: '', assign: value => navigations.push(value) };
+    const location = { href: 'https://example.test'+pathname, origin: 'https://example.test', pathname, search: '', assign: value => navigations.push(value) };
     vm.runInNewContext(source, { window: { matchMedia: () => ({ matches: reduced, addEventListener() {} }), gsap, addEventListener: (event, callback) => windowEvents[event] = callback },
         gsap, location, URL, sessionStorage: { setItem(key, value) { if (storageFails) throw Error('Unavailable'); stored.push(JSON.parse(value)); } },
         document: { documentElement: html, addEventListener: (event, callback) => events[event] = callback, querySelector: () => null, createElement: () => cover, body: { append() {} } },
@@ -29,12 +29,22 @@ test('ordinary internal links navigate with an arrival marker', () => {
         assert.equal(ui.stored[0].path, route);
     }
 });
-test('account pages, reservation filters, and links out of the account hub stay native', () => {
-    const ui = setup();
-    for (const route of ['/my-reservations?view=past', '/transactions', '/my-profile', '/Reservations/Index', '/guest/reservations?view=past']) {
+test('navigation within the account area and reservation filters stays native', () => {
+    const ui = setup(false, false, false, '/my-profile');
+    for (const route of ['/my-reservations?view=past', '/transactions', '/my-profile', '/notifications', '/Reservations/Index', '/guest/reservations?view=past']) {
         assert.equal(ui.click('https://example.test' + route).defaultPrevented, undefined);
     }
     assert.equal(setup(false, false, true).click('https://example.test/Home/About').defaultPrevented, undefined);
+});
+test('public-to-account and account-to-public links transition in both directions', () => {
+    for (const route of ['/my-reservations','/transactions','/my-profile','/notifications']) {
+        const incoming = setup(false, false, false, '/Home/Contacts');
+        assert.equal(incoming.click('https://example.test'+route).defaultPrevented,true);
+        assert.equal(incoming.stored[0].path,route);
+        const outgoing = setup(false, false, false, route);
+        assert.equal(outgoing.click('https://example.test/').defaultPrevented,true);
+        assert.equal(outgoing.stored[0].path,'/');
+    }
 });
 test('external, anchor, modified, download, and new-tab links stay native', () => {
     for (const [href, options] of [['https://elsewhere.test/', {}], ['https://example.test/#section', {}], ['https://example.test/next', { ctrlKey: true }], ['https://example.test/next', { download: true }], ['https://example.test/next', { target: '_blank' }], ['mailto:test@example.test', {}]]) {

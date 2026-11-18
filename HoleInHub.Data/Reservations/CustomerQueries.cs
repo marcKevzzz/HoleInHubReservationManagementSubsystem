@@ -46,6 +46,12 @@ public sealed partial class ReservationPersistence
 
     public async Task<CustomerDirectoryRecords> SearchCustomersAsync(string term, string[] phones, int page, CancellationToken ct)
     {
+        var profiles = new HoleInHub.Data.Customers.CustomerProfilePersistence(context);
+        if (await profiles.InstalledAsync(ct))
+        {
+            return await profiles.SearchAsync(term, phones, page, ct);
+        }
+
         var filter = Builders<ReservationRecord>.Filter;
         var search = FilterDefinition<ReservationRecord>.Empty;
         if (term.Length > 0)
@@ -65,11 +71,11 @@ public sealed partial class ReservationPersistence
             .Project<ReservationRecord>(ContactProjectionWithIdentity())
             .Group<BsonDocument>(new BsonDocument { { "_id", CustomerIdentity() }, { "Contact", new BsonDocument("$first", "$$ROOT") } })
             .Sort(new BsonDocument { { "Contact.CreatedUtc", -1 }, { "Contact._id", -1 } })
-            .Skip((page - 1) * 25).Limit(26)
+            .Skip((page - 1) * 20).Limit(21)
             .Project<BsonDocument>(new BsonDocument { { "Kind", "$_id.Kind" }, { "Contact", ContactFields("$Contact") } })
             .ToListAsync(ct);
-        return new(rows.Take(25).Select(row => new CustomerContactRecord(
-            BsonSerializer.Deserialize<ReservationRecord>(row["Contact"].AsBsonDocument), row["Kind"].AsString)).ToArray(), rows.Count > 25);
+        return new(rows.Take(20).Select(row => new CustomerContactRecord(
+            BsonSerializer.Deserialize<ReservationRecord>(row["Contact"].AsBsonDocument), row["Kind"].AsString)).ToArray(), rows.Count > 20);
     }
 
     private static BsonDocument ContactFields(string prefix)
@@ -83,6 +89,12 @@ public sealed partial class ReservationPersistence
 
     public async Task<CustomerProfileRecords?> ReadCustomerProfileAsync(string bookingId, bool upcomingOnly, int page, DateTime now, CancellationToken ct)
     {
+        var profiles = new HoleInHub.Data.Customers.CustomerProfilePersistence(context);
+        if (await profiles.InstalledAsync(ct))
+        {
+            return await profiles.ReadHistoryAsync(bookingId, upcomingOnly, page, now, ct);
+        }
+
         var identity = await Reservations.Aggregate(new AggregateOptions { MaxTime = CustomerQueryTimeout })
             .Match(x => x.Id == bookingId).Project<BsonDocument>(new BsonDocument("Identity", CustomerIdentity())).FirstOrDefaultAsync(ct);
         if (identity is null) { return null; }
@@ -109,8 +121,8 @@ public sealed partial class ReservationPersistence
         var bookings = await Reservations.Find(bookingFilter, new FindOptions { MaxTime = CustomerQueryTimeout })
             .Sort(upcomingOnly ? Builders<ReservationRecord>.Sort.Ascending(x => x.StartUtc).Ascending(x => x.Id)
                 : Builders<ReservationRecord>.Sort.Descending(x => x.StartUtc).Descending(x => x.Id))
-            .Skip((page - 1) * 25).Limit(26).Project<ReservationRecord>(ContactProjection()).ToListAsync(ct);
-        return new(new(latest, scope["Kind"].AsString), bookings.Take(25).ToArray(), summary["Total"].ToInt64(),
-            summary["Upcoming"].ToInt64(), summary["Completed"].ToInt64(), summary["Cancelled"].ToInt64(), bookings.Count > 25);
+            .Skip((page - 1) * 20).Limit(21).Project<ReservationRecord>(ContactProjection()).ToListAsync(ct);
+        return new(new(latest, scope["Kind"].AsString), bookings.Take(20).ToArray(), summary["Total"].ToInt64(),
+            summary["Upcoming"].ToInt64(), summary["Completed"].ToInt64(), summary["Cancelled"].ToInt64(), bookings.Count > 20);
     }
 }

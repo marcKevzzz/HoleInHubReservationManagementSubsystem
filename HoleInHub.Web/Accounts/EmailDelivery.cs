@@ -23,7 +23,7 @@ public sealed class AccountEmailOptions
 }
 public sealed class SmtpEmailSender(IOptions<SmtpOptions> settings, IHostEnvironment environment, IDataProtectionProvider protection)
 {
-    public async Task SendAsync(QueuedEmail email, CancellationToken ct)
+    public async Task<bool> SendAsync(QueuedEmail email, CancellationToken ct, Func<CancellationToken, Task<bool>>? eligible = null)
     {
         var options = settings.Value;
         if (string.IsNullOrWhiteSpace(options.Host) || string.IsNullOrWhiteSpace(options.From))
@@ -47,8 +47,9 @@ public sealed class SmtpEmailSender(IOptions<SmtpOptions> settings, IHostEnviron
         {
             await client.AuthenticateAsync(options.Username, options.Password, ct);
         }
+        if (eligible is not null && !await eligible(ct)) { return false; }
         await client.SendAsync(message, ct);
-        await client.DisconnectAsync(true, ct);
+        return true;
     }
 }
 public sealed class NotificationWorker(IServiceScopeFactory scopes, ILogger<NotificationWorker> logger) : BackgroundService
@@ -68,17 +69,27 @@ public sealed class NotificationWorker(IServiceScopeFactory scopes, ILogger<Noti
                     if (email is null) { break; }
                     try
                     {
-                        if (await queue.IsEligibleAsync(email, stoppingToken))
+                        using var delivery = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+                        delivery.CancelAfter(TimeSpan.FromSeconds(60));
+                        if (await queue.IsEligibleAsync(email, delivery.Token)
+                            && await scope.ServiceProvider.GetRequiredService<SmtpEmailSender>()
+                                .SendAsync(email, delivery.Token, token => queue.IsEligibleAsync(email, token)))
                         {
-                            await scope.ServiceProvider.GetRequiredService<SmtpEmailSender>().SendAsync(email, stoppingToken);
+                            await queue.CompleteAsync(email, stoppingToken);
                         }
-                        await queue.CompleteAsync(email, stoppingToken);
+                        else { await queue.SuppressAsync(email, stoppingToken); }
                     }
                     catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { throw; }
                     catch (Exception error)
                     {
-                        await queue.RetryAsync(email, stoppingToken);
-                        logger.LogWarning("Notification delivery failed ({FailureType}) for event {EventId}; retry scheduled.", error.GetType().Name, email.Id);
+                        var failure = error switch
+                        {
+                            OperationCanceledException or TimeoutException => "Timeout",
+                            System.Security.Cryptography.CryptographicException => "ContentUnavailable",
+                            _ => "DeliveryFailure"
+                        };
+                        await queue.RetryAsync(email, stoppingToken, failure);
+                        logger.LogWarning("Notification delivery failed ({FailureType}).", failure);
                     }
                 }
             }

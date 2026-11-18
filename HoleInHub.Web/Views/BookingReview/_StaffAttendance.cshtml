@@ -1,0 +1,65 @@
+@using HoleInHub.Business.Reservations
+@model StaffReviewDetail
+@{
+    var booking = Model.Context.Booking;
+    var now = Model.Queue.Now;
+    var checkout = Model.Context.CanCheckOut;
+    var early = checkout && now < booking.EndUtc;
+    var available = Model.Context.CanCheckIn || checkout;
+    var attendance = Model.AttendanceForm?.Action is "check-in" or "check-out" ? Model.AttendanceForm : new StaffAttendanceForm
+    {
+        Action = checkout ? "check-out" : "check-in", ExpectedRevision = booking.Revision,
+        CommandId = Guid.NewGuid().ToString("N")
+    };
+}
+<section class="review-section review-attendance" aria-labelledby="attendance-heading">
+    <div class="attendance-heading"><div class="attendance-title"><h2 id="attendance-heading">Attendance</h2>
+    @if (Model.Context.NeedsFollowUp)
+    {
+        <span class="attendance-help">
+            <button type="button" class="staff-icon-button" aria-label="Arrival follow-up information" aria-describedby="attendance-follow-up-help"><partial name="_StaffIcon" model='"info"' /></button>
+            <span class="attendance-tooltip" id="attendance-follow-up-help" role="tooltip">Guest has not checked in. Contact them to confirm arrival.</span>
+        </span>
+    }
+    </div><span class="staff-status" data-status="@(checkout ? "Checked-In" : booking.Status)">@(checkout ? "Checked in" : booking.Status == "Confirmed" ? "Awaiting arrival" : booking.Status)</span></div>
+    <div asp-validation-summary="All" class="staff-error" role="alert"></div>
+    @if (available)
+    {
+        <p class="attendance-note">@(early ? $"{Math.Ceiling((booking.EndUtc - now).TotalMinutes)} minutes remain. Add an early checkout reason." : checkout ? "Checking out releases all booked bays." : "Check-in keeps the original end time.")</p>
+        <form asp-action="Attendance" asp-route-id="@booking.Id" asp-route-date="@Model.ScheduleDate"
+              asp-route-fromQueue="@Model.FromQueue" asp-route-filter="@(Model.FromQueue ? Model.Queue.Filter : null)"
+              asp-route-day="@Model.Queue.Day" asp-route-sort="@Model.Queue.Sort" method="post" class="staff-create-form"
+              data-attendance-form data-check-in-opens="@AttendanceRules.CheckInOpens(booking.StartUtc).ToString("O")" data-session-start="@booking.StartUtc.ToString("O")" data-session-end="@booking.EndUtc.ToString("O")">
+            <input type="hidden" name="Action" value="@(checkout ? "check-out" : "check-in")" />
+            <input type="hidden" name="ExpectedRevision" value="@attendance.ExpectedRevision" />
+            <input type="hidden" name="CommandId" value="@attendance.CommandId" />
+            @if (early)
+            {
+                <div><label for="attendance-reason">Early checkout reason</label><textarea id="attendance-reason" name="Reason" rows="2" maxlength="500" required>@attendance.Reason</textarea></div>
+            }
+            else
+            {
+                <details class="attendance-notes"><summary>Add a note</summary><label class="sr-only" for="attendance-reason">Attendance note</label><textarea id="attendance-reason" name="Reason" rows="2" maxlength="500">@attendance.Reason</textarea></details>
+            }
+            <label class="staff-create-confirm attendance-confirm"><input type="checkbox" name="ConfirmAttendance" value="true" required checked="@attendance.ConfirmAttendance" /><span>@(checkout ? "Guest finished and all booked bays are clear." : "The guest has arrived.")</span></label>
+            <button class="button" type="submit">@(checkout ? "Check out guest" : "Check in guest")</button>
+            <p class="attendance-note" data-attendance-expired hidden>Check-in is closed. Refresh the booking.</p>
+        </form>
+    }
+    else if (booking.Status == "Confirmed")
+    {
+        <button class="button" type="button" disabled>Check-in unavailable</button>
+        @if (now < AttendanceRules.CheckInOpens(booking.StartUtc))
+        {
+            <p class="attendance-note">Check-in opens one hour before the reservation.</p>
+        }
+    }
+    else
+    {
+        <p class="attendance-note">@(booking.Status == "Completed" ? "Guest checked out." : "No attendance action is available.")</p>
+    }
+</section>
+@if (Model.Context.AttendanceOperationsAvailable)
+{
+    <partial name="_StaffAttendanceOperations" model="Model" />
+}

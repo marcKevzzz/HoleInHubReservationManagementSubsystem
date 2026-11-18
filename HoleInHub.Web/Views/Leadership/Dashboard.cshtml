@@ -1,0 +1,7 @@
+@model DashboardViewModel
+@{ ViewData["Title"] = "Dashboard"; }
+<partial name="_DashboardContent" model="Model" />
+@section Scripts {
+    <script src="~/js/vendor/chart.umd.min.js" asp-append-version="true"></script>
+    <script src="~/js/dashboard.js" asp-append-version="true"></script>
+}

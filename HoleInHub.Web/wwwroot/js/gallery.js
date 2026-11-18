@@ -79,8 +79,10 @@
     filters.addEventListener('scroll', () => {
         filters.style.setProperty('--gallery-filters-scroll', `${filters.scrollLeft}px`);
     }, { passive: true });
-    const indicatorObserver = new ResizeObserver(positionIndicator);
-    [filters, ...tabs].forEach(tab => indicatorObserver.observe(tab));
+    if (window.ResizeObserver) {
+        const indicatorObserver = new ResizeObserver(positionIndicator);
+        [filters, ...tabs].forEach(tab => indicatorObserver.observe(tab));
+    }
     positionIndicator();
 
     filters.addEventListener('click', event => {

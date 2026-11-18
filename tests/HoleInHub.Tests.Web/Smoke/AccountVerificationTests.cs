@@ -46,7 +46,7 @@ public sealed class AccountVerificationTests
     private static async Task<string> SignUp(HttpClient client)
     {
         var page = await client.GetStringAsync("/account/sign-up?returnUrl=%2FReservations%2FCreate");
-        var result = await client.PostAsync("/account/sign-up", new FormUrlEncodedContent(new Dictionary<string, string> { ["__RequestVerificationToken"] = Csrf(page), ["Email"] = "verify@example.test", ["Password"] = "TestingPassword123!", ["ConfirmPassword"] = "TestingPassword123!", ["FirstName"] = "Verified", ["LastName"] = "Player", ["Phone"] = "09123456789", ["ReturnUrl"] = "/Reservations/Create" }));
+        var result = await client.PostAsync("/account/sign-up", new FormUrlEncodedContent(new Dictionary<string, string> { ["__RequestVerificationToken"] = Csrf(page), ["Email"] = "verify@example.test", ["Password"] = "TestingPassword123", ["ConfirmPassword"] = "TestingPassword123", ["FirstName"] = "Verified", ["LastName"] = "Player", ["Phone"] = "09123456789", ["ReturnUrl"] = "/Reservations/Create" }));
         Assert.Equal(HttpStatusCode.Redirect, result.StatusCode);
         return await client.GetStringAsync(result.Headers.Location);
     }
@@ -123,7 +123,7 @@ public sealed class AccountVerificationTests
         var database = "hih_legacy_email_" + Guid.NewGuid().ToString("N"); await using var factory = Factory(database, new Clock()); using var scope = factory.Services.CreateScope(); var context = scope.ServiceProvider.GetRequiredService<IMongoDbContext>(); using var client = Client(factory);
         try
         {
-            await Seed(context); var users = scope.ServiceProvider.GetRequiredService<UserManager<AccountUser>>(); var user = new AccountUser { Email = "legacy-link@example.test" }; Assert.True((await users.CreateAsync(user, "TestingPassword123!")).Succeeded);
+            await Seed(context); var users = scope.ServiceProvider.GetRequiredService<UserManager<AccountUser>>(); var user = new AccountUser { Email = "legacy-link@example.test" }; Assert.True((await users.CreateAsync(user, "TestingPassword123")).Succeeded);
             var options = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<DataProtectionTokenProviderOptions>>().Value;
             options.TokenLifespan = TimeSpan.FromSeconds(-1); var expired = await users.GenerateEmailConfirmationTokenAsync(user);
             string Link(string token) => "/account/verify-email?userId=" + user.Id + "&token=" + Microsoft.AspNetCore.WebUtilities.WebEncoders.Base64UrlEncode(System.Text.Encoding.UTF8.GetBytes(token));

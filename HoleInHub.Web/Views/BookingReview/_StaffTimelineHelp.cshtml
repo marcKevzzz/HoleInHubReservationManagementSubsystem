@@ -1,0 +1,28 @@
+@using HoleInHub.Web.Accounts
+<div class="attendance-help staff-help staff-timeline-help">
+    <button type="button" class="staff-icon-button" aria-label="Timeline actions and shortcuts" aria-describedby="staff-timeline-shortcuts">
+        <partial name="_StaffIcon" model='"info"' />
+    </button>
+    <div class="attendance-tooltip" id="staff-timeline-shortcuts" role="tooltip">
+        <strong>Timeline actions &amp; shortcuts</strong>
+        <dl>
+            <div><dt>Open details</dt><dd>Click a reservation or block.</dd></div>
+            <div><dt>Pan</dt><dd>Drag empty space. Pull past either edge to change days.</dd></div>
+            <div><dt>Scroll</dt><dd>Scroll vertically; <kbd>Shift</kbd> + scroll moves horizontally.</dd></div>
+            <div><dt>Zoom</dt><dd><kbd>Ctrl</kbd> + scroll over the timeline.</dd></div>
+            <div><dt>New booking</dt><dd><kbd>Ctrl</kbd> + drag an open time range.</dd></div>
+            <div><dt>Select bays</dt><dd><kbd>Ctrl</kbd> + click bay names, then drag a time range on a selected bay.</dd></div>
+            <div><dt>Move booking</dt><dd>Drag a movable reservation. Hold it at an edge to preview another day, then drop to review.</dd></div>
+            <div><dt>Select bookings</dt><dd><kbd>Shift</kbd> + click, or focus a booking and press <kbd>Shift</kbd> + <kbd>Space</kbd>/<kbd>Enter</kbd>. On touch, hold to select.</dd></div>
+            <div><dt>Group move</dt><dd>Drag a selected booking to move the selection together.</dd></div>
+            <div><dt>Keyboard move</dt><dd>Focus a movable booking: <kbd>Alt</kbd> + <kbd>←</kbd>/<kbd>→</kbd> shifts 30 minutes; <kbd>Alt</kbd> + <kbd>↑</kbd>/<kbd>↓</kbd> changes bay.</dd></div>
+            <div><dt>Move to another day</dt><dd><kbd>Alt</kbd> + <kbd>Page Up</kbd>/<kbd>Page Down</kbd> on a single movable booking.</dd></div>
+            @if (User.ManagesVenue())
+            {
+                <div><dt>Block availability</dt><dd><kbd>Shift</kbd> + <kbd>B</kbd> for a time range; <kbd>Shift</kbd> + <kbd>D</kbd> for a full day.</dd></div>
+            }
+            <div><dt>Cancel / clear</dt><dd><kbd>Esc</kbd> cancels a drag, clears selections or closes this help.</dd></div>
+        </dl>
+        <span class="staff-timeline-help-note">Moves and blocks open a review form before saving.</span>
+    </div>
+</div>

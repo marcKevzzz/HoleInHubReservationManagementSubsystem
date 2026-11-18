@@ -1,5 +1,7 @@
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text.Json;
+using HoleInHub.Business.Accounts;
 using HoleInHub.Business.Reservations;
 using HoleInHub.Web.Accounts;
 using HoleInHub.Web.ViewModels;
@@ -10,7 +12,7 @@ namespace HoleInHub.Web.Controllers;
 
 public sealed partial class AccountController
 {
-    private sealed record AccountVerificationContext(string Session, string UserId, string? ReturnUrl, DateTimeOffset CreatedUtc);
+    private sealed record AccountVerificationContext(string Session, string UserId, string? ReturnUrl, DateTimeOffset CreatedUtc, bool RememberMe = false);
     private const string VerificationCookie = "hih-account-email";
 
     [HttpGet("verify-email")]
@@ -62,9 +64,11 @@ public sealed partial class AccountController
                 if (!challenge.Verified) { await verification.VerifyAsync("account-email:" + context.Session, user.Email, code ?? "", ct); }
                 var identityToken = protection.CreateProtector("AccountEmailCode", user.Id).Unprotect(challenge.ProtectedContext);
                 if (!(await users.ConfirmEmailAsync(user, identityToken)).Succeeded) { throw new ReservationValidationException("Your code expired. Resend a code."); }
-                await signIn.SignInAsync(user, false);
+                await signIn.SignInWithClaimsAsync(user, CustomerSession(context.RememberMe && !user.Roles.Any(StaffRoles.Workspace.Contains)),
+                    [new Claim("amr", "pwd")]);
                 Response.Cookies.Delete(VerificationCookie, new CookieOptions { Path = "/account" });
                 TempData["PageArrival"] = true;
+                new HoleInHubReservationManagementSubsystem.ViewModels.ToastNotice("success", "Email verified", "You’re now signed in.").Store(TempData);
                 return LocalRedirect("/");
             }
             else { throw new ReservationValidationException("Resend a code to continue."); }
@@ -86,20 +90,29 @@ public sealed partial class AccountController
         catch (Exception error) when (error is CryptographicException or JsonException) { return null; }
     }
 
-    private async Task EnsureAccountChallengeAsync(AccountUser user, string? returnUrl, CancellationToken ct)
+    private async Task EnsureAccountChallengeAsync(AccountUser user, string? returnUrl, CancellationToken ct, bool rememberMe = false)
     {
         var context = ReadAccountContext();
-        if (context?.UserId == user.Id && await verification.ReadAsync("account-email:" + context.Session, ct) is { } challenge && challenge.ExpiresUtc > clock.GetUtcNow().UtcDateTime) { return; }
-        await BeginAccountChallengeAsync(user, returnUrl, ct, context?.UserId == user.Id ? context : null);
+        if (context?.UserId == user.Id && await verification.ReadAsync("account-email:" + context.Session, ct) is { } challenge && challenge.ExpiresUtc > clock.GetUtcNow().UtcDateTime)
+        {
+            WriteAccountContext(context with { RememberMe = rememberMe });
+            return;
+        }
+        await BeginAccountChallengeAsync(user, returnUrl, ct, context?.UserId == user.Id ? context with { RememberMe = rememberMe } : null, rememberMe);
     }
 
-    private async Task BeginAccountChallengeAsync(AccountUser user, string? returnUrl, CancellationToken ct, AccountVerificationContext? context = null)
+    private async Task BeginAccountChallengeAsync(AccountUser user, string? returnUrl, CancellationToken ct, AccountVerificationContext? context = null, bool rememberMe = false)
     {
-        context ??= new(Convert.ToHexString(RandomNumberGenerator.GetBytes(32)), user.Id, SafeReturnUrl(returnUrl), clock.GetUtcNow());
+        context ??= new(Convert.ToHexString(RandomNumberGenerator.GetBytes(32)), user.Id, SafeReturnUrl(returnUrl), clock.GetUtcNow(), rememberMe);
         var scope = "account-email:" + context.Session; var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString(System.Globalization.CultureInfo.InvariantCulture);
         var body = "protected:" + protection.CreateProtector("BookingEmail").Protect($"Your Hole In Hub account verification code is {code}. It expires in 10 minutes. Do not share it.");
         var identityToken = protection.CreateProtector("AccountEmailCode", user.Id).Protect(await users.GenerateEmailConfirmationTokenAsync(user));
         await verification.IssueAsync(scope, user.Email, HoleInHub.Business.Accounts.EmailVerificationService.CodeHash(scope, user.Email, code), body, "Verify your Hole In Hub email", "AccountEmail", ct, identityToken);
+        WriteAccountContext(context);
+    }
+
+    private void WriteAccountContext(AccountVerificationContext context)
+    {
         var value = protection.CreateProtector("AccountEmailSession").Protect(JsonSerializer.Serialize(context));
         Response.Cookies.Append(VerificationCookie, value, new CookieOptions { Path = "/account", HttpOnly = true, Secure = !environment.IsDevelopment() || Request.IsHttps, SameSite = SameSiteMode.Lax, MaxAge = TimeSpan.FromHours(2), IsEssential = true });
         // Read the just-issued context when this request renders after a resend.

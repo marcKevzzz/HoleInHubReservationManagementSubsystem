@@ -6,6 +6,19 @@ namespace HoleInHub.Tests.Unit.Reservations;
 public sealed class ScheduleChangeRulesTests
 {
     [Theory]
+    [InlineData("Regular", "Regular", 2, false, true)]
+    [InlineData("VIP", "VIP", 1, false, true)]
+    [InlineData("Regular", "VIP", 1, true, true)]
+    [InlineData("Regular", "VIP", 1, false, false)]
+    [InlineData("Regular", "VIP", 2, true, false)]
+    [InlineData("VIP", "Regular", 1, true, false)]
+    public void VipUpgradesRequireExplicitAgreementAndASingleRegularBay(string source, string target, int bays, bool confirmed, bool allowed)
+    {
+        if (allowed) { ReservationService.ValidateTimelineServiceChange(source, target, bays, confirmed); }
+        else { Assert.Throws<ReservationValidationException>(() => ReservationService.ValidateTimelineServiceChange(source, target, bays, confirmed)); }
+    }
+
+    [Theory]
     [InlineData("Confirmed", 1, true)]
     [InlineData("Confirmed", 59, true)]
     [InlineData("Confirmed", 0, false)]

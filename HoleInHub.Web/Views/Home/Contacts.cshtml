@@ -1,34 +1,60 @@
-@{ ViewData["Title"] = "Contact & location"; }
-<div class="page-content venue-page">
-    <header class="venue-heading">
-        <h1 data-venue-title>CONTACT &amp; LOCATION</h1>
-        <p data-motion="load">Plan your visit to Hole In Hub in Quezon City. Get directions or reach out about coaching, group sessions and whole-shop bookings.</p>
+@model HoleInHub.Business.Settings.SettingsEdit
+@{ ViewData["Title"] = "Contact Us"; var phone=string.IsNullOrWhiteSpace(Model?.ContactPhone)?"+63 969 265 4976":Model!.ContactPhone;var email=string.IsNullOrWhiteSpace(Model?.ContactEmail)?"holeinhub@gmail.com":Model!.ContactEmail; }
+<div class="page-content venue-page venue-contact-page">
+    <header class="venue-heading venue-contact-heading">
+        <img class="venue-contact-image" src="/media/facebook/venue-overview.webp" alt="" fetchpriority="high" />
+        <div class="venue-contact-copy">
+            <h1 data-venue-title>@T("Contact Us")</h1>
+            <p>@T("Plan your visit to Hole In Hub in Quezon City. Get directions or reach out about coaching, group sessions and whole-shop bookings.")</p>
+        </div>
     </header>
     <div class="venue-contact">
-        <section data-motion="stagger" class="venue-location" aria-labelledby="venue-location-title">
-            <h2 id="venue-location-title">Find the clubhouse</h2>
-            <address>3rd Floor, EK Building<br />50 Holy Spirit Drive<br />Quezon City, Metro Manila, Philippines</address>
-            <a class="button" href="https://www.google.com/maps/search/?api=1&amp;query=EK+Building+50+Holy+Spirit+Drive+Quezon+City" rel="noreferrer" target="_blank">Get directions</a>
+        <section class="venue-hours" aria-labelledby="venue-hours-title">
+            <h2 id="venue-hours-title">@T("Opening hours")</h2>
+            <dl>
+                <div><dt>@T("Monday")</dt><dd>@T("11 AM–midnight")</dd></div>
+                <div><dt>@T("Tuesday–Sunday")</dt><dd>@T("10 AM–midnight")</dd></div>
+            </dl>
+            <p>@T("PH Manila Time")</p>
         </section>
-        <div class="venue-contact-info" data-motion="stagger">
-            <section aria-labelledby="venue-hours-title">
-                <h2 id="venue-hours-title">Opening hours</h2>
-                <dl>
-                    <div><dt>Monday</dt><dd>11 AM–midnight</dd></div>
-                    <div><dt>Tuesday–Sunday</dt><dd>10 AM–midnight</dd></div>
-                </dl>
-                <p>Manila time</p>
-            </section>
-            <section aria-labelledby="venue-inquiries-title">
-                <h2 id="venue-inquiries-title">Get in touch</h2>
-                <ul>
-                    <li><a class="prototype-link" href="tel:+639692654976">+63 969 265 4976</a></li>
-                    <li><a class="prototype-link" href="mailto:holeinhub@gmail.com">holeinhub@gmail.com</a></li>
-                    <li><a class="prototype-link" href="https://www.facebook.com/profile.php?id=61589175118662" rel="noreferrer">Facebook</a></li>
-                </ul>
-            </section>
-        </div>
+        <section class="venue-location" aria-labelledby="venue-location-title">
+            <div class="venue-location-content">
+            <h2 id="venue-location-title">@T("Find the clubhouse")</h2>
+            <div class="venue-row">
+                <svg class="venue-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                <address>3rd Floor, EK Building<br />50 Holy Spirit Drive<br />Quezon City, Metro Manila, Philippines</address>
+            </div>
+            <a class="button" href="https://www.google.com/maps/search/?api=1&amp;query=EK+Building+50+Holy+Spirit+Drive+Quezon+City" rel="noreferrer" target="_blank">@T("Get directions")</a>
+            </div>
+        </section>
+        <section class="venue-reach" aria-labelledby="venue-inquiries-title">
+            <h2 id="venue-inquiries-title">@T("Get in touch")</h2>
+            <ul class="venue-social">
+                <li>
+                    <a class="venue-social-link" href="https://www.facebook.com/profile.php?id=61589175118662" target="_blank" rel="noopener noreferrer" aria-label="Hole In Hub on Facebook" title="Facebook">
+                        <svg class="venue-social-filled" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M24 12a12 12 0 1 0-13.875 11.855V15.47H7.078V12h3.047V9.356c0-3.007 1.792-4.669 4.533-4.669 1.313 0 2.686.235 2.686.235v2.953h-1.513c-1.49 0-1.956.925-1.956 1.874V12h3.328l-.532 3.469h-2.796v8.386A12 12 0 0 0 24 12Z"/></svg>
+                    </a>
+                </li>
+                <li>
+                    <a class="venue-social-link" href="https://www.instagram.com/holeinhub_golf_lounge/?fbclid=IwY2xjawVo--RleHRuA2FlbQIxMABwZG9mBWJyaWQRMWloRTZPcVhRNVVVWk5iV3NzcnRjBmFwcF9pZBAyMjIwMzkxNzg4MjAwODkyAAEftz1aVwGA14Fj5Z6V1suuSLzF-1fTsruUK4A_hSm8PieSf1ehKVR4ErvxxlQ_aem_ePn5rLYyxzXbBuiwOlSZXA" target="_blank" rel="noopener noreferrer" aria-label="Hole In Hub on Instagram" title="Instagram">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect width="20" height="20" x="2" y="2" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6"/></svg>
+                    </a>
+                </li>
+                <li>
+                    <a class="venue-social-link" href="tel:@phone.Replace(" ", "")" aria-label="@T("Call") @phone" title="@phone">
+                        <svg class="venue-social-filled" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.6 10.8a15.5 15.5 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.24c1.1.36 2.3.55 3.6.55a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.6 21 3 13.4 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.3.19 2.5.55 3.6a1 1 0 0 1-.24 1Z"/></svg>
+                    </a>
+                </li>
+                <li>
+                    <a class="venue-social-link" href="mailto:@email" aria-label="@T("Email") @email" title="@email">
+                        <svg class="venue-social-filled" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 2h18l-9 6Zm18 12H3V8l9 6 9-6Z"/></svg>
+                    </a>
+                </li>
+            </ul>
+        </section>
     </div>
-    <img class="venue-contact-photo" data-motion="reveal" src="/media/facebook/venue-overview.webp" alt="Indoor simulator bays at Hole In Hub" loading="lazy" />
-    <div class="venue-next" data-motion="reveal"><h2>Ready to play?</h2><a class="button button-secondary" href="/Reservations/Create">Reserve a bay</a></div>
+    <div class="venue-next">
+        <h2>@if (Korean) { @T("Ready to play?") } else { <text>Ready to <span class="venue-play">play?</span></text> }</h2>
+        <a class="button" href="/Reservations/Create">@T("RESERVE A BAY")</a>
+    </div>
 </div>

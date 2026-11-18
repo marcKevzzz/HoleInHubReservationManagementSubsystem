@@ -1,0 +1,3 @@
+@model DashboardBookingsViewModel
+@{ Layout = "_StaffLayout"; ViewData["Title"] = "Dashboard reservations"; }
+<section class="staff-workspace dashboard-page"><a href="@Model.Context.DashboardUrl" class="flow-back"><partial name="_BackArrow" /> Back to dashboard</a><partial name="_DashboardBookings" model="Model" /></section>

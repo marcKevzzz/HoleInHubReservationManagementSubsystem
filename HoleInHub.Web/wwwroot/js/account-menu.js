@@ -1,6 +1,6 @@
 (() => {
-    const trigger = document.querySelector('.profile-link');
-    const popup = document.querySelector('#account-menu');
+    const trigger = document.querySelector('.profile-link') || document.querySelector('.staff-user-trigger');
+    const popup = document.querySelector('#account-menu') || document.querySelector('#staff-user-menu');
     const hasPopup = trigger && popup && typeof popup.showPopover === 'function';
     const confirmation = document.querySelector('#logout-confirmation');
     const logoutForm = document.querySelector('#account-logout-form');
@@ -29,7 +29,14 @@
         });
         popup.addEventListener('toggle', event => trigger.setAttribute('aria-expanded', String(event.newState === 'open')));
         popup.addEventListener('click', event => {
-            if (event.target.closest('[data-account-placeholder]')) event.preventDefault();
+            if (event.target.closest('[data-account-placeholder]')) { event.preventDefault(); return; }
+            const link = event.target.closest('a[href]');
+            if (link && !event.defaultPrevented && !event.button && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey
+                && !link.hasAttribute('download') && (!link.target || link.target === '_self')) {
+                // The popover is in the top layer, above the page-transition cover.
+                popup.hidePopover();
+                trigger.setAttribute('aria-expanded', 'false');
+            }
         });
         popup.addEventListener('keydown', event => {
             if (event.key === 'Escape') {
@@ -64,6 +71,35 @@
             logoutTrigger?.focus({ preventScroll: true });
             logoutTrigger = null;
         });
+    }
+
+    const badges = document.querySelectorAll('[data-customer-unread]');
+    if (badges.length) {
+        let refreshing = false;
+        let readVersion = 0;
+        function showUnread(unread) {
+            for (const badge of badges) badge.hidden = !unread;
+        }
+        async function refreshUnread() {
+            if (document.hidden || refreshing) return;
+            refreshing = true;
+            const version = readVersion;
+            try {
+                const response = await fetch('/notifications/unread', { signal: AbortSignal.timeout(5000) });
+                if (response.ok && !response.redirected) {
+                    const status = await response.json();
+                    if (version === readVersion && typeof status.unread === 'boolean') showUnread(status.unread);
+                }
+            } catch { /* Keep the last known badge state when the network is unavailable. */ }
+            finally { refreshing = false; }
+        }
+        document.addEventListener('notifications:read', event => {
+            readVersion++;
+            showUnread(event.detail > 0);
+        });
+        document.addEventListener('visibilitychange', refreshUnread);
+        window.addEventListener('focus', refreshUnread);
+        window.setInterval(refreshUnread, 20000);
     }
 
     window.addEventListener('pageshow', () => {

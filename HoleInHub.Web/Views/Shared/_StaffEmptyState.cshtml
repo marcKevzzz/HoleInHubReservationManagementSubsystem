@@ -1,0 +1,11 @@
+@model (string Icon, string Title, string Message, string? Href, string? LinkLabel)
+
+<section class="staff-empty-state">
+    <partial name="_StaffIcon" model="@Model.Icon" />
+    <h2>@Model.Title</h2>
+    <p>@Model.Message</p>
+    @if (Model.Href is not null)
+    {
+        <a class="staff-link" href="@Model.Href">@Model.LinkLabel</a>
+    }
+</section>

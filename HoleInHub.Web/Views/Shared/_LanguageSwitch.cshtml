@@ -1,0 +1,7 @@
+@{ var switchId = ViewData["LanguageSwitchId"] as string; }
+<form id="@switchId" action="/language" method="post" class="customer-language" aria-label="@T("Language")">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="returnUrl" value="@(Context.Request.PathBase + Context.Request.Path + Context.Request.QueryString)" />
+    <button type="submit" name="culture" value="en" lang="en" aria-label="English" aria-pressed="@(!CustomerText.Korean ? "true" : "false")" class="focus-visible:ring-2">EN</button>
+    <button type="submit" name="culture" value="ko" lang="ko" aria-label="한국어" aria-pressed="@(CustomerText.Korean ? "true" : "false")" class="focus-visible:ring-2">KR</button>
+</form>

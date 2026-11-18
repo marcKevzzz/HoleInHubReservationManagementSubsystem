@@ -6,10 +6,10 @@
     var end = StaffReviewQueue.Local(Model.Booking.EndUtc);
 }
 <div class="page-content booking-status-page schedule-change-page">
-    <a class="flow-back" asp-action="Status" asp-route-id="@Model.Booking.Id" asp-route-token="@ViewData["AccessToken"]" asp-route-guest="@(ViewData["GuestAccess"] is true ? "true" : null)"><partial name="_BackArrow" /> Back to reservation</a>
-    <header class="booking-status-heading"><h1>Request a schedule change</h1><p>@Model.Booking.Reference · @ReservationLabels.Service(Model.Booking.Service)</p></header>
+    <a class="flow-back" asp-action="Status" asp-route-id="@Model.Booking.Id" asp-route-token="@ViewData["AccessToken"]" asp-route-guest="@(ViewData["GuestAccess"] is true ? "true" : null)"><partial name="_BackArrow" /> @T("Back to reservation")</a>
+    <header class="booking-status-heading"><h1>@T("Request a schedule change")</h1><p>@Model.Booking.Reference · @T(ReservationLabels.Service(Model.Booking.Service))</p></header>
     <section class="review-section">
-        <h2>Your current booking</h2>
+        <h2>@T("Your current booking")</h2>
         <p>@original.ToString("ddd, d MMM yyyy") · @original.ToString("h:mm tt")–@end.ToString("h:mm tt")</p>
         <p>@StaffReviewQueue.Bays(Model.Booking)</p>
     </section>
@@ -17,16 +17,16 @@
         <input type="hidden" name="token" value="@ViewData["AccessToken"]" />
         <input asp-for="ExpectedRevision" type="hidden" /><input asp-for="CommandId" type="hidden" />
         <div asp-validation-summary="All" class="staff-error" role="alert"></div>
-        <fieldset><legend>Proposed schedule</legend>
+        <fieldset><legend>@T("Proposed schedule")</legend>
             <div class="staff-create-fields">
-                <div><label asp-for="Date">Date</label><input asp-for="Date" asp-format="{0:yyyy-MM-dd}" type="date" required /></div>
-                <div><label asp-for="StartTime">Start time · Manila</label><input asp-for="StartTime" asp-format="{0:HH:mm}" type="time" step="1800" required /></div>
+                <div><label asp-for="Date">@T("Date")</label><input asp-for="Date" asp-format="{0:yyyy-MM-dd}" type="date" required /></div>
+                <div><label asp-for="StartTime">@T("Start time · Manila")</label><input asp-for="StartTime" asp-format="{0:HH:mm}" type="time" step="1800" required /></div>
             </div>
-            <div><label asp-for="DurationMinutes">Duration in minutes</label><input asp-for="DurationMinutes" type="number" min="30" max="840" step="30" required /></div>
-            <div><label asp-for="Reason">Reason for the change</label><textarea asp-for="Reason" rows="3" maxlength="500" required></textarea></div>
+            <div><label asp-for="DurationMinutes">@T("Duration in minutes")</label><input asp-for="DurationMinutes" type="number" min="30" max="840" step="30" required /></div>
+            <div><label asp-for="Reason">@T("Reason for the change")</label><textarea asp-for="Reason" rows="3" maxlength="500" required></textarea></div>
         </fieldset>
         <p>Requests must be made at least one hour before your current session. The proposed start must allow @(BookingRules.ReviewMinutes(Model.Booking.Service)) minutes of staff review during operating hours.</p>
-        <p>Your current booking stays reserved. The proposed time is subject to availability and staff approval.</p>
-        <button class="button" type="submit">Submit change request</button>
+        <p>@T("Your current booking stays reserved. The proposed time is subject to availability and staff approval.")</p>
+        <button class="button" type="submit">@T("Submit change request")</button>
     </form>
 </div>

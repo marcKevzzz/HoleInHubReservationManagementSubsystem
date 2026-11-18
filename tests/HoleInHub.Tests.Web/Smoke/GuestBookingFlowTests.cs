@@ -68,15 +68,18 @@ public sealed class GuestBookingFlowTests
             ["Smtp:Host"] = ""
         })).ConfigureServices(services => services.AddSingleton<TimeProvider>(new BookingClock())));
     private static HttpClient Client(WebApplicationFactory<Program> factory) => factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost"), AllowAutoRedirect = false });
-    private static async Task SignInStaffAsync(HttpClient client, string email)
+    private static async Task SignInStaffAsync(HttpClient client, string email, IServiceProvider services)
     {
         client.DefaultRequestHeaders.Add("X-Test-Desktop", "approved");
         const string pin = "048217";
-        using var setup = await StaffPinAccessTests.SubmitAsync(client, "/staff/pin/setup",
-            new() { ["Email"] = email, ["Password"] = "TestingPassword123!", ["Pin"] = pin, ["ConfirmPin"] = pin });
-        Assert.Equal(HttpStatusCode.Redirect, setup.StatusCode);
+        var users = services.GetRequiredService<UserManager<AccountUser>>();
+        var staff = (await users.FindByEmailAsync(email))!;
+        var access = services.GetRequiredService<StaffPinAccess>();
+        var hasher = services.GetRequiredService<IPasswordHasher<AccountUser>>();
+        var pins = services.GetRequiredService<HoleInHub.Business.Accounts.StaffPinService>();
+        Assert.True(await pins.TrySaveAsync(staff.Id, hasher.HashPassword(staff, access.PinInput(staff, pin)), staff.SecurityStamp, default));
         using var signIn = await StaffPinAccessTests.SubmitAsync(client, "/staff/sign-in",
-            new() { ["Email"] = email, ["Pin"] = pin });
+            new() { ["Pin"] = pin });
         Assert.Equal(HttpStatusCode.Redirect, signIn.StatusCode);
     }
     private static string Csrf(string html) => WebUtility.HtmlDecode(Regex.Match(html, "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"").Groups[1].Value);
@@ -133,7 +136,7 @@ public sealed class GuestBookingFlowTests
     [InlineData("Attendees", "invalid", "Attendees")]
     [InlineData("FirstName", "Guest2", "FirstName")]
     [InlineData("LastName", "Player٣", "LastName")]
-    [InlineData("Phone", "+639123456789", "Phone")]
+    [InlineData("Phone", "+63912345678", "Phone")]
     [InlineData("Phone", "0912abc6789", "Phone")]
     [InlineData("StartTime", "01:00", "")]
     public async Task FailedSubmissionProvidesFieldKeysForWizardFeedback(string field, string value, string expectedKey)
@@ -192,7 +195,7 @@ public sealed class GuestBookingFlowTests
             status = await client.GetStringAsync("/Reservations/Status/" + saved.Id + "?token=" + token);
             var cancellation = await client.PostAsync("/Reservations/RequestCancellation/" + saved.Id, new FormUrlEncodedContent(new Dictionary<string, string> { ["__RequestVerificationToken"] = Csrf(status), ["token"] = token }));
             Assert.Equal(HttpStatusCode.Redirect, cancellation.StatusCode);
-            Assert.True((await scope.ServiceProvider.GetRequiredService<ReservationService>().GetStaffAsync(saved.Id, default))!.CancellationRequested);
+            Assert.Equal("Cancelled", (await scope.ServiceProvider.GetRequiredService<ReservationService>().GetStaffAsync(saved.Id, default))!.Status);
             var email = await context.Database.GetCollection<OutboxRecord>("outbox").Find(x => x.Id == saved.Id + ":submitted").SingleAsync();
             var receipt = scope.ServiceProvider.GetRequiredService<IDataProtectionProvider>().CreateProtector("BookingEmail").Unprotect(email.Body[10..]);
             Assert.Contains("Reservation status: Pending", receipt);
@@ -288,11 +291,15 @@ public sealed class GuestBookingFlowTests
             Assert.True((await users.CreateAsync(staff, "TestingPassword123!")).Succeeded);
             staff.Roles = ["Staff"]; Assert.True((await users.UpdateAsync(staff)).Succeeded);
             using var staffClient = Client(factory);
-            await SignInStaffAsync(staffClient, staff.Email);
+            await SignInStaffAsync(staffClient, staff.Email, scope.ServiceProvider);
             Assert.Equal(HttpStatusCode.Redirect, (await guest.GetAsync("/staff/review-queue")).StatusCode);
-            var queuePage = await staffClient.GetStringAsync("/staff/review-queue");
+            var queuePage = await staffClient.GetStringAsync("/staff/review-queue/pending");
             Assert.Contains(record.Reference, queuePage);
             Assert.DoesNotContain("Bay schedule", queuePage);
+            Assert.Contains("Pending reviews", queuePage);
+            var overdueQueue = await staffClient.GetStringAsync("/staff/review-queue/overdue");
+            Assert.DoesNotContain(record.Reference, overdueQueue);
+            Assert.Contains("Overdue requests", overdueQueue);
             var day = TimeZoneInfo.ConvertTimeFromUtc(record.StartUtc, ReservationRules.Manila).ToString("yyyy-MM-dd");
             var workspace = await staffClient.GetStringAsync($"/BookingReview?date={day}&reference={record.Reference.ToLowerInvariant()}");
             Assert.Contains("Bay schedule", workspace);
@@ -301,9 +308,38 @@ public sealed class GuestBookingFlowTests
             Assert.Contains($"data-reference=\"{record.Reference}\"", guestSearch);
             Assert.DoesNotContain(record.Email, workspace);
             var review = await staffClient.GetStringAsync("/BookingReview/Details/" + record.Id);
-            var decided = await staffClient.PostAsync("/BookingReview/Decide/" + record.Id, new FormUrlEncodedContent(new Dictionary<string, string>
-            { ["__RequestVerificationToken"] = Csrf(review), ["expectedRevision"] = Regex.Match(review, "name=\"expectedRevision\"[^>]*value=\"([^\"]+)\"").Groups[1].Value, ["decision"] = decision, ["reason"] = decision == "reject" ? "Venue cannot accommodate this request." : "" }));
-            Assert.Equal(HttpStatusCode.Redirect, decided.StatusCode);
+            Assert.Equal(HttpStatusCode.Redirect, (await guest.GetAsync($"/staff/reservations/{record.Id}/actions")).StatusCode);
+            var quickActions = await staffClient.GetStringAsync($"/staff/reservations/{record.Id}/actions");
+            Assert.DoesNotContain("<html", quickActions);
+            Assert.Contains("name=\"expectedRevision\"", quickActions);
+            Assert.Contains("Confirm approve booking", quickActions);
+            Assert.Contains("Confirm reject booking", quickActions);
+            Assert.Equal("Pending", (await service.GetStaffAsync(record.Id, default))!.Status);
+            var decisionFields = new Dictionary<string, string>
+            {
+                ["__RequestVerificationToken"] = Csrf(review),
+                ["expectedRevision"] = Regex.Match(review, "name=\"expectedRevision\"[^>]*value=\"([^\"]+)\"").Groups[1].Value,
+                ["decision"] = decision,
+                ["reason"] = decision == "reject" ? "Venue cannot accommodate this request." : "",
+                ["fromQueue"] = "true"
+            };
+            if (decision == "approve")
+            {
+                decisionFields["participants[0].ResourceId"] = record.ResourceIds[0];
+                decisionFields["participants[0].Players"] = "1";
+                decisionFields["participants[0].NonPlayers"] = (record.Attendees - 1).ToString();
+            }
+            var decided = await staffClient.PostAsync("/BookingReview/Decide/" + record.Id, new FormUrlEncodedContent(decisionFields));
+            Assert.True(decided.StatusCode == HttpStatusCode.Redirect, (await decided.Content.ReadAsStringAsync())[..Math.Min(1200, (await decided.Content.ReadAsStringAsync()).Length)]);
+            var destination = decided.Headers.Location!.ToString();
+            Assert.Contains("fromQueue=True", destination, StringComparison.OrdinalIgnoreCase);
+            var feedback = await staffClient.GetStringAsync(destination);
+            Assert.Contains("data-toast-seed data-kind=\"success\"", feedback);
+            Assert.Contains(decision == "approve" ? ">Booking approved<" : ">Booking rejected<", feedback);
+            Assert.DoesNotContain("data-toast-seed", await staffClient.GetStringAsync(destination));
+            var stale = await staffClient.PostAsync("/BookingReview/Decide/" + record.Id, new FormUrlEncodedContent(decisionFields));
+            Assert.Equal(HttpStatusCode.Redirect, stale.StatusCode);
+            Assert.Contains("data-toast-seed data-kind=\"warning\"", await staffClient.GetStringAsync(stale.Headers.Location!.ToString()));
             var updated = (await service.GetStaffAsync(record.Id, default))!;
             Assert.Equal(expected, updated.Status);
             Assert.Contains(expected, await guest.GetStringAsync(link));
@@ -317,13 +353,8 @@ public sealed class GuestBookingFlowTests
                 { ["__RequestVerificationToken"] = Csrf(page), ["token"] = token }));
                 Assert.Equal(HttpStatusCode.Redirect, cancellation.StatusCode);
                 updated = (await service.GetStaffAsync(record.Id, default))!;
-                Assert.True(updated.CancellationRequested); Assert.Equal("Confirmed", updated.Status);
-                Assert.False((await service.GetAvailabilityAsync(DateOnly.FromDateTime(record.StartUtc.AddHours(8)), TimeOnly.FromDateTime(record.StartUtc.AddHours(8)), 60, "Regular", default)).Single(x => x.Resource.Id == "bay-2").Available);
-                review = await staffClient.GetStringAsync("/BookingReview/Details/" + record.Id);
-                var cancelled = await staffClient.PostAsync("/BookingReview/Decide/" + record.Id, new FormUrlEncodedContent(new Dictionary<string, string>
-                { ["__RequestVerificationToken"] = Csrf(review), ["expectedRevision"] = Regex.Match(review, "name=\"expectedRevision\"[^>]*value=\"([^\"]+)\"").Groups[1].Value, ["decision"] = "cancel" }));
-                Assert.Equal(HttpStatusCode.Redirect, cancelled.StatusCode);
-                Assert.Equal("Cancelled", (await service.GetStaffAsync(record.Id, default))!.Status);
+                Assert.False(updated.CancellationRequested);
+                Assert.Equal("Cancelled", updated.Status);
                 Assert.Contains("Cancelled", await guest.GetStringAsync(link));
             }
             Assert.True((await service.GetAvailabilityAsync(DateOnly.FromDateTime(record.StartUtc.AddHours(8)), TimeOnly.FromDateTime(record.StartUtc.AddHours(8)), 60, "Regular", default)).Single(x => x.Resource.Id == "bay-2").Available);

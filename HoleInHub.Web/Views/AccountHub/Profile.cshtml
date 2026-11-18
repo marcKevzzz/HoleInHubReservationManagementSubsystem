@@ -1,22 +1,38 @@
 @using HoleInHub.Web.ViewModels
-@model AccountContactModel
+@model AccountProfileModel
 @{ ViewData["Title"] = "My profile"; ViewData["AccountPage"] = "profile"; }
 <div class="page-content account-hub">
     <partial name="_AccountNavigation" />
-    <header class="account-heading" data-motion="load"><h1>MY PROFILE</h1></header>
+    <header class="account-heading" data-motion="load"><h1>@T("MY PROFILE")</h1></header>
     <div class="account-profile-layout" data-motion="load">
-        <div><h2>Contact details</h2></div>
-        <form class="account-profile-form" method="post" action="/my-profile">
+        <div><h2>@T("Contact details")</h2></div>
+        <form class="account-profile-form" method="post" action="/my-profile" novalidate>
             @Html.AntiForgeryToken()
             @if (TempData["ProfileSaved"] is string message) { <p class="account-feedback" role="status">@message</p> }
             <div asp-validation-summary="ModelOnly" class="account-errors" role="alert"></div>
             <div class="account-name-fields">
-                <div><label asp-for="FirstName"></label><input asp-for="FirstName" pattern="@HoleInHub.Business.Accounts.ContactRules.NamePattern" autocomplete="given-name" required maxlength="100" aria-describedby="FirstName-error" aria-invalid="@(ViewData.ModelState["FirstName"]?.Errors.Count>0?"true":"false")" /><span asp-validation-for="FirstName" id="FirstName-error" class="account-errors"></span></div>
-                <div><label asp-for="LastName"></label><input asp-for="LastName" pattern="@HoleInHub.Business.Accounts.ContactRules.NamePattern" autocomplete="family-name" required maxlength="100" aria-describedby="LastName-error" aria-invalid="@(ViewData.ModelState["LastName"]?.Errors.Count>0?"true":"false")" /><span asp-validation-for="LastName" id="LastName-error" class="account-errors"></span></div>
+                <div><div class="profile-input-wrap"><input asp-for="FirstName" data-profile-contact placeholder=" " pattern="@HoleInHub.Business.Accounts.ContactRules.NamePattern" autocomplete="given-name" required maxlength="100" aria-describedby="FirstName-error" aria-invalid="@(ViewData.ModelState["FirstName"]?.Errors.Count>0?"true":"false")" /><label asp-for="FirstName">@T("First name")</label></div><span asp-validation-for="FirstName" id="FirstName-error" aria-live="polite" class="account-errors"></span></div>
+                <div><div class="profile-input-wrap"><input asp-for="LastName" data-profile-contact placeholder=" " pattern="@HoleInHub.Business.Accounts.ContactRules.NamePattern" autocomplete="family-name" required maxlength="100" aria-describedby="LastName-error" aria-invalid="@(ViewData.ModelState["LastName"]?.Errors.Count>0?"true":"false")" /><label asp-for="LastName">@T("Last name")</label></div><span asp-validation-for="LastName" id="LastName-error" aria-live="polite" class="account-errors"></span></div>
             </div>
-            <label asp-for="Phone"></label><input asp-for="Phone" autocomplete="tel" type="tel" required maxlength="15" inputmode="numeric" pattern="[0-9]{7,15}" aria-describedby="Phone-error" aria-invalid="@(ViewData.ModelState["Phone"]?.Errors.Count>0?"true":"false")" /><span asp-validation-for="Phone" id="Phone-error" class="account-errors"></span>
-            <div class="account-email"><span>Email address</span><p>@ViewData["Email"]</p></div>
-            <button class="button" type="submit">Save changes</button>
+            <div class="profile-phone-field">
+                <select id="PhoneCountry" name="PhoneCountry" disabled aria-label="@T("Phone country code")" hidden>
+                    <option value="PH" data-flag="/media/flags/ph.svg" data-selected-label="+63">@T("Philippines") +63</option>
+                    <option value="KR" data-flag="/media/flags/kr.svg" data-selected-label="+82">@T("South Korea") +82</option>
+                    <option value="CN" data-flag="/media/flags/cn.svg" data-selected-label="+86">@T("China") +86</option>
+                    <option value="US" data-flag="/media/flags/us.svg" data-selected-label="+1">@T("United States") +1</option>
+                    <option value="JP" data-flag="/media/flags/jp.svg" data-selected-label="+81">@T("Japan") +81</option>
+                </select>
+                <div class="profile-input-wrap"><input asp-for="Phone" id="PhoneDisplay" data-profile-contact placeholder=" " type="text" inputmode="tel" autocomplete="tel-national" maxlength="24" required data-phone-pattern="@HoleInHub.Business.Accounts.ContactRules.PhonePattern" aria-describedby="Phone-error" aria-invalid="@(ViewData.ModelState["Phone"]?.Errors.Count>0?"true":"false")" />
+                <label for="PhoneDisplay">@T("Contact number")</label></div>
+            </div>
+            <noscript><p class="account-muted">@T("Include the country code for international numbers.")</p></noscript>
+            <span asp-validation-for="Phone" id="Phone-error" aria-live="polite" class="account-errors"></span>
+            <div class="account-email"><span>@T("Email address")</span><p>@ViewData["Email"]</p></div>
+            <button class="button" type="submit">@T("Save changes")</button>
         </form>
     </div>
 </div>
+
+@section Scripts {
+    <script src="~/js/profile-contact.js" asp-append-version="true"></script>
+}

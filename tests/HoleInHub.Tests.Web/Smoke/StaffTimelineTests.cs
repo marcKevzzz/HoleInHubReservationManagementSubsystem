@@ -7,7 +7,7 @@ namespace HoleInHub.Tests.Web.Smoke;
 public sealed class StaffTimelineTests
 {
     [Fact]
-    public void ExpiredFilterIncludesDepositExpirationsAndSortsMostRecentFirst()
+    public void ExpiredQueueIncludesExpiredDepositsAndKeepsThemOutOfOverdue()
     {
         var now = new DateTime(2026, 11, 8, 4, 0, 0, DateTimeKind.Utc);
         var earlier = new ReservationDto("earlier", "ref", "Regular", "Expired", now.AddDays(1), now.AddDays(1).AddHours(1),
@@ -17,6 +17,9 @@ public sealed class StaffTimelineTests
         var queue = new StaffReviewQueue([earlier, later, pending], "expired", null, "deadline", now);
         Assert.Equal(new[] { "later", "earlier" }, queue.Visible.Select(item => item.Id));
         Assert.False(queue.Overdue(earlier));
+        var overdue = queue with { Filter = "overdue" };
+        Assert.Equal("pending", Assert.Single(overdue.Visible).Id);
+        Assert.Equal("pending", Assert.Single((overdue with { Sort = "session" }).Visible).Id);
     }
 
     [Fact]

@@ -1,0 +1,81 @@
+@using HoleInHub.Business.Accounts
+@using HoleInHub.Business.Reservations
+@model NotificationDeliveryPage
+@{
+    Layout = "_StaffLayout";
+    ViewData["Title"] = "Notifications";
+    string Local(DateTime value) => TimeZoneInfo.ConvertTimeFromUtc(value, ReservationRules.Manila).ToString("d MMM, h:mm tt");
+}
+<section class="staff-workspace people-page notification-delivery">
+    <header class="staff-workspace-heading"><h1>@T("Notifications")</h1></header>
+    @if (Model.Items.Any(item => item.Unread))
+    {
+        <form asp-action="MarkVisibleRead" method="post" data-read-visible hidden></form>
+    }
+    <div class="people-toolbar">
+        <nav class="review-sort notification-tabs" aria-label="@T("Delivery status")">
+            @foreach (var status in NotificationDeliveryService.Filters)
+            {
+                <a asp-action="Index" asp-route-status="@status" aria-current="@(Model.Status == status ? "page" : null)">
+                    @T(char.ToUpperInvariant(status[0]) + status[1..])
+                </a>
+            }
+        </nav>
+        <span class="people-page-count">@F("Page {0} · {1} shown", Model.Page, Model.Items.Count)</span>
+    </div>
+    @if (Model.Items.Count == 0)
+    {
+        <partial name="_StaffEmptyState" model='("notifications", T("No notifications"), T("Email delivery records will appear here."), (string?)null, (string?)null)' />
+    }
+    else
+    {
+        <div class="review-table" role="table" aria-label="@T("Notification delivery")">
+            <div class="review-row review-table-head" role="row">
+                <span role="columnheader">@T("Email")</span><span role="columnheader">@T("Delivery")</span>
+                <span role="columnheader">@T("Time, Manila")</span><span role="columnheader">@T("Attempts")</span><span role="columnheader">@T("Action")</span>
+            </div>
+            @foreach (var message in Model.Items)
+            {
+                <div class="review-row review-request" role="row" data-unread-id="@(message.Unread ? message.Id : null)"
+                     data-activity-ticks="@(message.Unread ? message.ActivityTicks.ToString(System.Globalization.CultureInfo.InvariantCulture) : null)">
+                    <div role="cell">
+                        <strong>@message.Subject</strong>
+                        @if (message.Unread) { <span class="staff-nav-count notification-new">@T("New")</span> }
+                        <small>@message.Recipient</small>
+                    </div>
+                    <div role="cell" data-column="@T("Delivery")">
+                        <span class="staff-status" data-status="@(message.Status == "Sent" ? "Confirmed" : message.Status == "Failed" ? "Cancellation" : "Pending")">@T(message.Status)</span>
+                        @if (message.Failure is not null && message.Status is "Failed" or "Queued") { <small>@T(message.Failure)</small> }
+                    </div>
+                    <div role="cell" data-column="@T("Time, Manila")">@Local(message.FinishedUtc ?? message.LastAttemptUtc ?? message.DueUtc)</div>
+                    <div role="cell" data-column="@T("Attempts")">@message.Attempts</div>
+                    <div role="cell" class="review-row-actions">
+                        @if (message.CanRetry)
+                        {
+                            <details class="review-action review-header-action">
+                                <summary class="staff-icon-button" title="@T("Retry delivery")" aria-label="@T("Retry delivery")"><partial name="_StaffIcon" model='"refresh"' /></summary>
+                                <form asp-action="Retry" method="post">
+                                    <input type="hidden" name="id" value="@message.Id" />
+                                    <input type="hidden" name="status" value="@Model.Status" />
+                                    <input type="hidden" name="page" value="@Model.Page" />
+                                    <p>@T("Queue another delivery attempt for this email?")</p>
+                                    <button class="button" type="submit" data-no-icon>@T("Queue retry")</button>
+                                </form>
+                            </details>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    @if (Model.Page > 1 || Model.HasMore)
+    {
+        <nav class="customer-pagination" aria-label="@T("Notification pages")">
+            @if (Model.Page > 1) { <a class="button button-secondary" asp-action="Index" asp-route-status="@Model.Status" asp-route-page="@(Model.Page - 1)">@T("Previous")</a> }
+            @if (Model.HasMore) { <a rel="next" class="button button-secondary" asp-action="Index" asp-route-status="@Model.Status" asp-route-page="@(Model.Page + 1)">@T("Next")</a> }
+        </nav>
+    }
+</section>
+@section Scripts {
+    <script src="~/js/notification-read.js" asp-append-version="true"></script>
+}

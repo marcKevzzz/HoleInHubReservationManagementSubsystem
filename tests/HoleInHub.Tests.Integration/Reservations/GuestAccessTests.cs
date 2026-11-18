@@ -71,9 +71,9 @@ public sealed class GuestAccessTests(MongoDbFixture fixture) : IClassFixture<Mon
         await context.Database.GetCollection<ReservationRecord>("reservations").InsertManyAsync(records);
         var store = new ReservationPersistence(context);
         var first = await store.GuestHistoryAsync("guest@example.test", false, now, 1, default);
-        Assert.Equal(27, first.UpcomingCount); Assert.Equal(1, first.PastCount); Assert.Equal(25, first.Items.Count); Assert.True(first.HasMore);
+        Assert.Equal(27, first.UpcomingCount); Assert.Equal(1, first.PastCount); Assert.Equal(20, first.Items.Count); Assert.True(first.HasMore);
         var second = await store.GuestHistoryAsync("guest@example.test", false, now, 2, default);
-        Assert.Equal(2, second.Items.Count); Assert.False(second.HasMore);
+        Assert.Equal(7, second.Items.Count); Assert.False(second.HasMore);
         Assert.Empty(first.Items.Select(x => x.Id).Intersect(second.Items.Select(x => x.Id)));
         Assert.NotNull(await store.GuestDetailAsync("guest@example.test", "000", default));
         Assert.Null(await store.GuestDetailAsync("other@example.test", "000", default));

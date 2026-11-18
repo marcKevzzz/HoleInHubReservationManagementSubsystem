@@ -8,11 +8,17 @@ public sealed class ResourceRecord
     [BsonId] public string Id { get; set; } = "";
     public string Name { get; set; } = "";
     public string Service { get; set; } = "Regular";
+    [BsonIgnoreIfNull] public int? MaxPlayers { get; set; }
+    [BsonIgnoreIfNull] public int? MaxTotalGuests { get; set; }
+    [BsonIgnoreIfNull] public int? MaxNonPlayers { get; set; }
+    [BsonIgnoreIfDefault] public long Revision { get; set; }
 }
 
 public sealed class ReservationRecord
 {
     public long Revision { get; set; }
+    [BsonIgnoreIfNull] public string? ServiceEntryId { get; set; }
+    [BsonIgnoreIfNull] public long? ServiceRevision { get; set; }
     [BsonIgnoreIfNull] public DateTime? CheckedInUtc { get; set; }
     [BsonIgnoreIfNull] public DateTime? CheckedOutUtc { get; set; }
     public int PolicyVersion { get; set; }
@@ -53,10 +59,13 @@ public sealed class ReservationRecord
     public string IdempotencyKey { get; set; } = "";
     [BsonElement("PayloadHash")] public string SubmissionHash { get; set; } = "";
     public List<HistoryRecord> History { get; set; } = [];
+    [BsonIgnoreIfNull] public int[]? CustomerReadHistory { get; set; }
 }
 
 public sealed class HistoryRecord
 {
+    [BsonIgnoreIfNull] public ReservationAttendanceSnapshot? AttendanceBefore { get; set; }
+    [BsonIgnoreIfNull] public ReservationAttendanceSnapshot? AttendanceAfter { get; set; }
     [BsonIgnoreIfNull] public ScheduleChangeRecord? ScheduleChange { get; set; }
     [BsonIgnoreIfNull] public string? CommandId { get; set; }
     [BsonIgnoreIfNull] public string? CommandHash { get; set; }
@@ -67,6 +76,23 @@ public sealed class HistoryRecord
     public string Status { get; set; } = "";
     public DateTime AtUtc { get; set; }
     public string Actor { get; set; } = "";
+}
+
+public sealed class ReservationAttendanceSnapshot
+{
+    public string Status { get; set; } = "";
+    public DateTime StartUtc { get; set; }
+    public DateTime EndUtc { get; set; }
+    [BsonIgnoreIfNull] public DateTime? CheckedInUtc { get; set; }
+    [BsonIgnoreIfNull] public DateTime? CheckedOutUtc { get; set; }
+    public static ReservationAttendanceSnapshot From(ReservationRecord record) => new()
+    {
+        Status = record.Status,
+        StartUtc = record.StartUtc,
+        EndUtc = record.EndUtc,
+        CheckedInUtc = record.CheckedInUtc,
+        CheckedOutUtc = record.CheckedOutUtc
+    };
 }
 
 public sealed class ScheduleChangeRecord
@@ -116,6 +142,15 @@ public sealed class OutboxRecord
     public DateTime? SentUtc { get; set; }
     public int Attempts { get; set; }
     public bool Failed { get; set; }
+    [BsonIgnoreIfNull] public DateTime? ReminderStartUtc { get; set; }
+    [BsonIgnoreIfNull] public DateTime? ExpiresUtc { get; set; }
+    [BsonIgnoreIfNull] public string? VerificationId { get; set; }
+    [BsonIgnoreIfNull] public DateTime? VerificationIssuedUtc { get; set; }
+    [BsonIgnoreIfNull] public DateTime? SuppressedUtc { get; set; }
+    [BsonIgnoreIfNull] public DateTime? LastAttemptUtc { get; set; }
+    [BsonIgnoreIfNull] public DateTime? FailedUtc { get; set; }
+    [BsonIgnoreIfNull] public string? FailureType { get; set; }
+    [BsonIgnoreIfNull] public Dictionary<string, DateTime>? ReadThroughByAdmin { get; set; }
 }
 
 public sealed class ParticipantRecord

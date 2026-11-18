@@ -1,0 +1,35 @@
+@using HoleInHub.Business.Accounts
+@using HoleInHub.Business.Reservations
+@model NotificationDeliveryPage
+@{ Layout = "_StaffLayout"; ViewData["Title"] = "Notifications"; }
+<section class="staff-workspace staff-notifications">
+    <header class="staff-workspace-heading"><h1>Notifications</h1>
+    @if (User.IsInRole(StaffRoles.Admin)) { <a class="staff-hover-link" asp-controller="NotificationDelivery" asp-action="Index" asp-route-status="all">Email delivery</a> }
+    </header>
+    @if (Model.Items.Any(item => item.Unread)) { <form asp-action="MarkVisibleRead" method="post" data-read-visible hidden></form> }
+    @if (Model.Items.Count == 0)
+    {
+        <partial name="_StaffEmptyState" model='("notifications", "You’re all caught up", "Reservation updates will appear here.", (string?)null, (string?)null)' />
+    }
+    else
+    {
+        <ul class="staff-notification-list">
+        @foreach (var item in Model.Items)
+        {
+            <li data-unread-id="@(item.Unread ? item.Id : null)" data-activity-ticks="@(item.Unread ? item.ActivityTicks.ToString(System.Globalization.CultureInfo.InvariantCulture) : null)">
+                <a asp-controller="BookingReview" asp-action="Details" asp-route-id="@item.ReservationId">
+                    <partial name="_StaffIcon" model='"notifications"' />
+                    <span><strong>@StaffNotificationText.Title(item.Subject)</strong><time datetime="@item.DueUtc.ToString("O")">@StaffReviewQueue.Local(item.DueUtc).ToString("d MMM, h:mm tt")</time></span>
+                    @if (item.Unread) { <span class="notification-new" aria-label="Unread">New</span> }
+                    <partial name="_StaffIcon" model='"arrow-right"' />
+                </a>
+            </li>
+        }
+        </ul>
+    }
+    <nav class="customer-pagination" aria-label="Notification pages">
+        @if (Model.Page > 1) { <a class="button button-secondary" asp-action="Index" asp-route-page="@(Model.Page - 1)">Previous</a> }
+        @if (Model.HasMore) { <a class="button button-secondary" asp-action="Index" asp-route-page="@(Model.Page + 1)">Next</a> }
+    </nav>
+</section>
+@section Scripts { <script src="~/js/notification-read.js" asp-append-version="true"></script> }

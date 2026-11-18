@@ -30,3 +30,9 @@ Shared UI/button motion, page transitions, account navigation and booking script
 Maintain visible keyboard focus, the contributor-required two-pixel focus-ring treatment, semantic labels/errors and WCAG 2.2 AA contrast: 4.5:1 normal text and 3:1 large text/icons. These are requirements, not a blanket certification of current pages. Verify focus order, disabled/loading controls, reduced motion and responsive overflow when changing UI.
 
 Run `npm --prefix HoleInHub.Web run test:ui` and `npm --prefix HoleInHub.Web run build:css`; perform browser checks for visual and accessibility behavior that source tests cannot prove.
+
+## Staff component consistency
+
+`Styles/staff-components.css` owns shared staff panel dimensions, typography, controls, hover states, and badge geometry. Use `staff-side-panel`, a header with `staff-panel-heading`, and a scrollable `staff-panel-body` for every workspace side panel. Activity, schedule, and account forms share `HoleInHubPanels.loading(body, label)` from `staff-panel.js`; remove `aria-busy` when the request settles.
+
+Staff text buttons and back buttons use the shared staggered rolling-text animation, with right arrows for actions and left arrows for back navigation. Fetched content must mount the same button component; progress labels use its setLabel API. Text links use a sliding ::after underline. Text fields use the sign-in underline focus animation without an outline. Side-panel loading regions show skeletons with a visually hidden loading announcement, never a spinner. Reservation statuses use `staff-status` and their existing semantic state colors; people metadata uses `people-pill` with the same sizing and rounded shape. Team-member activity is an embedded feed, with no filter-clearing action in its empty state.

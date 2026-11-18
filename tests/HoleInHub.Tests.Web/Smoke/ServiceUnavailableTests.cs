@@ -29,9 +29,9 @@ public sealed class ServiceUnavailableTests
         using var client = factory.CreateClient();
         var form = await client.GetStringAsync("/account/reset-password?userId=sample-user&token=sample-token&returnUrl=%2FReservations%2FCreate");
         var csrf = Regex.Match(form, "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"").Groups[1].Value;
-        var response = await client.PostAsync("/account/reset-password", new FormUrlEncodedContent(new Dictionary<string, string> { ["__RequestVerificationToken"] = WebUtility.HtmlDecode(csrf), ["UserId"] = "sample-user", ["Token"] = "sample-token", ["Password"] = "PrivatePassword123!", ["ConfirmPassword"] = "PrivatePassword123!", ["ReturnUrl"] = "/Reservations/Create" }));
+        var response = await client.PostAsync("/account/reset-password", new FormUrlEncodedContent(new Dictionary<string, string> { ["__RequestVerificationToken"] = WebUtility.HtmlDecode(csrf), ["UserId"] = "sample-user", ["Token"] = "sample-token", ["Password"] = "PrivatePassword123", ["ConfirmPassword"] = "PrivatePassword123", ["ReturnUrl"] = "/Reservations/Create" }));
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
-        var body = await response.Content.ReadAsStringAsync(); Assert.DoesNotContain("PrivatePassword123!", body);
+        var body = await response.Content.ReadAsStringAsync(); Assert.DoesNotContain("PrivatePassword123", body);
         var retry = WebUtility.HtmlDecode(Regex.Match(body, "href=\"([^\"]+)\">Try again").Groups[1].Value);
         var restored = await client.GetStringAsync(retry);
         Assert.Contains("value=\"sample-user\"", restored); Assert.Contains("value=\"sample-token\"", restored); Assert.Contains("value=\"/Reservations/Create\"", restored);

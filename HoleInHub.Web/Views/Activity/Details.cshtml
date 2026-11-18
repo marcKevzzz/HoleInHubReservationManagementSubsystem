@@ -1,0 +1,3 @@
+@model ActivityDetailModel
+@{Layout="_StaffLayout";ViewData["Title"]="Activity details";}
+<div class="staff-workspace people-page activity-page activity-detail-page"><a class="staff-back-link" href="@Model.BackUrl"><partial name="_StaffIcon" model='"arrow-left"' /> Back to activity</a><partial name="_Event" model="Model" /></div>

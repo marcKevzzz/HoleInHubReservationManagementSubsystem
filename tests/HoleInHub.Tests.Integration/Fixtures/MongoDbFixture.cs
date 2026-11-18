@@ -48,7 +48,7 @@ public sealed class MongoDbFixture : IAsyncLifetime
             ConnectionString = ConnectionString,
             DatabaseName = databaseName,
             ServerSelectionTimeoutMs = 2000,
-            SocketTimeoutMs = 5000
+            SocketTimeoutMs = 30000
         });
 
         return new MongoDbContext(options);

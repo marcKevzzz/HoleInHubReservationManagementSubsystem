@@ -1,0 +1,8 @@
+@model CustomerContactForm
+@{ Layout = "_StaffLayout"; ViewData["Title"] = "Add customer"; }
+<section class="staff-workspace people-page">
+    <a class="flow-back" asp-action="Index"><partial name="_BackArrow" /> Back to customers</a>
+    <header class="staff-workspace-heading"><h1>Add customer</h1></header>
+
+    <partial name="_CreateForm" model="Model" />
+</section>

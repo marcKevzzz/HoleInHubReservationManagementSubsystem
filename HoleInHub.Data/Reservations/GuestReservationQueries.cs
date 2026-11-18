@@ -29,7 +29,7 @@ public sealed partial class ReservationPersistence
             : Builders<ReservationRecord>.Sort.Ascending(x => x.StartUtc).Ascending(x => x.Id);
         var items = await Reservations.Find(filter & (past ? !upcoming : upcoming), new FindOptions { Collation = GuestEmailCollation })
             .Sort(sort)
-            .Skip((Math.Clamp(page, 1, int.MaxValue / 25) - 1) * 25).Limit(26).ToListAsync(ct);
-        return new(items.Take(25).ToArray(), upcomingCount, pastCount, items.Count > 25);
+            .Skip((Math.Clamp(page, 1, int.MaxValue / 20) - 1) * 20).Limit(21).ToListAsync(ct);
+        return new(items.Take(20).ToArray(), upcomingCount, pastCount, items.Count > 20);
     }
 }

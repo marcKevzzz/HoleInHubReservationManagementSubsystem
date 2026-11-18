@@ -192,9 +192,17 @@ The booking form collects one Number of guests value including non-players. New 
 
 The booking form works without JavaScript. Verified accounts skip guest codes; signed-in unverified accounts use the existing account verification page. Signed-in users receive editable first name, last name and phone defaults from their account, with latest-owned-reservation fallback for missing legacy values. Account email is displayed read-only and derived again on the server. Guest mode offers a guest/sign-in choice. Past starts and starts inside the service review lead time are disabled in the enhanced calendar and rejected by the server. Selecting a new time defaults to a full hour. Whole-shop selections always include every active bay.
 
-Guests receive an unguessable status link. References alone never authorize access. Customers sign in at `/account/sign-in`. Staff, Manager, and Admin use `/staff/sign-in` on the dedicated HTTPS staff hostname to access `/staff`. Admin alone can manage schedule blocks. Staff sessions use a separate cookie.
+Guests receive an unguessable status link. References alone never authorize access. Customers and Admins use `/account/sign-in`. Admins enter their verified work email and password to open `/staff/dashboard`. Staff and Managers use their PIN at `/staff/sign-in` on the dedicated HTTPS staff hostname. Managers and Admins can manage schedule blocks. The workspace uses a separate session from the customer account. Admin access ends when you sign out of the account or switch accounts in the same browser.
 
-Public registration creates Customer accounts. An authorized administrator provisions employee roles through the controlled database administration process. Follow the [staff PIN setup instructions](specs/2026-11-07-rbac-staff-authentication.md#registered-desktop-pin) to apply migration 016, configure the staff hostname, enroll TLS client certificates, and activate PIN sign-in.
+Public registration creates Customer accounts. Follow the [staff PIN setup instructions](specs/2026-11-07-rbac-staff-authentication.md#registered-desktop-pin) to configure the staff hostname, enroll TLS client certificates, and activate PIN sign-in. Apply migrations 016 and 017 through the Migrator before administering roles.
+
+Staff, Managers, and Admins share the Dashboard and reservation schedule. Staff sign in to the schedule. Managers and Admins sign in to the Dashboard. Managers can view the staff directory and alert summary, and can manage blocks from the schedule.
+
+After signing in with an Admin email and password, open **People → Team & access → Edit staff access**. The directory shows all accounts and can be filtered to staff accounts. Select Staff, Manager, Admin, or **No staff access**, then enter a reason and save. The account needs a verified email and a password to receive a staff role. A saved change ends the employee's existing staff session on its next request. Staff and Managers retaining or gaining access must set up a PIN. Admins sign in with their password. Revocation preserves the customer account and its reservations. Role editing is unavailable in PIN presentation mode.
+
+Open **Overview → Activity** to review recorded booking, customer merge and schedule actions by any actor. Filter by date, category or your own activity, or search a booking reference or recorded actor. Select a row for its event details and related record. Admins also have an **Access** category for staff role changes. The old Admin and Manager activity URLs redirect to this page. Times use Manila time. Sign-in telemetry is handled separately from this feed.
+
+Use the controlled database administration process to bootstrap the first Admin or recover Admin access if all Admin sign-ins are unavailable. Perform recovery during a maintenance window and document the actor, reason, and affected account. Use **Team & access** for routine changes so they pass the concurrency guard and create an audit entry.
 
 ### Enable a local demonstration
 
@@ -218,6 +226,17 @@ The configured coverage spans all days, but business validation still accepts re
 Whole-shop checkout displays a server-calculated demonstration total/deposit and allows success/failure/cancel simulations. It requires both the explicit flag and Development or Demo environment. Production rejects simulated checkout even if the flag is accidentally set; online whole-shop submission remains unavailable until a real POS contract and authoritative prices exist. Demo uses documented weekday/weekend rates without a holiday calendar and labels totals as demonstration values. A 50% successful simulated deposit confirms immediately. Failed/cancelled checkout may retry until the same 60-minute hold expires; retries never extend it. Duplicate successes do not confirm twice. Late successes are recorded as `LatePayment`, appear in staff review for reconciliation, and never revive an expired/rejected/cancelled allocation.
 
 The future POS handoff must provide checkout tied to a reservation, an authoritative PHP rental/deposit quote, and an authenticated payment result with reservation/payment references, amount, currency and outcome. This release exposes no live payment callback and accepts no customer-supplied payment amount. POS retains collection, official receipts, refunds and settlement. Never connect the demo buttons to real funds.
+
+#### Hosted evaluation checkout (IIS)
+
+If the booking page renders `data-demo-payments="false"`, whole-shop quoting and simulated checkout are disabled. Selecting bays cannot fix that configuration. For an evaluation deployment, merge these non-secret entries into the deployed `web.config` under `system.webServer/aspNetCore/environmentVariables`, preserving all existing configuration:
+
+```xml
+<environmentVariable name="ASPNETCORE_ENVIRONMENT" value="Demo" />
+<environmentVariable name="ReservationPolicy__DemoPaymentsEnabled" value="true" />
+```
+
+Restart the hosted application, check `/health/ready`, and confirm the booking page now renders `data-demo-payments="true"`. Demo does not load Development user-secrets; keep the host's existing database, email and key-store configuration. These settings enable simulated outcomes only. Keep them disabled for real-money operation until the POS integration exists.
 
 Cancellation requests require at least one hour before the start and staff approval. The request itself releases no allocation and does not extend an existing Pending deadline. Refund terms and rescheduling remain venue-managed. Coaching uses regular bay capacity and requires staff to record external coach confirmation before venue approval; package bookings allocate only the selected first session.
 
@@ -250,6 +269,12 @@ References: [Microsoft Google authentication setup](https://learn.microsoft.com/
 
 
 ### Customer account pages and verification
+
+Authentication forms share square controls, six-slot email-code inputs, inline field errors and toast feedback. Account pages and guest recovery omit the language switch. Sign-in offers **Continue as guest** and an optional **Remember me for 30 days**; this customer session has an absolute 30-day limit, with existing security-stamp checks retained. Staff workspace sessions retain their existing shorter limits.
+
+New passwords chosen through signup, activation and reset use 8–128 ASCII letters/numbers, without case or symbol requirements. Existing passwords continue to work at sign-in. The strength indicator is guidance, not another submission requirement. Contact fields accept local PH/KR numbers and an optional leading `+`; pasted spaces and punctuation are removed, while persisted phone values remain digits for schema compatibility. Names also accept commas.
+
+Forgot-password now uses `/account/reset-password/verify`: a browser-bound, ten-minute email code with five attempts, a one-minute delivery cooldown and five deliveries per email per hour. The encrypted outbox and existing `AccountEmail` challenge purpose are reused with a separate `password-reset:` scope, so no migration is required. After verification the protected reset token remains on the server; the browser gets a placeholder and must retain its reset-context cookie. Unknown/unverified accounts see the same recovery flow without receiving mail. Existing reset links remain supported. Use the local Mailpit launcher above to capture codes.
 
 `/my-reservations`, `/transactions` and `/my-profile` share customer navigation and require sign-in. Profile updates accept only current-user first name, last name and contact number; the email remains immutable. Booking contact edits affect only the reservation. Transactions show existing owned whole-shop demonstration payment state and history, with separate rental/deposit and reservation/payment statuses; no real transaction ledger or receipts are created.
 
@@ -287,3 +312,16 @@ Apply pending migrations through the explicit Migrator using the intended databa
 New/edited first and last names accept international letters, combining marks, spaces, periods, apostrophes and hyphens, and reject numbers. Phone fields accept 7–15 ASCII digits and preserve leading zeroes. Browser input filtering, native form constraints and server validation apply to booking, signup, Google account completion and profile editing. Historical contact values are not bulk rewritten; formatted account phone numbers are shown as digits when prefilled for editing.
 
 Successful reservation submission continues to enqueue one encrypted durable outbox message in the booking transaction. The receipt now includes Pending status, service, Manila session time, guest count and the existing secure status link (account holders use their owned reservation page). Regular/coaching requests still require approval. For local delivery use Mailpit; actual customer delivery needs the configured SMTP sender. This task does not introduce a second notification worker or mail pipeline.
+
+
+### Customer record consolidation
+
+Staff notifications at `/staff/notifications` show concise reservation updates for Staff, Manager and Admin. Only due, unsuppressed reservation messages appear; account verification/reset emails stay out of this feed. Visible or interacted-with rows save that account’s read markers and update the sidebar count. Delivery retries do not make a read reservation notice unread again. Admins retain **Email delivery** diagnostics. This reuses existing outbox fields and requires no migration. Success toasts appear after sign-in/account creation. Sidebar scroll starts at the top after sign-in/reload. **Block availability** combines timed and full-day blocks; Shift+B/Shift+D and the existing booking rules remain in effect.
+
+After explicit migration 018, Staff, Manager and Admin can open **Customers → customer details → Merge customer**. Choose another record, compare both histories, choose the main contact details and either all or specific reservations, then review and supply a reason. Shared phone/email/name matches are clues only. Use **Merge history** for the actor/reason and eligible undo. Login accounts, guest access and booking ownership remain separate.
+
+In the Customers directory, drag a row onto another customer to review a merge. The full row lifts while its place stays in the table; the drop target is the initial main profile. Ordinary clicks still open details. Keyboard and touch users can open details and choose **Merge customer**. Review the primary name, phone and email, inspect the included reservations, then continue to the required reason and final confirmation. Dropping or cancelling never saves. Successful merges refresh the directory and restore focus; use Merge history for eligible undo. The full-page comparison remains available without JavaScript.
+
+For a repeat walk-in, open the existing customer and choose **New booking**. The schedule opens with that customer selected: drag an open time on a bay to review the prefilled side panel, then confirm. The customer stays selected across date changes. The schedule’s New booking button provides a keyboard/touch alternative; its ordinary full-form link remains available without JavaScript. A schedule-first walk-in or a new guest starts separately; staff can review it later. Historical guest groups remain as previously displayed after backfill; use selected reservations if a shared-contact group contains several people.
+
+The isolated development verification preview is `http://127.0.0.1:5280`; it uses a separate local test database. The configured development preview at port 5275 now has migration 018 and the merge actions enabled (owner-authorized rollout on 11 November 2026). Preserve its current launch configuration; never use Atlas for integration tests. Follow the migration backup and stopped-writer rollout instructions in `MIGRATIONS.md`.

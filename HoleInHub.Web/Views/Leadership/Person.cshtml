@@ -1,0 +1,72 @@
+@using System.Security.Claims
+@using HoleInHub.Business.Accounts
+@model StaffRoleEditModel
+@{
+    ViewData["Title"] = "Team member";
+    var scope = ViewData["SelectedRole"] as string;
+    var account = Model.Account;
+    var ownAccount = account.Id == User.FindFirstValue(ClaimTypes.NameIdentifier);
+}
+<section class="staff-workspace leadership-page people-page people-person">
+    @if (HoleInHub.Web.Navigation.ActivityNavigation.FromRequest(Context.Request) is null)
+    {
+        <a class="flow-back" asp-action="People" asp-route-scope="@scope" asp-route-page="@ViewData["DirectoryPage"]"><partial name="_BackArrow" /> Back to Team &amp; access</a>
+    }
+    <header class="staff-workspace-heading">
+        <h1>@(string.IsNullOrWhiteSpace(account.Name) ? (account.Roles.Contains(StaffRoles.Admin) ? "Administrator" : "Name not recorded") : account.Name)</h1>
+        @if (ownAccount) { <span class="people-pill">Your account</span> }
+    </header>
+    <section class="people-summary" aria-label="Team member overview">
+        <div><h2>Email</h2><a href="mailto:@account.Email">@account.Email</a><span class="people-pill" data-verified="@account.EmailConfirmed.ToString().ToLowerInvariant()">@(account.EmailConfirmed ? "Verified email" : "Email not verified")</span></div>
+        <div>
+            @if (ViewData["RoleEditing"] is true)
+            {
+                <partial name="_StaffRoleControl" model="Model" />
+            }
+            else
+            {
+                <h2>Staff role</h2><span class="people-role-list">@foreach (var role in account.Roles.Where(StaffRoles.Workspace.Contains)) { <span class="people-pill">@role</span> }</span>
+            }
+        </div>
+        <div class="people-signin">
+            <div class="staff-field-heading"><h2>Sign-in</h2><partial name="_StaffHelp" model='("staff-pin-help", "About PIN reset", "A reset signs this person out and invalidates their current PIN. Setup instructions are emailed so they can choose a new PIN on their staff desktop.")' /></div>
+            <span class="people-pill">@(ViewData["UsesPin"] is true ? (ViewData["HasPin"] is true ? "PIN ready" : "PIN setup needed") : "Email and password")</span>
+            @if (ViewData["UsesPin"] is true && ViewData["HasPin"] is not true)
+            {
+                <small>On an authorized staff desktop, open staff sign-in and choose “Set up or reset your PIN.”</small>
+            }
+            @if (ViewData["CanResetPin"] is true)
+            {
+                <form id="staff-pin-reset-form" asp-action="ResetPin" asp-route-id="@account.Id" method="post" data-reason-form>
+                    <input type="hidden" name="Version" value="@Model.Form.Version" />
+                    <input type="hidden" name="CommandId" value="@Guid.NewGuid().ToString("N")" />
+                    <noscript><label>Reason <textarea name="Reason" maxlength="500" required></textarea></label></noscript>
+                    <button class="button button-secondary" type="submit" data-reason-fallback data-no-icon>Reset staff PIN</button>
+                    <partial name="_ReasonConfirmation" model='new ReasonConfirmationModel("staff-pin-reset", "staff-pin-reset-form", "Reset staff PIN?", "This signs them out and invalidates their current PIN. We’ll email instructions to verify their work email and choose a new PIN. Enter a reason to continue.", "Reason", "", "Reset PIN and send email")' />
+                </form>
+            }
+            @if (!account.EmailConfirmed && ViewData["CanInvite"] is true)
+            {
+                <form asp-controller="TeamMembers" asp-action="Resend" asp-route-id="@account.Id" method="post">
+                    <input type="hidden" name="commandId" value="@Guid.NewGuid().ToString("N")" />
+                    <button class="button button-secondary" type="submit">Resend activation email</button>
+                </form>
+            }
+        </div>
+    </section>
+
+    @if (ViewData["MemberActivity"] is ActivityListModel memberActivity)
+    {
+        <section class="member-activity activity-page" data-activity-page data-activity-return-url="@(Context.Request.Path + Context.Request.QueryString)" aria-labelledby="member-activity-heading">
+            <header class="staff-workspace-heading"><h2 id="member-activity-heading">Activity</h2><a class="staff-hover-link" href="@memberActivity.Query.Url(reset: true)">View all activity</a></header>
+            <p class="activity-feedback" data-activity-status role="status" hidden></p>
+            <partial name="~/Views/Activity/_Results.cshtml" model="@(memberActivity with { Embedded = true })" />
+            <partial name="~/Views/Activity/_Panel.cshtml" />
+        </section>
+    }
+</section>
+
+@section Scripts {
+    <script src="~/js/activity.js" asp-append-version="true"></script>
+    <script src="~/js/reason-confirmation.js" asp-append-version="true"></script>
+}

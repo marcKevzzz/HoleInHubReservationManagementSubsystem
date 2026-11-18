@@ -107,9 +107,10 @@ public sealed class GoogleAccountTests
             var completion = await GoogleLogin(client, "https://external.example/steal"); Assert.Equal(HttpStatusCode.OK, completion.StatusCode);
             var form = await completion.Content.ReadAsStringAsync(); Assert.Contains("Complete your account", form); Assert.Contains("value=\"Google\"", form);
             var invalidContact = await client.PostAsync("/account/google-complete", new FormUrlEncodedContent(new Dictionary<string, string> { ["__RequestVerificationToken"] = Csrf(form), ["FirstName"] = "Google", ["LastName"] = "Player", ["Phone"] = "1------" }));
-            Assert.Equal(HttpStatusCode.OK, invalidContact.StatusCode); Assert.Contains("valid contact number", await invalidContact.Content.ReadAsStringAsync()); Assert.Null(await users.FindByEmailAsync(backchannel.Email));
+            Assert.Equal(HttpStatusCode.OK, invalidContact.StatusCode); Assert.Contains("Check the contact number", await invalidContact.Content.ReadAsStringAsync()); Assert.Null(await users.FindByEmailAsync(backchannel.Email));
             var created = await client.PostAsync("/account/google-complete", new FormUrlEncodedContent(new Dictionary<string, string> { ["__RequestVerificationToken"] = Csrf(form), ["FirstName"] = " Saved ", ["LastName"] = " Player ", ["Phone"] = "09123456789", ["Email"] = "attacker@example.test", ["Roles"] = "Administrator", ["ReturnUrl"] = "/Reservations/Create" }));
             Assert.Equal("/Reservations/Create", created.Headers.Location!.ToString());
+            AssertRemembered(created);
             var user = (await users.FindByEmailAsync(backchannel.Email))!; Assert.NotNull(user); Assert.True(user.EmailConfirmed); Assert.False(await users.HasPasswordAsync(user)); Assert.Equal(["Customer"], user.Roles); Assert.Equal("Saved", user.FirstName); Assert.Equal(backchannel.Subject, user.GoogleSubject);
             Assert.Null(await users.FindByEmailAsync("attacker@example.test"));
             await context.Database.GetCollection<ReservationRecord>("reservations").InsertOneAsync(new ReservationRecord { AccountId = user.Id, Email = user.Email, Reference = "OLD-CONTACT", Service = "Regular", ResourceIds = ["bay-2"], Attendees = 1, CreatedUtc = DateTime.UtcNow, ReviewDeadlineUtc = DateTime.UtcNow.AddMinutes(30), FirstName = "Old", LastName = "Contact", Phone = "09000000000", IdempotencyKey = "old-contact", SubmissionHash = "old", StartUtc = DateTime.UtcNow, EndUtc = DateTime.UtcNow.AddHours(1) });
@@ -119,6 +120,7 @@ public sealed class GoogleAccountTests
             user.EmailConfirmed = false; Assert.True((await users.UpdateAsync(user)).Succeeded);
             using var second = factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost"), AllowAutoRedirect = false });
             var repeated = await GoogleLogin(second); Assert.Equal("/Reservations/Create", repeated.Headers.Location!.ToString());
+            AssertRemembered(repeated);
             Assert.Equal(1, await context.Database.GetCollection<HoleInHub.Data.Accounts.AccountRecord>("accounts").CountDocumentsAsync(FilterDefinition<HoleInHub.Data.Accounts.AccountRecord>.Empty));
             user = (await users.FindByIdAsync(user.Id))!; Assert.True(user.EmailConfirmed);
             Assert.True((await users.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddMinutes(15))).Succeeded);
@@ -133,6 +135,14 @@ public sealed class GoogleAccountTests
         finally { await context.Client.DropDatabaseAsync(database); }
     }
 
+    private static void AssertRemembered(HttpResponseMessage response)
+    {
+        var cookie = response.Headers.GetValues("Set-Cookie").Select(header => Microsoft.Net.Http.Headers.SetCookieHeaderValue.Parse(header))
+            .Single(value => value.Name.Value == ".AspNetCore.Identity.Application");
+        var expires = Assert.IsType<DateTimeOffset>(cookie.Expires);
+        Assert.InRange(expires, DateTimeOffset.UtcNow.AddDays(30).AddMinutes(-1), DateTimeOffset.UtcNow.AddDays(30).AddMinutes(1));
+    }
+
     [Fact]
     public async Task RegistrationValidatesAndPersistsContactAndMigrationPreservesLegacyAccounts()
     {
@@ -142,11 +152,11 @@ public sealed class GoogleAccountTests
         try
         {
             await Seed(context); await new Migration_005_GoogleAccounts().UpAsync(context.Database, default);
-            Assert.True((await users.CreateAsync(new AccountUser { Email = "legacy@example.test" }, "TestingPassword123!")).Succeeded);
-            var page = await client.GetStringAsync("/account/sign-up"); var form = new Dictionary<string, string> { ["__RequestVerificationToken"] = Csrf(page), ["Email"] = "new@example.test", ["Password"] = "TestingPassword123!", ["ConfirmPassword"] = "TestingPassword123!" };
+            Assert.True((await users.CreateAsync(new AccountUser { Email = "legacy@example.test" }, "TestingPassword123")).Succeeded);
+            var page = await client.GetStringAsync("/account/sign-up"); var form = new Dictionary<string, string> { ["__RequestVerificationToken"] = Csrf(page), ["Email"] = "new@example.test", ["Password"] = "TestingPassword123", ["ConfirmPassword"] = "TestingPassword123" };
             var invalid = await client.PostAsync("/account/sign-up", new FormUrlEncodedContent(form)); Assert.Equal(HttpStatusCode.OK, invalid.StatusCode); Assert.Null(await users.FindByEmailAsync("new@example.test"));
             form["FirstName"] = "First"; form["LastName"] = "Last"; form["Phone"] = "not a number";
-            Assert.Contains("valid contact number", await (await client.PostAsync("/account/sign-up", new FormUrlEncodedContent(form))).Content.ReadAsStringAsync());
+            Assert.Contains("Check the contact number", await (await client.PostAsync("/account/sign-up", new FormUrlEncodedContent(form))).Content.ReadAsStringAsync());
             form["Phone"] = "09123456789"; form["ReturnUrl"] = "/Reservations/Create";
             Assert.Equal(HttpStatusCode.Redirect, (await client.PostAsync("/account/sign-up", new FormUrlEncodedContent(form))).StatusCode);
             var user = (await users.FindByEmailAsync("new@example.test"))!; Assert.Equal("First", user.FirstName); Assert.Equal("Last", user.LastName); Assert.Equal(form["Phone"], user.Phone); Assert.False(user.EmailConfirmed);

@@ -4,16 +4,12 @@ namespace HoleInHub.Web.ViewModels;
 
 public sealed class StaffPinForm
 {
-    [EmailAddress, StringLength(254)]
-    [Display(Name = "Work email")]
-    public string? Email { get; set; }
-
     [Required, RegularExpression("[0-9]{6}", ErrorMessage = "Enter exactly six digits.")]
     [Display(Name = "Six-digit PIN")]
     public string Pin { get; set; } = "";
 }
 
-public sealed class StaffPinSetupForm
+public sealed class StaffPinRequestForm
 {
     [Required, EmailAddress, StringLength(254)]
     [Display(Name = "Work email")]
@@ -21,7 +17,10 @@ public sealed class StaffPinSetupForm
 
     [Required, StringLength(256)]
     public string Password { get; set; } = "";
+}
 
+public sealed class StaffPinSetupForm
+{
     [Required, RegularExpression("[0-9]{6}", ErrorMessage = "Enter exactly six digits.")]
     [Display(Name = "New PIN")]
     public string Pin { get; set; } = "";

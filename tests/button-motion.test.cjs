@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const source = fs.readFileSync(path.join(__dirname, '../HoleInHub.Web/wwwroot/js/button-motion.js'), 'utf8');
 function setup(left, reduced = false) {
-    const events = {}; const moves = []; const sets = [];
+    const events = {}; const moves = []; const sets = []; const timers = new Map(); let nextTimer = 0;
     const labelA = { querySelectorAll: () => ['a1', 'a2'] };
     const labelB = { querySelectorAll: () => ['b1', 'b2'] };
     const iconA = {}; const iconB = {};
@@ -18,9 +18,12 @@ function setup(left, reduced = false) {
         if (selector.includes('icon-b')) return iconB;
         if (selector === '.button-icon-left') return left;
     }, addEventListener: (event, handler) => events[event] = handler, removeEventListener: event => delete events[event] };
-    const context = { window: { gsap }, gsap, matchMedia: () => ({ matches: reduced }) };
+    const context = { window: { gsap }, gsap, matchMedia: () => ({ matches: reduced }),
+        setTimeout(callback, delay) { const id = ++nextTimer; timers.set(id, { callback, delay }); return id; },
+        clearTimeout(id) { timers.delete(id); },
+    };
     vm.runInNewContext(source, context);
-    return { ...context.window.HoleInHubButtons, button, events, moves, sets, timeline, iconA, iconB };
+    return { ...context.window.HoleInHubButtons, button, events, moves, sets, timeline, iconA, iconB, timers };
 }
 for (const left of [false, true]) test(`${left ? 'back' : 'forward'} controls use shared stagger and arrow direction`, () => {
     const ui = setup(left); const dispose = ui.animate(ui.button);
@@ -42,7 +45,7 @@ test('repeated animation initialization does not duplicate handlers or timelines
     const dispose = ui.animate(ui.button), count = ui.moves.length;
     ui.animate(ui.button)();
     assert.equal(ui.moves.length, count);
-    assert.equal(Object.keys(ui.events).length, 4);
+    assert.equal(Object.keys(ui.events).length, 5);
     dispose();
     ui.animate(ui.button);
     assert.ok(ui.moves.length > count);
@@ -57,6 +60,22 @@ test('disabled controls do not play hover or focus motion', () => {
     const ui = setup(false); ui.button.disabled = true;
     ui.animate(ui.button); ui.events.focus(); ui.events.pointerenter();
     assert.equal(ui.timeline.played, undefined);
+});
+
+test('touch feedback reverses after its delay and disposal cancels pending feedback', () => {
+    const ui = setup(false), dispose = ui.animate(ui.button);
+    ui.events.pointerdown({ pointerType: 'mouse' });
+    assert.equal(ui.timers.size, 0);
+    ui.events.pointerdown({ pointerType: 'touch' });
+    assert.equal(ui.timeline.played, true);
+    const timer = [...ui.timers.values()][0];
+    assert.equal(timer.delay, 520);
+    timer.callback();
+    assert.equal(ui.timeline.reversed, true);
+    ui.events.pointerdown({ pointerType: 'touch' });
+    assert.equal(ui.timers.size, 1);
+    dispose();
+    assert.equal(ui.timers.size, 0);
 });
 
 test('automatic button mounting waits for DOM readiness and preserves back-forward cache handlers', () => {
@@ -87,4 +106,21 @@ test('automatic button mounting waits for DOM readiness and preserves back-forwa
     assert.equal(mediaReverts, 0);
     windowEvents.pagehide({ persisted: false });
     assert.equal(mediaReverts, 1);
+});
+
+test('progress labels rebuild staggered markup and update the accessible name', () => {
+    const attributes = {};
+    const element = () => ({ dataset: {}, children: [], setAttribute() {}, append(child) { this.children.push(child); } });
+    const button = { textContent: 'Save', children: [], querySelector: () => null, matches: () => false,
+        setAttribute(name, value) { attributes[name] = value; }, getAttribute: name => attributes[name],
+        replaceChildren() { this.children = []; }, append(child) { this.children.push(child); }, hasAttribute: () => true };
+    const window = {};
+    vm.runInNewContext(source, { window, document: { readyState: 'loading', addEventListener() {}, createElement: element } });
+    for (const label of ['Adding…', 'Add customer']) {
+        window.HoleInHubButtons.setLabel(button, label);
+        assert.equal(attributes['aria-label'], label);
+        assert.equal(button.children.length, 1);
+        assert.equal(button.children[0].children.length, 2);
+        assert.equal(button.children[0].children[0].children.length, label.length);
+    }
 });

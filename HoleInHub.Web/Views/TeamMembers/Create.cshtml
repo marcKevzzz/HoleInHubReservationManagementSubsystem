@@ -1,0 +1,9 @@
+@using HoleInHub.Business.Accounts
+@model TeamMemberForm
+@{ Layout = "_StaffLayout"; ViewData["Title"] = "Add team member"; }
+<section class="staff-workspace people-page">
+    <a class="flow-back" asp-controller="Leadership" asp-action="People"><partial name="_BackArrow" /> Back to team</a>
+    <header class="staff-workspace-heading"><h1>Add team member</h1></header>
+
+    <partial name="_CreateForm" model="Model" />
+</section>

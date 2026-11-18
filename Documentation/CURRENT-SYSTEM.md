@@ -12,8 +12,8 @@ Reviewed against the working tree on 2026-11-04, including uncommitted feature w
 | Guest booking | Protected draft, email code, availability recheck, atomic Pending submission and secure status link | Drafts hold no capacity; references alone grant no access |
 | Account booking | Verified accounts submit directly; profile contact defaults with legacy reservation fallback | Booking contact edits do not update the saved profile |
 | Allocation | Multi-bay and whole-shop booking, schedule blocks, persisted guards and idempotency | No separate allocation collection or named-coach scheduling model |
-| Staff review | Staff/Admin queue, approval/rejection, coach confirmation and cancellation decisions | No general staff-assisted creation, rescheduling, extension or attendance workflow |
-| Notifications | Durable SMTP outbox, verification, booking events, Pending alerts and expiry | No pre-start reminder, SMS/Viber provider or notification administration UI |
+| Staff review | Queue decisions, attendance, manual no-show, attendance corrections and guarded Regular/VIP extensions | Extensions exclude coaching/whole-shop and do not process additional payments |
+| Notifications | Durable SMTP outbox, verification, booking events, Pending alerts and expiry, 15-minute reminders for eligible confirmed bookings, admin delivery tracking and retry | Delivery status records SMTP acceptance. Retrying after an interrupted send can duplicate email. |
 | Whole-shop checkout | Explicitly enabled Development/Demo simulation and 50% demonstration deposit | No real collection, authenticated live POS exchange or production payment confirmation |
 | Reports/inquiries | Public contact information | No operational reporting dashboard or predefined-answer chatbot |
 
@@ -23,12 +23,12 @@ Reviewed against the working tree on 2026-11-04, including uncommitted feature w
 - Asia/Manila venue time: Monday 11:00–midnight, other days 10:00–midnight. Store UTC instants; conflicts use half-open `[start, end)` intervals.
 - Ordinary sessions: 30-minute start/duration increments, minimum 30 minutes, maximum 840 minutes within opening hours. Whole-shop: 15:00–21:00 or opening–midnight.
 - Regular review/lead time: 30 minutes; other services: 60. Submission must fit opening hours, configured approved review coverage and booking start. No maximum advance-booking horizon is enforced.
-- Verified submission creates Pending and holds capacity. Regular alerts occur at 15/25 minutes; longer windows use 30/50. Expiry uses the saved deadline; older records retain their policy.
+- Verified submission creates Pending and holds capacity until the saved review deadline. Regular alerts occur at 15/25 minutes and longer windows use 30/50. A missed review deadline releases ordinary online capacity and flags the request as overdue. Staff can approve it before the session starts if the bays are available, or send a link to choose another time if the slot conflicts. The request expires at session start if undecided.
 - Total capacity: eight per regular bay, ten per VIP bay; group coaching capped at eight. The current form records total guests including non-players. Legacy participant splits remain readable; staff must check the six-player limit when splits are absent.
 - Service identifiers: `Regular`, `VIP`, `PhilippineCoach`, `KpgaPro`, `KpgaGroup`, `WholeShop`. KPGA Pro is Tuesday/Thursday/Saturday; group coaching is Tuesday 15:00–16:00. These application assumptions do not establish client-approved coaching terms.
 - Staff approve Regular/VIP; coaching also requires the coach-confirmed flag. Whole-shop demonstration deposit success confirms through the demo flow.
-- Customers may request cancellation of Pending/Confirmed bookings at least one hour before start; staff accept or decline. A request alone releases no capacity.
-- Capacity queries protect `Pending`, `Confirmed` and legacy `Checked-In`. Current actions also produce `Rejected`, `Cancelled` and `Expired`. Proposed `CheckedIn`/`NoShow` identifiers are not the implemented lifecycle contract.
+- Customers may cancel ordinary Pending or Confirmed bookings at least one hour before start. The update releases any remaining bay hold immediately. Staff review Whole-shop and previously queued cancellation requests.
+- Capacity queries protect unexpired Pending holds, `Confirmed` and legacy `Checked-In`. Current actions also produce `Rejected`, `Cancelled` and `Expired`. Proposed `CheckedIn`/`NoShow` identifiers are not the implemented lifecycle contract.
 
 ## Current booking flow
 
@@ -44,7 +44,9 @@ flowchart TD
     G --> H[Pending receipt and capacity hold]
     H --> I[Staff review or whole-shop demo deposit]
     I --> J[Confirmed or rejected/payment outcome]
-    H --> K[Unresolved deadline: Expired]
+    H --> K[Ordinary review deadline: Overdue and hold released]
+    K --> I
+    K --> L[Undecided at session start: Expired]
 ```
 
 ## Document boundaries
@@ -60,17 +62,23 @@ Migration 006 adds typed collection validators, interval-order validation, optio
 
 New ordinary online requests may be submitted at any hour. Their capacity hold starts immediately, while the 30/60-minute review clock counts only approved staff coverage within Manila operating hours. Unused time carries across closing. The full review window must finish by the session start. Whole-shop retains its elapsed-time deposit deadline.
 
-Migration 014 adds optional saved review start and two alert timestamps. Existing bookings retain their saved deadlines and legacy alerts. Apply migrations explicitly through the Migrator. Manual no-show actions and attendance corrections remain deferred.
+Migration 014 adds optional saved review start and two alert timestamps. Existing bookings retain their saved deadlines and legacy alerts. Apply migrations explicitly through the Migrator. Manual no-show and attendance corrections were added in the 15 November slice below.
 
 ## Schedule changes — 7 November 2026
 
 The owner approved customer proposals for Confirmed Regular/VIP reservations with at least one hour of notice before the current start. Proposed starts must allow the full 30/60-minute staff review window under the operating-hours clock. One open proposal per reservation is retained. Submitting holds no new capacity.
 
-Customers use the existing account ownership, secure link or verified guest session. Staff open Change requests in the sidebar or Changes in the review queue, compare schedules and choose the same number of active bays for approval. Approval is available before both sessions begin and requires the proposal's base revision to remain current. A conflict, closure, stale revision or rejected decision preserves the original allocation. Declines require a reason. Approved and declined decisions enqueue customer email when an email is recorded.
+Customers use the existing account ownership, secure link or verified guest session. Staff open **Review queue → Schedule changes**, compare schedules and choose the same number of active bays for approval. Approval is available before both sessions begin and requires the proposal's base revision to remain current. A conflict, closure, stale revision or rejected decision preserves the original allocation. Declines require a reason. Approved and declined decisions enqueue customer email when an email is recorded.
 
 Migration 015 adds optional proposal and audit snapshots. The guarded transaction takes the catalog guard and sorted old/new resource-date guards, rechecks allocations, and commits the schedule, resource names, history and outbox together. Current/proposed resource IDs and intervals remain in history. Existing records remain readable. Apply the migration explicitly.
 
-This slice handles proposed changes before arrival. Whole-shop/coaching changes, changes during a session, direct staff moves without a customer proposal, manual no-show actions and attendance corrections remain deferred.
+This slice handles proposed changes before arrival. Whole-shop/coaching changes and direct staff moves without a customer proposal remain outside this slice. The 15 November slice below adds attendance corrections and Regular/VIP extensions during a session.
+
+## Attendance and extensions — 15 November 2026
+
+Staff may mark an unattended Confirmed booking No-show after follow-up at the earlier of one hour after start or scheduled end. Reasons and confirmation are required. Attendance corrections preserve before/after actual times and status, rechecking capacity atomically when restoring an active booking. Regular/VIP sessions can be extended in 30-minute increments while ongoing, within operating hours and subject to all booked bays remaining available. Extra charges remain venue/POS-managed; the customer page identifies the original quote.
+
+Migration 020 adds optional audit snapshots and event types. It must run explicitly before these actions become available. Existing check-in/checkout command hashes remain replayable. See the [implementation plan and verification record](plans/2026-11-15-attendance-and-extensions.md).
 
 ## Staff Customers — 7 November 2026
 

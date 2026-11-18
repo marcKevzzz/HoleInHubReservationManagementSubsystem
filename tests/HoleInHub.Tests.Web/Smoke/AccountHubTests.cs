@@ -70,7 +70,7 @@ public sealed class AccountHubIdentityTests
             Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync("/my-profile", new FormUrlEncodedContent(new Dictionary<string, string>()))).StatusCode);
             var invalid = await client.PostAsync("/my-profile", Form(profile, new() { ["FirstName"] = "Player2", ["LastName"] = "Changed", ["Phone"] = "bad" }));
             Assert.Equal(HttpStatusCode.OK, invalid.StatusCode);
-            Assert.Contains("Use letters for names", await invalid.Content.ReadAsStringAsync());
+            Assert.Contains("Enter at least two letters.", await invalid.Content.ReadAsStringAsync());
             Assert.Equal("Original", (await users.FindByIdAsync(owner.Id))!.FirstName);
             var saved = await client.PostAsync("/my-profile", Form(profile, new()
             {

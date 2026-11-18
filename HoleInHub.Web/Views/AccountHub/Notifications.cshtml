@@ -1,0 +1,59 @@
+@using HoleInHub.Business.Reservations
+@model CustomerNotificationPage
+@{ ViewData["Title"] = "Notifications"; ViewData["AccountPage"] = "notifications"; }
+<div class="page-content account-hub">
+    <partial name="_AccountNavigation" />
+    <header class="account-heading">
+        <h1>@T("Notifications")</h1>
+        <p class="account-muted">@T("Updates about your reservations and deposits.")</p>
+    </header>
+    @if (Model.Items.Count == 0 && Model.Page == 1)
+    {
+        <section class="account-inbox-empty" aria-labelledby="inbox-empty-title">
+            <span class="account-inbox-icon"><partial name="_StaffIcon" model='"notifications"' /></span>
+            <div>
+                <h2 id="inbox-empty-title">@T("No notifications yet")</h2>
+                <p>@T("Booking updates will appear here after you make a reservation.")</p>
+                <a class="account-text-link" href="/my-reservations">@T("My reservations")</a>
+            </div>
+        </section>
+    }
+    else
+    {
+        <form method="post" asp-action="MarkNotificationsRead" data-read-visible hidden></form>
+        <ul class="account-inbox">
+            @foreach (var item in Model.Items)
+            {
+                var local = TimeZoneInfo.ConvertTimeFromUtc(item.AtUtc, ReservationRules.Manila);
+                <li class="account-inbox-item" data-unread-id="@(item.Unread ? item.Id : null)" data-activity-ticks="@(item.Unread ? (long?)item.AtUtc.Ticks : null)">
+                    <a class="account-inbox-link" asp-controller="Reservations" asp-action="Details" asp-route-id="@item.BookingId">
+                        <span class="account-inbox-icon"><partial name="_StaffIcon" model="item.Icon" /></span>
+                        <span class="account-inbox-copy">
+                            <strong>@T(item.Title)@if (item.Unread)
+                                {
+                                    <span class="notification-new"><span class="account-unread-dot" aria-hidden="true"></span><span class="sr-only">@T("Unread notification")</span></span>
+                                }
+                            </strong>
+                            <span>@T(item.Message)</span>
+                            <small>@item.Reference</small>
+                        </span>
+                        <span class="account-inbox-side">
+                            <time datetime="@item.AtUtc.ToString("O")" title="@local.ToString("g") · Manila">@local.ToString("d MMM")</time>
+                            <partial name="_StaffIcon" model='"arrow-up-right-compact"' />
+                        </span>
+                    </a>
+                </li>
+            }
+        </ul>
+        @if (Model.Page > 1 || Model.HasMore)
+        {
+            <nav class="account-inbox-pager" aria-label="@T("Notification pages")">
+                @if (Model.Page > 1) { <a asp-action="Notifications" asp-route-page="@(Model.Page - 1)">@T("Newer notifications")</a> }
+                @if (Model.HasMore) { <a asp-action="Notifications" asp-route-page="@(Model.Page + 1)">@T("Older notifications")</a> }
+            </nav>
+        }
+    }
+</div>
+@section Scripts {
+    <script src="~/js/notification-read.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,21 @@
+@model bool
+<div class="dashboard-loading-layout">
+    <div class="dashboard-skeleton-attention"><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill"></span></div>
+    <div class="dashboard-summary dashboard-skeleton-summary">
+        @for (var kpi = 0; kpi < 4; kpi++)
+        {
+            <div><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill"></span></div>
+        }
+    </div>
+    <div class="dashboard-main">
+        <section><div class="dashboard-section-heading"><span class="staff-skeleton-fill staff-skeleton-section-title"></span><span class="staff-skeleton-fill staff-skeleton-count"></span></div><div class="dashboard-skeleton-plot">@for (var line = 0; line < 4; line++) { <span class="staff-skeleton-fill"></span> }</div></section>
+        <section><div class="dashboard-section-heading"><span class="staff-skeleton-fill staff-skeleton-section-title"></span><span class="staff-skeleton-fill staff-skeleton-count"></span></div><div class="dashboard-pie-frame"><div class="dashboard-skeleton-donut"><span class="staff-skeleton-fill"></span></div></div>@for (var service = 0; service < 2; service++) { <div class="dashboard-skeleton-service"><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill"></span></div> }</section>
+    </div>
+    <div class="dashboard-bottom" data-dashboard-skeleton-live hidden="@(!Model)"><section><div class="dashboard-section-heading"><span class="staff-skeleton-fill staff-skeleton-section-title"></span></div>@for (var arrival = 0; arrival < 3; arrival++) { <div class="dashboard-skeleton-arrival"><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill"></span></div> }</section><section><div class="dashboard-section-heading"><span class="staff-skeleton-fill staff-skeleton-section-title"></span></div><span class="staff-skeleton-fill dashboard-skeleton-bays"></span></section></div>
+    <section class="dashboard-activity"><div class="dashboard-section-heading"><span class="staff-skeleton-fill staff-skeleton-section-title"></span><span class="staff-skeleton-fill staff-skeleton-count"></span></div><div class="dashboard-skeleton-activity">
+        @for (var row = 0; row < 6; row++)
+        {
+            <div class="dashboard-skeleton-activity-row" data-skeleton-activity-row="@(row == 0 ? "heading" : "event")">@for (var cell = 0; cell < 5; cell++) { <span class="staff-skeleton-fill"></span> }</div>
+        }
+    </div></section>
+</div>

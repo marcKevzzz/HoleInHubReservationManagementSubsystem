@@ -8,10 +8,13 @@
     var day = DateOnly.FromDateTime(Local(block.StartUtc)).ToString("yyyy-MM-dd");
 }
 <div class="staff-workspace staff-create-page">
-    <a class="flow-back" asp-action="Index" asp-route-date="@day"><partial name="_BackArrow" /> Back to reservations</a>
+    @if (HoleInHub.Web.Navigation.ActivityNavigation.FromRequest(Context.Request) is null)
+    {
+        <a class="flow-back" asp-action="Index" asp-route-date="@day"><partial name="_BackArrow" /> Back to reservations</a>
+    }
     <header class="staff-workspace-heading">
         <h1>@ViewData["Title"]</h1>
-        <p>@block.Location · Manila time</p>
+        <p>@block.Location</p>
     </header>
     <dl class="review-facts">
         <dt>When</dt><dd>@Local(block.StartUtc).ToString("ddd, d MMM yyyy, h:mm tt") – @Local(block.EndUtc).ToString("d MMM, h:mm tt")</dd>

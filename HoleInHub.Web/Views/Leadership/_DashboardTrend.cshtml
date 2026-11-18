@@ -1,0 +1,5 @@
+@model DashboardTrend
+<span class="dashboard-kpi-context is-@Model.Tone" title="@($"{Model.Previous:0.##} → {Model.Current:0.##}. Calendar periods; reservation statuses reflect the latest records.")">
+    @if (Model.Difference != 0) { <span aria-hidden="true">@(Model.Difference > 0 ? "↑" : "↓")</span><span class="sr-only">@(Model.Difference > 0 ? "Up" : "Down") </span> }
+    <strong>@Model.Change</strong><span>vs @Model.Period</span>
+</span>

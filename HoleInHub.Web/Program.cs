@@ -1,6 +1,8 @@
+using System.Globalization;
 using HoleInHub.Business.Extensions;
 using HoleInHub.Business.Services;
 using HoleInHub.Web.Accounts;
+using Microsoft.AspNetCore.Localization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,10 +10,22 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHoleInHubBusiness(builder.Configuration);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews(options => options.Filters.Add<HoleInHubReservationManagementSubsystem.Filters.ServiceUnavailableFilter>());
+builder.Services.AddControllersWithViews(options => { options.Filters.Add<HoleInHubReservationManagementSubsystem.Filters.ServiceUnavailableFilter>(); options.Filters.Add<HoleInHubReservationManagementSubsystem.Filters.CustomerLanguageFilter>(); });
+builder.Services.AddLocalization();
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var cultures = new[] { new CultureInfo("en"), new CultureInfo("ko") };
+    options.DefaultRequestCulture = new RequestCulture("en");
+    options.SupportedCultures = cultures;
+    options.SupportedUICultures = cultures;
+    options.RequestCultureProviders = [new CookieRequestCultureProvider(), new AcceptLanguageHeaderRequestCultureProvider()];
+    options.ApplyCurrentCultureToResponseHeaders = true;
+});
 builder.Services.AddHealthChecks();
 builder.Services.AddCustomerAccounts(builder.Configuration, builder.Environment);
 builder.Services.AddScoped<GuestReservationSession>();
+builder.Services.AddSingleton<HoleInHub.Web.Live.WorkspaceUpdates>();
+builder.Services.AddHostedService<HoleInHub.Web.Live.WorkspaceChangeWorker>();
 
 var app = builder.Build();
 
@@ -33,7 +47,8 @@ if (app.Environment.IsDevelopment()
             && request.Host.Host is ("localhost" or "127.0.0.1" or "[::1]")
             && request.Path.StartsWithSegments("/staff")
             && (!request.IsHttps || !context.RequestServices.GetRequiredService<StaffPinAccess>().Enabled)
-            && (!request.IsHttps || request.Host != new HostString(staffWorkspace.Host, staffWorkspace.Port)))
+            && (!request.IsHttps || request.Host != new HostString(staffWorkspace.Host, staffWorkspace.Port))
+            && await StaffPinAccess.ReadPasswordAdminAsync(context) is null)
         {
             context.Response.Redirect(new Uri(staffWorkspace, request.Path + request.QueryString).AbsoluteUri);
             return;
@@ -58,9 +73,28 @@ app.Use(async (context, next) =>
 });
 
 app.UseRouting();
+app.UseRequestLocalization();
+// Keep staff formatting independent of UI language for date and time inputs.
+app.Use(async (context, next) =>
+{
+    var controller = context.GetRouteValue("controller")?.ToString();
+    if (controller is not ("Home" or "Account" or "AccountHub" or "Reservations" or "GuestReservations" or "Language"))
+    {
+        CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("en");
+    }
+    await next(context);
+});
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+app.Use(async (context, next) =>
+{
+    await next();
+    if (HttpMethods.IsPost(context.Request.Method) && context.Response.StatusCode is >= 200 and < 400)
+    {
+        context.RequestServices.GetRequiredService<HoleInHub.Web.Live.WorkspaceUpdates>().Publish();
+    }
+});
 
 // Liveness probe - returns 200 if process is listening
 app.MapGet("/health/live", () => Results.Ok(new
@@ -101,7 +135,6 @@ app.MapControllerRoute("availability", "availability", new { controller = "Reser
 app.MapControllerRoute("reservation", "appointment", new { controller = "Reservations", action = "Create" });
 app.MapControllerRoute("my-reservations", "my-reservations", new { controller = "Reservations", action = "Index" });
 app.MapControllerRoute("staff", "staff", new { controller = "BookingReview", action = "Index" });
-app.MapControllerRoute("staff-review-queue", "staff/review-queue", new { controller = "BookingReview", action = "Queue" });
 app.MapControllerRoute("staff-review-actions", "staff/review/{action}/{id?}", new { controller = "BookingReview" });
 
 app.MapControllerRoute(

@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HoleInHubReservationManagementSubsystem.Controllers;
 
-public class HomeController(IServiceCatalog catalog) : Controller
+public class HomeController(IServiceCatalog catalog, HoleInHub.Business.Settings.OperationalSettings? settings = null) : Controller
 {
     public IActionResult Index()
     {
@@ -14,7 +14,11 @@ public class HomeController(IServiceCatalog catalog) : Controller
 
     public IActionResult About() => View();
     public IActionResult Gallery() => View();
-    public IActionResult Contacts() => View();
+    public async Task<IActionResult> Contacts(CancellationToken ct)
+    {
+        try { return View(settings is null ? null : await settings.GetAsync(ct)); }
+        catch (Exception error) when (ServiceAvailability.Translate(error) is not null) { return View(); }
+    }
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public async Task<IActionResult> Services(CancellationToken ct)
     {
@@ -35,8 +39,13 @@ public class HomeController(IServiceCatalog catalog) : Controller
         { return StatusCode(StatusCodes.Status503ServiceUnavailable); }
     }
 
-    public IActionResult Privacy()
+    public async Task<IActionResult> Privacy(CancellationToken ct)
     {
+        try
+        {
+            if (settings is not null && (await settings.GetAsync(ct)).PoliciesPublished) { return Redirect("/policies#privacy"); }
+        }
+        catch (Exception error) when (ServiceAvailability.Translate(error) is not null) { return View(); }
         return View();
     }
 

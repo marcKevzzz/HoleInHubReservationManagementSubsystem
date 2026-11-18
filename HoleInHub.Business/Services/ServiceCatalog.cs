@@ -3,14 +3,22 @@ using HoleInHub.Data.Services;
 namespace HoleInHub.Business.Services;
 
 public sealed record ServiceCatalogItem(string Id, string Title, string ImagePath, string Summary,
-    string RateText, string Details, string ActionLabel, string ActionUrl);
+    string RateText, string Details, string ActionLabel, string ActionUrl)
+{
+    public int? MaxPax { get; init; }
+    public string[] Images { get; init; } = [];
+    public string DepositText { get; init; } = "";
+    public string BookingService { get; init; } = "";
+    public bool? CustomerSelectsBays { get; init; }
+    public ServiceAvailabilityRule[]? AvailabilityRules { get; init; }
+}
 
 public interface IServiceCatalog
 {
     Task<IReadOnlyList<ServiceCatalogItem>> GetActiveAsync(CancellationToken ct);
 }
 
-public sealed class ServiceCatalog(ServiceCatalogPersistence persistence) : IServiceCatalog
+public sealed partial class ServiceCatalog(ServiceCatalogPersistence persistence) : IServiceCatalog
 {
     public async Task<IReadOnlyList<ServiceCatalogItem>> GetActiveAsync(CancellationToken ct)
     {
@@ -18,9 +26,15 @@ public sealed class ServiceCatalog(ServiceCatalogPersistence persistence) : ISer
         return records.Select(x => new ServiceCatalogItem(x.Id, x.Title,
             x.ImagePath.StartsWith("/media/", StringComparison.Ordinal) && !x.ImagePath.Contains("..") && !x.ImagePath.Contains('\\')
                 ? x.ImagePath : "/media/facebook/venue-overview.webp",
-            x.Summary, x.RateText, x.Details,
-            x.BookingService == "WholeShop" || x.Action == "Contact" ? "Contact the venue" : x.ActionLabel,
-            x.BookingService == "WholeShop" || x.Action != "Book" ? "/Home/Contacts"
-                : "/Reservations/Create?service=" + Uri.EscapeDataString(x.BookingService))).ToArray();
+            x.Summary, x.Pricing is { } pricing ? Reservations.PricingRules.Summary(x.BookingService, pricing) : x.RateText, x.Details,
+            "Request a booking", "/Reservations/Create?service=" + Uri.EscapeDataString(x.Id == x.BookingService ? x.BookingService : $"{x.BookingService}:{x.Id}"))
+        {
+            MaxPax = x.MaxPax,
+            Images = ImagePaths(x),
+            DepositText = FormatDeposit(x.DepositType, x.DepositValue),
+            BookingService = x.BookingService,
+            CustomerSelectsBays = x.CustomerSelectsBays,
+            AvailabilityRules = x.AvailabilityRules
+        }).ToArray();
     }
 }

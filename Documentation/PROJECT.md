@@ -27,7 +27,8 @@ Multi-bay group appointments and consolidated POS billing are distinct: sequenti
 | Ownership | Guests verify email before submission and use a secure status link. Find my booking verifies their email again for temporary access to their guest reservation history, including confirmed bookings; it never grants access to account-owned bookings with the same email. Verified account holders access their own account-linked reservations |
 | Submission | Successful submission creates Pending and immediately holds all requested allocations; browsing alone holds nothing |
 | Ordinary online Pending | Owner-approved provisional review deadlines: Regular 30 minutes (alerts 15/25); VIP/coaching 60 minutes (alerts 30/50) |
-| Pending expiry | Unresolved ordinary online requests become Expired at the deadline, release all allocations, and notify customer and staff |
+| Overdue review | An ordinary online Pending request releases its bay hold at the review deadline. It stays Pending, shows an Overdue flag, and notifies the customer and staff. Staff can confirm before the session starts if they can reserve the bays atomically, decline the request, or email a rebooking link if the slot is unavailable. Undecided requests expire at session start. |
+| Online cancellation | Customers can cancel ordinary Pending and Confirmed bookings directly at least one hour before start, including exactly one hour before. Cancellation releases any remaining bay hold and notifies staff. Whole-shop cancellation requests follow the separate deposit workflow. |
 | Review coverage | Owner directs review during operating hours only; review minutes pause outside operating hours and resume at the next staffed opening. The full review window must finish by the booked start. Existing operating hours remain authoritative |
 | Confirmation | Staff approve Regular/VIP; coaching requires recorded coach confirmation plus venue approval. Whole-shop confirms automatically after a verified 50% deposit; currently demonstrated with simulated POS only |
 | Whole shop | Exclusive allocation of all active bays. Provisional 60-minute deposit deadline; simulated 50% deposit confirms automatically. Live collection remains POS-owned and disabled |
@@ -37,6 +38,7 @@ Multi-bay group appointments and consolidated POS billing are distinct: sequenti
 | Multi-bay | One reservation; all requested resources allocated together or the entire attempt rejected |
 | Changes | Staff review customer requests; reassignment, extension, and rescheduling recheck conflicts; rejected/failed changes preserve the original booking |
 | First change-request release | Owner-approved 7 November 2026. Confirmed Regular/VIP customers may propose a new schedule or duration at least one hour before the current start. The proposed start must allow the full 30/60-minute operating-hours review window. One open proposal, same service, bay count and guest count. Staff may select replacement bays during approval. Approval must precede both session starts and recheck revision and availability. Original allocations remain until successful approval. |
+| Staff timeline VIP upgrade | Owner-approved 12 November 2026. Staff may upgrade an upcoming Confirmed single-bay Regular reservation to an available VIP bay after explicitly acknowledging customer agreement to VIP pricing. Preserve duration and guest count, recheck revision and allocation conflicts atomically, update the service and bay together, and record the upgrade in history. Multi-bay cross-service moves and VIP downgrades remain unavailable. |
 | Attendance | Authorized staff record arrival, cancellation, completion, and no-show outcomes; no hardware occupancy detection |
 | Grace period | Confirmed allocations protected for one hour after start, capped at scheduled end; flag unattended bookings at the earlier deadline |
 | No-show | Staff follow up and may mark No-show, releasing remaining allocations; no automatic no-show decision |
@@ -47,9 +49,17 @@ Multi-bay group appointments and consolidated POS billing are distinct: sequenti
 
 The owner approved these provisional online booking rules on 2026-11-03. Require 30-minute Regular lead time and 60-minute lead time for other online services; no maximum advance-booking limit. Owner update on 2026-11-07 allows submission at any time. Ordinary online Pending holds begin immediately. Their 30/60-minute review clock counts only configured staff coverage within venue operating hours, carries across closing, and must finish by the session start. Whole-shop retains its separate elapsed-time deposit deadline. Existing records retain their saved deadlines; no policy is inferred for staff-assisted bookings. Expiry timings still need operational validation with the client.
 
+### Browser language support
+
+The customer-facing web interface shall support English (`en`) and Korean (`ko`). On the first visit, it shall use the browser's preferred supported language, with English as the fallback. Customers shall be able to switch between **English** and **한국어**, and their choice shall take precedence over the browser preference on later visits.
+
+Both languages shall cover navigation, service and availability information, guest and account booking, email-code entry screens, validation and error messages, booking receipts and status pages, and customer change and cancellation requests. Pages shall expose the active language to assistive technology. Both language versions shall use the same availability, booking rules, and Asia/Manila schedule.
+
+Acceptance shall cover Korean- and English-preferred browsers, an unsupported browser language, persistence of a manual selection, and the same booking journey and error states in both languages on desktop and mobile. Confirm the Korean wording with a fluent reviewer. Staff screens and outbound email localization require separate scope decisions.
+
 ## Reservation lifecycle and access
 
-Submission, approval, arrival, completion, cancellation, expiry, and no-show are distinct events. Expired applies to unresolved ordinary online Pending requests at the agreed review deadline; No-show applies to confirmed unattended bookings after staff follow-up. Payment/deposit statuses remain separate from reservation status. A deposit or payment response alone does not establish attendance or completion.
+Submission, approval, arrival, completion, cancellation, expiry, and no-show are distinct events. Expired applies to unresolved ordinary online Pending requests when the session starts. No-show applies to confirmed unattended bookings after staff follow-up. Payment/deposit statuses remain separate from reservation status. A deposit or payment response alone does not establish attendance or completion.
 
 Record actor, timestamp, reason, and relevant changes in history. Exact status identifiers, exceptional transitions, and completion criteria must be specified during feature design; the paper does not establish a complete transition matrix.
 
@@ -73,7 +83,7 @@ MongoDB is the sole database, with MongoDB Atlas specified in Chapter I and a lo
 - Use half-open intervals `[start, end)` and persisted resource/date guards within MongoDB transactions to prevent concurrent incompatible allocations.
 - Commit all resources together, including whole-shop exclusivity; failed changes preserve original allocations.
 - Use submission idempotency keys and stale-edit protection. Preserve history after capacity release.
-- Expiry and confirmation must compete safely against the same reservation state; release allocations only when the eligible Pending request actually expires.
+- Approval, cancellation, and final expiry must compete safely against the same reservation state. Ordinary Pending holds end at the review deadline, and any late approval must reacquire capacity atomically.
 - Deliver notifications after commit; delivery failures do not undo reservations. Prevent duplicate/stale messages after changes.
 - Run migrations only through the dedicated CLI under its distributed lease, never on Web startup.
 
@@ -102,7 +112,7 @@ Excluded from Reservation implementation: inventory, food/merchandise ordering, 
 
 Still requiring agreement:
 
-- Client validation of the owner-approved provisional review/deposit deadlines; review coverage uses operating minutes with carryover to the next staffed opening. Manual no-show actions and attendance corrections remain deferred.
+- Client validation of the owner-approved provisional review/deposit deadlines; review coverage uses operating minutes with carryover to the next staffed opening.
 - Live POS payment evidence/contract, authoritative prices (including holidays), late-payment reconciliation and deposit refunds. The owner sets a 50% deposit and provisional 60-minute deadline for the demo.
 - Change-request approval criteria and late-arrival exceptions.
 - Client confirmation of remaining package sessions and rescheduling. Implemented ordinary sessions use a 30-minute minimum and half-hour increments; the customer enters one total guest count including non-players, with eight total people per Regular bay or ten per VIP. Staff checks the six-player-per-bay limit because a total count does not identify players. Cancellation requests require one hour of notice and staff approval, with no cancellation fee.
@@ -112,3 +122,5 @@ Still requiring agreement:
 The [aligned diagram package](diagrams/README.md) provides system architecture, system flowchart, context/Level 1 references, a combined Level 2 DFD with detail sheets, and POS integration flow. The final POS exchange contract remains to be agreed. These October exports are historical target designs; use [CURRENT-SYSTEM.md](CURRENT-SYSTEM.md) for the current flow and remaining implementation gaps.
 
 Owner update (2026-11-03): ordinary sessions may be 30 minutes. Each time tile represents a half-hour; dragging consecutive tiles sets the complete duration (two tiles = one hour). Existing fixed coaching classes and whole-shop rental windows retain their defined durations. Review deadlines and minimum booking lead times are unchanged.
+
+Owner update (2026-11-15): implement staff-managed no-show, attendance corrections and then session extensions. The first extension release covers Regular and VIP only. Implementation rules and verification evidence are recorded in the [attendance and extensions plan](plans/2026-11-15-attendance-and-extensions.md).

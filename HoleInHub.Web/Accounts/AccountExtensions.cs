@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Threading.RateLimiting;
 using HoleInHub.Business.Accounts;
 using Microsoft.AspNetCore.Authentication;
@@ -15,11 +16,24 @@ public static class AccountExtensions
         services.AddIdentityCore<AccountUser>(options =>
         {
             options.User.RequireUniqueEmail = true;
-            options.Password.RequiredLength = 12;
+            options.Password.RequiredLength = 8;
+            options.Password.RequireDigit = false;
+            options.Password.RequireLowercase = false;
+            options.Password.RequireUppercase = false;
+            options.Password.RequireNonAlphanumeric = false;
             options.SignIn.RequireConfirmedEmail = false;
             options.Lockout.MaxFailedAccessAttempts = 5;
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
         }).AddUserStore<AccountStore>().AddSignInManager().AddDefaultTokenProviders();
+        services.Configure<SecurityStampValidatorOptions>(options => options.OnRefreshingPrincipal = context =>
+        {
+            if (context.CurrentPrincipal?.FindFirst("amr") is { Value: "pwd" } password
+                && context.NewPrincipal?.Identity is ClaimsIdentity identity)
+            {
+                identity.AddClaim(password);
+            }
+            return Task.CompletedTask;
+        });
         services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromHours(2));
         var authentication = services.AddAuthentication(IdentityConstants.ApplicationScheme);
         authentication.AddIdentityCookies();
@@ -57,6 +71,19 @@ public static class AccountExtensions
             options.Cookie.SameSite = SameSiteMode.Lax;
             options.Cookie.SecurePolicy = environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
             options.ExpireTimeSpan = TimeSpan.FromHours(8);
+            options.SlidingExpiration = false;
+            options.Events.OnValidatePrincipal = async context =>
+            {
+                var now = context.HttpContext.RequestServices.GetRequiredService<TimeProvider>().GetUtcNow();
+                if (context.Properties.Items.TryGetValue("hih-session-end", out var deadline)
+                    && long.TryParse(deadline, out var seconds) && now.ToUnixTimeSeconds() >= seconds)
+                {
+                    context.RejectPrincipal();
+                    await context.HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
+                    return;
+                }
+                await SecurityStampValidator.ValidatePrincipalAsync(context);
+            };
         });
         services.AddAuthorization(options =>
         {

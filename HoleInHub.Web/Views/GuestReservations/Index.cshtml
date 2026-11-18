@@ -1,23 +1,23 @@
 @model HoleInHub.Web.ViewModels.GuestReservationsModel
 @{ViewData["Title"]="Your reservations";ViewData["GuestAccess"]=true;ViewData["GuestReservationList"]=true;var history=Model.History;}
 <div class="page-content account-hub">
-    <div class="guest-access-bar"><p>@Model.Email</p><form action="/guest/reservations/leave" method="post">@Html.AntiForgeryToken()<button class="guest-text-button" type="submit">Leave guest access</button></form></div>
-    <header class="account-heading"><h1>YOUR RESERVATIONS</h1></header>
-    <nav class="account-reservation-tabs" aria-label="Reservation views"><a href="/guest/reservations" aria-current="@(!Model.ShowPast?"page":null)">Upcoming <span>@history.UpcomingCount</span></a><a href="/guest/reservations?view=past" aria-current="@(Model.ShowPast?"page":null)">Past <span>@history.PastCount</span></a></nav>
-    <p class="account-timezone">All times are Asia/Manila.</p>
+    <div class="guest-access-bar"><p>@Model.Email</p><form action="/guest/reservations/leave" method="post">@Html.AntiForgeryToken()<button class="guest-text-button" type="submit">@T("Leave guest access")</button></form></div>
+    <header class="account-heading"><h1>@T("YOUR RESERVATIONS")</h1></header>
+    <nav class="account-reservation-tabs" aria-label="@T("Reservation views")"><a href="/guest/reservations" aria-current="@(!Model.ShowPast?"page":null)">@T("Upcoming") <span>@history.UpcomingCount</span></a><a href="/guest/reservations?view=past" aria-current="@(Model.ShowPast?"page":null)">@T("Past") <span>@history.PastCount</span></a></nav>
+    <p class="account-timezone">@T("All times are Asia/Manila.")</p>
     @if(history.Items.Count==0)
     {
-        <div class="account-empty" data-motion="stagger"><h2>@(history.UpcomingCount+history.PastCount==0?"No guest reservations found for this email.":Model.ShowPast?"No past reservations yet.":"Your next round is waiting.")</h2><form method="post" action="/guest/reservations/change-email">@Html.AntiForgeryToken()<button class="guest-text-button" type="submit">Use another email</button></form></div>
+        <div class="account-empty" data-motion="stagger"><h2>@(history.UpcomingCount+history.PastCount==0?T("No guest reservations found for this email."):Model.ShowPast?T("No past reservations yet."):T("Your next round is waiting."))</h2><form method="post" action="/guest/reservations/change-email">@Html.AntiForgeryToken()<button class="guest-text-button" type="submit">@T("Use another email")</button></form></div>
     }
     else
     {
         <div class="account-reservations">@foreach(var booking in history.Items){<partial name="_ReservationRow" model="booking" />}</div>
         @if (Model.Page > 1 || history.HasMore)
         {
-        <nav class="guest-history-paging" aria-label="Reservation pages">
-            @if(Model.Page>1){<a asp-action="Index" asp-route-view="@(Model.ShowPast?"past":null)" asp-route-page="@(Model.Page-1)">Previous</a>}
+        <nav class="guest-history-paging" aria-label="@T("Reservation pages")">
+            @if(Model.Page>1){<a asp-action="Index" asp-route-view="@(Model.ShowPast?"past":null)" asp-route-page="@(Model.Page-1)">@T("Previous")</a>}
             <span>Page @Model.Page</span>
-            @if(history.HasMore){<a asp-action="Index" asp-route-view="@(Model.ShowPast?"past":null)" asp-route-page="@(Model.Page+1)">Next</a>}
+            @if(history.HasMore){<a asp-action="Index" asp-route-view="@(Model.ShowPast?"past":null)" asp-route-page="@(Model.Page+1)">@T("Next")</a>}
         </nav>
         }
     }

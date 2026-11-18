@@ -1,0 +1,32 @@
+@model HoleInHub.Web.ViewModels.StaffProfileModel
+@{ Layout = "_StaffLayout"; ViewData["Title"] = "My profile"; }
+<section class="staff-workspace staff-profile">
+    <header class="staff-workspace-heading"><h1>@T("My profile")</h1><p>@T("Manage your details and sign-in security.")</p></header>
+    <div asp-validation-summary="ModelOnly" class="validation-summary" role="alert"></div>
+    <section class="staff-profile-section" aria-labelledby="profile-details-title">
+        <div class="staff-section-heading"><h2 id="profile-details-title">@T("Personal details")</h2><p>@T("Your work account information.")</p></div>
+        <form asp-action="Save" method="post" class="staff-profile-form">
+            <partial name="~/Views/Account/_ContactFields.cshtml" model="Model.Contact" />
+            <div class="staff-profile-account"><div><span>@T("Work email")</span><p>@Model.Email</p></div><div><span>@T("Role")</span><p>@T(Model.Role)</p></div></div>
+            <button class="button" type="submit" data-no-icon>@T("Save changes")</button>
+        </form>
+    </section>
+    @if (Model.CanSetPin)
+    {
+        <section class="staff-profile-section" aria-labelledby="profile-pin-title">
+            <div class="staff-section-heading"><h2 id="profile-pin-title">@T("Staff PIN")</h2><p>@T("Your six-digit workspace sign-in.")</p></div>
+            <div class="staff-profile-security"><p>@T("Verify your work email before choosing a new PIN.")</p><a class="button button-secondary" asp-controller="StaffAccess" asp-action="Setup" data-no-icon>@T("Change PIN")</a></div>
+        </section>
+    }
+    @if (Model.HasPassword)
+    {
+        <section class="staff-profile-section" aria-labelledby="profile-password-title">
+            <div class="staff-section-heading"><h2 id="profile-password-title">@T("Password")</h2><p>@T(Model.Role == "Admin" ? "Changing your password signs you out." : "Changing your password signs you out. You’ll also need to set a new PIN.")</p></div>
+            <partial name="_PasswordForm" model="Model.PasswordChange" />
+        </section>
+    }
+</section>
+@section Scripts {
+    <script src="~/js/auth-feedback.js" asp-append-version="true"></script>
+    <script src="~/js/staff-profile.js" asp-append-version="true"></script>
+}

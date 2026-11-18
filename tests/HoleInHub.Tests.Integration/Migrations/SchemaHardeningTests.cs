@@ -122,9 +122,9 @@ public sealed class SchemaHardeningTests(MongoDbFixture fixture) : IClassFixture
         var saved = await context.Database.GetCollection<BsonDocument>("reservations").Find(new BsonDocument("_id", guest.Id)).SingleAsync();
         Assert.False(saved.Contains("CustomerAccountId"));
         var history = saved["History"].AsBsonArray.Last().AsBsonDocument;
-        Assert.Equal("CancellationRequested", history["EventType"].AsString);
-        Assert.Equal("Pending", history["ReservationStatus"].AsString);
-        Assert.Equal("Cancellation requested", history["Status"].AsString);
+        Assert.Equal("ReservationCancelled", history["EventType"].AsString);
+        Assert.Equal("Cancelled", history["ReservationStatus"].AsString);
+        Assert.Equal("Cancelled", history["Status"].AsString);
     }
 
     [Theory]

@@ -1,0 +1,55 @@
+@using HoleInHub.Business.Accounts
+@model SettingsForm
+@inject Microsoft.Extensions.Options.IOptions<HoleInHub.Business.Reservations.ReservationPolicy> DeploymentPolicy
+@inject Microsoft.Extensions.Hosting.IHostEnvironment HostEnvironment
+@{ Layout="_StaffLayout";ViewData["Title"]="Settings";var admin=User.IsInRole(StaffRoles.Admin);string Time(int minutes)=>minutes==1440?"24:00":TimeSpan.FromMinutes(minutes).ToString(@"hh\:mm"); }
+<section class="staff-workspace settings-page">
+    <header class="staff-workspace-heading service-admin-heading"><h1>Settings</h1><div class="service-admin-actions">@if(admin){<button class="button" type="submit" form="settings-form" data-no-icon>Save changes</button>}</div></header>
+    <form id="settings-form" asp-action="Save" method="post" data-settings-form>
+        <input asp-for="Revision" type="hidden"/><input asp-for="CommandId" type="hidden"/>
+        <div asp-validation-summary="All" class="staff-error" role="alert"></div>
+        <div class="settings-layout">
+            <nav class="settings-nav" aria-label="Settings sections"><a href="#operations">Operations</a><a href="#review">Review coverage</a><a href="#venue">Venue details</a><a href="#policies">Policies</a><a href="#rules">Reservation rules</a><a href="#health">System health</a></nav>
+            <div class="settings-content">
+                @if(!admin){<p class="settings-note">An administrator can change these settings.</p>}
+                <fieldset>
+                    <section id="operations" class="settings-section"><div class="settings-section-heading"><h2>Operations</h2><partial name="_StaffHelp" model='("operations-help", "About operations", "Pausing requests keeps existing bookings and staff operations available. New requests always require staff review.")'/></div>
+                        <label class="service-switch"><span>Online reservation requests</span><input disabled="@(!admin)" asp-for="OnlineEnabled" role="switch"/><span class="service-switch-track" aria-hidden="true"></span></label>
+
+                        <label class="service-switch"><span>Duration policy approved</span><input disabled="@(!admin)" asp-for="DurationsApproved" role="switch"/><span class="service-switch-track" aria-hidden="true"></span></label>
+
+                    </section>
+                    <section id="review" class="settings-section"><div class="settings-section-heading"><h2>Review coverage</h2><partial name="_StaffHelp" model='("coverage-help", "About review coverage", "Times use Asia/Manila. Review coverage must fit within venue operating hours.")'/></div>
+                        <div class="settings-two"><div class="settings-field"><label asp-for="ReviewStartMinutes">Starts</label><select disabled="@(!admin)" asp-for="ReviewStartMinutes">@for(var minute=0;minute<1440;minute+=30){<option value="@minute">@Time(minute)</option>}@if(Model.ReviewStartMinutes%30!=0){<option value="@Model.ReviewStartMinutes">@Time(Model.ReviewStartMinutes)</option>}</select></div>
+                        <div class="settings-field"><label asp-for="ReviewEndMinutes">Ends</label><select disabled="@(!admin)" asp-for="ReviewEndMinutes"><option value="0">Choose time</option>@for(var minute=30;minute<=1440;minute+=30){<option value="@minute">@Time(minute)</option>}@if(Model.ReviewEndMinutes%30!=0){<option value="@Model.ReviewEndMinutes">@Time(Model.ReviewEndMinutes)</option>}</select></div></div>
+                        <fieldset class="settings-days"><legend>Staffed days</legend>@foreach(var day in new[]{1,2,3,4,5,6,0}){<label><input disabled="@(!admin)" type="checkbox" name="ReviewDays" value="@day" checked="@Model.ReviewDays.Contains(day)"/><span>@(((DayOfWeek)day).ToString()[..3])</span></label>}</fieldset>
+                        @if(admin){<div class="settings-field"><label asp-for="StaffEmails">Alert recipients</label><textarea disabled="@(!admin)" asp-for="StaffEmails" rows="2" maxlength="6000" placeholder="One email address per line"></textarea><span asp-validation-for="StaffEmails"></span></div>}
+                        else {<p class="settings-note">Alert recipients are managed by Admin.</p>}
+                    </section>
+                    <section id="venue" class="settings-section"><h2>Venue details</h2><div class="settings-field"><label asp-for="VenueName">Venue name</label><input disabled="@(!admin)" asp-for="VenueName" maxlength="120" required/><span asp-validation-for="VenueName"></span></div><div class="settings-two"><div class="settings-field"><label asp-for="ContactEmail">Contact email</label><input disabled="@(!admin)" asp-for="ContactEmail" type="email" maxlength="254"/><span asp-validation-for="ContactEmail"></span></div><div class="settings-field"><label asp-for="ContactPhone">Contact number</label><input disabled="@(!admin)" asp-for="ContactPhone" type="tel" autocomplete="tel" inputmode="tel" pattern="@HoleInHub.Business.Accounts.ContactRules.PhonePattern" maxlength="16"/><span asp-validation-for="ContactPhone"></span></div></div></section>
+                    <section id="policies" class="settings-section"><div class="settings-section-heading"><h2>Policies</h2><a href="/policies" class="staff-hover-link settings-policy-link" target="_blank" rel="noopener"><span>View published policies</span><partial name="_StaffIcon" model='"arrow-up-right"'/></a></div>
+                        <p class="settings-note">Review the draft wording before publishing.</p>
+                        <label class="service-switch"><span>Publish policies</span><input disabled="@(!admin)" asp-for="PoliciesPublished" role="switch"/><span class="service-switch-track" aria-hidden="true"></span></label>
+                        <div class="settings-field"><label asp-for="BookingPolicy">Booking &amp; cancellation policy</label><textarea disabled="@(!admin)" asp-for="BookingPolicy" rows="4" maxlength="12000"></textarea></div>
+                        <div class="settings-field"><label asp-for="PrivacyPolicy">Privacy policy</label><textarea disabled="@(!admin)" asp-for="PrivacyPolicy" rows="4" maxlength="12000"></textarea></div>
+                        <div class="settings-field"><label asp-for="VenueRules">Venue rules</label><textarea disabled="@(!admin)" asp-for="VenueRules" rows="4" maxlength="12000"></textarea></div>
+                    </section>
+                </fieldset>
+                <section id="rules" class="settings-section"><div class="settings-section-heading"><h2>Reservation rules</h2><partial name="_StaffHelp" model='("rules-help", "About reservation rules", "These rules are enforced by the application. Changing policy text does not change booking behavior.")'/></div><dl class="settings-facts"><dt>Venue hours</dt><dd>Monday 11:00–24:00; Tuesday–Sunday 10:00–24:00</dd><dt>Session duration</dt><dd>30-minute minimum and increments</dd><dt>Review deadlines</dt><dd>Regular 30 minutes; VIP and coaching 60 minutes</dd><dt>Review alerts</dt><dd>Regular at 15/25 minutes; VIP and coaching at 30/50 minutes</dd><dt>Customer cancellation</dt><dd>At least one hour before the session</dd><dt>Bay capacity</dt><dd>6 players; 8 total guests in Regular, 10 in VIP</dd><dt>Whole-shop deposit</dt><dd>50% · simulated checkout only</dd></dl></section>
+                <section id="health" class="settings-section" data-settings-health data-health-url="@Url.Action("Health")">
+                    <div class="settings-section-heading"><h2>System health</h2><button class="staff-hover-link" type="button" data-health-refresh>Refresh status</button></div>
+                    <dl class="settings-facts">
+                        <dt>Application</dt><dd>Responding</dd>
+                        <dt>Database &amp; schema</dt><dd data-health-status role="status">Not checked</dd>
+                        <dt>Connection</dt><dd>@(Context.Request.IsHttps ? "HTTPS" : "HTTP") <partial name="_StaffHelp" model='("https-help", "About HTTPS", "TLS certificates are installed and renewed through hosting. Private keys are never stored in venue settings.")'/></dd>
+                        <dt>Deposit checkout</dt><dd>@((HostEnvironment.EnvironmentName is "Development" or "Demo") && DeploymentPolicy.Value.DemoPaymentsEnabled ? "Simulation enabled · no real money" : "Disabled") <partial name="_StaffHelp" model='("deposit-help", "About deposit checkout", "Simulated deposits require the Demo environment and ReservationPolicy__DemoPaymentsEnabled=true in hosting configuration. Live POS integration is not available.")'/></dd>
+                    </dl>
+                    <p class="settings-note" data-health-time>Refresh to check database readiness.</p>
+                </section>
+                @if(Model.UpdatedUtc.HasValue){<p class="settings-note">Last saved @TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(Model.UpdatedUtc.Value,DateTimeKind.Utc),HoleInHub.Business.Reservations.ReservationRules.Manila).ToString("dd MMM yyyy, h:mm tt") · Manila</p>}
+            </div>
+        </div>
+    </form>
+    <dialog class="logout-confirmation" data-settings-confirm aria-labelledby="settings-confirm-title"><h2 id="settings-confirm-title">Save settings?</h2><p>New reservation requests will use this review coverage. Existing booking deadlines stay unchanged.</p><div class="logout-actions"><button type="button" class="button button-secondary" data-settings-cancel autofocus>Cancel</button><button type="button" class="button" data-settings-save>Save changes</button></div></dialog>
+</section>
+@section Scripts {<script src="~/js/settings.js" asp-append-version="true"></script>}

@@ -1,18 +1,24 @@
+@using HoleInHub.Business.Accounts
 @model HoleInHub.Business.Reservations.ReservationPolicy
 @{
     ViewData["Title"] = "Settings";
-    var days = Model.ReviewDays.Where(x => x is >= 0 and <= 6).Select(x => ((DayOfWeek)x).ToString());
+    var isAdmin = User.IsInRole(StaffRoles.Admin);
 }
 <section class="staff-workspace staff-review leadership-page">
     <header class="staff-workspace-heading"><h1>Settings</h1><p>Review the deployed booking policy. These settings are managed through deployment configuration.</p></header>
     <section class="review-section">
-        <h2>Staff review coverage</h2>
+        <h2>Reservation review alerts</h2>
         <dl class="review-facts">
-            <dt>Status</dt><dd>@(Model.Approved ? "Approved" : "Awaiting approval")</dd>
-            <dt>Review days</dt><dd>@(days.Any() ? string.Join(", ", days) : "No days configured")</dd>
-            <dt>Hours</dt><dd>@Model.ReviewStart.ToString(@"hh\:mm")–@(Model.ReviewEnd == TimeSpan.FromDays(1) ? "24:00" : Model.ReviewEnd.ToString(@"hh\:mm")) · Manila time</dd>
-            <dt>Alert recipients</dt><dd>@(Model.StaffEmails.Length > 0 ? string.Join(", ", Model.StaffEmails) : "No recipients configured")</dd>
-            <dt>Duration policy</dt><dd>@(Model.DurationsApproved ? "Approved" : "Awaiting approval")</dd>
+            <dt>Review coverage</dt><dd>@(Model.Approved ? "Approved" : "Awaiting approval")</dd>
+            <dt>Recipients</dt><dd>@Model.StaffEmails.Length configured</dd>
+            @if (isAdmin)
+            {
+                var days = Model.ReviewDays.Where(x => x is >= 0 and <= 6).Select(x => ((DayOfWeek)x).ToString()).ToArray();
+                <dt>Review days</dt><dd>@(days.Length > 0 ? string.Join(", ", days) : "No days configured")</dd>
+                <dt>Hours</dt><dd>@Model.ReviewStart.ToString(@"hh\:mm")–@(Model.ReviewEnd == TimeSpan.FromDays(1) ? "24:00" : Model.ReviewEnd.ToString(@"hh\:mm")) · Manila time</dd>
+                <dt>Alert recipients</dt><dd>@(Model.StaffEmails.Length > 0 ? string.Join(", ", Model.StaffEmails) : "No recipients configured")</dd>
+                <dt>Duration policy</dt><dd>@(Model.DurationsApproved ? "Approved" : "Awaiting approval")</dd>
+            }
         </dl>
     </section>
 </section>

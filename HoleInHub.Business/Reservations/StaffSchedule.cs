@@ -3,7 +3,7 @@ namespace HoleInHub.Business.Reservations;
 public sealed record StaffScheduleBay(string Name, bool Active, IReadOnlyList<StaffScheduleEntry> Entries, string Service = "Regular", string Id = "");
 public sealed record StaffScheduleEntry(DateTime Start, DateTime End, string Status,
     string? ReservationId = null, string? Reference = null, string? Service = null, string? Guest = null, int Attendees = 0, string? Reason = null, string? BlockId = null, DateTime? CheckedOut = null,
-    long Revision = 0, bool CanMove = false)
+    long Revision = 0, bool CanMove = false, string Location = "", int BayCount = 1, string? MoveRestriction = null)
 {
     public bool HoldsCapacity => Status is "Pending" or "Confirmed" or "Checked-In" or "Blocked";
 }
@@ -20,7 +20,7 @@ public sealed partial class ReservationService
     {
         var start = TimeZoneInfo.ConvertTimeToUtc(day.ToDateTime(TimeOnly.MinValue), ReservationRules.Manila);
         var end = TimeZoneInfo.ConvertTimeToUtc(day.AddDays(1).ToDateTime(TimeOnly.MinValue), ReservationRules.Manila);
-        var (resources, bookings, blocks) = await persistence.ReadScheduleAsync(start, end, ct);
+        var (resources, bookings, blocks) = await persistence.ReadScheduleAsync(start, end, ct, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime);
         var bookingBays = bookings.SelectMany(booking => booking.ResourceIds.Select(id =>
             (Id: id, Name: booking.ResourceNames.GetValueOrDefault(id, id))));
         var bays = resources.Select(resource => (resource.Id, resource.Name, resource.Active, resource.Service))
@@ -40,9 +40,14 @@ public sealed partial class ReservationService
 
     private static DateTime Local(DateTime utc) => TimeZoneInfo.ConvertTimeFromUtc(utc, ReservationRules.Manila);
 
-    private StaffScheduleEntry ScheduleEntry(HoleInHub.Data.Reservations.ReservationRecord booking) =>
-        new(Local(booking.StartUtc), Local(booking.EndUtc), booking.Status, booking.Id, booking.Reference,
+    private StaffScheduleEntry ScheduleEntry(HoleInHub.Data.Reservations.ReservationRecord booking)
+    {
+        var restriction = StaffMoveRestriction(Map(booking), (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime);
+        return new(Local(booking.StartUtc), Local(booking.EndUtc), booking.Status, booking.Id, booking.Reference,
             booking.Service, $"{booking.FirstName} {booking.LastName}".Trim(), booking.Attendees,
             CheckedOut: booking.CheckedOutUtc.HasValue ? Local(booking.CheckedOutUtc.Value) : null,
-            Revision: booking.Revision, CanMove: CanMoveStaffBooking(Map(booking), (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime));
+            Revision: booking.Revision, CanMove: restriction is null,
+            Location: string.Join(", ", booking.ResourceIds.Select(id => booking.ResourceNames.GetValueOrDefault(id, id))),
+            BayCount: booking.ResourceIds.Length, MoveRestriction: restriction);
+    }
 }

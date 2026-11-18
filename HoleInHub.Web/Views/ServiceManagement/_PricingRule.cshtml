@@ -1,0 +1,76 @@
+@model (string Key, PricingBandForm? Band, RentalPriceForm? Rental)
+@{
+    var group = Model.Rental is null ? "Bands" : "RentalOverrides";
+    var prefix = $"{group}[{Model.Key}]";
+    var id = $"{group}-{Model.Key}";
+    var day = Model.Band?.Day ?? Model.Rental?.Day;
+    var date = Model.Band?.Date ?? Model.Rental?.Date;
+    var dateText = date?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+    var start = Model.Band?.Start?.ToString("HH:mm");
+    var end = Model.Band?.EndsAtMidnight == true ? "24:00" : Model.Band?.End?.ToString("HH:mm");
+    string Number(decimal value) => value == 0 ? "" : value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    string Peso(decimal value) => value > 0 ? $"₱{value:#,##0.##}" : "Set rate";
+}
+<details class="service-disclosure service-price-rule" data-price-row>
+    <summary>
+        <span data-rule-day>@(dateText ?? day?.ToString() ?? (Model.Band is null ? "Rental override" : "Rate band"))</span>
+        @if (Model.Band is { } rateBand)
+        {
+            <span class="service-rule-summary" data-rule-rate>@(start is not null && end is not null ? $"{start}–{end} · " : "")@Peso(rateBand.Rate)</span>
+        }
+        else if (Model.Rental is { } rentalRate)
+        {
+            <span class="service-rule-summary" data-rule-rate>@Peso(rentalRate.HalfDayRate) / @Peso(rentalRate.WholeDayRate)</span>
+        }
+    </summary>
+    <fieldset class="service-rule-grid">
+        <legend class="sr-only">Price rule</legend>
+        <input type="hidden" name="@(group).Index" value="@Model.Key" />
+        <div class="auth-input-wrap">
+            <select id="@(id)-day" name="@(prefix).Day" data-native-select><option value="">Choose a day</option>
+                @foreach (var weekday in Enum.GetValues<DayOfWeek>())
+                {
+                    <option value="@weekday" selected="@(weekday == day)">@weekday</option>
+                }
+            </select>
+            <label for="@(id)-day">Weekday</label>
+        </div>
+        <div class="auth-input-wrap">
+            <input id="@(id)-date" type="date" name="@(prefix).Date" value="@dateText" />
+            <label for="@(id)-date">Specific date</label>
+        </div>
+        @if (Model.Band is { } band)
+        {
+            <div class="auth-input-wrap">
+                <input id="@(id)-start" type="time" step="1800" name="@(prefix).Start" value="@band.Start?.ToString("HH:mm")" />
+                <label for="@(id)-start">Starts</label>
+            </div>
+            <div class="auth-input-wrap">
+                <input id="@(id)-end" type="time" step="1800" name="@(prefix).End" value="@band.End?.ToString("HH:mm")" />
+                <label for="@(id)-end">Ends</label>
+            </div>
+            <div class="auth-input-wrap">
+                <input id="@(id)-rate" type="number" min="0.01" step="0.01" name="@(prefix).Rate" value="@Number(band.Rate)" placeholder=" " />
+                <label for="@(id)-rate">Rate (₱)</label>
+            </div>
+        }
+        else if (Model.Rental is { } rental)
+        {
+            <div class="auth-input-wrap">
+                <input id="@(id)-half" type="number" min="0.01" step="0.01" name="@(prefix).HalfDayRate" value="@Number(rental.HalfDayRate)" placeholder=" " />
+                <label for="@(id)-half">Half day (₱)</label>
+            </div>
+            <div class="auth-input-wrap">
+                <input id="@(id)-whole" type="number" min="0.01" step="0.01" name="@(prefix).WholeDayRate" value="@Number(rental.WholeDayRate)" placeholder=" " />
+                <label for="@(id)-whole">Whole day (₱)</label>
+            </div>
+        }
+        <div class="service-rule-actions">
+            @if (Model.Band is { } hourlyBand)
+            {
+                <label class="service-midnight"><input type="checkbox" name="@(prefix).EndsAtMidnight" value="true" checked="@hourlyBand.EndsAtMidnight" /> Ends at midnight</label>
+            }
+            <button type="button" class="service-rule-delete" data-remove-price aria-label="Delete price rule" title="Delete price rule"><partial name="_StaffIcon" model='"trash"' /></button>
+        </div>
+    </fieldset>
+</details>

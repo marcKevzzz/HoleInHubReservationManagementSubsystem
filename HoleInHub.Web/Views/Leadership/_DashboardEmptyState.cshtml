@@ -1,0 +1,7 @@
+@model (string Icon, string Title, string Message)
+
+<div class="dashboard-empty-state">
+    <partial name="_StaffIcon" model="@Model.Icon" />
+    <h3>@Model.Title</h3>
+    <p>@Model.Message</p>
+</div>
