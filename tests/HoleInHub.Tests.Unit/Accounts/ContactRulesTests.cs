@@ -6,6 +6,22 @@ namespace HoleInHub.Tests.Unit.Accounts;
 public sealed class ContactRulesTests
 {
     [Theory]
+    [InlineData("PH", "639171234567", true)]
+    [InlineData("PH", "6391712345678", false)]
+    [InlineData("KR", "821012345678", true)]
+    [InlineData("KR", "8210123456789", false)]
+    [InlineData("CN", "8613812345678", true)]
+    [InlineData("CN", "86138123456789", false)]
+    [InlineData("US", "14155552671", true)]
+    [InlineData("US", "141555526711", false)]
+    [InlineData("JP", "819012345678", true)]
+    [InlineData("JP", "8190123456789", false)]
+    [InlineData("CN", "14155552671", false)]
+    [InlineData("missing", "14155552671", false)]
+    public void ProfileCountryLimitsRejectExtraDigitsAndMismatchedPrefixes(string country, string value, bool valid) =>
+        Assert.Equal(valid, ContactRules.IsCountryPhone(country, value));
+
+    [Theory]
     [InlineData("María-José", true)]
     [InlineData("O’Connor", true)]
     [InlineData("王小明", true)]

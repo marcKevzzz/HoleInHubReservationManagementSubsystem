@@ -54,7 +54,7 @@ function animatePage(root) {
   let media;
   const context = gsap.context(() => {
     media = gsap.matchMedia();
-    media.add({ motion: '(prefers-reduced-motion: no-preference)', desktop: '(min-width: 701px)' }, ({ conditions }) => {
+    media.add({ motion: '(prefers-reduced-motion: no-preference)', desktop: '(min-width: 701px)', contactDesktop: '(min-width: 901px)' }, ({ conditions }) => {
       if (!conditions.motion) return;
       const desktop = conditions.desktop;
       const heroes = root.querySelectorAll('.hero'); heroes.forEach((section,index)=>{if(index>0){section.querySelector('.hero-content')?.classList.replace('hero-content','statement-content');}}); const hero = root.querySelector('.hero');
@@ -97,6 +97,63 @@ function animatePage(root) {
       };
 
       root.querySelectorAll('[data-venue-title]').forEach(element => revealHeading(element, true));
+
+      root.querySelectorAll('.venue-contact > section').forEach(section => {
+        const entrance = gsap.timeline({
+          defaults: { ease: 'none' },
+          scrollTrigger: { trigger: section, start: 'top 88%', end: 'top 48%', scrub: .8 },
+        })
+          .from(section.querySelectorAll('h2 .split-word'), { yPercent: 110, duration: .85, stagger: .05 }, 0)
+          .from(section.querySelectorAll('dl > div, p, address, .venue-icon, .button, .venue-social-link'), {
+            y: 20, opacity: 0, duration: .65, stagger: .08,
+          }, .2);
+        const finish = () => { entrance.scrollTrigger.disable(false); entrance.progress(1).pause(); };
+        const resume = event => {
+          if (!section.contains(event.relatedTarget)) { entrance.scrollTrigger.enable(false, false); entrance.scrollTrigger.update(); }
+        };
+        section.addEventListener('focusin', finish);
+        section.addEventListener('focusout', resume);
+        cleanup.push(() => { section.removeEventListener('focusin', finish); section.removeEventListener('focusout', resume); });
+      });
+
+      const clubhouse = root.querySelector('.venue-location-content');
+      if (clubhouse && conditions.contactDesktop) {
+        // ScrollSmoother transforms the page, so native sticky needs a scroll pin here.
+        gsap.set(clubhouse, { position: 'relative', top: 0 });
+        ScrollTrigger.create({
+          trigger: clubhouse,
+          start: 'top 124px',
+          end: () => '+=' + Math.max(0, clubhouse.closest('.venue-contact').querySelector('.venue-reach').offsetTop - clubhouse.closest('.venue-location').offsetTop),
+          pin: true,
+          pinSpacing: false,
+          invalidateOnRefresh: true,
+        });
+      }
+
+      root.querySelectorAll('.venue-next h2').forEach(heading => {
+        gsap.timeline({
+          defaults: { ease: 'none' },
+          scrollTrigger: { trigger: heading, start: 'top 90%', end: 'top 45%', scrub: .8 },
+        })
+          .from(heading.querySelectorAll('.split-word'), { yPercent: 110, duration: 1, stagger: .08 })
+          .from(heading.parentElement.querySelector('.button'), { y: 24, opacity: 0, duration: .7 }, .35);
+      });
+
+      root.querySelectorAll('.venue-contact-heading').forEach(heading => {
+        gsap.from(heading.querySelector('.venue-contact-image'), { opacity: 0, duration: 1, ease: 'power3.out' });
+        gsap.from(heading.querySelector('.venue-contact-copy p'), { y: 20, opacity: 0, duration: .7, delay: .5, ease: 'power3.out' });
+        gsap.fromTo(heading, { scale: 1 }, {
+          scale: desktop ? .94 : .98,
+          ease: 'none',
+          scrollTrigger: { trigger: heading, start: 'top top', end: 'bottom top', scrub: .2 },
+        });
+        gsap.fromTo(heading.querySelector('.venue-contact-image'), { scale: 1.14, yPercent: -4 }, {
+          scale: 1.08,
+          yPercent: 4,
+          ease: 'none',
+          scrollTrigger: { trigger: heading, start: 'top bottom', end: 'bottom top', scrub: .2 },
+        });
+      });
 
       root.querySelectorAll('.intro h2,.mosaic-copy h2,.statement h2,.venue-promotions h2,.about-teaser h2,.final-cta h2,.contact-gallery h2')
         .forEach(element => revealHeading(element));

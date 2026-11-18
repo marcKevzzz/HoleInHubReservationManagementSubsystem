@@ -29,15 +29,15 @@
                     <a class="account-inbox-link" asp-controller="Reservations" asp-action="Details" asp-route-id="@item.BookingId">
                         <span class="account-inbox-icon"><partial name="_StaffIcon" model="item.Icon" /></span>
                         <span class="account-inbox-copy">
-                            <strong>@T(item.Title)</strong>
+                            <strong>@T(item.Title)@if (item.Unread)
+                                {
+                                    <span class="notification-new"><span class="account-unread-dot" aria-hidden="true"></span><span class="sr-only">@T("Unread notification")</span></span>
+                                }
+                            </strong>
                             <span>@T(item.Message)</span>
                             <small>@item.Reference</small>
                         </span>
                         <span class="account-inbox-side">
-                            @if (item.Unread)
-                            {
-                                <span class="notification-new"><span class="account-unread-dot" aria-hidden="true"></span><span class="sr-only">@T("Unread notification")</span></span>
-                            }
                             <time datetime="@item.AtUtc.ToString("O")" title="@local.ToString("g") · Manila">@local.ToString("d MMM")</time>
                             <partial name="_StaffIcon" model='"arrow-up-right-compact"' />
                         </span>

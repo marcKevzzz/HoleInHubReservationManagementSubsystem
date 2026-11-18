@@ -1,22 +1,310 @@
 /* Shared editorial rhythm for the venue pages. */
-.page-content.venue-page{max-width:1440px}
-.venue-heading{margin-bottom:clamp(32px,5vw,72px)}
-.venue-heading h1{font-size:clamp(38px,6vw,88px);line-height:1.05;margin:0 0 20px;text-wrap:balance}
-.venue-heading p{max-width:59ch;color:var(--color-muted);font-size:clamp(15px,1.5vw,19px);line-height:1.7;margin:0}
-.venue-contact{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:clamp(24px,5vw,72px)}
-.venue-contact{border-top:1px solid var(--color-line);padding-top:24px;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-.venue-contact :is(h2){font-size:clamp(24px,3vw,38px);margin:0 0 12px}
-.venue-contact-photo{display:block;width:100%;aspect-ratio:21/8;object-fit:cover;object-position:center 62%;margin-top:clamp(32px,5vw,64px)}
-.venue-contact-info p{color:var(--color-muted);margin:0;line-height:1.6}
-.venue-location address{font-style:normal;line-height:1.7;margin-bottom:20px}
-.venue-contact-info section+section{border-top:1px solid var(--color-line);margin-top:24px;padding-top:24px}
-.venue-contact-info dl,.venue-contact-info ul{margin:0 0 12px;padding:0}
-.venue-contact-info ul{list-style:none;display:grid;gap:12px;overflow-wrap:anywhere}
-.venue-contact-info dl div{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 16px;padding:10px 0}
-.venue-contact-info dd{margin:0}
-.venue-next{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;border-top:1px solid var(--color-line);margin-top:clamp(36px,6vw,80px);padding-top:24px}
-.venue-next h2{margin:0}
-.page-content.venue-about,.page-content.venue-about-end{min-height:0}
-.page-content.venue-about{padding-bottom:0}
-.page-content.venue-about-end{padding-top:0}
-@media(max-width:700px){.venue-contact{grid-template-columns:minmax(0,1fr)}.venue-contact-photo{aspect-ratio:16/10}}
+.page-content.venue-page {
+    max-width: 1440px
+}
+
+.venue-heading {
+    margin-bottom: clamp(32px, 5vw, 72px)
+}
+
+.venue-heading h1 {
+    font-size: clamp(38px, 6vw, 88px);
+    line-height: 1.05;
+    margin: 0 0 20px;
+    text-wrap: balance
+}
+
+.venue-heading p {
+    max-width: 59ch;
+    color: var(--color-muted);
+    font-size: clamp(15px, 1.5vw, 19px);
+    line-height: 1.7;
+    margin: 0
+}
+
+/* Contact: flat editorial layout - visit info, hours, then social icon buttons. */
+.venue-contact {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(28px, 5vw, 72px);
+    padding-top: 24px
+}
+
+.venue-contact h2 {
+    font-size: clamp(24px, 3vw, 38px);
+    line-height: 1.15;
+    margin: 0 0 12px
+}
+
+.venue-contact>section {
+    min-width: 0
+}
+
+.venue-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 20px
+}
+
+.venue-row address {
+    font-style: normal;
+    line-height: 1.7;
+    overflow-wrap: anywhere
+}
+
+.venue-icon {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    margin-top: 3px
+}
+
+.venue-hours dl {
+    margin: 0 0 12px;
+    padding: 0
+}
+
+.venue-hours dl div {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px 16px;
+    padding: 10px 0
+}
+
+.venue-hours dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums
+}
+
+.venue-hours p {
+    color: var(--color-muted);
+    margin: 0;
+    line-height: 1.6
+}
+
+.venue-reach {
+    grid-column: 1/-1;
+    padding-top: 0
+}
+
+.venue-social {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none
+}
+
+.venue-social-link {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    color: var(--color-ink);
+    background: transparent;
+    transition: background-color .25s, color .25s, border-color .25s, transform .25s, box-shadow .25s
+}
+
+.venue-social-link svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform .25s
+}
+
+.venue-social-link:hover,
+.venue-social-link:focus-visible {
+    color: var(--color-green);
+    transform: translateY(-2px)
+}
+
+.venue-social-link:hover svg,
+.venue-social-link:focus-visible svg {
+    transform: scale(1.1)
+}
+
+.venue-social-link:active {
+    transform: translateY(-1px)
+}
+
+.venue-social-link:focus-visible,
+.venue-page .button:focus-visible {
+    outline: 2px solid var(--color-green);
+    outline-offset: 3px
+}
+
+.venue-social-link .venue-social-filled {
+    fill: currentColor;
+    stroke: none
+}
+
+/* Button hover effects for every button on the venue pages. */
+.venue-page .button {
+    transition: background-color .25s, color .25s, border-color .25s, transform .25s, box-shadow .25s
+}
+
+.venue-page .button:hover,
+.venue-page .button:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px -10px rgb(16 17 15 / 45%)
+}
+
+.venue-page .button.button-secondary:hover,
+.venue-page .button.button-secondary:focus-visible {
+    background: var(--color-green);
+    border-color: var(--color-green);
+    color: var(--color-paper)
+}
+
+.venue-page .button:active {
+    transform: translateY(0);
+    box-shadow: none
+}
+
+@media(prefers-reduced-motion:reduce) {
+
+    .venue-social-link,
+    .venue-social-link svg,
+    .venue-page .button {
+        transition: none
+    }
+
+    .venue-social-link:hover,
+    .venue-social-link:focus-visible,
+    .venue-page .button:hover,
+    .venue-page .button:focus-visible {
+        transform: none
+    }
+}
+
+.page-content.venue-contact-page {
+    max-width: none;
+    padding-inline: 0;
+    padding-bottom: 45px
+}
+
+.venue-contact-page .venue-next {
+    flex-direction: column;
+    justify-content: center;
+    text-align: center
+}
+
+.venue-play { color: var(--color-green) }
+
+.venue-contact-page > :is(.venue-contact, .venue-next) {
+    width: calc(100% - 2 * var(--gutter));
+    max-width: calc(1440px - 2 * var(--gutter));
+    margin-inline: auto
+}
+
+.venue-contact-heading {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    text-align: center;
+    min-height: clamp(360px, 42vw, 560px);
+    padding: clamp(24px, 5vw, 64px);
+    background: var(--color-ink);
+    color: var(--color-paper)
+}
+
+.venue-contact-image {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 62%
+}
+
+.venue-contact-heading::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--color-auth-shade)
+}
+
+.venue-contact-copy { min-width: 0; width: 100% }
+.venue-contact-heading p { color: inherit; margin-inline: auto }
+.venue-contact-heading h1 { font-size: clamp(32px, 5.6vw, 80px); text-transform: uppercase }
+.venue-contact-heading .split-word-wrap { max-width: 100% }
+.venue-contact + .venue-next { border-top: 0; padding-top: 0 }
+
+.venue-next {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    border-top: 1px solid var(--color-line);
+    margin-top: clamp(36px, 6vw, 80px);
+    padding-top: 24px
+}
+
+.venue-next h2 {
+    margin: 0
+}
+
+.page-content.venue-about,
+.page-content.venue-about-end {
+    min-height: 0
+}
+
+.page-content.venue-about {
+    padding-bottom: 0
+}
+
+.page-content.venue-about-end {
+    padding-top: 0
+}
+
+@media(max-width:900px) {
+    .venue-contact {
+        grid-template-columns: minmax(0, 1fr)
+    }
+}
+
+@media(min-width:901px) {
+    .venue-contact {
+        grid-template-rows: minmax(240px, auto) minmax(220px, auto)
+    }
+
+    .venue-location {
+        grid-column: 2;
+        grid-row: 1 / span 2
+    }
+
+    .venue-location-content {
+        position: sticky;
+        top: 124px
+    }
+
+    .venue-reach { grid-column: 1 }
+}
+
+@media(max-width:700px) {
+    .venue-reach { text-align: center }
+
+    .venue-social {
+        gap: 10px;
+        justify-content: center
+    }
+}

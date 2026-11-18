@@ -60,6 +60,7 @@ Contact|연락처
 Email address|이메일 주소
 Email address *|이메일 주소 *
 Email|이메일
+Call|전화
 Password|비밀번호
 Confirm password|비밀번호 확인
 First name|이름
@@ -171,6 +172,7 @@ History|변경 내역
 All times are Asia/Manila.|모든 시간은 마닐라 시간(Asia/Manila) 기준입니다.
 All times are in Asia/Manila.|모든 시간은 마닐라 시간(Asia/Manila) 기준입니다.
 Manila time|마닐라 시간
+PH Manila Time|필리핀 마닐라 시간
 Start time|시작 시간
 Start time · Manila|시작 시간 · 마닐라
 Start time · Asia/Manila|시작 시간 · 마닐라
@@ -409,6 +411,15 @@ COME TOGETHER.|함께 모이세요.
 EXPLORE THE EXPERIENCE|체험 둘러보기
 EXPLORE THE PROGRAMS|프로그램 둘러보기
 CONTACT & LOCATION|연락처 및 위치
+Contact Us|문의하기
+Phone country code|전화 국가 코드
+Philippines|필리핀
+South Korea|대한민국
+China|중국
+United States|미국
+Japan|일본
+International|국제 전화번호
+Include the country code for international numbers.|국제 전화번호에는 국가 코드를 포함해 주세요.
 CONTACT THE VENUE|매장에 문의하기
 Explore availability|예약 가능 여부 보기
 Opening hours|영업시간

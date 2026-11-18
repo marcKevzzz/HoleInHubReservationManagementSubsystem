@@ -15,6 +15,7 @@ if(typeof window!=='undefined')window.HoleInHubContacts=ContactInputs;
 if(typeof module!=='undefined')module.exports=ContactInputs;
 if(typeof document!=='undefined'){
  document.querySelectorAll('input[autocomplete="given-name"],input[autocomplete="family-name"],input[autocomplete="tel"],input[type="tel"]').forEach(input=>{
+  if(input.hasAttribute?.('data-profile-contact'))return;
   const isPhone=input.autocomplete==='tel'||input.type==='tel';
   const clean=isPhone?ContactInputs.phone:ContactInputs.name;
   function sanitize(){

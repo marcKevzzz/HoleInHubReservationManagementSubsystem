@@ -9,6 +9,10 @@ public class AccountContactModel
     [Required, StringLength(100), RegularExpression(ContactRules.NamePattern, ErrorMessage = ContactRules.NameError), Display(Name = "Last name")] public string LastName { get; set; } = "";
     [Required, StringLength(16), RegularExpression(ContactRules.PhonePattern, ErrorMessage = ContactRules.PhoneError), Display(Name = "Contact number")] public string Phone { get; set; } = "";
 }
+public sealed class AccountProfileModel : AccountContactModel
+{
+    public string? PhoneCountry { get; set; }
+}
 public sealed class SignUpModel : AccountContactModel
 {
     [StringLength(2048)] public string? ReturnUrl { get; set; }

@@ -61,11 +61,11 @@ public sealed class AccountHubController(UserManager<AccountUser> users, Reserva
         }
 
         ViewData["Email"] = user.Email;
-        return View(new AccountContactModel { FirstName = user.FirstName, LastName = user.LastName, Phone = HoleInHub.Business.Accounts.ContactRules.PhoneDigits(user.Phone) });
+        return View(new AccountProfileModel { FirstName = user.FirstName, LastName = user.LastName, Phone = HoleInHub.Business.Accounts.ContactRules.PhoneDigits(user.Phone) });
     }
 
     [HttpPost("/my-profile"), ValidateAntiForgeryToken]
-    public async Task<IActionResult> Profile(AccountContactModel model, CancellationToken ct)
+    public async Task<IActionResult> Profile(AccountProfileModel model, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         var user = await users.GetUserAsync(User);
@@ -75,6 +75,10 @@ public sealed class AccountHubController(UserManager<AccountUser> users, Reserva
         }
 
         ViewData["Email"] = user.Email;
+        if (!string.IsNullOrEmpty(model.PhoneCountry) && !HoleInHub.Business.Accounts.ContactRules.IsCountryPhone(model.PhoneCountry, model.Phone))
+        {
+            ModelState.AddModelError(nameof(model.Phone), "Check the contact number's length and selected country code.");
+        }
         if (!ModelState.IsValid)
         {
             return View(model);
