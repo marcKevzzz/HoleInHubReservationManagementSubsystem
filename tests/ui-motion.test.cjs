@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const source = fs.readFileSync(require('node:path').join(__dirname, '../HoleInHub.Web/wwwroot/js/ui-motion.js'), 'utf8');
 
 test('shared smooth scrolling respects the desktop motion query and starts paused behind a modal', () => {
-    const content = {};
+    const content = { querySelector: () => null };
     const wrapper = { querySelector: () => content };
     let mount, options, pauseArgs, killed;
     const events = {};

@@ -192,6 +192,7 @@
 .page-content.venue-contact-page {
     max-width: none;
     padding-inline: 0;
+    padding-top: 0;
     padding-bottom: 45px
 }
 
@@ -218,7 +219,7 @@
     isolation: isolate;
     overflow: hidden;
     text-align: center;
-    min-height: clamp(360px, 42vw, 560px);
+    min-height: clamp(360px, 38vw, 510px);
     padding: clamp(24px, 5vw, 64px);
     background: var(--color-ink);
     color: var(--color-paper)

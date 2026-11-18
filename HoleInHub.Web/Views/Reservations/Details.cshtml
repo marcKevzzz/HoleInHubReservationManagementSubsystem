@@ -140,8 +140,6 @@
                 {
                     <a class="button" asp-controller="Reservations" asp-action="Checkout" asp-route-id="@Model.Id" asp-route-token="@ViewData["AccessToken"]" asp-route-guest="@(ViewData["GuestAccess"] is true?"true":null)">@T("Review deposit")</a>
                 }
-                @if(ViewData["GuestAccess"] is true){<a class="booking-text-link" href="/guest/reservations/details/@Uri.EscapeDataString(Model.Id)">@T("Refresh booking status")</a>}
-                else{<a class="booking-text-link" asp-controller="Reservations" asp-action="Status" asp-route-id="@Model.Id" asp-route-token="@ViewData["AccessToken"]">@T("Refresh booking status")</a>}
             </div>
             @if (Model.CancellationRequested)
             {
@@ -163,13 +161,13 @@
             }
             @if (ReservationService.CanRequestScheduleChange(Model, DateTime.UtcNow))
             {
-                <a class="button button-secondary" asp-controller="Reservations" asp-action="Change" asp-route-id="@Model.Id" asp-route-token="@ViewData["AccessToken"]"
+                <a class="button button-secondary booking-detail-action" asp-controller="Reservations" asp-action="Change" asp-route-id="@Model.Id" asp-route-token="@ViewData["AccessToken"]"
                    asp-route-guest="@(ViewData["GuestAccess"] is true ? "true" : null)">@T("Request schedule change")</a>
             }
             @if (ReservationService.CanCancelOnline(Model, now))
             {
-                <details class="booking-cancellation">
-                    <summary class="focus-visible:ring-2">@(Model.Service == "WholeShop" ? T("Request cancellation") : T("Cancel reservation"))</summary>
+                <details class="booking-cancellation booking-cancel-confirmation" data-booking-cancel>
+                    <summary class="button booking-detail-action booking-danger">@(Model.Service == "WholeShop" ? T("Request cancellation") : T("Cancel reservation"))</summary>
                     <form asp-controller="Reservations" asp-action="RequestCancellation" asp-route-id="@Model.Id"
                           asp-route-guest="@(ViewData["GuestAccess"] is true ? "true" : null)" method="post">
                         <input type="hidden" name="token" value="@ViewData["AccessToken"]" />
@@ -181,7 +179,7 @@
                         {
                             <p>@T("This cancels your reservation immediately and releases any remaining bay hold.")</p>
                         }
-                        <button class="button button-secondary" type="submit">@(Model.Service == "WholeShop" ? T("Send cancellation request") : T("Confirm cancellation"))</button>
+                        <button class="button booking-danger" type="submit">@(Model.Service == "WholeShop" ? T("Send cancellation request") : T("Confirm cancellation"))</button>
                     </form>
                 </details>
             }
@@ -200,3 +198,5 @@
         <a class="button button-secondary booking-return-link" data-icon-left href="/my-reservations">@T("Back to My Reservations")</a>
     }
 </div>
+
+@section Scripts { <script src="~/js/booking-cancellation.js" asp-append-version="true"></script> }

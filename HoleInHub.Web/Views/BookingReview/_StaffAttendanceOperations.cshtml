@@ -16,7 +16,7 @@
 {
     var saved = Model.AttendanceForm?.Action == action.Key ? Model.AttendanceForm : null;
     var status = saved?.CorrectedStatus ?? booking.Status;
-    <details class="review-section attendance-operation" open="@(saved is not null)">
+    <details class="review-section attendance-operation" data-attendance-operation="@action.Key" open="@(saved is not null)">
         <summary>@action.Title</summary>
         <form asp-action="Attendance" asp-route-id="@booking.Id" asp-route-date="@Model.ScheduleDate"
               asp-route-fromQueue="@Model.FromQueue" asp-route-filter="@Model.Queue.Filter" asp-route-day="@Model.Queue.Day" asp-route-sort="@Model.Queue.Sort"

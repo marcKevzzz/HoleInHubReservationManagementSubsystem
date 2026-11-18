@@ -33,7 +33,7 @@
                 disposeMotion = window.HoleInHubMotion?.mount(catalog);
                 window.ScrollTrigger?.refresh();
             }
-            status.textContent = 'Current offerings from the venue.';
+            status.textContent = '';
         } catch {
             status.textContent = 'We couldn’t refresh services. Please check rates with the venue; we’ll try again shortly.';
         } finally {

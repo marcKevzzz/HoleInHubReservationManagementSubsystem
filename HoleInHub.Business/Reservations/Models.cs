@@ -66,6 +66,7 @@ public sealed class ReservationPolicy
     public TimeSpan ReviewStart { get; set; }
     public TimeSpan ReviewEnd { get; set; }
     public int[] ReviewDays { get; set; } = []; public string[] StaffEmails { get; set; } = [];
+    public string? StaffEmailOverride { get; set; }
     public bool DemoPaymentsEnabled { get; set; }
     public void ValidateCoverage(DateTimeOffset now, int minutes = 30)
     {
@@ -149,6 +150,32 @@ public static class BookingRules
             throw new ReservationValidationException($"Enter between 1 and {capacity} guests, including non-players, for your selected bays.");
         }
     }
+    public static BayParticipants[] AssignOverdueParticipants(IReadOnlyList<ResourceDto> bays, int attendees)
+    {
+        var remaining = attendees;
+        var participants = new BayParticipants[bays.Count];
+        for (var i = 0; i < bays.Count; i++)
+        {
+            var bay = bays[i];
+            var players = Math.Min(remaining, Math.Min(bay.MaxPlayers, bay.MaxTotalGuests));
+            participants[i] = new() { ResourceId = bay.Id, Players = players };
+            remaining -= players;
+        }
+        for (var i = 0; i < bays.Count && remaining > 0; i++)
+        {
+            var bay = bays[i];
+            var remainingBayCapacity = bay.MaxTotalGuests - participants[i].Players;
+            var nonPlayers = Math.Min(remaining, Math.Min(bay.MaxNonPlayers ?? remainingBayCapacity, remainingBayCapacity));
+            participants[i].NonPlayers = nonPlayers;
+            remaining -= nonPlayers;
+        }
+        if (remaining > 0)
+        {
+            throw new ReservationValidationException("The selected bays cannot fit all guests within their player and non-player limits.");
+        }
+        return participants;
+    }
+
     public static void ValidateParticipants(string service, IReadOnlyList<ResourceDto> bays, BayParticipants[] participants, bool allowEmptyBays = false)
     {
         if (participants.Length != bays.Count || participants.Select(x => x.ResourceId).Distinct().Count() != bays.Count ||

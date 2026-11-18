@@ -29,22 +29,18 @@
       margin-bottom: 20px;
     }
 
-.services-note,
 .services-update,
 .service-entry-details {
   color: var(--color-muted);
 }
 
-.services-note {
-  font-size: 12px;
-  margin: 0;
-}
+.services-page .services-update:empty { padding: 0; }
 
 .services-update {
   font-size: 12px;
-  border-block: 1px solid var(--color-line);
+
   padding: 14px 0;
-  min-height: 49px;
+
 }
 
 .service-entry {
@@ -124,7 +120,7 @@
 .services-page .service-entry-copy > .button {
   display: flex;
   width: fit-content;
-  margin-left: auto;
+  margin-inline: 0 auto;
 }
 
   .services-page .button span {
@@ -350,9 +346,9 @@
     width: 36px;
     height: 36px;
     padding: 8px;
-    border: 1px solid var(--color-line);
-    background: var(--color-paper);
-    color: var(--color-green);
+    border: 0;
+    background: transparent;
+    color: var(--color-muted);
     cursor: pointer;
   }
 
@@ -371,15 +367,15 @@
 .site-footer.spyker-footer {
   border-top: 1px solid var(--color-line);
   background-color: var(--color-paper);
-  padding: 72px 0 48px;
+  padding: clamp(70px, 7vw, 96px) var(--gutter) clamp(56px, 6vw, 80px);
 }
 
-.spyker-footer-inner {
+.site-footer.spyker-footer .spyker-footer-inner {
   max-width: 1280px;
   margin-inline: auto;
-  padding-inline: 24px;
+  padding-inline: 0;
   display: grid;
-  grid-template-columns: 1.2fr 1.6fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 48px;
   align-items: start;
 }
@@ -389,8 +385,9 @@
   display: inline-block;
 }
 
-.spyker-footer-brand img {
-  max-width: 190px;
+.site-footer.spyker-footer .spyker-footer-brand img {
+  width: 190px;
+  max-width: 100%;
   height: auto;
   display: block;
 }
@@ -402,15 +399,17 @@
   gap: 32px;
 }
 
-.spyker-footer-nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px 28px;
+.site-footer.spyker-footer .spyker-footer-nav {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0;
 }
 
-  .spyker-footer-nav a {
-    font-size: 16px;
-    font-weight: 500;
+  .site-footer.spyker-footer .spyker-footer-nav a {
+    font-size: clamp(22px, 2vw, 28px);
+    font-weight: 400;
+    padding-block: 0;
     text-decoration: none;
     color: inherit;
     transition: color 0.2s ease;
@@ -433,9 +432,9 @@
     place-items: center;
     width: 36px;
     height: 36px;
-    border: 1px solid var(--color-line);
-    background: var(--color-paper);
-    color: var(--color-green);
+    border: 0;
+    background: transparent;
+    color: var(--color-muted);
     text-decoration: none;
     transition: background 0.2s ease, border-color 0.2s ease;
   }
@@ -475,7 +474,6 @@
     color: var(--color-muted);
     margin: 16px 0 0;
     padding-top: 16px;
-    border-top: 1px solid var(--color-line);
   }
 
 /* Accessibility & Selection consistency */
@@ -494,10 +492,10 @@
    ========================================= */
 @media (max-width: 900px) {
   .site-footer.spyker-footer {
-    padding: 56px 0 36px;
+    padding: 56px var(--gutter) 36px;
   }
 
-  .spyker-footer-inner {
+  .site-footer.spyker-footer .spyker-footer-inner {
     grid-template-columns: 1fr;
     gap: 36px;
   }

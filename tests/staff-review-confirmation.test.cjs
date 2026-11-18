@@ -18,7 +18,7 @@ test('review confirmation protects focus, preserves the form, and requires Other
     }
     const document = { body: node('body'), createElement: node,
         addEventListener(k, fn) { listeners[k] = fn; }, querySelectorAll() { return []; }, querySelector() { return null; } };
-    const window = { location: { hash: '' }, addEventListener() {} };
+    const window = { matchMedia: () => ({ matches: true }), location: { hash: '' }, addEventListener() {} };
     vm.runInNewContext(fs.readFileSync(require.resolve('../HoleInHub.Web/wwwroot/js/staff-table.js'), 'utf8'), { document, window });
     const choice = node('select'); choice.value = 'Other';
     const form = node('form'); form.elements = { reason: { required: false } };

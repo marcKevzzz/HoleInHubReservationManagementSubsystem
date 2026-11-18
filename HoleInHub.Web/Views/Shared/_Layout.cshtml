@@ -7,7 +7,7 @@
 	<script src="~/js/page-transition-start.js" asp-append-version="true"></script>
 	<link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
-<body class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Index" && ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "home-page" : "inner-page")">
+<body class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Index" && ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "home-page" : ViewContext.RouteData.Values["action"]?.ToString() == "Contacts" ? "home-page contacts-page" : "inner-page")">
 	<partial name="_CustomerLanguage" />
 	<a class="skip-link" href="#main-content">@T("Skip to main content")</a>
 
@@ -54,7 +54,21 @@
 
 		@if (ViewData["HideFooter"] is not true)
 		{
-			<footer class="hh-footer"><div class="hh-footer-inner"><div class="hh-footer-top"><div class="hh-footer-brand"><a href="/" class="brand" aria-label="@T("Hole In Hub home")"><img src="~/media/brand/wordmark-hq.webp" alt="Hole In Hub" /></a></div><nav class="hh-footer-nav" aria-label="@T("Footer navigation")"><a href="/">@T("Home")</a><a href="/Home/About">@T("About")</a><a href="/Home/Gallery">@T("Gallery")</a><a href="/Home/Services">@T("Services")</a><a href="/Home/Contacts">@T("Contacts")</a></nav><div class="hh-footer-socials"><partial name="_SocialLinks" /></div></div><div class="hh-footer-bottom"><p class="hh-footer-copy">&copy; @DateTime.UtcNow.Year Hole In Hub Golf &amp; Lounge</p><div class="hh-footer-links"><a href="/Home/Privacy">@T("Privacy")</a><a href="/policies">@T("Venue policies")</a><a href="/Home/Contacts">@T("Get in touch")</a></div></div></div></footer>
+			<footer class="site-footer spyker-footer">
+    <div class="spyker-footer-inner">
+        <div class="spyker-footer-brand"><a href="/" class="brand" aria-label="@T("Hole In Hub home")"><img src="~/media/brand/wordmark-hq.webp" alt="Hole In Hub" /></a></div>
+        <div class="spyker-footer-center">
+            <nav class="spyker-footer-nav" aria-label="@T("Footer navigation")">
+                <a href="/">@T("Home")</a><a href="/Home/About">@T("About")</a><a href="/Home/Gallery">@T("Gallery")</a><a href="/Home/Services">@T("Services")</a><a href="/Home/Contacts">@T("Contacts")</a>
+            </nav>
+            <partial name="_SocialLinks" />
+        </div>
+        <div class="spyker-footer-right">
+            <a href="/Home/Privacy">@T("Privacy")</a><a href="/policies">@T("Venue policies")</a><a href="/Home/Contacts">@T("Get in touch")</a>
+            <p>&copy; @DateTime.UtcNow.Year Hole In Hub Golf &amp; Lounge</p>
+        </div>
+    </div>
+</footer>
 		}
 	</div>
 </div>

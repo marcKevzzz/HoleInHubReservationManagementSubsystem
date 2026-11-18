@@ -64,7 +64,7 @@
 
 				</div>
 			</fieldset>
-			<fieldset class="booking-step booking-schedule"><legend>@T("CHOOSE DATE & TIME")</legend><div class="booking-schedule-grid"><div id="booking-calendar" hidden><div class="calendar-heading"><button type="button" id="previous-month" aria-label="@T("Previous month")"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg></button><h3 id="calendar-month" aria-live="polite"></h3><button type="button" id="next-month" aria-label="@T("Next month")"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg></button></div><div class="month-grid" id="calendar-days"></div></div><div class="booking-native-fields"><div class="field"><label asp-for="Date">@T("Date")</label><input asp-for="Date" type="date" required /></div><div class="field"><label asp-for="StartTime">@T("Start time · Asia/Manila")</label><input asp-for="StartTime" type="time" step="1800" required /></div><div class="field"><label asp-for="DurationMinutes">@T("Duration")</label><select asp-for="DurationMinutes">@for(var m=30;m<=840;m+=30){
+			<fieldset class="booking-step booking-schedule"><legend>@T("CHOOSE DATE & TIME") <span class="info-tip" id="coaching-policy-tip" hidden><button type="button" class="info-tip-btn" aria-label="@T("Coaching approval details")" aria-describedby="coaching-policy" aria-expanded="false">i</button><span id="coaching-policy" class="info-tip-bubble" role="tooltip">@T("Staff must record coach confirmation and approve the bay within 60 minutes. Remaining package sessions are arranged with the venue.")</span></span></legend><div class="booking-schedule-grid"><partial name="_BookingCalendar" /><div class="booking-native-fields"><div class="field"><label asp-for="Date">@T("Date")</label><input asp-for="Date" type="date" required /></div><div class="field"><label asp-for="StartTime">@T("Start time · Asia/Manila")</label><input asp-for="StartTime" type="time" step="1800" required /></div><div class="field"><label asp-for="DurationMinutes">@T("Duration")</label><select asp-for="DurationMinutes">@for(var m=30;m<=840;m+=30){
 				<option value="@m">@(m / 60m) @T("hours")</option>
 			}
 		</select></div></div><div id="enhanced-time" hidden><div class="time-selection-heading"><h3>@T("Choose your times")</h3></div><p id="selected-time-range" class="selected-time-range" role="status" aria-live="polite"></p><div id="time-period-tabs" class="time-period-tabs" role="tablist" aria-label="@T("Time of day")"></div><div class="calendar-slots" id="time-slots" role="group" aria-label="@T("Session times, Asia/Manila")" aria-describedby="session-availability"></div><p id="session-availability" class="booking-session-status" role="status"></p></div></div></fieldset>
@@ -75,13 +75,23 @@
 	<fieldset class="booking-step booking-contact">
 		<legend>@T("YOUR DETAILS")</legend>
 		<div class="fields-grid">
-			@foreach (var field in new[] { ("FirstName", "First name", "given-name"), ("LastName", "Last name", "family-name"), ("Phone", "Mobile number", "tel") })
+			@foreach (var field in new[] { ("FirstName", "First name", "given-name"), ("LastName", "Last name", "family-name") })
 			{
-				<div class="field"><div class="auth-input-wrap"><input id="@field.Item1" name="@field.Item1" value="@(field.Item1 == "FirstName" ? Model.FirstName : field.Item1 == "LastName" ? Model.LastName : Model.Phone)" autocomplete="@field.Item3" maxlength="@(field.Item1 == "Phone" ? 16 : 100)" inputmode="@(field.Item1 == "Phone" ? "tel" : "text")" pattern="@(field.Item1 == "Phone" ? HoleInHub.Business.Accounts.ContactRules.PhonePattern : HoleInHub.Business.Accounts.ContactRules.NamePattern)" type="@(field.Item1 == "Phone" ? "tel" : "text")" aria-describedby="@(field.Item1)-feedback" placeholder=" " required /><label for="@field.Item1">@T(field.Item2) *</label></div><span class="field-error" id="@(field.Item1)-feedback" aria-live="polite"></span></div>
+				<div class="field"><div class="auth-input-wrap"><input id="@field.Item1" name="@field.Item1" value="@(field.Item1 == "FirstName" ? Model.FirstName : Model.LastName)" autocomplete="@field.Item3" maxlength="100" pattern="@HoleInHub.Business.Accounts.ContactRules.NamePattern" type="text" aria-describedby="@(field.Item1)-feedback" placeholder=" " required /><label for="@field.Item1">@T(field.Item2) *</label></div><span class="field-error" id="@(field.Item1)-feedback" aria-live="polite"></span></div>
 			}
+            <div class="field">
+                <div class="profile-phone-field">
+                    <partial name="_PhoneCountry" />
+                    <div class="auth-input-wrap">
+                        <input asp-for="Phone" data-profile-contact type="tel" inputmode="tel" autocomplete="tel-national" maxlength="24" placeholder=" " required data-phone-pattern="@HoleInHub.Business.Accounts.ContactRules.PhonePattern" aria-describedby="Phone-feedback" />
+                        <label asp-for="Phone">@T("Mobile number") *</label>
+                    </div>
+                </div>
+                <span asp-validation-for="Phone" class="field-error" id="Phone-feedback" aria-live="polite"></span>
+            </div>
 			@if (User.Identity?.IsAuthenticated == true)
 			{
-				<div class="field"><div class="auth-input-wrap"><input asp-for="Email" type="email" autocomplete="email" readonly placeholder=" " aria-readonly="true" /><label asp-for="Email">@T("Email address")</label></div></div>
+				<div class="field"><div class="auth-input-wrap"><input asp-for="Email" type="email" autocomplete="email" readonly placeholder=" " aria-readonly="true" aria-describedby="Email-feedback" /><label asp-for="Email">@T("Email address")</label></div><span asp-validation-for="Email" id="Email-feedback" class="field-error" aria-live="polite"></span></div>
 			}
 			else
 			{
@@ -95,7 +105,7 @@
 		<legend>@T("REVIEW YOUR REQUEST")</legend>
 		<div class="review-card">
 			<div class="review-card-body">
-				<div class="review-card-head"><span class="eyebrow">@T("FINAL CHECK")</span><div class="review-heading-row"><h3 id="review-service">@T("Regular simulator bay")</h3><span class="info-tip review-info-tip"><button type="button" class="info-tip-btn" aria-label="@T("Review your booking details")" aria-describedby="review-guidance" aria-expanded="false">i</button><span id="review-guidance" class="info-tip-bubble" role="tooltip">@T("Please confirm these details before you send your request.")</span></span></div><p class="review-description">@T("Please confirm these details before you send your request.")</p></div>
+				<div class="review-card-head"><span class="eyebrow">@T("FINAL CHECK")</span><div class="review-heading-row"><h3 id="review-service">@T("Regular simulator bay")</h3></div><p class="review-description">@T("Please confirm these details before you send your request.")</p></div>
 				<dl id="review-selection" class="review-list" aria-live="polite"></dl>
 				<ul class="review-checklist">
 					<li>@T("Your contact details can be used to reach you about this request.")</li>
@@ -104,7 +114,6 @@
 			</div>
 			<div class="review-card-media"><img id="review-image" src="/media/facebook/venue-overview.webp" alt="" /></div>
 		</div>
-		<p id="pending-policy">@T("Submit anytime. Regular requests receive 30 minutes of staff review; VIP and coaching receive 60 minutes. The review clock pauses outside operating hours, and your selected bays are held until the review deadline. If review is overdue, confirmation depends on availability.")</p>
 		<div id="review-policy-tip" class="review-policy-tip"><span class="info-tip review-info-tip"><button type="button" class="info-tip-btn" aria-label="@T("Review timing and bay hold details")" aria-describedby="review-policy-guidance" aria-expanded="false">i</button><span id="review-policy-guidance" class="info-tip-bubble" role="tooltip">@T("Submit anytime. Regular requests receive 30 minutes of staff review; VIP and coaching receive 60 minutes. The review clock pauses outside operating hours, and your selected bays are held until the review deadline. If review is overdue, confirmation depends on availability.")</span></span><span>@T("Review timing and bay hold details")</span></div>
 		@if (ViewData["DemoPayments"] is true)
 		{
@@ -120,7 +129,7 @@
 	}else
 	{
 
-		<button class="button" type="submit" id="booking-submit" data-submit-mobile="@T("SUBMIT REQUEST")" data-submit-web="@T("SEND REQUEST")">@T("SUBMIT REQUEST")</button>
+		<button class="button" type="submit" id="booking-submit">@T("Submit reservation")</button>
 	}
 </div>
 </div><aside class="reservation-summary"><img id="selection-image" src="/media/facebook/venue-overview.webp" alt="@T("Regular simulator bays")" /><div class="summary"><h3 id="selection-service">@T("Regular simulator bay")</h3><dl id="live-selection"></dl></div></aside>
@@ -133,5 +142,6 @@
 	<noscript><p>@T("You can complete this form as a guest, or") <a href="/account/sign-in?returnUrl=%2FReservations%2FCreate">@T("sign in")</a> @T("before booking.")</p></noscript>
 }
 @section Scripts {
-	<script src="~/js/reservation.js" asp-append-version="true"></script>
+	<script src="~/js/profile-contact.js" asp-append-version="true"></script>
+    <script src="~/js/reservation.js" asp-append-version="true"></script>
 }

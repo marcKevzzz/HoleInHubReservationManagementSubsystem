@@ -15,13 +15,7 @@
                 <div><div class="profile-input-wrap"><input asp-for="LastName" data-profile-contact placeholder=" " pattern="@HoleInHub.Business.Accounts.ContactRules.NamePattern" autocomplete="family-name" required maxlength="100" aria-describedby="LastName-error" aria-invalid="@(ViewData.ModelState["LastName"]?.Errors.Count>0?"true":"false")" /><label asp-for="LastName">@T("Last name")</label></div><span asp-validation-for="LastName" id="LastName-error" aria-live="polite" class="account-errors"></span></div>
             </div>
             <div class="profile-phone-field">
-                <select id="PhoneCountry" name="PhoneCountry" disabled aria-label="@T("Phone country code")" hidden>
-                    <option value="PH" data-flag="/media/flags/ph.svg" data-selected-label="+63">@T("Philippines") +63</option>
-                    <option value="KR" data-flag="/media/flags/kr.svg" data-selected-label="+82">@T("South Korea") +82</option>
-                    <option value="CN" data-flag="/media/flags/cn.svg" data-selected-label="+86">@T("China") +86</option>
-                    <option value="US" data-flag="/media/flags/us.svg" data-selected-label="+1">@T("United States") +1</option>
-                    <option value="JP" data-flag="/media/flags/jp.svg" data-selected-label="+81">@T("Japan") +81</option>
-                </select>
+                <partial name="_PhoneCountry" />
                 <div class="profile-input-wrap"><input asp-for="Phone" id="PhoneDisplay" data-profile-contact placeholder=" " type="text" inputmode="tel" autocomplete="tel-national" maxlength="24" required data-phone-pattern="@HoleInHub.Business.Accounts.ContactRules.PhonePattern" aria-describedby="Phone-error" aria-invalid="@(ViewData.ModelState["Phone"]?.Errors.Count>0?"true":"false")" />
                 <label for="PhoneDisplay">@T("Contact number")</label></div>
             </div>

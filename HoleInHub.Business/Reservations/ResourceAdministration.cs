@@ -105,14 +105,19 @@ public sealed partial class ReservationService
             allowEmptyBays: record.PolicyVersion != 1);
 
     private static ParticipantRecord[] ConfirmParticipants(ReservationRecord record, IReadOnlyList<ResourceRecord> selected,
-        BayParticipants[]? participants)
+        BayParticipants[]? participants, DateTime now)
     {
+        var bays = selected.Select(MapResource).OrderBy(bay => bay.Id, StringComparer.Ordinal).ToArray();
+        if ((participants is null || participants.Length == 0) && record.ReviewDeadlineUtc <= now)
+        {
+            participants = BookingRules.AssignOverdueParticipants(bays, record.Attendees);
+        }
         if ((participants is null || participants.Length == 0) && record is { Attendees: 1, ResourceIds.Length: 1 })
         { participants = [new() { ResourceId = record.ResourceIds[0], Players = 1 }]; }
         if (participants is null || participants.Length == 0 || participants.Sum(x => (long)x.Players + x.NonPlayers) != record.Attendees)
         { throw new ReservationValidationException($"Enter a breakdown matching the {record.Attendees} guests on this request."); }
 
-        ValidateBookingCapacity(record.Service, selected.Select(MapResource).ToArray(), record.Attendees, participants, allowEmptyBays: true);
+        ValidateBookingCapacity(record.Service, bays, record.Attendees, participants, allowEmptyBays: true);
         return participants.Select(x => new ParticipantRecord { ResourceId = x.ResourceId, Players = x.Players, NonPlayers = x.NonPlayers }).ToArray();
     }
 
