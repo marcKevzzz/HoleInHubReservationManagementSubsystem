@@ -92,9 +92,17 @@
 
         const enter = () => { if (!button.disabled && button.getAttribute?.('aria-disabled') !== 'true') tl.play(); };
         const leave = () => tl.reverse();
+        let touchReset;
+        const touchActivate = event => {
+            if (event.pointerType !== 'touch' || button.disabled) return;
+            enter();
+            clearTimeout(touchReset);
+            touchReset = setTimeout(leave, 520);
+        };
 
         button.addEventListener('pointerenter', enter);
         button.addEventListener('pointerleave', leave);
+        button.addEventListener('pointerdown', touchActivate);
         button.addEventListener('focus', enter);
         button.addEventListener('blur', leave);
 
@@ -102,6 +110,8 @@
             active.delete(button);
             button.removeEventListener('pointerenter', enter);
             button.removeEventListener('pointerleave', leave);
+            button.removeEventListener('pointerdown', touchActivate);
+            clearTimeout(touchReset);
             button.removeEventListener('focus', enter);
             button.removeEventListener('blur', leave);
             tl.kill();

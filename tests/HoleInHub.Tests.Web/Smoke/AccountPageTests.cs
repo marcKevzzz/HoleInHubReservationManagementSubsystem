@@ -9,8 +9,8 @@ public sealed class AccountPageTests : IClassFixture<WebApplicationFactory<Progr
 {
     private readonly HttpClient _client;
     [Theory]
-    [InlineData("FirstName", "Guest2", "Use letters for names")]
-    [InlineData("LastName", "Player٣", "Use letters for names")]
+    [InlineData("FirstName", "Guest2", "Enter at least two letters.")]
+    [InlineData("LastName", "Player٣", "Enter at least two letters.")]
     [InlineData("Phone", "0912abc6789", "prefix and digit count")]
     public async Task SignUpRejectsForgedNamesAndNonNumericPhones(string field, string value, string message)
     {

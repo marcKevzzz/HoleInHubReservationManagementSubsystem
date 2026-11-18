@@ -20,7 +20,8 @@ public static partial class CustomerText
         while (reader.ReadLine() is { } line)
         {
             var separator = line.IndexOf('|');
-            if (separator > 0) { result.Add(line[..separator], line[(separator + 1)..]); }
+            // Later entries replace earlier copies so duplicate translation keys cannot break type initialization.
+            if (separator > 0) { result[line[..separator]] = line[(separator + 1)..]; }
         }
         return result;
     }

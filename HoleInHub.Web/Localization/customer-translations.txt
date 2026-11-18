@@ -247,6 +247,9 @@ and understand how my reservation details will be used.|예약 정보가 어떻�
 Whole-shop: a simulated 50% deposit within 60 minutes confirms automatically. No real money is collected.|전체 매장 대관: 60분 이내에 모의 예약금 50%를 납부하면 자동으로 확정됩니다. 실제 금액은 청구되지 않습니다.
 Whole-shop online checkout is unavailable. Contact the venue.|전체 매장 대관 온라인 결제를 이용할 수 없습니다. 매장에 문의해 주세요.
 SUBMIT REQUEST|예약 요청 제출
+SEND REQUEST|예약 요청 보내기
+Review your booking details|예약 내용을 확인하세요
+Review timing and bay hold details|검토 시간 및 베이 확보 정보
 VERIFY EMAIL TO SUBMIT|이메일 인증 후 제출
 MAKE IT YOURS.|나만의 라운드를 시작하세요.
 Continue as a guest or sign in.|비회원으로 계속하거나 로그인하세요.
@@ -330,7 +333,24 @@ Enter your contact number.|연락처를 입력해 주세요.
 Enter your email address.|이메일 주소를 입력해 주세요.
 Enter your password.|비밀번호를 입력해 주세요.
 Enter a valid email address.|올바른 이메일 주소를 입력해 주세요.
-Use letters for names; numbers are not allowed.|이름에는 문자를 사용해 주세요. 숫자는 사용할 수 없습니다.
+Enter the number of guests.|이용 인원 수를 입력해 주세요.
+Use numbers only for guest count.|이용 인원은 숫자만 입력해 주세요.
+Digits only|숫자만 입력
+Use numbers for guest count.|이용 인원은 숫자만 입력해 주세요.
+First name (2+ letters)|이름 (두 글자 이상)
+Last name (2+ letters)|성 (두 글자 이상)
+Names (2+ letters)|이름 (두 글자 이상)
+Phone|연락처
+Valid email|올바른 이메일
+Guest count (digits only)|이용 인원 (숫자만)
+Guests (digits only)|이용 인원 (숫자만)
+Privacy consent|개인정보 처리방침 동의
+Fix:|수정할 항목:
+Guest count must be between 1 and|이용 인원은 1명에서
+Please accept the privacy policy.|개인정보 처리방침에 동의해 주세요.
+This field is too long.|입력 내용이 너무 깁니다.
+Enter at least two letters; numbers are not allowed.|두 글자 이상 입력해 주세요. 숫자는 사용할 수 없습니다.
+Enter at least two letters. Numbers aren't allowed; spaces, commas, apostrophes, periods and hyphens are allowed.|두 글자 이상 입력해 주세요. 숫자는 사용할 수 없으며 공백, 쉼표, 아포스트로피, 마침표, 하이픈을 사용할 수 있습니다.
 Use letters for names; spaces, apostrophes, periods and hyphens are allowed.|이름에는 문자를 사용해 주세요. 공백, 아포스트로피, 마침표, 하이픈을 사용할 수 있습니다.
 Enter a valid contact number using 7–15 digits only.|연락처는 숫자 7~15자리로 입력해 주세요.
 Enter a valid contact number using 7�15 digits only.|연락처는 숫자 7~15자리로 입력해 주세요.
