@@ -198,6 +198,7 @@ public sealed class GuestBookingFlowTests
             Assert.Equal("Cancelled", (await scope.ServiceProvider.GetRequiredService<ReservationService>().GetStaffAsync(saved.Id, default))!.Status);
             var email = await context.Database.GetCollection<OutboxRecord>("outbox").Find(x => x.Id == saved.Id + ":submitted").SingleAsync();
             var receipt = scope.ServiceProvider.GetRequiredService<IDataProtectionProvider>().CreateProtector("BookingEmail").Unprotect(email.Body[10..]);
+            Assert.Contains($"Reservation ID: {saved.Reference}", email.Subject);
             Assert.Contains("Reservation status: Pending", receipt);
             Assert.Contains("Number of guests: 3", receipt);
             Assert.Contains("Asia/Manila", receipt);
@@ -333,7 +334,9 @@ public sealed class GuestBookingFlowTests
                 Assert.DoesNotContain("Confirm approve booking", review);
                 var coach = await staffClient.PostAsync("/BookingReview/Decide/" + record.Id, new FormUrlEncodedContent(new Dictionary<string, string>
                 {
-                    ["__RequestVerificationToken"] = Csrf(review), ["expectedRevision"] = record.Revision.ToString(), ["decision"] = "coach"
+                    ["__RequestVerificationToken"] = Csrf(review),
+                    ["expectedRevision"] = record.Revision.ToString(),
+                    ["decision"] = "coach"
                 }));
                 Assert.Equal(HttpStatusCode.Redirect, coach.StatusCode);
                 review = await staffClient.GetStringAsync(coach.Headers.Location);

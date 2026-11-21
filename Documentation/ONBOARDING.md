@@ -240,7 +240,7 @@ Restart the hosted application, check `/health/ready`, and confirm the booking p
 
 Cancellation requests require at least one hour before the start and staff approval. The request itself releases no allocation and does not extend an existing Pending deadline. Refund terms and rescheduling remain venue-managed. Coaching uses regular bay capacity and requires staff to record external coach confirmation before venue approval; package bookings allocate only the selected first session.
 
-Verify with unit/smoke tests, local isolated MongoDB integration tests (including guest/staff HTTP flows), `npm run test:ui`, and `npm run build:css`. A healthy `/health/ready` requires all migrations 001–007, even when Google is disabled. Do not run integration tests against Atlas or the shared preview database.
+Verify with unit/smoke tests, local isolated MongoDB integration tests (including guest/staff HTTP flows), `npm run test:ui`, and `npm run build:css`. A healthy `/health/ready` requires migrations 001–008 and 021–022, even when Google is disabled. Do not run integration tests against Atlas or the shared preview database.
 
 Owner update (2026-11-03): ordinary sessions may be 30 minutes. Each time tile represents a half-hour; dragging consecutive tiles sets the complete duration (two tiles = one hour). Existing fixed coaching classes and whole-shop rental windows retain their defined durations. Review deadlines and minimum booking lead times are unchanged.
 
@@ -248,7 +248,7 @@ Owner update (2026-11-03): ordinary sessions may be 30 minutes. Each time tile r
 
 Google is disabled by default. Email/password signup and guest booking remain available. First name, last name and contact number are required for new accounts and prefill booking details. Existing accounts keep working; missing account contact values fall back to the latest owned reservation. Editing booking details changes that reservation, not the saved account profile.
 
-Before enabling Google, run the explicit migration CLI against the intended database to apply `005_GoogleAccounts`. It adds a unique index for present Google subjects without changing legacy accounts. Readiness requires all migrations through 007; migrations never run on Web startup.
+Before enabling Google, run the explicit migration CLI against the intended database to apply `005_GoogleAccounts`. It adds a unique index for present Google subjects without changing legacy accounts. Readiness requires migrations 001–008 and 021–022; migrations never run on Web startup.
 
 Create a Google OAuth **Web application** client and register the exact application's origin plus `/signin-google` as its authorized redirect URI (for example `https://localhost:PORT/signin-google`, using your actual HTTPS port). This is the middleware callback, not `/account/google-callback`. For a consent screen in Testing, add the intended test users in Google Cloud. Use a separate production client/HTTPS redirect when deploying.
 
@@ -289,7 +289,7 @@ The standalone availability page and its navigation entry are temporarily hidden
 
 ### Schema-hardening release (migration 006)
 
-Read [DATABASE.md](DATABASE.md) for plain-language collection/field definitions and legacy storage-name mappings. This release adds typed validators, explicit customer-account links, verification purposes, structured history fields and a customer-history index without new admin screens. Apply 006 before starting this Web build; readiness requires 001–008, including when Google is disabled.
+Read [DATABASE.md](DATABASE.md) for plain-language collection/field definitions and legacy storage-name mappings. This release adds typed validators, explicit customer-account links, verification purposes, structured history fields and a customer-history index without new admin screens. Apply 006 before starting this Web build; readiness requires 001–008 and 021–022, including when Google is disabled.
 
 Stop older Web instances/workers before upgrading, back up the selected database, run the explicit Migrator with the intended credentials, then start the new Web build. Do not mix old binaries with new writers or use a binary-only rollback after additive fields have been written. A preflight error means existing data needs review; migration 006 does not automatically delete or invent data. See [migration rollout/recovery](MIGRATIONS.md#006_schemahardening-existing-feature-validation).
 
@@ -297,7 +297,7 @@ Stop older Web instances/workers before upgrading, back up the selected database
 
 **Find my booking** is available from the anonymous account menu, sign-in screen and guest booking receipt. `/guest/reservations/find` sends a code to the entered booking email; verification opens guest history directly, including confirmed reservations. It does not create an account, sign into Identity or link bookings to an account. The existing per-booking email link remains valid independently of recovery.
 
-Apply all pending migrations through the CLI before starting this Web build. Migration 007 extends the installed challenge validator with `GuestRecovery`, adds the case-insensitive reservation email/history index, and creates the TTL-managed recovery delivery-quota collection. No existing booking, allocation or migration is rewritten. Keep the intended Web/Migrator environment and check `/health/ready` after rollout; readiness requires 001–008. For local testing explicitly override Atlas configuration with the local replica-set URI and an isolated database.
+Apply all pending migrations through the CLI before starting this Web build. Migration 007 extends the installed challenge validator with `GuestRecovery`, adds the case-insensitive reservation email/history index, and creates the TTL-managed recovery delivery-quota collection. No existing booking, allocation or migration is rewritten. Keep the intended Web/Migrator environment and check `/health/ready` after rollout; readiness requires 001–008 and 021–022. For local testing explicitly override Atlas configuration with the local replica-set URI and an isolated database.
 
 Recovery shares the configured SMTP delivery and encrypted outbox. Codes last ten minutes with five attempts. Delivery is limited to one per email per minute and five per rolling hour across browser sessions, plus ten initial/resend requests per IP per ten minutes. Verification allows thirty requests per IP per ten minutes. IP limits use the existing per-process limiter; a multi-instance deployment needs coordinated edge/IP limiting and trusted proxy configuration. Persist/share the Data Protection key ring as documented above.
 
@@ -305,7 +305,7 @@ Successful recovery creates a separate protected, HttpOnly guest-access cookie l
 
 ### Service catalog and contact fields (migration 008)
 
-Apply pending migrations through the explicit Migrator using the intended database credentials before starting this build. `008_ServiceCatalog` creates `service_catalog`, seeds the six existing offerings, and adds an active/order/ID index. Re-running the CLI preserves venue edits. Readiness now requires 001–008. No migrations run at Web startup and no existing resource IDs or reservations are changed.
+Apply pending migrations through the explicit Migrator using the intended database credentials before starting this build. `008_ServiceCatalog` creates `service_catalog`, seeds the six existing offerings, and adds an active/order/ID index. Re-running the CLI preserves venue edits. Readiness requires 001–008 and 021–022. No migrations run at Web startup and no existing resource IDs or reservations are changed.
 
 `/Home/Services` (also `/services`) reads current active catalog records on each request. Its server-rendered partial `/Home/ServiceCatalog` is fetched every 45 seconds while the tab is visible; it preserves the last good content on errors and skips replacement during focused interaction. Title, local image, summary, indicative rate text, details, action label, order and visibility are database-backed. Whole-shop links remain contact-only on this public page. The catalog is presentation content: it does not replace the booking rules, server quote calculations or approved service/resource mapping, and Active controls catalog visibility only. No catalog administration UI is included.
 

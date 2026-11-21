@@ -40,7 +40,7 @@
     .staff-schedule-actions,.service-admin-actions,.review-header-actions {flex-wrap:wrap;gap:6px;max-width:100%}
     .staff-schedule-actions>.button {flex:0 0 auto}
     .staff-date-controls {--staff-control-size:32px;flex-wrap:wrap;gap:6px}
-    .staff-date-controls :is(nav a,.staff-date-picker,.staff-view-controls button) {min-height:32px;min-width:30px;font-size:.75rem;padding-inline:5px}
+    .staff-date-controls :is(nav a,.staff-date-picker,.staff-view-controls a) {min-height:32px;min-width:30px;font-size:.75rem;padding-inline:5px}
     .staff-date-controls .staff-date-picker {min-width:96px}
     .staff-date-controls .staff-today {min-height:32px;padding:6px 8px;font-size:.75rem}
     .staff-shell .staff-workspace .app-select-trigger {min-height:36px;padding:7px 4px;font-size:.8125rem}

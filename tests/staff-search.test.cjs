@@ -20,7 +20,7 @@ function mount(popover = false) {
     });
     const form = {
         dataset: { staffSearch: '/staff/reservations/search' }, getBoundingClientRect() { return { right: 900, bottom: 160 }; },
-        elements: { reference: input, date: { value: '2026-11-08' } },
+        elements: { reservation_id: input, date: { value: '2026-11-08' } },
         addEventListener: (type, callback) => { formEvents[type] = callback; }
     };
     let timerId = 0;
@@ -50,7 +50,7 @@ test('debounces typing and ignores a response for a superseded query', async () 
     assert.equal(ui.requests.length, 0);
     const stale = ui.fire();
     assert.equal(ui.requests.length, 1);
-    assert.equal(ui.requests[0].url.searchParams.get('reference'), 'Alex');
+    assert.equal(ui.requests[0].url.searchParams.get('reservation_id'), 'Alex');
     assert.equal(ui.requests[0].url.searchParams.get('date'), '2026-11-08');
     ui.type('Jamie');
     assert.equal(ui.requests[0].signal.aborted, true);

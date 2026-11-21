@@ -39,17 +39,19 @@ public sealed class NotificationDeliveryService(OutboxPersistence outbox, Accoun
         return await CountUnreadAsync(accountId, ct, operational);
     }
 
-    public async Task<NotificationDeliveryPage> ListAsync(string accountId, string? status, int page, CancellationToken ct, bool operational = false)
+    public async Task<NotificationDeliveryPage> ListAsync(string accountId, string? status, int page, CancellationToken ct, bool operational = false, bool compact = false)
     {
         status = operational ? "staff" : Filters.Contains(status) ? status! : "all";
-        page = Math.Clamp(page, 1, 1000);
+        var pageSize = compact ? 5 : PageSize;
+        var lastPage = 1000 * PageSize / pageSize;
+        page = Math.Clamp(page, 1, lastPage);
         var now = clock.GetUtcNow().UtcDateTime;
         var since = await ReadThroughAsync(accountId, ct);
         var adminKey = AdminKey(accountId);
-        var rows = await outbox.ListDeliveryAsync(status, (page - 1) * PageSize, PageSize + 1, now, ct);
+        var rows = await outbox.ListDeliveryAsync(status, (page - 1) * pageSize, pageSize + 1, now, ct);
         var unread = await outbox.CountUnreadDeliveryAsync(adminKey, since, ct, operational, now);
-        return new(status, page, rows.Take(PageSize).Select(row => Map(row, now, since, adminKey, operational)).ToArray(),
-            page < 1000 && rows.Count > PageSize, unread);
+        return new(status, page, rows.Take(pageSize).Select(row => Map(row, now, since, adminKey, operational)).ToArray(),
+            page < lastPage && rows.Count > pageSize, unread);
     }
 
     public Task<bool> RetryAsync(string? id, CancellationToken ct) =>

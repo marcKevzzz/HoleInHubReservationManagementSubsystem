@@ -43,6 +43,27 @@ Stored names are case-sensitive. Most application fields use PascalCase; `Id` ma
 
 No collection is renamed in this release. `Purpose` explicitly identifies new verification challenges as `GuestBooking` or `AccountEmail` in 006; 007 additionally permits `GuestRecovery`. Purpose is absent on legacy challenges because their hashed scope cannot safely be reverse-inferred. Existing scope hashes and authorization checks remain unchanged.
 
+## Named business identifiers (migrations 021 and 022)
+
+In MongoDB Compass, use these fields to identify business records. Each field is required and has a unique index within its collection. MongoDB retains its original `_id` and existing relationships.
+
+| Collection | Named ID | Source of the value |
+| --- | --- | --- |
+| `reservations` | `reservation_id` | Existing `Reference`, for example `HIH-123456789A` |
+| `customer_profiles` | `customer_id` | `CUS-` code |
+| `accounts` | `account_id` | `ACC-` code, including staff accounts |
+| `resources` | `resource_id` | Bay `_id` |
+| `service_catalog` | `service_id` | `SVC-` code |
+| `schedule_blocks` | `block_id` | `BLK-` code |
+| `service_images` | `service_image_id` | `IMG-` code |
+| `system_settings` | `settings_id` | `SET-` code |
+
+Migration 022 derives six permanent codes from the existing document keys using the first 16 uppercase hexadecimal digits of SHA-256. Unique indexes prevent ambiguous lookups. MongoDB still uses `_id` as the primary key.
+
+Staff can search for the public `reservation_id` in Schedule. Customer access still requires an authorized account or a valid guest access link. Existing booking relationships, including customer profile memberships, use the reservation document’s internal `_id`. A guest customer can have a `customer_id` without a login account.
+
+Back up the selected database and stop all older Web instances and background writers before running `dotnet run --project HoleInHub.Migrator -- migrate` with the intended migration credentials. Migration 021 checks source IDs before backfilling and enforcing equality. If preflight fails, review the reported collection and resolve the conflicting data before retrying. Start the new Web build and verify `/health/ready` after migration. Restore a compatible backup before rolling back to writers that omit named IDs.
+
 ## Booking document: reservations
 
 | Stored field | Type | Purpose |
@@ -199,7 +220,7 @@ Migration 015 adds an optional `ScheduleChange` object to a reservation and its 
 
 ### Staff customer profiles (migration 018)
 
-`customer_profiles` holds stable staff-facing contact records and retained booking-contact variants. `customer_profile_bookings` has one membership per reservation (`_id` is the reservation ID). `customer_profile_operations` stores merge/undo receipts, actor, reason, original profile snapshots, membership provenance and resulting semantic-state hashes. `customer_profile_guards` serializes these metadata writes in MongoDB transactions; this does not replace reservation capacity guards.
+`customer_profiles` holds stable staff-facing contact records and retained booking-contact variants. `customer_profile_bookings` has one membership per reservation (`_id` is the internal booking document ID). `customer_profile_operations` stores merge/undo receipts, actor, reason, original profile snapshots, membership provenance and resulting semantic-state hashes. `customer_profile_guards` serializes these metadata writes in MongoDB transactions; this does not replace reservation capacity guards.
 
 A manual merge changes staff profile membership and preferred contact fields only. Reservation contact snapshots, account IDs, guest verification/access, allocations, payments, status and customer-owned history are untouched. Matching contact values never authorize ownership or an automatic merge. Backfill preserves existing account/verified-guest groupings; new guests and walk-ins stay separate unless staff explicitly select a profile. Account bookings use immutable account identity.
 

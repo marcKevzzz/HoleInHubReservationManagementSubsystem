@@ -16,14 +16,14 @@
         <form class="staff-lookup people-search" asp-action="Index" method="get" role="search" aria-label="Find a customer">
             <div class="auth-input-wrap">
                 <partial name="_StaffIcon" model='"search"' />
-                <label class="sr-only" for="customer-search">Name, email, phone or booking reference</label>
+                <label class="sr-only" for="customer-search">Name, email, phone, customer ID or reservation ID</label>
                 <input id="customer-search" type="search" name="search" value="@Model.Search" maxlength="100"
                        placeholder="Find a customer" aria-describedby="customer-search-help" />
             </div>
         </form>
         <span class="people-page-count" data-customer-count hidden="@(hint is not null)">Page @Model.Page · @Model.Items.Count shown</span>
     </div>
-    <p id="customer-search-help" class="sr-only">Use at least two characters, or a full phone number or reservation reference.</p>
+    <p id="customer-search-help" class="sr-only">Use at least two characters for names and emails. Enter the full phone number, customer ID or reservation ID.</p>
     <p class="people-search-status" data-customer-search-status role="status">@hint</p>
     <p class="sr-only" data-merge-drop-status role="status"></p>
     <div data-row-merge-result role="status" tabindex="-1" hidden></div>
@@ -35,7 +35,7 @@
     else if (Model.Items.Count == 0)
     {
         <partial name="_StaffEmptyState" model='("customers", Model.Search.Length > 0 ? "No matching contacts" : "No reservation contacts yet",
-            Model.Search.Length > 0 ? "Try a name, email, phone number or booking reference." : "Customer contacts appear here when a reservation is recorded.",
+            Model.Search.Length > 0 ? "Try a name, email, phone number, customer ID or reservation ID." : "Customer contacts appear here when a reservation is recorded.",
             Url.Action("Index"), "View recent contacts")' />
 
     }
@@ -43,14 +43,17 @@
     {
         <div class="customer-directory @(mergeReady ? "customer-directory-merge-enabled" : "")" role="table" aria-label="Reservation contacts">
             <div class="customer-directory-row customer-directory-head" role="row">
-                <span role="columnheader">Customer</span><span role="columnheader">Contact</span><span role="columnheader">Matched reservation</span><span role="columnheader">Action</span>
+                <span role="columnheader">Customer</span><span role="columnheader">Customer ID</span><span role="columnheader">Contact</span><span role="columnheader">Reservation ID</span><span role="columnheader">Action</span>
             </div>
             @foreach (var customer in Model.Items)
             {
                 <div class="customer-directory-row customer-directory-item" role="row" data-customer-key="@customer.BookingId" data-customer-name="@CustomerLabels.Name(customer.FirstName,customer.LastName)" data-merge-url="@Url.Action("Merge",new { id=customer.BookingId })">
-                    <div role="cell" class="customer-identity-cell">@if (mergeReady && customer.Kind != "Manual") { <span class="customer-merge-grip" data-merge-handle hidden aria-hidden="true" title="Drag to another customer to review a merge"><partial name="_StaffIcon" model='"grip"' /></span> }<div><strong>@CustomerLabels.Name(customer.FirstName, customer.LastName)</strong><small>@CustomerLabels.Kind(customer.Kind)</small><small data-merge-row-feedback aria-hidden="true"></small></div></div>
+                    <div role="cell" class="customer-identity-cell">@if (mergeReady && customer.Kind != "Manual") { <span class="customer-merge-grip" data-merge-handle hidden aria-hidden="true" title="Drag to another customer to review a merge"><partial name="_StaffIcon" model='"grip"' /></span> }<div><strong>@CustomerLabels.Name(customer.FirstName, customer.LastName)</strong><small>@CustomerLabels.Kind(customer.Kind)</small>
+
+                        <small data-merge-row-feedback aria-hidden="true"></small></div></div>
                     <div role="cell">
-                        <span>@(string.IsNullOrWhiteSpace(customer.Phone) ? "Phone not recorded" : CustomerLabels.Phone(customer.Phone))</span>
+                        <span><span class="sr-only">Customer ID </span>@(customer.CustomerId ?? "—")</span></div>
+                    <div role="cell"><span>@(string.IsNullOrWhiteSpace(customer.Phone) ? "Phone not recorded" : CustomerLabels.Phone(customer.Phone))</span>
                         <small>@(string.IsNullOrWhiteSpace(customer.Email) ? "Email not recorded" : customer.Email)</small>
                     </div>
                     <div role="cell"><span>@customer.Reference</span><small>Recorded @StaffReviewQueue.Local(customer.CreatedUtc).ToString("d MMM yyyy")</small></div>

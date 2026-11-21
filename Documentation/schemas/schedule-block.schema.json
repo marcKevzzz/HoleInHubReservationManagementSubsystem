@@ -4,7 +4,8 @@
     "_id",
     "ResourceIds",
     "StartUtc",
-    "EndUtc"
+    "EndUtc",
+    "block_id"
   ],
   "properties": {
     "_id": {
@@ -54,6 +55,10 @@
       "bsonType": "string",
       "minLength": 1,
       "maxLength": 500
+    },
+    "block_id": {
+      "bsonType": "string",
+      "pattern": "^BLK-[0-9A-F]{16}\\z"
     }
   }
 }

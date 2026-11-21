@@ -20,6 +20,22 @@ test('the schedule cache retains at most five days', async () => {
     await load('1'); assert.equal(calls, 7);
 });
 
+test('empty days reject move previews and open booking details for cross-day search', async () => {
+    const vm = require('node:vm'), fs = require('node:fs');
+    const destinations = [];
+    const page = { dataset: { date: '2026-11-18' }, isConnected: true, querySelector() { return null; },
+        setAttribute() {}, timelineGesture: { preview() {} } };
+    const window = { addEventListener() {}, location: { pathname: '/staff', origin: 'http://localhost', assign(url) { destinations.push(String(url)); } } };
+    vm.runInNewContext(fs.readFileSync(require.resolve('../HoleInHub.Web/wwwroot/js/staff-navigation.js'), 'utf8'), {
+        document: { querySelector: () => page, addEventListener() {} }, URL, clearTimeout, window,
+        fetch: async () => ({ ok: true, text: async () => '' }),
+        DOMParser: class { parseFromString() { return { querySelector: () => ({ dataset: { date: '2026-11-19' }, querySelector: () => null }) }; } },
+    });
+    await assert.rejects(window.HoleInHubSchedule.load('2026-11-19'), /Schedule unavailable/);
+    await window.HoleInHubSchedule.go('2026-11-19', true, '/BookingReview/Details/match');
+    assert.deepEqual(destinations, ['/BookingReview/Details/match']);
+});
+
 test('date-link intent prefetches one day and preserves customer context', async () => {
     const vm = require('node:vm'), fs = require('node:fs');
     const fetched = [], events = {}, documentEvents = {};

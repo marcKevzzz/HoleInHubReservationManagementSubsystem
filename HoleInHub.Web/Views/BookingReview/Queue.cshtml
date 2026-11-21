@@ -100,7 +100,7 @@
                 var cancelledAt = item.History.Where(entry => entry.Status == "Cancelled").OrderByDescending(entry => entry.AtUtc).FirstOrDefault()?.AtUtc;
                 <div role="row" class="review-row review-request">
                     <div role="cell"><strong><a class="staff-link" asp-action="Details" asp-route-id="@item.Id" asp-route-date="@date" asp-route-fromQueue="true" asp-route-filter="@Model.Filter"
-                           asp-route-page="@(Model.Page > 1 ? Model.Page : (int?)null)" asp-route-day="@Model.Day" asp-route-sort="@Model.Sort" title="Open booking" aria-label="@($"Open booking {item.Reference} for {item.FirstName} {item.LastName}")">@item.FirstName @item.LastName</a></strong><small>@item.Reference · @item.Attendees @(item.Attendees == 1 ? "guest" : "guests")</small></div>
+                           asp-route-page="@(Model.Page > 1 ? Model.Page : (int?)null)" asp-route-day="@Model.Day" asp-route-sort="@Model.Sort" title="Open booking" aria-label="@($"Open booking {item.Reference} for {item.FirstName} {item.LastName}")">@item.FirstName @item.LastName</a></strong><small>Reservation ID @item.Reference · @item.Attendees @(item.Attendees == 1 ? "guest" : "guests")</small></div>
                     <div role="cell" data-column="Session"><strong>@start.ToString("ddd, d MMM")</strong><small>@start.ToString("h:mm tt")–@end.ToString("h:mm tt") · @StaffReviewQueue.Bays(item)</small></div>
                     <div role="cell" data-column="Status">
                         @if (readOnly)

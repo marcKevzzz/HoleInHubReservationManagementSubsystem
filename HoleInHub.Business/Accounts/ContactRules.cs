@@ -18,8 +18,12 @@ public static class ContactRules
     {
         var (code, maximum) = country switch
         {
-            "PH" => ("63", 10), "KR" => ("82", 10), "CN" => ("86", 11),
-            "US" => ("1", 10), "JP" => ("81", 10), _ => ("", 0)
+            "PH" => ("63", 10),
+            "KR" => ("82", 10),
+            "CN" => ("86", 11),
+            "US" => ("1", 10),
+            "JP" => ("81", 10),
+            _ => ("", 0)
         };
         var digits = PhoneDigits(value);
         return maximum > 0 && IsPhone(value) && digits.StartsWith(code, StringComparison.Ordinal) && digits.Length <= code.Length + maximum;

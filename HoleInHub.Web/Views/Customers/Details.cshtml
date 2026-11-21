@@ -18,6 +18,7 @@
     <header class="staff-workspace-heading customer-profile-header">
         <div>
             <h1>@CustomerLabels.Name(customer.FirstName, customer.LastName)</h1>
+            @if (!string.IsNullOrEmpty(customer.CustomerId)) { <p class="customer-record-meta">Customer ID @customer.CustomerId</p> }
             <p class="customer-record-meta">@customer.Reference · @StaffReviewQueue.Local(customer.CreatedUtc).ToString("d MMM yyyy")</p>
         </div>
         @if (profile is not null)
@@ -58,7 +59,7 @@
                         var end = StaffReviewQueue.Local(booking.EndUtc);
                         <li>
                             <div class="customer-booking-date"><strong>@start.ToString("dd")</strong><span>@start.ToString("MMM yyyy")</span></div>
-                            <div><h3>@ReservationLabels.Service(booking.Service)</h3><p>@start.ToString("h:mm tt")–@(end.Date == start.Date ? end.ToString("h:mm tt") : end.ToString("d MMM, h:mm tt"))</p><p>@StaffReviewQueue.Bays(booking) · @booking.Attendees @(booking.Attendees == 1 ? "guest" : "guests")</p><small>@booking.Reference</small>
+                            <div><h3>@ReservationLabels.Service(booking.Service)</h3><p>@start.ToString("h:mm tt")–@(end.Date == start.Date ? end.ToString("h:mm tt") : end.ToString("d MMM, h:mm tt"))</p><p>@StaffReviewQueue.Bays(booking) · @booking.Attendees @(booking.Attendees == 1 ? "guest" : "guests")</p><small>Reservation ID @booking.Reference</small>
                             @if (!string.Equals(CustomerLabels.Name(booking.FirstName, booking.LastName), CustomerLabels.Name(customer.FirstName, customer.LastName), StringComparison.OrdinalIgnoreCase)
                                 || CustomerLabels.Phone(booking.Phone) != CustomerLabels.Phone(customer.Phone))
                             {

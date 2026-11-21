@@ -84,14 +84,6 @@ public sealed partial class LeadershipController(ReservationService reservations
         return RedirectToAction(nameof(Person), new { id });
     }
 
-    [Authorize(Roles = StaffRoles.VenueManagement), HttpGet("/manager/reports")]
-    public async Task<IActionResult> Reports(CancellationToken ct)
-    {
-        var day = Today;
-        ViewData["Day"] = day;
-        return View(await reservations.GetStaffScheduleAsync(day, ct));
-    }
-
     [Authorize(Roles = StaffRoles.VenueManagement), HttpGet("/manager/activity")]
     public IActionResult Activity() => RedirectToAction("Index", "Activity");
 

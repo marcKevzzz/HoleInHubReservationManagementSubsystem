@@ -6,6 +6,7 @@ public sealed class ResourceRecord
 {
     public bool Active { get; set; } = true;
     [BsonId] public string Id { get; set; } = "";
+    [BsonElement("resource_id")] public string ResourceId => Id;
     public string Name { get; set; } = "";
     public string Service { get; set; } = "Regular";
     [BsonIgnoreIfNull] public int? MaxPlayers { get; set; }
@@ -40,7 +41,9 @@ public sealed class ReservationRecord
     public string AccountId { get; set; } = "";
     [BsonIgnoreIfNull] public string? BookingSource { get; set; }
     public string Email { get; set; } = "";
-    public string Reference { get; set; } = "";
+    [BsonElement("reservation_id")] public string ReservationId { get; set; } = "";
+    // Migration 021 requires the historical BSON field to mirror the public ID.
+    public string Reference { get => ReservationId; set => ReservationId = value; }
     public string Service { get; set; } = "";
     public string Status { get; set; } = "Pending";
     public DateTime StartUtc { get; set; }
@@ -123,6 +126,7 @@ public sealed class ScheduleBlock
     [BsonIgnoreIfNull] public DateTime? CreatedUtc { get; set; }
     [BsonIgnoreIfNull] public string? SubmissionHash { get; set; }
     [BsonId] public string Id { get; set; } = "";
+    [BsonElement("block_id")] public string BlockId => BusinessIdentifier.Format("BLK", Id);
     public string[] ResourceIds { get; set; } = [];
     public DateTime StartUtc { get; set; }
     public DateTime EndUtc { get; set; }

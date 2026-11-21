@@ -16,7 +16,7 @@ public sealed class SettingsForm
         PRICES, CANCELLATIONS, AND CHANGES
         Review the selected service, schedule, guest count, and price shown before submitting. You may cancel an eligible Pending or Confirmed ordinary booking online up to one hour before its scheduled start. Contact the venue for a later cancellation, whole-shop cancellation, or deposit refund. Change requests are reviewed by staff and depend on availability; the current booking remains in place unless a change is approved.
 
-        Keep your account credentials and secure guest booking links private, and provide accurate contact and attendance details. A reservation reference alone does not authorize access to booking information. Contact holeinhub@gmail.com for booking questions.
+        Keep your account credentials and secure guest booking links private, and provide accurate contact and attendance details. A reservation ID alone does not authorize access to booking information. Contact holeinhub@gmail.com for booking questions.
         """;
 
     internal const string DefaultPrivacyPolicy = """

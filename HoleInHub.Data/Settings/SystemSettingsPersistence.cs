@@ -6,6 +6,7 @@ namespace HoleInHub.Data.Settings;
 public sealed class SystemSettingsRecord
 {
     [BsonId] public string Id { get; set; } = "venue";
+    [BsonElement("settings_id")] public string SettingsId => BusinessIdentifier.Format("SET", Id);
     public long Revision { get; set; }
     public string CommandId { get; set; } = "";
     public string CommandHash { get; set; } = "";

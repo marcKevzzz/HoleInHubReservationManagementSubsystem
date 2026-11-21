@@ -123,11 +123,11 @@ public sealed partial class ReservationPersistence
     }
 
     public Task<string?> FindIdByReferenceAsync(string reference, CancellationToken ct) =>
-        Reservations.Find(x => x.Reference == reference).Project(x => x.Id).FirstOrDefaultAsync(ct)!;
+        Reservations.Find(x => x.ReservationId == reference).Project(x => x.Id).FirstOrDefaultAsync(ct)!;
 
     public Task<List<ReservationRecord>> SearchStaffBookingsAsync(string term, CancellationToken ct)
     {
-        var exact = Builders<ReservationRecord>.Filter.Eq(x => x.Reference, term.ToUpperInvariant());
+        var exact = Builders<ReservationRecord>.Filter.Eq(x => x.ReservationId, term.ToUpperInvariant());
         var names = new BsonDocument("$expr", new BsonDocument("$regexMatch", new BsonDocument
         {
             { "input", new BsonDocument("$concat", new BsonArray
@@ -176,8 +176,8 @@ public sealed partial class ReservationPersistence
         {
             Id = $"{record.Id}:{eventName}",
             Recipient = record.Email,
-            Subject = subject,
-            Body = encryptedBody ?? $"Reservation {record.Reference}: {record.Status}. Session {record.StartUtc:O}. Review/payment deadline {record.ReviewDeadlineUtc:O}. Keep your booking status link to view updates.",
+            Subject = eventName == "submitted" ? $"{subject} (Reservation ID: {record.Reference})" : subject,
+            Body = encryptedBody ?? $"Reservation ID: {record.Reference}. Status: {record.Status}. Session {record.StartUtc:O}. Review/payment deadline {record.ReviewDeadlineUtc:O}. Keep your booking status link to view updates.",
             ReservationId = record.Id,
             RequiredStatus = eventName == "submitted" ? null : record.Status,
             DueUtc = DateTime.UtcNow
@@ -274,8 +274,8 @@ public sealed partial class ReservationPersistence
             change = change.Push(x => x.History, new HistoryRecord { EventType = eventType, ReservationStatus = record.Status, Status = history, Actor = actor, AtUtc = now, Reason = reason });
             await Reservations.UpdateOneAsync(s, x => x.Id == id, change.Inc(x => x.Revision, 1), cancellationToken: token);
             var message = action == "reschedule"
-                ? $"The original slot for request {record.Reference} is no longer available. Choose another time: {rebookUrl}"
-                : selfService ? $"You cancelled reservation {record.Reference}. Any remaining bay hold has been released." : null;
+                ? $"The original slot for your booking (Reservation ID: {record.Reference}) is no longer available. Choose another time: {rebookUrl}"
+                : selfService ? $"You cancelled your booking (Reservation ID: {record.Reference}). Any remaining bay hold has been released." : null;
             await NotifyAsync(s, record, $"action:{record.History.Count}:{action}", history, token, message);
             if (action == "request-cancellation")
             {

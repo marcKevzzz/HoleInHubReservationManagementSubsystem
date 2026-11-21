@@ -24,7 +24,7 @@ public static class ReservationReminderPolicy
             ReminderStartUtc = reservation.StartUtc,
             Recipient = reservation.Email,
             Subject = $"Upcoming reservation: {reservation.Reference}",
-            Body = $"Reminder: your confirmed reservation {reservation.Reference} starts on {localStart.ToString("MMMM d, yyyy 'at' h:mm tt", CultureInfo.InvariantCulture)} (Manila time). We look forward to seeing you at Hole In Hub.",
+            Body = $"Reminder: your confirmed booking (Reservation ID: {reservation.Reference}) starts on {localStart.ToString("MMMM d, yyyy 'at' h:mm tt", CultureInfo.InvariantCulture)} (Manila time). We look forward to seeing you at Hole In Hub.",
             DueUtc = now
         };
     }

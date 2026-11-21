@@ -1,0 +1,63 @@
+@using HoleInHub.Business.Reservations
+@model StaffScheduleList
+@{
+    Layout = "_StaffLayout";
+    ViewData["Title"] = "Reservations";
+    var customerProfileId = Context.Request.Query["customerProfileId"].FirstOrDefault();
+    string? PageUrl(int page) => Url.Action("List", new { from = Model.From, to = Model.To, page, customerProfileId });
+    var returnSchedule = PageUrl(Model.Page);
+}
+<div class="staff-workspace">
+    <header class="staff-workspace-heading"><h1>Reservations</h1></header>
+    <section class="staff-schedule" aria-label="Schedule list">
+        <div class="staff-date-controls schedule-list-controls">
+            <form asp-action="List" method="get" class="schedule-list-filter">
+                @if (customerProfileId is not null) { <input type="hidden" name="customerProfileId" value="@customerProfileId" /> }
+                <label>From <input type="date" name="from" value="@Model.From" min="2000-01-01" max="2100-12-31" required /></label>
+                <label>To <input type="date" name="to" value="@Model.To" min="2000-01-01" max="2100-12-31" required /></label>
+                <button class="button" type="submit">Apply</button>
+            </form>
+            <partial name="_ScheduleViews" model="new ScheduleViewLinks(Model.From, Model.To, true, customerProfileId)" />
+        </div>
+        @if (Model.Error is not null)
+        {
+            <p class="staff-error" role="alert">@Model.Error</p>
+        }
+        else
+        {
+            <p class="schedule-list-count">@Model.Total @(Model.Total == 1 ? "reservation" : "reservations") · Manila time</p>
+            @if (Model.Total == 0)
+            {
+                <p class="staff-empty">No reservations in this date range.</p>
+            }
+            else
+            {
+                <div class="resource-table" role="region" aria-label="Reservations in date range" tabindex="0">
+                    <table>
+                        <thead><tr><th scope="col">Reservation ID</th><th scope="col">Customer</th><th scope="col">Service</th><th scope="col">Bays</th><th scope="col">Start</th><th scope="col">End</th><th scope="col">Status</th></tr></thead>
+                        <tbody>
+                            @foreach (var booking in Model.Bookings)
+                            {
+                                <tr>
+                                    <th scope="row"><a class="staff-link" asp-action="Details" asp-route-id="@booking.Id" asp-route-returnSchedule="@returnSchedule">@booking.Reference</a></th>
+                                    <td>@booking.Guest</td><td>@booking.Service</td><td>@string.Join(", ", booking.Bays)</td>
+                                    <td>@DashboardMetrics.Local(booking.StartUtc).ToString("d MMM yyyy, h:mm tt")</td>
+                                    <td>@DashboardMetrics.Local(booking.EndUtc).ToString("d MMM yyyy, h:mm tt")</td>
+                                    <td><span class="staff-status" data-status="@booking.Status">@(booking.Status == "Checked-In" ? "Checked in" : booking.Status)</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                @if (Model.Total > 20)
+                {
+                    <nav class="dashboard-pagination" aria-label="Schedule list pages">
+                        @if (Model.Page > 1) { <a href="@PageUrl(Model.Page - 1)" rel="prev">Previous</a> }
+                        <span>Page @Model.Page of @((Model.Total + 19) / 20)</span>
+                        @if ((long)Model.Page * 20 < Model.Total) { <a href="@PageUrl(Model.Page + 1)" rel="next">Next</a> }
+                    </nav>
+                }
+            }
+        }
+    </section>
+</div>

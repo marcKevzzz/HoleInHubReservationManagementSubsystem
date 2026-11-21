@@ -4,7 +4,7 @@
     const results = document.querySelector('[data-staff-search-results]');
     if (!form || !results) return;
 
-    const input = form.elements.reference;
+    const input = form.elements.reservation_id;
     let timer;
     let request;
     const enhanced = typeof results.showPopover === 'function';
@@ -65,7 +65,7 @@
         request = new AbortController();
         const { signal } = request;
         const url = new URL(form.dataset.staffSearch, window.location.href);
-        url.searchParams.set('reference', reference);
+        url.searchParams.set('reservation_id', reference);
         url.searchParams.set('date', form.elements.date.value);
         results.setAttribute('aria-busy', 'true');
         try {

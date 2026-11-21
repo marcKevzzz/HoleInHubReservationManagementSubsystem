@@ -12,6 +12,7 @@ public sealed class DashboardRow
     public DateTime StartUtc { get; set; }
     public DateTime EndUtc { get; set; }
     public string[] ResourceIds { get; set; } = [];
+    public Dictionary<string, string> ResourceNames { get; set; } = [];
     public bool CancellationRequested { get; set; }
     public DateTime? CheckedInUtc { get; set; }
 }
@@ -28,20 +29,33 @@ public sealed partial class ReservationPersistence
         StartUtc = x.StartUtc,
         EndUtc = x.EndUtc,
         ResourceIds = x.ResourceIds,
+        ResourceNames = x.ResourceNames,
         CancellationRequested = x.CancellationRequested,
         CheckedInUtc = x.CheckedInUtc
     };
 
+    private static FilterDefinition<ReservationRecord> Overlaps(DateTime start, DateTime end) =>
+        Builders<ReservationRecord>.Filter.Where(x => x.StartUtc < end && x.EndUtc > start);
+
     // Explicit bound: callers reject an oversized range rather than reporting truncated totals.
     public Task<List<DashboardRow>> ReadDashboardRowsAsync(DateTime start, DateTime end, CancellationToken ct) =>
-        Reservations.Find(x => x.StartUtc < end && x.EndUtc > start).Project(DashboardProjection).Limit(20001).ToListAsync(ct);
+        Reservations.Find(Overlaps(start, end)).Project(DashboardProjection).Limit(20001).ToListAsync(ct);
+
+    public async Task<(List<DashboardRow> Rows, long Total)> ReadScheduleListAsync(DateTime start, DateTime end, int page, CancellationToken ct)
+    {
+        var filter = Overlaps(start, end);
+        var count = Reservations.CountDocumentsAsync(filter, cancellationToken: ct);
+        var rows = ReadBookingPageAsync(filter, page, 20, ct);
+        await Task.WhenAll(count, rows);
+        return (await rows, await count);
+    }
 
     public Task<List<DashboardRow>> ReadDashboardSliceAsync(DateTime start, DateTime end, string? service,
         string[]? statuses, bool excludeStatuses, (DateTime Start, DateTime End)[] intervals, bool byStart,
         int page, CancellationToken ct)
     {
         var f = Builders<ReservationRecord>.Filter;
-        var filter = f.Lt(x => x.StartUtc, end) & f.Gt(x => x.EndUtc, start);
+        var filter = Overlaps(start, end);
         if (service is not null)
         {
             filter &= f.Eq(x => x.Service, service);
@@ -59,9 +73,12 @@ public sealed partial class ReservationPersistence
                 : f.Lt(x => x.StartUtc, interval.End) & f.Gt(x => x.EndUtc, interval.Start)));
         }
 
-        return Reservations.Find(filter).SortBy(x => x.StartUtc).ThenBy(x => x.Id)
-            .Skip((page - 1) * 20).Limit(21).Project(DashboardProjection).ToListAsync(ct);
+        return ReadBookingPageAsync(filter, page, 21, ct);
     }
+
+    private Task<List<DashboardRow>> ReadBookingPageAsync(FilterDefinition<ReservationRecord> filter, int page, int limit, CancellationToken ct) =>
+        Reservations.Find(filter).SortBy(x => x.StartUtc).ThenBy(x => x.Id)
+            .Skip(checked((page - 1) * 20)).Limit(limit).Project(DashboardProjection).ToListAsync(ct);
 
     public async Task<(List<ResourceRecord> Resources, List<DashboardRow> Bookings, List<ScheduleBlock> Blocks)> ReadDashboardLiveAsync(DateTime now, CancellationToken ct)
     {

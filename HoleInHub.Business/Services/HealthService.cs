@@ -23,7 +23,7 @@ public sealed class HealthService(IMongoDbContext dbContext) : IHealthService
 
         try
         {
-            string[] required = ["001_InitialFoundation", "002_Reservations", "003_Accounts", "004_BookingProcess", "005_GoogleAccounts", "006_SchemaHardening", "007_GuestReservationAccess", "008_ServiceCatalog"];
+            string[] required = ["001_InitialFoundation", "002_Reservations", "003_Accounts", "004_BookingProcess", "005_GoogleAccounts", "006_SchemaHardening", "007_GuestReservationAccess", "008_ServiceCatalog", "021_BusinessIdentifiers", "022_PrefixedBusinessIdentifiers"];
             var applied = await _dbContext.Migrations.Find(Builders<MigrationRecord>.Filter.In(x => x.MigrationId, required)).Project(x => x.MigrationId).ToListAsync(ct);
             if (required.All(applied.Contains))
             {

@@ -3,7 +3,7 @@ using HoleInHub.Business.Accounts;
 namespace HoleInHub.Business.Reservations;
 
 public sealed record StaffCustomer(string BookingId, string FirstName, string LastName, string Email, string Phone,
-    string Kind, string Reference, DateTime CreatedUtc);
+    string Kind, string Reference, DateTime CreatedUtc, string? CustomerId = null);
 public sealed record StaffCustomerDirectory(IReadOnlyList<StaffCustomer> Items, string Search, int Page, bool HasMore);
 public sealed record StaffCustomerProfile(StaffCustomer Customer, IReadOnlyList<ReservationDto> Bookings, long Total,
     long Upcoming, long Completed, long Cancelled, bool UpcomingOnly, int Page, bool HasMore);
@@ -26,7 +26,7 @@ public sealed partial class ReservationService
                 : digits.Length == 11 && digits.StartsWith('0') ? [digits, "63" + digits[1..]] : [digits];
         }
         var result = await persistence.SearchCustomersAsync(term, phones, page, ct);
-        return new(result.Items.Select(row => Contact(row.Contact, row.Kind)).ToArray(), term, page, result.HasMore);
+        return new(result.Items.Select(Contact).ToArray(), term, page, result.HasMore);
     }
 
     public async Task<StaffCustomerProfile?> GetCustomerProfileAsync(string bookingId, bool upcomingOnly, int page, CancellationToken ct)
@@ -34,10 +34,13 @@ public sealed partial class ReservationService
         if (string.IsNullOrWhiteSpace(bookingId) || bookingId.Length > 100) { return null; }
         page = Math.Clamp(page, 1, 1000);
         var result = await persistence.ReadCustomerProfileAsync(bookingId, upcomingOnly, page, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime, ct);
-        return result is null ? null : new(Contact(result.Customer.Contact, result.Customer.Kind), result.Bookings.Select(Map).ToArray(),
+        return result is null ? null : new(Contact(result.Customer), result.Bookings.Select(Map).ToArray(),
             result.Total, result.Upcoming, result.Completed, result.Cancelled, upcomingOnly, page, result.HasMore);
     }
 
-    private static StaffCustomer Contact(HoleInHub.Data.Reservations.ReservationRecord record, string kind) =>
-        new(record.Id, record.FirstName, record.LastName, record.Email, record.Phone, kind, record.Reference, record.CreatedUtc);
+    private static StaffCustomer Contact(HoleInHub.Data.Reservations.CustomerContactRecord row)
+    {
+        var record = row.Contact;
+        return new(record.Id, record.FirstName, record.LastName, record.Email, record.Phone, row.Kind, record.Reference, record.CreatedUtc, row.CustomerId);
+    }
 }

@@ -83,6 +83,7 @@ public sealed partial class CustomerProfilePersistence(IMongoDbContext context)
                 Sources = [kind]
             };
             SetSearchNames(profile);
+            profile.UseLegacyCustomerId = legacyGrouping;
             await Profiles.InsertOneAsync(session, profile, cancellationToken: ct);
         }
         else
@@ -102,6 +103,7 @@ public sealed partial class CustomerProfilePersistence(IMongoDbContext context)
             }
             profile.UpdatedUtc = record.CreatedUtc > profile.UpdatedUtc ? record.CreatedUtc : profile.UpdatedUtc;
             SetSearchNames(profile);
+            profile.UseLegacyCustomerId = legacyGrouping;
             await Profiles.ReplaceOneAsync(session, x => x.Id == profile.Id, profile, cancellationToken: ct);
         }
         await Memberships.InsertOneAsync(session, new() { Id = record.Id, ProfileId = profile.Id }, cancellationToken: ct);

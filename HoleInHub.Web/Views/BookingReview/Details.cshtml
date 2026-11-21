@@ -34,10 +34,19 @@
     <div class="review-top-nav">
         @if (activityReturn is null)
         {
+            var reportReturn = Context.Request.Query["returnReport"].ToString();
             var dashboardReturn = Context.Request.Query["returnDashboard"].ToString();
             if (Url.IsLocalUrl(dashboardReturn) && (dashboardReturn == "/staff/dashboard" || dashboardReturn.StartsWith("/staff/dashboard?", StringComparison.Ordinal)))
             {
                 <a class="flow-back" href="@dashboardReturn"><partial name="_BackArrow" /> Back to dashboard</a>
+            }
+            else if (Url.IsLocalUrl(reportReturn) && reportReturn.StartsWith("/manager/reports?", StringComparison.Ordinal))
+            {
+                <a class="flow-back" href="@reportReturn"><partial name="_BackArrow" /> Back to reports</a>
+            }
+            else if (ViewData["ScheduleListUrl"] is string scheduleList)
+            {
+                <a class="flow-back" href="@scheduleList"><partial name="_BackArrow" /> Back to schedule list</a>
             }
             else if (ViewData["CustomerId"] is string customerId)
             {
@@ -81,7 +90,7 @@
     <header class="staff-workspace-heading review-heading">
         <div>
             <h1>Review booking</h1>
-            <p class="review-reference">@booking.Reference <span class="staff-status review-chip" data-status="@booking.Status">@statusLabel</span></p>
+            <p class="review-reference">Reservation ID @booking.Reference <span class="staff-status review-chip" data-status="@booking.Status">@statusLabel</span></p>
         </div>
         <div class="review-header-actions">
             <partial name="_ReviewDecision" model="Model" />

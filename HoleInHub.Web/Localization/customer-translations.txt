@@ -182,7 +182,7 @@ Schedule change requested|일정 변경 요청
 Schedule change approved|일정 변경 승인
 Schedule change rejected|일정 변경 거절
 Pending · Overdue|검토 대기 · 기한 초과
-Reference|예약 번호
+Reservation ID|예약 번호
 RESERVATION DETAILS|예약 상세
 RESERVATION INFORMATION|예약 정보
 Reservation status|예약 상태

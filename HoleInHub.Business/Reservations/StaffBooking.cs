@@ -88,7 +88,7 @@ public sealed partial class ReservationService
         var record = new ReservationRecord
         {
             AccountId = scope,
-            Reference = $"HIH-{Guid.NewGuid().ToString("N")[..10].ToUpperInvariant()}",
+            ReservationId = $"HIH-{Guid.NewGuid().ToString("N")[..10].ToUpperInvariant()}",
             BookingSource = request.Source,
             Status = "Confirmed",
             PolicyVersion = 2,

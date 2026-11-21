@@ -26,7 +26,7 @@
     @if (available)
     {
         <p class="attendance-note">@(early ? $"{Math.Ceiling((booking.EndUtc - now).TotalMinutes)} minutes remain. Add an early checkout reason." : checkout ? "Checking out releases all booked bays." : "Check-in keeps the original end time.")</p>
-        <form asp-action="Attendance" asp-route-id="@booking.Id" asp-route-date="@Model.ScheduleDate"
+        <form asp-action="Attendance" asp-route-id="@booking.Id" asp-route-date="@Model.ScheduleDate" asp-route-returnSchedule="@ViewData["ScheduleListUrl"]"
               asp-route-fromQueue="@Model.FromQueue" asp-route-filter="@(Model.FromQueue ? Model.Queue.Filter : null)"
               asp-route-day="@Model.Queue.Day" asp-route-page="@(Model.Queue.Page > 1 ? Model.Queue.Page : (int?)null)" asp-route-sort="@Model.Queue.Sort" method="post" class="staff-create-form"
               data-attendance-form data-check-in-opens="@AttendanceRules.CheckInOpens(booking.StartUtc).ToString("O")" data-session-start="@booking.StartUtc.ToString("O")" data-session-end="@booking.EndUtc.ToString("O")">

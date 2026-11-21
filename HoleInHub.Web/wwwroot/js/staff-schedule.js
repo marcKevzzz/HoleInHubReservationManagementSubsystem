@@ -110,12 +110,12 @@
             event.preventDefault();
             if (booking.dataset.searchDay) {
                 const date = booking.dataset.searchDay;
-                const destination = date === page.dataset.date ? page : await window.HoleInHubSchedule?.go(date);
+                if (date !== page.dataset.date && !window.HoleInHubSchedule) { window.location.assign(booking.href); return; }
+                const destination = date === page.dataset.date ? page : await window.HoleInHubSchedule.go(date, true, booking.href);
                 if (!destination) return;
                 const bars = [...destination.querySelectorAll('.staff-timeline-bar[data-booking-id]')]
                     .filter(bar => bar.dataset.bookingId === booking.dataset.bookingId);
                 if (bars.length) {
-                    if (destination.dataset?.activeView !== 'timeline') destination.querySelector('[data-schedule-view="timeline"]').click();
                     const scroller = destination.querySelector('.staff-timeline-scroll');
                     const viewport = scroller.getBoundingClientRect();
                     const label = destination.querySelector('.staff-timeline-label').offsetWidth;
@@ -151,8 +151,6 @@
     const scroller = page.querySelector('.staff-timeline-scroll');
     const axis = timeline.querySelector('.staff-timeline-hours');
     const nowLabel = timeline.querySelector('.staff-now-label');
-    const viewControls = page.querySelector('.staff-view-controls');
-    const views = [...viewControls.querySelectorAll('[data-schedule-view]')];
     const firstMinute = Number(page.dataset.firstHour) * 60;
     const clock = new Intl.DateTimeFormat('en-GB', {
         timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit',
@@ -182,16 +180,8 @@
         }
     }
 
-    function setView(view) {
-        page.dataset.activeView = view;
-        views.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.scheduleView === view)));
-        if (view === 'timeline') scrollToNow();
-    }
-
     updateClock();
-    setView('timeline');
-    viewControls.hidden = false;
-    views.forEach(button => button.addEventListener('click', () => setView(button.dataset.scheduleView)));
+    scrollToNow();
     const clockTimer = window.setInterval(updateClock, 15000);
     page.addEventListener('staff:schedule-unmount', () => { window.clearInterval(clockTimer); actionsRequest?.abort(); }, { once: true });
     }

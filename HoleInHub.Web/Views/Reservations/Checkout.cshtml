@@ -11,7 +11,7 @@
     <a class="flow-back" asp-action="Status" asp-route-id="@Model.Id" asp-route-token="@token" asp-route-guest="@(ViewData["GuestAccess"] is true ? "true" : null)"><partial name="_BackArrow" /> @T("Back to reservation")</a>
     <header class="booking-status-heading">
         <h1>@T("DEPOSIT CHECKOUT")</h1>
-        <p>@T("Reservation") <strong class="booking-reference">@Model.Reference</strong></p>
+        <p>@T("Reservation ID") <strong class="booking-reference">@Model.Reference</strong></p>
     </header>
     <div class="checkout-layout">
         <section class="checkout-summary" aria-labelledby="checkout-experience">
