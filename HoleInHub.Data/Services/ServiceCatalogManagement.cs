@@ -7,6 +7,7 @@ namespace HoleInHub.Data.Services;
 public sealed class ServiceImageRecord
 {
     [BsonId] public string Id { get; set; } = "";
+    [BsonElement("service_image_id")] public string ServiceImageId => BusinessIdentifier.Format("IMG", Id);
     public string ContentType { get; set; } = "";
     public byte[] Content { get; set; } = [];
 }

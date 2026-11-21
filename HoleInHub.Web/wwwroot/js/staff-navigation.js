@@ -31,11 +31,11 @@
         if (!response.ok) throw new Error('Couldn’t load that day. Please try again.');
         return response.text();
     });
-    async function load(date, signal) {
+    async function load(date, signal, allowEmpty = false) {
         const html = await read(date);
         if (signal?.aborted) throw new DOMException('Cancelled', 'AbortError');
         const page = new DOMParser().parseFromString(html, 'text/html').querySelector('[data-staff-schedule]');
-        if (page?.dataset.date !== date || !page.querySelector('.staff-timeline')) throw new Error('Schedule unavailable. Please reload and sign in again.');
+        if (page?.dataset.date !== date || (!allowEmpty && !page.querySelector('.staff-timeline'))) throw new Error('Schedule unavailable. Please reload and sign in again.');
         return page;
     }
     const dateLink = target => target.closest('[data-staff-schedule] .staff-date-controls nav a');
@@ -61,25 +61,26 @@
             if (link && !link.contains(event.relatedTarget)) clearTimeout(prefetchTimer);
         });
     }
-    async function go(date, push = true) {
+    async function go(date, push = true, bookingUrl) {
         clearTimeout(prefetchTimer);
         const page = document.querySelector('[data-staff-schedule]');
         if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || page.dataset.moving || page.querySelector('dialog[open]')) return;
         const id = ++requestId;
         page.setAttribute('aria-busy', 'true');
+        if (!page.timelineGesture) { window.location.assign(bookingUrl || dayUrl(date)); return; }
         page.timelineGesture.preview(date, 'Loading schedule');
         const focused = document.activeElement;
         const focusLabel = focused?.getAttribute('aria-label');
         try {
-            const incoming = await load(date);
+            const incoming = await load(date, undefined, true);
             if (id !== requestId || !page.isConnected) return;
             if (page.dataset.moving || page.querySelector('dialog[open]')) {
                 page.removeAttribute('aria-busy');
                 page.timelineGesture.hide();
                 return;
             }
+            if (!incoming.querySelector('.staff-timeline')) { window.location.assign(bookingUrl || dayUrl(date)); return; }
             const direction = date < page.dataset.date ? -1 : 1;
-            const view = page.dataset.activeView;
             const zoom = page.querySelector('.staff-timeline').style.getPropertyValue('--hour-width');
             const scroll = page.querySelector('.staff-timeline-scroll');
             page.dispatchEvent(new Event('staff:schedule-unmount'));
@@ -89,7 +90,6 @@
             if (zoom) incoming.querySelector('.staff-timeline').style.setProperty('--hour-width', zoom);
             document.dispatchEvent(new Event('staff:schedule-mounted'));
             disposeButtons = window.HoleInHubButtons?.mount(incoming);
-            if (view === 'list') incoming.querySelector('[data-schedule-view="list"]').click();
             incoming.querySelector('.staff-timeline-scroll').scrollTo({ left: scroll.scrollLeft, top: scroll.scrollTop, behavior: 'instant' });
             incoming.timelineGesture.transition(direction);
             const url = dayUrl(date);
@@ -109,7 +109,8 @@
             if (id !== requestId) return;
             page.removeAttribute('aria-busy');
             page.timelineGesture.hide();
-            window.HoleInHubToasts?.show({ autoDismiss: true, kind: 'error', title: 'Schedule unavailable', message: error.message });
+            if (bookingUrl) window.location.assign(bookingUrl);
+            else window.HoleInHubToasts?.show({ autoDismiss: true, kind: 'error', title: 'Schedule unavailable', message: error.message });
         }
     }
     window.HoleInHubSchedule = { go, load };

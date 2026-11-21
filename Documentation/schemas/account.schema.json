@@ -1,6 +1,6 @@
 {
   "bsonType" : "object",
-  "required" : ["_id", "Email", "NormalizedEmail"],
+  "required" : ["_id", "Email", "NormalizedEmail", "account_id"],
   "properties" : {
     "_id" : {
       "bsonType" : "string",
@@ -65,6 +65,10 @@
         "bsonType" : "string",
         "minLength" : 1
       }
+    },
+    "account_id" : {
+      "bsonType" : "string",
+      "pattern" : "^ACC-[0-9A-F]{16}\\z"
     }
   }
 }

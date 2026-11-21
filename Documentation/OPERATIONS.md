@@ -46,6 +46,26 @@ mongorestore --uri="mongodb://username:password@cluster-host:27017/?replicaSet=r
 
 ---
 
+### Local restore rehearsal, 21 November 2026
+
+The ignored pre-022 preview backup captured at 07:24:56 UTC was restored on the local MongoDB 7 replica set at 10:45:51 UTC. The archive SHA-256 was `3b26b9dd6aa10200fa57a5442ffae645f0958ed747b4f247a4790a3aae6a51d5`. Its age at restore completion was 3 hours 20 minutes 55 seconds.
+
+| Check | Observed result | Elapsed |
+| --- | --- | --- |
+| Namespace-remapped restore to an empty database | 846 documents restored, zero failures | 10.908 s |
+| Explicit migration CLI | 21 already applied, one applied, 22 total | 0.519 s runner, 6.948 s including build and launch |
+| Isolated Web startup | HTTP 200 and Healthy at 10:47:54 UTC, SMTP restricted to loopback Mailpit | 1.780 s to readiness |
+| Application recovery | Restored booking lookup, customer membership in both directions including public customer ID, authenticated manager CSV reference and status reconciliation | 1 test passed in 2.252 s |
+
+To repeat, select a fresh local database whose name starts with `test_restore_`, verify that the name is unused, and remap the archive namespace with `mongorestore --nsInclude='<source>.*' --nsFrom='<source>.*' --nsTo='<fresh-test-restore-name>.*' --gzip --archive=<path> --stopOnError`. Point the CLI and isolated Web process at `mongodb://localhost:27017/?replicaSet=rs0` and the new database. Run the CLI, then probe the isolated Web instance with SMTP directed to local Mailpit. Run the restored-data check before disposing of the database:
+
+```powershell
+$env:HOLEINHUB_RESTORE_TEST_DATABASE = '<fresh-test-restore-name>'
+dotnet test tests/HoleInHub.Tests.Web/HoleInHub.Tests.Web.csproj --filter FullyQualifiedName~RestoredBookingResolves
+```
+
+The rehearsal process was stopped, the disposable database was verified absent, and the temporary container archive copy was removed. The original backup was retained. These local timings cover a single preview snapshot. Production RPO and RTO require an agreed objective and measurements on representative infrastructure.
+
 ## 4. Pre-Deployment Release Checklist
 
 1. [ ] Confirm staging rehearsal migration succeeded cleanly.

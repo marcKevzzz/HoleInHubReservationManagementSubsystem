@@ -35,7 +35,7 @@
                                 }
                             </strong>
                             <span>@T(item.Message)</span>
-                            <small>@item.Reference</small>
+                            <small>@T("Reservation ID") @item.Reference</small>
                         </span>
                         <span class="account-inbox-side">
                             <time datetime="@item.AtUtc.ToString("O")" title="@local.ToString("g") · Manila">@local.ToString("d MMM")</time>

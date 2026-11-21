@@ -15,7 +15,7 @@
         <section class="merge-current"><h2>Selected customer</h2><strong>@Name(Model.Source)</strong><span>@Value(Model.Source.Email)</span><span>@CustomerLabels.Phone(Model.Source.Phone)</span><small>@Model.Source.BookingCount @(Model.Source.BookingCount == 1 ? "reservation" : "reservations")</small></section>
         <template data-merge-guidance></template>
         <form class="staff-lookup people-search merge-customer-search" asp-action="Merge" asp-route-id="@Model.Source.Id" method="get" role="search" aria-label="Find a duplicate customer">
-            <div class="auth-input-wrap"><partial name="_StaffIcon" model='"search"' /><label class="sr-only" for="merge-search">Name, phone, email or reference</label><input id="merge-search" type="search" name="search" value="@Model.Search" maxlength="100" placeholder="Find another customer record" /></div>
+            <div class="auth-input-wrap"><partial name="_StaffIcon" model='"search"' /><label class="sr-only" for="merge-search">Name, phone, email or reservation ID</label><input id="merge-search" type="search" name="search" value="@Model.Search" maxlength="100" placeholder="Find another customer record" /></div>
 
         </form>
         <p class="people-search-status" data-customer-search-status role="status">@(dialogMode ? null : Model.Error)</p>
@@ -32,7 +32,7 @@
                 </a></li>
             }
         </ul>
-        @if (Model.Candidates.Items.Count == 0 && Model.Search.Length != 1) { <p class="staff-empty">No matching records. Try another name, phone, email or reference.</p> }
+        @if (Model.Candidates.Items.Count == 0 && Model.Search.Length != 1) { <p class="staff-empty">No matching records. Try another name, phone, email or reservation ID.</p> }
         <nav class="customer-pagination" aria-label="Duplicate search pages">
             @if (Model.Candidates.Page>1) { <a asp-action="Merge" asp-route-id="@Model.Source.Id" asp-route-search="@Model.Search" asp-route-page="@(Model.Candidates.Page-1)">Previous</a> }
             @if (Model.Candidates.HasMore) { <a rel="next" asp-action="Merge" asp-route-id="@Model.Source.Id" asp-route-search="@Model.Search" asp-route-page="@(Model.Candidates.Page+1)">Next</a> }

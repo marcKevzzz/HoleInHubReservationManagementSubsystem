@@ -244,3 +244,5 @@ fieldset.service-rule-grid {border:0;border-bottom:1px solid var(--color-line);m
 @media(max-width:900px) {.service-configuration-grid {grid-template-columns:1fr}}
 .service-editor [data-bay-selection][hidden]{display:none}
 .service-editor [data-whole-shop-bays]{color:var(--color-muted);font-size:.8rem}
+
+.service-image-id {position:absolute;top:0;left:0;max-width:80%;padding:2px 5px;background:var(--color-paper);color:var(--color-ink);font-size:.75rem;overflow-wrap:anywhere;pointer-events:none}

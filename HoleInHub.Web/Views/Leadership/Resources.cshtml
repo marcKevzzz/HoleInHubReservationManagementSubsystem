@@ -20,7 +20,7 @@
                 @foreach (var bay in Model)
                 {
                     <tr data-resource-name="@bay.Name">
-                        <th scope="row"><span class="resource-identity"><span class="resource-symbol" aria-hidden="true"><partial name="_StaffIcon" model='@(bay.Service == "VIP" ? "vip-bay" : "regular-bay")' /></span><span>@bay.Name<small>@bay.Id</small></span></span></th>
+                        <th scope="row"><span class="resource-identity"><span class="resource-symbol" aria-hidden="true"><partial name="_StaffIcon" model='@(bay.Service == "VIP" ? "vip-bay" : "regular-bay")' /></span><span>@bay.Name<small>Resource ID @bay.Id</small></span></span></th>
                         <td>@bay.Service</td>
                         <td><span class="staff-status" data-status="@(bay.Active ? "Confirmed" : "Completed")">@(bay.Active ? "Active" : "Retired")</span></td>
                         <td class="resource-actions">

@@ -18,7 +18,7 @@
     var status = saved?.CorrectedStatus ?? booking.Status;
     <details class="review-section attendance-operation" open="@(saved is not null)">
         <summary>@action.Title</summary>
-        <form asp-action="Attendance" asp-route-id="@booking.Id" asp-route-date="@Model.ScheduleDate"
+        <form asp-action="Attendance" asp-route-id="@booking.Id" asp-route-date="@Model.ScheduleDate" asp-route-returnSchedule="@ViewData["ScheduleListUrl"]"
               asp-route-fromQueue="@Model.FromQueue" asp-route-filter="@Model.Queue.Filter" asp-route-day="@Model.Queue.Day" asp-route-page="@(Model.Queue.Page > 1 ? Model.Queue.Page : (int?)null)" asp-route-sort="@Model.Queue.Sort"
               method="post" class="staff-create-form" data-attendance-form>
             <input type="hidden" name="Action" value="@action.Key" />

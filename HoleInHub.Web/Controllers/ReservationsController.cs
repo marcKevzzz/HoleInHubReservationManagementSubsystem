@@ -284,7 +284,7 @@ public sealed class ReservationsController(ReservationService reservations, Gues
         var receipt = "protected:" + protection.CreateProtector("BookingEmail").Protect(
             $"Hi {request.FirstName.Trim()},\n\nYour reservation request has been received.\nReservation status: Pending\nExperience: {ReservationLabels.Service(request.Service)}\nSession: {localStart:dd MMM yyyy h:mm tt} (Asia/Manila)\nNumber of guests: {request.Attendees}\n\n" +
             (request.Service == "WholeShop" ? "Complete the 50% deposit before the deadline shown in your booking. No real money is collected.\n\n" : "Your request is awaiting staff approval. Review runs during operating hours and resumes at the next opening. Your selected bays are held while Pending. Check your booking for the review deadline. This email does not confirm your reservation.\n\n") +
-            $"View your reservation reference, details and updates: {publicBase.TrimEnd('/')}{statusPath}");
+            $"View your reservation ID, details and updates: {publicBase.TrimEnd('/')}{statusPath}");
         var result = await reservations.SubmitAsync(request, owner, verifiedEmail, ct,
             account ? null : GuestBookingService.Hash(session), account ? null : GuestBookingService.Hash(access), DemoAllowed, receipt);
         return RedirectToAction(nameof(Confirmation), new { id = result.Id, token = account ? null : access });

@@ -15,7 +15,8 @@
       "ResourceIds",
       "Attendees",
       "IdempotencyKey",
-      "PayloadHash"
+      "PayloadHash",
+      "reservation_id"
     ],
     "properties": {
       "_id": {
@@ -32,7 +33,7 @@
       },
       "Email": {
         "bsonType": "string",
-        "minLength": 1,
+        "minLength": 0,
         "maxLength": 254
       },
       "Reference": {
@@ -245,7 +246,10 @@
                 "ReservationCompleted",
                 "ScheduleChangeRequested",
                 "ScheduleChangeApproved",
-                "ScheduleChangeDeclined"
+                "ScheduleChangeDeclined",
+                "ReservationNoShow",
+                "AttendanceCorrected",
+                "ReservationExtended"
               ]
             },
             "ReservationStatus": {
@@ -376,9 +380,84 @@
                   "maxLength": 500
                 }
               }
+            },
+            "AttendanceBefore": {
+              "bsonType": "object",
+              "required": [
+                "Status",
+                "StartUtc",
+                "EndUtc"
+              ],
+              "properties": {
+                "Status": {
+                  "enum": [
+                    "Pending",
+                    "Confirmed",
+                    "Checked-In",
+                    "Completed",
+                    "Cancelled",
+                    "Rejected",
+                    "Expired",
+                    "No-show"
+                  ]
+                },
+                "StartUtc": {
+                  "bsonType": "date"
+                },
+                "EndUtc": {
+                  "bsonType": "date"
+                },
+                "CheckedInUtc": {
+                  "bsonType": "date"
+                },
+                "CheckedOutUtc": {
+                  "bsonType": "date"
+                }
+              }
+            },
+            "AttendanceAfter": {
+              "bsonType": "object",
+              "required": [
+                "Status",
+                "StartUtc",
+                "EndUtc"
+              ],
+              "properties": {
+                "Status": {
+                  "enum": [
+                    "Pending",
+                    "Confirmed",
+                    "Checked-In",
+                    "Completed",
+                    "Cancelled",
+                    "Rejected",
+                    "Expired",
+                    "No-show"
+                  ]
+                },
+                "StartUtc": {
+                  "bsonType": "date"
+                },
+                "EndUtc": {
+                  "bsonType": "date"
+                },
+                "CheckedInUtc": {
+                  "bsonType": "date"
+                },
+                "CheckedOutUtc": {
+                  "bsonType": "date"
+                }
+              }
             }
           }
         }
+      },
+      "BookingSource": {
+        "enum": [
+          "Walk-in",
+          "Phone",
+          "Messaging"
+        ]
       },
       "Revision": {
         "bsonType": [
@@ -498,6 +577,10 @@
             "maxLength": 500
           }
         }
+      },
+      "reservation_id": {
+        "bsonType": "string",
+        "pattern": "\\S"
       }
     }
   },
@@ -506,5 +589,42 @@
       "$StartUtc",
       "$EndUtc"
     ]
-  }
+  },
+  "$or": [
+    {
+      "Email": {
+        "$ne": ""
+      }
+    },
+    {
+      "AccountId": {
+        "$regularExpression": {
+          "pattern": "^staff:.+",
+          "options": ""
+        }
+      },
+      "CustomerAccountId": {
+        "$exists": false
+      },
+      "BookingSource": {
+        "$exists": true
+      },
+      "Phone": {
+        "$regularExpression": {
+          "pattern": "^[0-9]{7,15}$",
+          "options": ""
+        }
+      }
+    }
+  ],
+  "$and": [
+    {
+      "$expr": {
+        "$eq": [
+          "$reservation_id",
+          "$Reference"
+        ]
+      }
+    }
+  ]
 }

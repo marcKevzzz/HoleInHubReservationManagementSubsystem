@@ -11,12 +11,16 @@ public sealed partial class CustomerProfilePersistence
     {
         var f = Builders<CustomerProfileRecord>.Filter;
         var filter = f.Eq(x => x.MergedIntoId, null);
-        if (term.Length > 0)
+        if (term.StartsWith("CUS-", StringComparison.OrdinalIgnoreCase))
+        {
+            filter &= f.Eq(x => x.CustomerId, term.ToUpperInvariant());
+        }
+        else if (term.Length > 0)
         {
             var literal = new BsonRegularExpression(Regex.Escape(term), "i");
             var search = f.Regex("SearchNames", literal) | f.Regex(x => x.Email, literal) | f.Regex("Variants.Email", literal);
             if (phones.Length > 0) { search |= f.In(x => x.Phone, phones) | f.In("Variants.Phone", phones); }
-            var booking = await Reservations.Find(x => x.Reference == term.ToUpperInvariant()).Project(x => x.Id).FirstOrDefaultAsync(ct);
+            var booking = await Reservations.Find(x => x.ReservationId == term.ToUpperInvariant()).Project(x => x.Id).FirstOrDefaultAsync(ct);
             if (booking is not null)
             {
                 var membership = await Memberships.Find(x => x.Id == booking).FirstOrDefaultAsync(ct);
@@ -35,7 +39,7 @@ public sealed partial class CustomerProfilePersistence
             if (record is null && profile.RepresentativeBookingId.Length == 0) { record = ContactWithoutBooking(profile); }
             if (record is null) { continue; }
             SetDisplayContact(record, profile);
-            items.Add(new(record, profile.Kind));
+            items.Add(new(record, profile.Kind, profile.CustomerId));
         }
         return new(items, profiles.Count > 20);
     }
@@ -62,7 +66,7 @@ public sealed partial class CustomerProfilePersistence
                 ? Builders<ReservationRecord>.Sort.Ascending(x => x.StartUtc).Ascending(x => x.Id)
                 : Builders<ReservationRecord>.Sort.Descending(x => x.StartUtc).Descending(x => x.Id))
             .Skip((page - 1) * 20).Limit(21).ToListAsync(ct);
-        return new(new(representative, snapshot.Profile.Kind), records.Take(20).ToArray(), total, upcomingCount, completed, cancelled, records.Count > 20);
+        return new(new(representative, snapshot.Profile.Kind, snapshot.Profile.CustomerId), records.Take(20).ToArray(), total, upcomingCount, completed, cancelled, records.Count > 20);
     }
     public Task<List<ReservationRecord>> BookingsAsync(string[] ids, CancellationToken ct) => Reservations
         .Find(Builders<ReservationRecord>.Filter.In(x => x.Id, ids)).SortByDescending(x => x.StartUtc).ThenBy(x => x.Id).Limit(MaximumMergeBookings).ToListAsync(ct);

@@ -11,7 +11,7 @@ Synchronized with current test files and commands on 2026-11-04. This is coverag
 | Integration | Real replica-set allocation contention, guest booking process, outbox recovery, migration leasing/reruns, typed validator rejection, legacy-data preflight, account/guest ownership, structured history and schema-reference parity |
 | JavaScript | Booking verification, reservation behavior, shared/button motion, account UI/menu and page transitions |
 
-Mocked Web services test HTTP behavior without proving real MongoDB transactions, SMTP delivery or Google authentication. Integration tests use isolated local databases; never point them at Atlas or a shared preview. The fixture reads MongoDb__ConnectionString from the launching process, so explicitly override persistent Atlas settings before running integration tests. See the fixture and test attributes for actual category membership.
+Mocked Web services test HTTP behavior without proving real MongoDB transactions, SMTP delivery or Google authentication. Integration tests use isolated local databases; never point them at Atlas or a shared preview. MongoDbFixture connects to the local rs0 replica set on port 27017 and allocates a uniquely named test database. See the fixture and test attributes for actual category membership.
 
 ## Required commands
 
@@ -27,15 +27,15 @@ npm --prefix HoleInHub.Web run test:ui
 npm --prefix HoleInHub.Web run build:css
 ```
 
-`test:ui` is the current package script. Additional legacy standalone menu/motion tests can be run with `node --test tests/HoleInHub.Tests.Web/Smoke/menu.test.cjs tests/HoleInHub.Tests.Web/Smoke/motion.test.cjs`. Do not infer their execution from `test:ui`.
+The test:ui script runs all top-level JavaScript tests and all JavaScript smoke tests, including menu navigation and motion.
 
 ## Manual checks
 
-Require a healthy `/health/ready` (MongoDB and migrations 001–007) before end-to-end testing. Verify actual email delivery with Mailpit or configured SMTP, guest draft/code/receipt, repeated submission, owned/foreign account access, staff review and explicitly enabled demo checkout. Google requires its configured OAuth client and callback. Check keyboard focus, reduced motion, mobile layouts and non-JavaScript forms. A rendered sign-in page does not prove sign-in works.
+Require a healthy `/health/ready` (MongoDB and all registered migrations) before end-to-end testing. Verify actual email delivery with Mailpit or configured SMTP, guest draft/code/receipt, repeated submission, owned/foreign account access, staff review and explicitly enabled demo checkout. Google requires its configured OAuth client and callback. Check keyboard focus, reduced motion, mobile layouts and non-JavaScript forms. A rendered sign-in page does not prove sign-in works.
 
 ## CI and evidence
 
-The current CI workflow installs local assets, checks dotnet formatting, builds/tests/publishes, and runs replica-set integration tests in a separate job. It does not currently run `npm run test:ui`; run that explicitly for local verification. Record command exit codes, actual failures and environmental blockers rather than copying earlier test totals. See [ONBOARDING.md](ONBOARDING.md) for configuration and [CURRENT-SYSTEM.md](CURRENT-SYSTEM.md) for implemented boundaries.
+The current CI workflow installs local assets, checks dotnet formatting, builds/tests/publishes, and runs replica-set integration tests in a separate job. Both jobs install the SDK specified in global.json. The build job runs npm run test:ui before formatting and publishing. Record command exit codes, actual failures and environmental blockers rather than copying earlier test totals. See [ONBOARDING.md](ONBOARDING.md) for configuration and [CURRENT-SYSTEM.md](CURRENT-SYSTEM.md) for implemented boundaries.
 
 ## Guest reservation recovery coverage
 

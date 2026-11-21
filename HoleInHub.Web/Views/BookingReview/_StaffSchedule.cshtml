@@ -14,7 +14,6 @@
         ? time.ToString("h:mm tt")
         : time.ToString("d MMM, h:mm tt");
     string Interval(StaffScheduleEntry entry) => $"{TimeLabel(entry.Start)} – {TimeLabel(entry.End)}";
-    string Status(string status) => status == "Checked-In" ? "Checked in" : status;
 }
 <div class="staff-workspace" data-staff-schedule data-customer-profile-id="@Model.BookingForm.CustomerProfileId" data-date="@selectedDate" data-today="@today" data-first-hour="@timeline.FirstHour"
      data-opening-hour="@ReservationRules.OpeningHour(Model.Day.DayOfWeek)">
@@ -69,22 +68,12 @@
                 <input type="hidden" name="date" value="@selectedDate" />
                 <div class="auth-input-wrap">
                     <partial name="_StaffIcon" model='"search"' />
-                    <label class="sr-only" for="staff-reference">Search reference or guest name</label>
-                    <input id="staff-reference" type="search" name="reference" value="@Model.Lookup.Search" maxlength="100"
-                           placeholder="Find a booking" aria-controls="staff-search-results" />
+                    <label class="sr-only" for="staff-reference">Search by Reservation ID or guest name</label>
+                    <input id="staff-reference" type="search" name="reservation_id" value="@Model.Lookup.Search" maxlength="100"
+                           placeholder="Reservation ID or guest name" aria-controls="staff-search-results" />
                 </div>
             </form>
-            @if (rows.Count > 0)
-            {
-                <div class="staff-view-controls" role="group" aria-label="Schedule view" hidden>
-                    <button type="button" data-schedule-view="timeline" aria-label="Timeline" aria-pressed="false" title="Timeline">
-                        <partial name="_StaffIcon" model='"timeline"' />
-                    </button>
-                    <button type="button" data-schedule-view="list" aria-label="List" aria-pressed="false" title="List">
-                        <partial name="_StaffIcon" model='"list"' />
-                    </button>
-                </div>
-            }
+            <partial name="_ScheduleViews" model='new ScheduleViewLinks(selectedDate, selectedDate, false, Model.BookingForm.CustomerProfileId)' />
         </div>
         <div id="staff-search-results" class="staff-search-results" data-staff-search-results aria-live="polite" role="region" aria-label="Booking search results">
             <partial name="_StaffSearchResults" model="Model.Lookup" />
@@ -139,11 +128,11 @@
                                             @if (User.ManagesVenue() && entry.BlockId is not null)
                                             {
                                                 <a class="staff-timeline-bar @(IsActivityBlock(entry) ? "activity-related-block" : null)" data-status="Blocked" data-holds-capacity="true" style="@style" asp-action="Block" asp-route-id="@entry.BlockId"
-                                                   title="@($"Blocked · {Interval(entry)} · {entry.Reason ?? "Unavailable"}")" aria-label="@($"Review block for {bay.Name}, {Interval(entry)}")"><strong>Blocked</strong><partial name="_StaffIcon" model='"blocked"' /></a>
+                                                   title="@($"Blocked · {Interval(entry)} · {entry.Reason ?? "Unavailable"}")" aria-label="@($"Review block for {bay.Name}, {Interval(entry)}")"><strong>Blocked</strong>@if (entry.BlockId is string key) { <small>Block ID @BusinessIds.Block(key)</small> }<partial name="_StaffIcon" model='"blocked"' /></a>
                                             }
                                             else
                                             {
-                                                <span class="staff-timeline-bar @(IsActivityBlock(entry) ? "activity-related-block" : null)" data-status="Blocked" data-holds-capacity="true" style="@style" title="@($"Blocked · {Interval(entry)} · {entry.Reason ?? "Unavailable"}")"><strong>Blocked</strong><partial name="_StaffIcon" model='"blocked"' /></span>
+                                                <span class="staff-timeline-bar @(IsActivityBlock(entry) ? "activity-related-block" : null)" data-status="Blocked" data-holds-capacity="true" style="@style" title="@($"Blocked · {Interval(entry)} · {entry.Reason ?? "Unavailable"}")"><strong>Blocked</strong>@if (entry.BlockId is string key) { <small>Block ID @BusinessIds.Block(key)</small> }<partial name="_StaffIcon" model='"blocked"' /></span>
                                             }
                                         }
                                     }
@@ -152,45 +141,6 @@
                         }
                     </div>
                 </div>
-            </div>
-            <div class="staff-list-view" aria-label="Schedule list">
-                @foreach (var (bay, coverage) in rows)
-                {
-                    <section class="staff-bay" data-bay-type="@bay.Service">
-                        <h2>@bay.Name
-                            @if (!bay.Active) { <span>Retired</span> }
-                            @if (coverage.Count > 0) { <span>Venue buyout applies</span> }
-                        </h2>
-                        @if (bay.Entries.Count == 0)
-                        {
-                            <p class="staff-empty">No individual bookings or blocks</p>
-                        }
-                        else
-                        {
-                            <ul>
-                                @foreach (var entry in bay.Entries)
-                                {
-                                    <li class="staff-slot @(IsActivityBlock(entry) ? "activity-related-block" : null)">
-                                        <span class="staff-slot-time">@Interval(entry)</span>
-                                        @if (entry.ReservationId is not null)
-                                        {
-                                            <partial name="_StaffBookingLink" model='new StaffBookingLinkModel(entry, Model.Day, bay.Name, "staff-booking-list-link")' />
-                                        }
-                                        @if (User.ManagesVenue() && entry.BlockId is not null)
-                                        {
-                                            <a class="staff-booking-list-link" asp-action="Block" asp-route-id="@entry.BlockId">Review block</a>
-                                        }
-                                        @if (entry.Status == "Blocked" && !string.IsNullOrWhiteSpace(entry.Reason))
-                                        {
-                                            <span class="staff-block-reason">@entry.Reason</span>
-                                        }
-                                        <span class="staff-status" data-status="@entry.Status">@Status(entry.Status)</span>
-                                    </li>
-                                }
-                            </ul>
-                        }
-                    </section>
-                }
             </div>
         }
     </section>

@@ -277,7 +277,7 @@
         observer.observe(details);
     }
     const icon = name => name === 'delete' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 10v7m4-7v7"/></svg>' : '';
-    let items = [...gallery.querySelectorAll('[data-service-image]')].map(row => ({ path: row.dataset.path, src: row.querySelector('img').src }));
+    let items = [...gallery.querySelectorAll('[data-service-image]')].map(row => ({ path: row.dataset.path, src: row.querySelector('img').src, caption: row.querySelector('figcaption')?.textContent }));
     let dragged = -1;
     function move(from, to) {
         items.splice(to, 0, items.splice(from, 1)[0]); render();
@@ -300,7 +300,7 @@
             const img = document.createElement('img'); img.src = item.src; img.alt = 'Service image';
             const primary = document.createElement('button'); primary.type = 'button'; primary.className = 'service-viewer-primary'; primary.textContent = 'Set as primary';
             primary.addEventListener('click', () => { move(all ? offset : index, 0); closeViewer(); });
-            figure.append(img, primary); viewerContent.append(figure);
+            figure.append(img, primary); addImageId(figure, item); viewerContent.append(figure);
         });
         const close = viewer.querySelector('[data-viewer-close]');
         viewerContent.children[0]?.append(close);
@@ -317,6 +317,13 @@
     viewer.querySelector('[data-viewer-close]').addEventListener('click', closeViewer);
     viewer.addEventListener('click', event => { if (event.target === viewer) closeViewer(); });
     viewer.addEventListener('cancel', event => { event.preventDefault(); closeViewer(); });
+    function addImageId(figure, item) {
+        if (!item.caption) return;
+        const caption = document.createElement('figcaption');
+        caption.className = 'service-image-id';
+        caption.textContent = item.caption;
+        figure.append(caption);
+    }
     function render() {
         gallery.replaceChildren();
         const transfer = new DataTransfer();
@@ -340,6 +347,7 @@
             const primary = document.createElement('button'); primary.type = 'button'; primary.className = 'service-image-primary'; primary.textContent = index === 0 ? 'Primary' : 'Set primary'; primary.disabled = index === 0;
             primary.addEventListener('click', () => move(index, 0));
             tile.append(open, remove, primary);
+            addImageId(tile, item);
             tile.addEventListener('dragstart', event => { dragged = index; event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', String(index)); });
             tile.addEventListener('dragover', event => { if (dragged >= 0) { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; } });
             tile.addEventListener('drop', event => { event.preventDefault(); if (dragged >= 0) move(dragged, index); dragged = -1; });

@@ -6,7 +6,7 @@
 else if (Model.Matches.Count > 0)
 {
     <header class="staff-search-heading"><div><h2>Booking matches</h2><p>@(Model.Matches.Count == 10 ? "Showing up to 10 matches" : $"{Model.Matches.Count} found") · Select a booking to find it on the timeline</p></div><button type="button" class="staff-icon-button" data-close-search aria-label="Close search results"><partial name="_StaffIcon" model='"close"' /></button></header>
-    <div class="staff-search-columns" aria-hidden="true"><span>Guest</span><span>Session</span><span>Bay & party</span><span>Reference & status</span></div>
+    <div class="staff-search-columns" aria-hidden="true"><span>Guest</span><span>Session</span><span>Bay & party</span><span>Reservation ID & status</span></div>
     <ul>
         @foreach (var entry in Model.Matches)
         {

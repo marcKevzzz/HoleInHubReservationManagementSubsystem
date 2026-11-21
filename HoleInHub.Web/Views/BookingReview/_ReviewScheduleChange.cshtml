@@ -20,7 +20,7 @@
                         <dt>Proposed</dt><dd>@proposedStart.ToString("d MMM yyyy, h:mm tt")–@proposedEnd.ToString("h:mm tt")<small>Manila time</small></dd>
                         <dt>Reason</dt><dd>@proposal.Reason</dd>
                     </dl>
-                    <form asp-action="DecideChange" asp-route-id="@booking.Id" asp-route-date="@date"
+                    <form asp-action="DecideChange" asp-route-id="@booking.Id" asp-route-date="@date" asp-route-returnSchedule="@ViewData["ScheduleListUrl"]"
                           asp-route-fromQueue="@Model.FromQueue" asp-route-day="@Model.Queue.Day" asp-route-page="@(Model.Queue.Page > 1 ? Model.Queue.Page : (int?)null)" asp-route-sort="@Model.Queue.Sort"
                           asp-route-returnToQueue="@(ViewData["QueueActions"] is true ? "true" : null)" method="post" class="staff-create-form">
                         <input type="hidden" name="proposalId" value="@proposal.Id" />

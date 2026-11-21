@@ -21,7 +21,7 @@
                 <div class="service-editor-gallery" data-service-gallery>
                     @foreach (var image in Model.Images)
                     {
-                        <figure data-service-image data-path="@image"><img src="@image" alt="Service image" /><input type="hidden" name="Images" value="@image" /></figure>
+                        <figure data-service-image data-path="@image"><img src="@image" alt="Service image" />@if (BusinessIds.ServiceImage(image) is string imageId) { <figcaption>Image ID @imageId</figcaption> }<input type="hidden" name="Images" value="@image" /></figure>
                     }
                 </div>
                 <label class="service-upload" data-image-add title="Add up to 8 images · JPEG, PNG or WebP · 4 MB each"><input asp-for="Uploads" type="file" multiple accept="image/jpeg,image/png,image/webp" data-service-uploads /><span><partial name="_StaffIcon" model='"plus"' /><span class="sr-only">Add images</span></span></label>

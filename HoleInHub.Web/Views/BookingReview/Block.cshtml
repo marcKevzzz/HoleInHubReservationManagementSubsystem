@@ -17,6 +17,7 @@
         <p>@block.Location</p>
     </header>
     <dl class="review-facts">
+        <dt>Block ID</dt><dd>@BusinessIds.Block(block.Id)</dd>
         <dt>When</dt><dd>@Local(block.StartUtc).ToString("ddd, d MMM yyyy, h:mm tt") – @Local(block.EndUtc).ToString("d MMM, h:mm tt")</dd>
         <dt>Block reason</dt><dd>@(block.Reason ?? "Not recorded")</dd>
         <dt>Created by</dt><dd>@(block.CreatedBy ?? "Not recorded")</dd>

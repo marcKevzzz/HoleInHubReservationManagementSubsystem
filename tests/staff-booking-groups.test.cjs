@@ -48,7 +48,7 @@ test('linked bay highlighting follows reservation identity across hover and keyb
 for (const hasBars of [true, false]) test(`search opens the booking drawer after changing days with timeline bars=${hasBars}`, async () => {
     const handlers = {};
     const calls = [];
-    const booking = { dataset: { searchDay: '2026-11-13', bookingId: 'match' }, closest() { return this; } };
+    const booking = { href: '/BookingReview/Details/match', dataset: { searchDay: '2026-11-13', bookingId: 'match' }, closest() { return this; } };
     const bar = id => ({
         dataset: { bookingId: id },
         classList: new Set(),
@@ -65,7 +65,6 @@ for (const hasBars of [true, false]) test(`search opens the booking drawer after
         dispatchEvent(event) { calls.push([event.type, event.detail]); },
         querySelectorAll: () => hasBars ? [primary, peer, unrelated] : [],
         querySelector: selector => ({
-            '[data-schedule-view="timeline"]': { click() { calls.push(['timeline']); } },
             '.staff-timeline-scroll': scroller,
             '.staff-timeline-label': { offsetWidth: 60 },
             '.staff-timeline-axis': { offsetHeight: 30 },
@@ -82,12 +81,12 @@ for (const hasBars of [true, false]) test(`search opens the booking drawer after
         CustomEvent: class { constructor(type, { detail }) { this.type = type; this.detail = detail; } },
         window: {
             matchMedia: () => ({ matches: true }),
-            HoleInHubSchedule: { async go(date) { calls.push(['date', date]); return destination; } },
+            HoleInHubSchedule: { async go(date, push, fallback) { assert.equal(fallback, booking.href); calls.push(['date', date]); return destination; } },
         },
     });
     await handlers.click({ target: booking, button: 0, preventDefault() {} });
     assert.deepEqual(calls, hasBars
-        ? [['date', '2026-11-13'], ['timeline'], ['focus', true], ['scroll', 124, 98, 'instant'], ['staff:open-booking', primary]]
+        ? [['date', '2026-11-13'], ['focus', true], ['scroll', 124, 98, 'instant'], ['staff:open-booking', primary]]
         : [['date', '2026-11-13'], ['staff:open-booking', booking]]);
     assert.equal(primary.classList.has('is-search-target'), hasBars);
     assert.equal(peer.classList.has('is-search-target'), hasBars);

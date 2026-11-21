@@ -7,6 +7,7 @@ namespace HoleInHub.Data.Services;
 public sealed class ServiceCatalogRecord
 {
     [BsonId] public string Id { get; set; } = "";
+    [BsonElement("service_id")] public string ServiceId => BusinessIdentifier.Format("SVC", Id);
     public string Title { get; set; } = "";
     public string[] Images { get; set; } = [];
     public int? MaxPax { get; set; }

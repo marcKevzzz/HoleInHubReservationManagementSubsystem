@@ -1,11 +1,9 @@
 
 using HoleInHub.Business.Accounts;
 using HoleInHub.Data.Accounts;
-using HoleInHub.Data.Extensions;
 using HoleInHub.Data.Migrations;
 using HoleInHub.Data.Migrations.Definitions;
 using HoleInHub.Tests.Integration.Fixtures;
-using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Xunit;
@@ -26,10 +24,7 @@ public sealed class StaffRoleChangeTests(MongoDbFixture fixture) : IClassFixture
         var migration = new Migration_017_StaffRoleAdministration();
         if (upgrading)
         {
-            var earlierMigrations = new ServiceCollection().AddHoleInHubMigrations()
-                .Where(service => service.ServiceType == typeof(IMongoMigration))
-                .Select(service => (IMongoMigration)Activator.CreateInstance(service.ImplementationType!)!)
-                .Where(item => string.CompareOrdinal(item.MigrationId, migration.MigrationId) < 0).ToArray();
+            var earlierMigrations = MongoDbFixture.Migrations.Where(item => string.CompareOrdinal(item.MigrationId, migration.MigrationId) < 0);
             var earlier = new MongoMigrationRunner(db, new MongoMigrationLeaseManager(db), earlierMigrations);
             Assert.Equal(16, (await earlier.RunAsync()).NewlyApplied);
             await accounts.InsertOneAsync(existing);

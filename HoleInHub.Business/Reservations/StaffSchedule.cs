@@ -10,6 +10,18 @@ public sealed record StaffScheduleEntry(DateTime Start, DateTime End, string Sta
 
 public sealed partial class ReservationService
 {
+    public async Task<(IReadOnlyList<DashboardBooking> Bookings, long Total)> GetScheduleListAsync(DateOnly from, DateOnly to, int page, CancellationToken ct)
+    {
+        if (from > to || from.Year < 2000 || to.Year > 2100)
+        {
+            throw new ReservationValidationException("Choose a start date on or before the end date, between 2000 and 2100.");
+        }
+        if (page < 1 || page - 1 > int.MaxValue / 20) { throw new ReservationValidationException("Choose a valid page."); }
+        await ProcessPendingAsync(ct);
+        var (rows, total) = await persistence.ReadScheduleListAsync(DashboardMetrics.Utc(from), DashboardMetrics.Utc(to.AddDays(1)), page, ct);
+        return (rows.Select(ToScheduleBooking).ToArray(), total);
+    }
+
     public Task<string?> FindStaffBookingAsync(string reference, CancellationToken ct) =>
         persistence.FindIdByReferenceAsync(reference, ct);
 

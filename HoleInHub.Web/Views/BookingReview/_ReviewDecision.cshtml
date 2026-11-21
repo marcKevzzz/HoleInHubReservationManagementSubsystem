@@ -54,7 +54,7 @@
                     };
                     <details class="review-action review-header-action" data-pending-action="@(action.Key is "approve" or "reject" or "coach" or "reschedule" ? "" : null)">
                         <summary class="button @(destructive ? "review-danger" : action.Key == "approve" ? "" : "button-secondary")"><partial name="_StaffIcon" model="@icon" /> @action.Label</summary>
-                        <form asp-action="Decide" asp-route-id="@booking.Id" asp-route-date="@date" asp-route-fromQueue="@fromQueue"
+                        <form asp-action="Decide" asp-route-id="@booking.Id" asp-route-date="@date" asp-route-fromQueue="@fromQueue" asp-route-returnSchedule="@ViewData["ScheduleListUrl"]"
                               asp-route-filter="@(Model.FromQueue ? Model.Queue.Filter : null)" asp-route-day="@Model.Queue.Day"
                               asp-route-page="@(Model.Queue.Page > 1 ? Model.Queue.Page : (int?)null)" asp-route-sort="@(Model.FromQueue ? Model.Queue.Sort : null)"
                               asp-route-returnToQueue="@(ViewData["QueueActions"] is true && Model.Queue.Filter is ("cancellations" or "cancellation-requests") ? "true" : null)" method="post">

@@ -1,0 +1,5 @@
+@model ScheduleViewLinks
+<div class="staff-view-controls" role="group" aria-label="Schedule view">
+    <a asp-action="Index" asp-route-date="@Model.From" asp-route-customerProfileId="@Model.CustomerProfileId" aria-current="@(!Model.List ? "page" : null)">Timeline</a>
+    <a asp-action="List" asp-route-from="@Model.From" asp-route-to="@Model.To" asp-route-customerProfileId="@Model.CustomerProfileId" aria-current="@(Model.List ? "page" : null)">List</a>
+</div>

@@ -19,5 +19,22 @@ test('menu reversal restores explicit hamburger endpoints without clearing trans
 });
 
 test('social icons share the menu timeline and reset on reopening',()=>{assert.match(source,/\.from\(nav\.querySelectorAll\('\.social-links a'\),\{opacity:0,y:12,duration:\.4,stagger:\.07/);assert.ok(source.includes('.menu-bottom > *,.social-links a'));});
-const testSource = source.slice(source.indexOf("nav.addEventListener('click'"),source.indexOf("document.addEventListener('click'"));
-test('MVC menu handoff waits for motion readiness without native View Transitions',()=>{assert.ok(testSource.includes('duration:.22'));assert.ok(testSource.includes('location.assign'));assert.ok(source.includes('holeinhub:motion-ready'));assert.ok(source.includes("duration:.55"));assert.ok(!source.includes('startViewTransition'));});
+test('menu closes for the current page and preserves navigation to other pages', () => {
+    let handleClick;
+    let closes = 0;
+    const location = new URL('https://venue.example/schedule');
+    const nav = { addEventListener(name, callback) { handleClick = callback; } };
+    vm.runInNewContext(source.slice(source.indexOf("nav.addEventListener('click'"), source.indexOf("document.addEventListener('keydown'")), {
+        nav, location, URL, close() { closes++; }
+    });
+    function click(path, ctrlKey = false) {
+        let prevented = false;
+        const link = { href: new URL(path, location).href, hasAttribute: () => false };
+        handleClick({ target: { closest: () => link }, ctrlKey, preventDefault() { prevented = true; } });
+        return prevented;
+    }
+    assert.equal(click('/reports'), false);
+    assert.equal(click('/schedule', true), false);
+    assert.equal(click('/schedule'), true);
+    assert.equal(closes, 1);
+});

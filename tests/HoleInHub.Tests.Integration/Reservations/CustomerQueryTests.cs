@@ -38,6 +38,34 @@ public sealed class CustomerQueryTests(MongoDbFixture fixture) : IClassFixture<M
         return (new(new ReservationPersistence(context), new OutboxPersistence(context), Options.Create(new ReservationPolicy())), context);
     }
     [Fact]
+    public async Task ReportFiltersBookingsAndUsesEarlierVisitsAcrossServicesForReturningProfiles()
+    {
+        var (service, context) = await Setup();
+        var day = new DateOnly(2026, 10, 2);
+        var start = DashboardMetrics.Utc(day);
+        var current = Contact("account-one");
+        current.StartUtc = start;
+        current.EndUtc = start.AddHours(1);
+        var previous = Contact("account-one");
+        previous.Service = "VIP";
+        previous.Status = "Completed";
+        previous.StartUtc = start.AddDays(-1);
+        previous.EndUtc = previous.StartUtc.AddHours(1);
+        var excluded = Contact("account-two");
+        excluded.StartUtc = current.StartUtc;
+        excluded.EndUtc = current.EndUtc;
+        excluded.Service = "VIP";
+        await context.Database.GetCollection<ReservationRecord>("reservations").InsertManyAsync([current, previous, excluded]);
+        var memberships = context.Database.GetCollection<HoleInHub.Data.Customers.CustomerMembershipRecord>(
+            HoleInHub.Data.Customers.CustomerProfilePersistence.MembershipsName);
+        await memberships.InsertManyAsync([new() { Id = current.Id, ProfileId = "one" }, new() { Id = previous.Id, ProfileId = "one" }]);
+
+        var report = await service.GetReportAsync(day, day, "Regular", default);
+        Assert.Equal(current.Id, Assert.Single(report.Rows).Id);
+        Assert.Equal(2, report.Services.Count);
+        Assert.Equal((0, 1, 0), (report.NewCustomers, report.ReturningCustomers, report.UnmatchedReservations));
+    }
+    [Fact]
     public async Task ProfilesSeparateAccountGuestAndWalkInIdentitiesAndIncludeLegacyAccountRecords()
     {
         var (service, context) = await Setup();

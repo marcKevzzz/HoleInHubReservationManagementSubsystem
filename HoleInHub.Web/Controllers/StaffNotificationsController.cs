@@ -13,7 +13,7 @@ public sealed class StaffNotificationsController(NotificationDeliveryService not
     [HttpGet("")]
     public async Task<IActionResult> Index(int page, CancellationToken ct)
     {
-        var model = await notifications.ListAsync(User.FindFirstValue(ClaimTypes.NameIdentifier)!, null, page, ct, operational: true);
+        var model = await notifications.ListAsync(User.FindFirstValue(ClaimTypes.NameIdentifier)!, null, page, ct, operational: true, compact: User.IsInRole(StaffRoles.Admin));
         ViewData["NotificationUnread"] = model.Unread;
         return View(model);
     }
