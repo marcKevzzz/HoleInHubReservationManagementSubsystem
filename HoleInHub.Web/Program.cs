@@ -5,6 +5,10 @@ using HoleInHub.Web.Accounts;
 using Microsoft.AspNetCore.Localization;
 
 var builder = WebApplication.CreateBuilder(args);
+if (builder.Environment.IsEnvironment("Testing"))
+{
+    builder.WebHost.UseStaticWebAssets();
+}
 
 // Register business and data services
 builder.Services.AddHoleInHubBusiness(builder.Configuration);

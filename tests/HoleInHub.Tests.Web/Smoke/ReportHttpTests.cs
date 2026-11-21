@@ -81,6 +81,19 @@ public sealed partial class StaffBlockHttpTests
             Assert.Equal(first.Concat(second), full.Skip(1).Select(row => row[0]));
             const string filters = range + "&service=VIP&status=Cancelled";
             Assert.Equal(new[] { "HIH-REP-00" }, References(await manager.GetStringAsync(ReportsPath + filters)));
+            foreach (var (query, expected) in new[] {
+                (range, first), (range + "&page=9999", second), (filters, new[] { "HIH-REP-00" }),
+                (range + "&status=unknown", Array.Empty<string>()) })
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Get, ReportsPath + query);
+                request.Headers.Add("X-Reports", "list");
+                using var response = await manager.SendAsync(request);
+                response.EnsureSuccessStatusCode();
+                var fragment = await response.Content.ReadAsStringAsync();
+                Assert.Contains("report-reservations", fragment);
+                Assert.DoesNotContain("data-customer-donut", fragment);
+                Assert.Equal(expected, References(fragment));
+            }
             var filtered = await ReadReportCsv(manager, filters);
             Assert.Equal(new[] { "Reservation ID", "Customer", "Service", "Bays", "Start (Manila)", "End (Manila)", "Status" }, filtered[0]);
             var row = Assert.Single(filtered.Skip(1));
@@ -123,7 +136,7 @@ public sealed partial class StaffBlockHttpTests
         finally { await context.Client.DropDatabaseAsync(database); }
     }
 
-    private static async Task<List<string[]>> ReadReportCsv(HttpClient client, string query)
+    private static async Task<List<string[]>> ReadReportCsv(HttpClient client, string query, bool allSections = false)
     {
         using var response = await client.GetAsync(ReportsPath + "/export" + query);
         response.EnsureSuccessStatusCode();
@@ -140,6 +153,6 @@ public sealed partial class StaffBlockHttpTests
         Assert.Contains(rows, row => row[0] == "Service usage");
         Assert.Contains(rows, row => row[0] == "Customer trends");
         Assert.Contains(rows, row => row[0] == "Reservation summary");
-        return rows.TakeWhile(row => row.Length == 7).ToList();
+        return allSections ? rows : rows.TakeWhile(row => row.Length == 7).ToList();
     }
 }

@@ -31,6 +31,11 @@ public sealed partial class LeadershipController
         var start = from ?? end.AddDays(1 - (preset ?? 7));
         try
         {
+            if (export is null && Request.Headers["X-Reports"] == "list")
+            {
+                var list = await reservations.GetReportListAsync(start, end, service, status, page, ct);
+                return PartialView("_ReportList", new ReportListViewModel(start, end, service, status, list.Page, list.Pages, list.Rows, list.Counts));
+            }
             var report = await reservations.GetReportAsync(start, end, service, ct);
             var matches = string.IsNullOrEmpty(status) ? report.Rows : report.Rows.Where(x => x.Status == status).ToArray();
             if (export == "xlsx")

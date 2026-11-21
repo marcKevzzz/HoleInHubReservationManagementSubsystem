@@ -9,16 +9,36 @@ public sealed record ReservationReport(IReadOnlyList<DashboardBooking> Rows, IRe
 
 public sealed partial class ReservationService
 {
-    public async Task<ReservationReport> GetReportAsync(DateOnly from, DateOnly to, string? service, CancellationToken ct)
+    public async Task<(Dictionary<string, int> Counts, DashboardBooking[] Rows, int Page, int Pages)> GetReportListAsync(
+        DateOnly from, DateOnly to, string? service, string? status, int page, CancellationToken ct)
     {
         DashboardMetrics.ValidateRange(from, to);
-        await ProcessPendingAsync(ct);
         var start = DashboardMetrics.Utc(from);
-        var source = await persistence.ReadDashboardRowsAsync(start, DashboardMetrics.Utc(to.AddDays(1)), ct);
-        if (source.Count > 20000)
+        var end = DashboardMetrics.Utc(to.AddDays(1));
+        var (counts, total) = await persistence.ReadReportStatusCountsAsync(start, end, service, ct);
+        ValidateReportSize(total);
+        var matches = string.IsNullOrEmpty(status) ? counts.Values.Sum() : counts.GetValueOrDefault(status);
+        var pages = Math.Max(1, (matches + 19) / 20);
+        page = Math.Clamp(page, 1, pages);
+        var rows = await persistence.ReadDashboardSliceAsync(start, end, string.IsNullOrEmpty(service) ? null : service,
+            string.IsNullOrEmpty(status) ? null : [status], false, [], false, page, ct);
+        return (counts, rows.Take(20).Select(ToScheduleBooking).ToArray(), page, pages);
+    }
+
+    private static void ValidateReportSize(int count)
+    {
+        if (count > 20000)
         {
             throw new ReservationValidationException("This range contains too many reservations. Choose a shorter date range.");
         }
+    }
+
+    public async Task<ReservationReport> GetReportAsync(DateOnly from, DateOnly to, string? service, CancellationToken ct)
+    {
+        DashboardMetrics.ValidateRange(from, to);
+        var start = DashboardMetrics.Utc(from);
+        var source = await persistence.ReadDashboardRowsAsync(start, DashboardMetrics.Utc(to.AddDays(1)), ct);
+        ValidateReportSize(source.Count);
 
         var services = source.Select(row => row.Service).Distinct().Order(StringComparer.Ordinal)
             .ToDictionary(id => id, DashboardMetrics.ServiceLabel);

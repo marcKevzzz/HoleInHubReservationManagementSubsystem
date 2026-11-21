@@ -52,3 +52,36 @@ Run the required solution build, non-integration/integration suites, JS tests an
 ## Essential process acceptance
 
 The process-only acceptance record is [Sprint 1 essential process acceptance](plans/2026-11-04-sprint-1-process-acceptance.md). GuestBookingFlowTests now include separate guest/Staff HTTP approval/rejection/cancellation journeys and a real local SMTP acceptance test using the existing SmtpEmailSender. Start the complete Docker Compose stack, including Mailpit at 127.0.0.1:1025, for the Integration category. The SMTP test uses only unique synthetic example.test recipients; it never uses production SMTP credentials. AllocationTests cover receipt eligibility before/after a state change, stale Pending suppression and missing reservations. Mobile/visual checks were excluded by the owner for this pass.
+
+## Browser acceptance and report reconciliation
+
+Run the browser journeys from a clean checkout with the local MongoDB replica set and Mailpit running. The Playwright configuration launches its own HTTPS instance on port 54893. Desktop Chromium and a touch-enabled mobile Chromium viewport exercise the same workflows.
+
+```powershell
+docker compose -f docker-compose.mongo.yml up -d --wait
+npm --prefix HoleInHub.Web ci
+node HoleInHub.Web/node_modules/playwright/cli.js install chromium
+npm --prefix HoleInHub.Web run test:browser
+```
+
+The integration test `ReportSummaryChartsCsvAndEveryWorksheetReconcile` checks known totals in the staff report, CSV and all seven workbook tabs. Its fixture covers a reservation spanning midnight across two bays, a day with zero starts, and an empty reporting period.
+
+## Concurrent 90-day report benchmark
+
+With MongoDB, Mailpit and Chromium set up as above, run the desktop booking journey with the benchmark enabled. It creates a disposable database with 363 in-range reservations, warms the page, workbook and status endpoints, then measures five requests per endpoint alone and five on each of three concurrent request streams during guest confirmation. It also checks worker-only expiry before visiting any application page. The regular browser suite uses the smaller fixture.
+
+```powershell
+$env:HIH_REPORT_BENCHMARK = '1'
+try { npm --prefix HoleInHub.Web run test:browser -- --project=desktop booking.spec.cjs }
+finally { Remove-Item Env:HIH_REPORT_BENCHMARK }
+```
+
+Local medians in milliseconds on 21 November 2026:
+
+| Request | Before, alone | After, alone | Before, concurrent | After, concurrent |
+| --- | ---: | ---: | ---: | ---: |
+| Full report | 81 | 72 | 85 | 95 |
+| Workbook | 65 | 76 | 82 | 91 |
+| Status list | 58 | 22 | 76 | 23 |
+
+The status response shrank from 25,238 to 9,885 bytes. Guest confirmation through receipt took 371 ms before and 412 ms after, one observation each. These small local samples establish the benefit for status filtering only. The full report and exports read the last persisted statuses. The notification worker processes pending reservations on its normal polling cycle.

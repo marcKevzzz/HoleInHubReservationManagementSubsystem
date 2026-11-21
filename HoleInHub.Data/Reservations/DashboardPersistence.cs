@@ -50,6 +50,16 @@ public sealed partial class ReservationPersistence
         return (await rows, await count);
     }
 
+    public async Task<(Dictionary<string, int> Counts, int RangeTotal)> ReadReportStatusCountsAsync(
+        DateTime start, DateTime end, string? service, CancellationToken ct)
+    {
+        var groups = await Reservations.Aggregate().Match(Overlaps(start, end))
+            .Group(row => new { row.Service, row.Status }, group => new { group.Key, Count = group.Count() }).ToListAsync(ct);
+        return (groups.Where(group => string.IsNullOrEmpty(service) || group.Key.Service == service)
+            .GroupBy(group => group.Key.Status).ToDictionary(group => group.Key, group => group.Sum(item => item.Count)),
+            groups.Sum(group => group.Count));
+    }
+
     public Task<List<DashboardRow>> ReadDashboardSliceAsync(DateTime start, DateTime end, string? service,
         string[]? statuses, bool excludeStatuses, (DateTime Start, DateTime End)[] intervals, bool byStart,
         int page, CancellationToken ct)

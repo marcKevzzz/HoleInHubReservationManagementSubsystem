@@ -103,6 +103,12 @@ jobs:
         MongoDb__ConnectionString: "mongodb://localhost:27017/?replicaSet=rs0"
       run: dotnet test HoleInHubReservationManagementSubsystem.slnx --filter "Category=Integration" --logger "trx;LogFileName=integration-results.trx"
 
+    - name: Run browser acceptance tests
+      working-directory: HoleInHub.Web
+      run: |
+        npx playwright install --with-deps chromium
+        npm run test:browser
+
     - name: MongoDB Logs on Failure
       if: failure()
       run: docker compose -f docker-compose.mongo.yml logs

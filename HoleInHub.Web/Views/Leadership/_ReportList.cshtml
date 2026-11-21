@@ -1,0 +1,38 @@
+@using HoleInHub.Business.Reservations
+@using Microsoft.AspNetCore.WebUtilities
+@model ReportListViewModel
+@{
+    var statuses = Model.Counts;
+    var total = statuses.Values.Sum();
+    var matching = string.IsNullOrEmpty(Model.Status) ? total : statuses.GetValueOrDefault(Model.Status);
+    string Link(string? status, int page = 1) => QueryHelpers.AddQueryString("/manager/reports", new Dictionary<string, string?> {
+        ["from"] = Model.From.ToString("yyyy-MM-dd"), ["to"] = Model.To.ToString("yyyy-MM-dd"), ["service"] = Model.Service,
+        ["status"] = status, ["page"] = page > 1 ? page.ToString() : null });
+}
+    <section class="reports-panel" id="report-reservations" tabindex="-1">
+        <div class="dashboard-section-heading"><h2>Reservation details <span>(@matching)</span></h2></div>
+        <nav class="reports-statuses" aria-label="Filter reservations by status">
+            <a href="@Link(null)#report-reservations" data-report-link aria-current="@(Model.Status is null ? "true" : null)">All (@total)</a>
+            @foreach (var status in statuses.Keys.Append("Pending").Append(Model.Status).OfType<string>().Distinct().Order())
+            {
+                <a href="@Link(status)#report-reservations" data-report-link aria-current="@(Model.Status == status ? "true" : null)">@status (@statuses.GetValueOrDefault(status))</a>
+            }
+        </nav>
+        @if (Model.Rows.Count == 0) { <p>No matching reservations.</p> }
+        else
+        {
+            <div class="dashboard-table-wrap" role="region" aria-label="Reservation details" tabindex="0"><table>
+                <thead><tr><th scope="col">Reservation ID</th><th scope="col">Customer</th><th scope="col">Service</th><th scope="col">Bays</th><th scope="col">Start (Manila)</th><th scope="col">End (Manila)</th><th scope="col">Status</th></tr></thead>
+                <tbody>@foreach (var row in Model.Rows) {
+                    <tr><th scope="row"><a asp-controller="BookingReview" asp-action="Details" asp-route-id="@row.Id" asp-route-returnReport="@Link(Model.Status, Model.Page)">@row.Reference</a></th><td>@row.Guest</td><td>@row.Service</td><td>@string.Join(", ", row.Bays)</td><td>@DashboardMetrics.Local(row.StartUtc).ToString("d MMM yyyy, h:mm tt")</td><td>@DashboardMetrics.Local(row.EndUtc).ToString("d MMM yyyy, h:mm tt")</td><td><span class="staff-status" data-status="@row.Status">@row.Status</span></td></tr>
+                }</tbody>
+            </table></div>
+            @if (Model.PageCount > 1) {
+                <nav class="dashboard-pagination" aria-label="Report pages">
+                    @if (Model.Page > 1) { <a data-report-link href="@Link(Model.Status, Model.Page - 1)#report-reservations">Previous</a> }
+                    <span>Page @Model.Page of @Model.PageCount</span>
+                    @if (Model.Page < Model.PageCount) { <a data-report-link href="@Link(Model.Status, Model.Page + 1)#report-reservations">Next</a> }
+                </nav>
+            }
+        }
+    </section>

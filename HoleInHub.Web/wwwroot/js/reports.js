@@ -14,8 +14,11 @@
             const canvas = donut.querySelector('canvas');
             const colors = getComputedStyle(donut);
             canvas.hidden = false;
-            charts.push(new Chart(canvas, {
+            const customerChart = new Chart(canvas, {
                 type: 'doughnut',
+                // Moving focus to the legend can dispatch mouseout after the keyboard tooltip opens.
+                plugins: [{ id: 'legendFocus', beforeEvent: (_, args) =>
+                    args.event.type === 'mouseout' && facts.contains(document.activeElement) ? false : undefined }],
                 data: {
                     labels: [...facts.querySelectorAll('dt')].map(label => label.textContent),
                     datasets: [{
@@ -31,8 +34,30 @@
                     animation: reduced.matches ? false : { duration: 420 },
                     plugins: { legend: { display: false } }
                 }
-            }));
+            });
+            charts.push(customerChart);
             donut.classList.add('reports-customer-donut-enhanced');
+            facts.querySelectorAll('dt').forEach((label, index) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.textContent = label.textContent;
+                button.setAttribute('aria-label', label.textContent + ': ' + customerChart.data.datasets[0].data[index]);
+                label.replaceChildren(button);
+                function showSlice() {
+                    const active = [{ datasetIndex: 0, index }];
+                    const point = customerChart.getDatasetMeta(0).data[index].tooltipPosition();
+                    customerChart.setActiveElements(active);
+                    customerChart.tooltip.setActiveElements(active, point);
+                    customerChart.draw();
+                }
+                button.addEventListener('focus', showSlice);
+                button.addEventListener('click', showSlice);
+                button.addEventListener('blur', () => {
+                    customerChart.setActiveElements([]);
+                    customerChart.tooltip.setActiveElements([], { x: 0, y: 0 });
+                    customerChart.draw();
+                });
+            });
         }
         for (const panel of report.querySelectorAll('[data-report-chart]')) {
             const frame = panel.querySelector('.dashboard-chart-frame');
@@ -64,6 +89,11 @@
     }
 
     const listSelector = '#report-reservations';
+    function currentPeriod() {
+        const filters = new URL(report.querySelector('[data-report-export]').href).searchParams;
+        return JSON.stringify(['from', 'to', 'service'].map(key => filters.get(key) || ''));
+    }
+    history.replaceState({ ...history.state, reportsPeriod: currentPeriod() }, '', location.href);
     let renderedUrl = new URL(location.href);
     const samePeriod = (url, previous) => ['from', 'to', 'preset', 'service']
         .every(key => (url.searchParams.get(key) || '') === (previous.searchParams.get(key) || ''));
@@ -78,19 +108,26 @@
         list.setAttribute('aria-busy', 'true');
         announcement.textContent = 'Loading report…';
         try {
-            const response = await fetch(url, { headers: { 'X-Reports': 'true' }, signal: current.signal, cache: 'no-store' });
+            const response = await fetch(url, { headers: { 'X-Reports': listOnly ? 'list' : 'true' }, signal: current.signal, cache: 'no-store' });
             if (!response.ok) throw new Error();
-            const content = new DOMParser().parseFromString(await response.text(), 'text/html').querySelector('[data-reports]');
+            const content = new DOMParser().parseFromString(await response.text(), 'text/html').querySelector(listOnly ? listSelector : '[data-reports]');
             if (!content) throw new Error();
             if (request !== current) return;
             if (listOnly) {
-                list.replaceWith(content.querySelector(listSelector));
-                report.querySelector('[data-report-export]').href = content.querySelector('[data-report-export]').href;
-                report.querySelector('[data-report-filter] input[name="status"]')?.remove();
-                const status = content.querySelector('[data-report-filter] input[name="status"]');
-                if (status) report.querySelector('[data-report-filter]').append(status);
-                for (const [index, link] of report.querySelectorAll('.dashboard-presets a').entries()) {
-                    link.href = content.querySelectorAll('.dashboard-presets a')[index].href;
+                list.replaceWith(content);
+                const status = url.searchParams.get('status');
+                for (const link of report.querySelectorAll('[data-report-export], .dashboard-presets a')) {
+                    const target = new URL(link.href);
+                    if (status) target.searchParams.set('status', status);
+                    else target.searchParams.delete('status');
+                    link.href = target.href;
+                }
+                const form = report.querySelector('[data-report-filter]');
+                form.querySelector('input[name="status"]')?.remove();
+                if (status) {
+                    const input = document.createElement('input');
+                    Object.assign(input, { type: 'hidden', name: 'status', value: status });
+                    form.append(input);
                 }
                 report.removeAttribute('aria-busy');
                 report.removeAttribute('data-report-list-loading');
@@ -102,7 +139,7 @@
                 mount();
             }
             renderedUrl = url;
-            if (push) history.pushState(null, '', url);
+            if (push) history.pushState({ reportsPeriod: currentPeriod() }, '', url);
             const focus = url.hash ? report.querySelector('#report-reservations') : report.querySelector('summary');
             focus.focus({ preventScroll: !url.hash });
             announcement.textContent = 'Report updated.';
@@ -134,7 +171,7 @@
         url.search = new URLSearchParams(new FormData(form)).toString();
         void load(url);
     });
-    window.addEventListener('popstate', () => void load(new URL(location.href), false));
+    window.addEventListener('popstate', event => void load(new URL(location.href), false, event.state?.reportsPeriod === currentPeriod()));
     reduced.addEventListener('change', () => {
         if (reduced.matches) charts.forEach(chart => {
             chart.stop();
