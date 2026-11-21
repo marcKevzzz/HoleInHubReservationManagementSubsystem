@@ -5,7 +5,7 @@
     var now = Model.Queue.Now;
     var actions = new List<(string Key, string Title, string Button, string Confirmation)>();
     if (Model.Context.CanMarkNoShow) { actions.Add(("no-show", "Mark no-show", "Mark as no-show", "I followed up with the guest and confirmed they have not arrived.")); }
-    if (AttendanceCorrectionRules.CanCorrect(booking.Status) && !booking.CancellationRequested && booking.ScheduleChange?.Status != "Pending")
+    if (Model.Context.CheckoutCompletedUtc is null && AttendanceCorrectionRules.CanCorrect(booking.Status) && !booking.CancellationRequested && booking.ScheduleChange?.Status != "Pending")
     { actions.Add(("correct", "Correct attendance", "Save correction", "I reviewed the actual attendance and the reason for this correction.")); }
     if (SessionExtensionRules.CanExtend(booking.Status, booking.Service, booking.StartUtc, booking.EndUtc, now)
         && !booking.CancellationRequested && booking.ScheduleChange?.Status != "Pending")
@@ -27,7 +27,7 @@
             @if (action.Key == "correct")
             {
                 <div class="settings-field"><label for="correct-status">Attendance status</label><select id="correct-status" name="CorrectedStatus">
-                    @foreach (var item in new[] { "Confirmed", "Checked-In", "Completed", "No-show" }) { <option value="@item" selected="@(item == status)">@(item == "Checked-In" ? "Checked in" : item)</option> }
+                    @foreach (var item in new[] { "Confirmed", "Checked-In", "Completed", "No-show" }.Where(item => item != "Completed" || !Model.Context.RequirePosSettlement || booking.Status == "Completed")) { <option value="@item" selected="@(item == status)">@(item == "Checked-In" ? "Checked in" : item)</option> }
                 </select></div>
                 <div class="attendance-title"><span>Actual times · Manila</span><partial name="_StaffHelp" model='("correction-time-help", "About corrected times", "Checked in needs arrival only. Completed needs arrival and departure. Leave both times empty for Confirmed or No-show. Restoring a booking rechecks all original bays.")' /></div>
                 <div class="settings-field"><label for="correct-arrival">Arrival</label><input id="correct-arrival" type="datetime-local" step="0.001" name="ArrivalLocal" value="@(saved is not null ? saved.ArrivalLocal?.ToString("yyyy-MM-ddTHH:mm:ss.fff") : LocalValue(booking.CheckedInUtc))" /></div>

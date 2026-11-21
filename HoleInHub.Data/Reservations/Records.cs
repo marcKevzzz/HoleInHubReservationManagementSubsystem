@@ -15,9 +15,14 @@ public sealed class ResourceRecord
     [BsonIgnoreIfDefault] public long Revision { get; set; }
 }
 
+// Written only by the future authenticated POS adapter after all linked bills are settled.
+public sealed record PosSettlement(string ReservationId, string BillReference, DateTime VerifiedUtc);
+
 public sealed class ReservationRecord
 {
     public long Revision { get; set; }
+    [BsonIgnoreIfNull] public PosSettlement? FinalSettlement { get; set; }
+    [BsonIgnoreIfNull] public DateTime? CheckoutCompletedUtc { get; set; }
     [BsonIgnoreIfNull] public string? ServiceEntryId { get; set; }
     [BsonIgnoreIfNull] public long? ServiceRevision { get; set; }
     [BsonIgnoreIfNull] public DateTime? CheckedInUtc { get; set; }

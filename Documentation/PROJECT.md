@@ -124,3 +124,5 @@ The [aligned diagram package](diagrams/README.md) provides system architecture, 
 Owner update (2026-11-03): ordinary sessions may be 30 minutes. Each time tile represents a half-hour; dragging consecutive tiles sets the complete duration (two tiles = one hour). Existing fixed coaching classes and whole-shop rental windows retain their defined durations. Review deadlines and minimum booking lead times are unchanged.
 
 Owner update (2026-11-15): implement staff-managed no-show, attendance corrections and then session extensions. The first extension release covers Regular and VIP only. Implementation rules and verification evidence are recorded in the [attendance and extensions plan](plans/2026-11-15-attendance-and-extensions.md).
+
+The reservation-side settlement checkout pilot is disabled by default. Venue approval and authenticated POS settlement evidence are required before operational rollout. See the [implementation specification](specs/pos-settlement-checkout.md) and [next integration plan](plans/pos-settlement-checkout.md).

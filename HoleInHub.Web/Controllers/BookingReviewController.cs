@@ -456,6 +456,8 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
                                 : form.Action == "check-out" ? "Guest already checked out" : "Action already saved"),
                         _ when form.Action == "no-show" => new ToastNotice("success", "Marked as no-show", "Remaining bay time was released."),
                         _ when form.Action == "correct" => new ToastNotice("success", "Attendance corrected"),
+                        _ when form.Action == "end-session" => new ToastNotice("success", "Session ended", "Bays released. Final checkout requires POS settlement."),
+                        _ when form.Action == "complete-checkout" => new ToastNotice("success", "Checkout completed"),
                         _ when form.Action == "extend" => new ToastNotice("success", "Session extended"),
                         _ when form.Action == "check-in" => new ToastNotice("success", "Guest checked in"),
                         _ => new ToastNotice("success", "Guest checked out", "Remaining bay time was released.")

@@ -21,7 +21,7 @@ public sealed record DashboardSlice(IReadOnlyList<DashboardBooking> Bookings, bo
 
 public static class DashboardMetrics
 {
-    public static readonly string[] BookedStatuses = ["Confirmed", "Checked-In", "Completed"];
+    public static readonly string[] BookedStatuses = ["Confirmed", "Checked-In", AttendanceRules.AwaitingSettlement, "Completed"];
     public static DateTime Utc(DateOnly day) => TimeZoneInfo.ConvertTimeToUtc(day.ToDateTime(TimeOnly.MinValue), ReservationRules.Manila);
     public static DateTime Local(DateTime utc) => TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), ReservationRules.Manila);
     public static string ServiceLabel(string id) => id switch

@@ -5,6 +5,10 @@ public sealed record StaffReviewContext(ReservationDto Booking, bool HasConflict
     public string Email { get; init; } = "";
     public IReadOnlyList<ResourceDto> Bays { get; init; } = [];
     public bool AttendanceOperationsAvailable { get; init; }
+    public bool RequirePosSettlement { get; init; }
+    public bool CanCompleteCheckout { get; init; }
+    public DateTime? CheckoutCompletedUtc { get; init; }
+    public string? SettlementBill { get; init; }
     public bool CanMarkNoShow { get; init; }
 }
 
@@ -33,6 +37,10 @@ public sealed partial class ReservationService
             AttendanceRules.CanCheckOut(record, now),
             record.Status == "Confirmed" && now >= AttendanceRules.FollowUpDue(record.StartUtc, record.EndUtc))
         {
+            RequirePosSettlement = policy.Value.RequirePosSettlement,
+            CanCompleteCheckout = record.Status == AttendanceRules.AwaitingSettlement && AttendanceRules.HasFinalSettlement(record, now),
+            CheckoutCompletedUtc = record.CheckoutCompletedUtc,
+            SettlementBill = record.FinalSettlement?.BillReference,
             AttendanceOperationsAvailable = attendanceOperations,
             CanMarkNoShow = attendanceOperations && AttendanceRules.CanMarkNoShow(record, now),
             Email = record.Email,

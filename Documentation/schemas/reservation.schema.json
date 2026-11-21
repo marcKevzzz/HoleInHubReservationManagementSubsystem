@@ -58,7 +58,8 @@
         "Cancelled",
         "Rejected",
         "Expired",
-        "No-show"
+        "No-show",
+        "Awaiting settlement"
       ]
     },
     "StartUtc": {
@@ -248,7 +249,9 @@
               "ScheduleChangeDeclined",
               "ReservationNoShow",
               "AttendanceCorrected",
-              "ReservationExtended"
+              "ReservationExtended",
+              "SessionEnded",
+              "FinancialCheckoutCompleted"
             ]
           },
           "ReservationStatus": {
@@ -260,7 +263,8 @@
               "Cancelled",
               "Rejected",
               "Expired",
-              "No-show"
+              "No-show",
+              "Awaiting settlement"
             ]
           },
           "CommandId": {
@@ -282,7 +286,8 @@
               "Cancelled",
               "Rejected",
               "Expired",
-              "No-show"
+              "No-show",
+              "Awaiting settlement"
             ]
           },
           "ScheduleChange": {
@@ -580,6 +585,30 @@
     "reservation_id": {
       "bsonType": "string",
       "pattern": "\\S"
+    },
+    "CheckoutCompletedUtc": {
+      "bsonType": "date"
+    },
+    "FinalSettlement": {
+      "bsonType": "object",
+      "required": [
+        "ReservationId",
+        "BillReference",
+        "VerifiedUtc"
+      ],
+      "properties": {
+        "ReservationId": {
+          "bsonType": "string",
+          "minLength": 1
+        },
+        "BillReference": {
+          "bsonType": "string",
+          "minLength": 1
+        },
+        "VerifiedUtc": {
+          "bsonType": "date"
+        }
+      }
     }
   }
 }

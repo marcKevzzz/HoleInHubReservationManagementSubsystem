@@ -42,6 +42,29 @@ public static class AttendanceRules
         return null;
     }
 
+    public const string AwaitingSettlement = "Awaiting settlement";
+
+    public static bool HasFinalSettlement(ReservationRecord booking, DateTime now) =>
+        booking.FinalSettlement is { } evidence && evidence.ReservationId == booking.Reference
+        && !string.IsNullOrWhiteSpace(evidence.BillReference) && evidence.VerifiedUtc > DateTime.UnixEpoch
+        && evidence.VerifiedUtc <= now;
+
+    public static AttendanceChange? DecideCheckout(ReservationRecord booking, string action, string reason, DateTime now, bool requireSettlement)
+    {
+        if (booking.Status == AwaitingSettlement)
+        {
+            return action == "complete-checkout" && booking.CheckedOutUtc.HasValue && HasFinalSettlement(booking, now)
+                ? new("Completed", "FinancialCheckoutCompleted", now, null, null, false) : null;
+        }
+        if (action == "end-session" && requireSettlement)
+        {
+            var departure = Decide(booking, "check-out", reason, now);
+            return departure is null ? null : departure with { Status = AwaitingSettlement, EventType = "SessionEnded" };
+        }
+        if (action == "check-out" && requireSettlement) { return null; }
+        return Decide(booking, action, reason, now);
+    }
+
     public static void RequireReason(string reason)
     {
         if (string.IsNullOrWhiteSpace(reason) || reason.Length > 500)
