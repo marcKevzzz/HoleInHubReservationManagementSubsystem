@@ -81,6 +81,7 @@ public sealed partial class ReservationPersistence
                         CheckedOutUtc = change.ReplaceActualTimes ? change.CheckedOutUtc : change.CheckedOutUtc ?? record.CheckedOutUtc
                     } : null
                 });
+            if (change.EventType == "FinancialCheckoutCompleted") { update = update.Set(x => x.CheckoutCompletedUtc, change.AtUtc); }
             if (change.EndUtc.HasValue) { update = update.Set(x => x.EndUtc, change.EndUtc.Value); }
             if (change.ReplaceActualTimes && change.CheckedInUtc is null) { update = update.Unset(x => x.CheckedInUtc); }
             if (change.ReplaceActualTimes && change.CheckedOutUtc is null) { update = update.Unset(x => x.CheckedOutUtc); }

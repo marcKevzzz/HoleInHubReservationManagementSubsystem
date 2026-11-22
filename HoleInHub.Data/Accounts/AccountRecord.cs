@@ -9,6 +9,7 @@ public sealed class AccountRecord
     public string Phone { get; set; } = "";
     [BsonIgnoreIfNull] public string? GoogleSubject { get; set; }
     [BsonId] public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    [BsonElement("account_id")] public string AccountId => BusinessIdentifier.Format("ACC", Id);
     public string Email { get; set; } = "";
     public string NormalizedEmail { get; set; } = "";
     public string PasswordHash { get; set; } = "";

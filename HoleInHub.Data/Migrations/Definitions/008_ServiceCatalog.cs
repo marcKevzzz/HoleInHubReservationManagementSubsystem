@@ -40,7 +40,9 @@ public sealed class Migration_008_ServiceCatalog : IMongoMigration
         // Seed only missing records so rerunning the migration preserves venue edits.
         foreach (var item in Seed())
         {
-            await collection.UpdateOneAsync(x => x.Id == item.Id, new BsonDocument("$setOnInsert", item.ToBsonDocument()),
+            // Preserve the legacy seed shape expected by migration 021.
+            var document = item.ToBsonDocument().Set("service_id", item.Id);
+            await collection.UpdateOneAsync(x => x.Id == item.Id, new BsonDocument("$setOnInsert", document),
                 new UpdateOptions { IsUpsert = true }, ct);
         }
     }

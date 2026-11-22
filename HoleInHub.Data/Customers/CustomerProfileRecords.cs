@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using HoleInHub.Data.Reservations;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace HoleInHub.Data.Customers;
 
@@ -8,6 +9,8 @@ public sealed record CustomerContactVariant(string FirstName, string LastName, s
 public sealed class CustomerProfileRecord
 {
     public string Id { get; set; } = "";
+    internal bool UseLegacyCustomerId { get; set; }
+    [BsonElement("customer_id")] public string CustomerId => UseLegacyCustomerId ? Id : BusinessIdentifier.Format("CUS", Id);
     public string FirstName { get; set; } = "";
     public string LastName { get; set; } = "";
     public string Email { get; set; } = "";

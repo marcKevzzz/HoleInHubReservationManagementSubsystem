@@ -54,6 +54,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_018_CustomerProfiles>();
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_019_SystemSettings>();
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_020_AttendanceOperations>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_021_BusinessIdentifiers>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_022_PrefixedBusinessIdentifiers>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_023_SettlementCheckout>();
         services.AddSingleton<MongoMigrationRunner>();
 
         return services;

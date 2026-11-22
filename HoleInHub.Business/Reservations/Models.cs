@@ -61,6 +61,7 @@ public sealed class ReservationValidationException(string message, string? field
 }
 public sealed class ReservationPolicy
 {
+    public bool RequirePosSettlement { get; set; }
     public bool Approved { get; set; }
     public bool DurationsApproved { get; set; }
     public TimeSpan ReviewStart { get; set; }

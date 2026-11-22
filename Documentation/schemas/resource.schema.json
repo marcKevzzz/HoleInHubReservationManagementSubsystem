@@ -1,6 +1,6 @@
 {
   "bsonType" : "object",
-  "required" : ["_id", "Name", "Service"],
+  "required" : ["_id", "Name", "Service", "resource_id"],
   "properties" : {
     "_id" : {
       "bsonType" : "string",
@@ -15,6 +15,10 @@
     },
     "Active" : {
       "bsonType" : "bool"
+    },
+    "resource_id" : {
+      "bsonType" : "string",
+      "pattern" : "\\S"
     }
   }
 }

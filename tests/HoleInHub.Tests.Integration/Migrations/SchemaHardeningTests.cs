@@ -203,12 +203,10 @@ public sealed class SchemaHardeningTests(MongoDbFixture fixture) : IClassFixture
             var published = BsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(directory, "email-verification.006.schema.json")));
             Assert.Equal(baseline.ToJson(), published.ToJson());
         }
-        await new Migration_007_GuestReservationAccess().UpAsync(context.Database, default);
-        await new Migration_011_AdminScheduleBlocks().UpAsync(context.Database, default);
-        await new Migration_012_ReleaseScheduleBlocks().UpAsync(context.Database, default);
-        await new Migration_013_ReservationAttendance().UpAsync(context.Database, default);
-        await new Migration_014_OperatingReviewClock().UpAsync(context.Database, default);
-        await new Migration_015_ScheduleChanges().UpAsync(context.Database, default);
+        foreach (var migration in MongoDbFixture.Migrations.Where(m => string.CompareOrdinal(m.MigrationId, Migration().MigrationId) > 0))
+        {
+            await migration.UpAsync(context.Database, default);
+        }
         var names = new Dictionary<string, string>
         {
             ["reservations"] = "reservation",

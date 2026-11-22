@@ -4,7 +4,7 @@ using MongoDB.Driver;
 
 namespace HoleInHub.Business.Services;
 
-public sealed class HealthService(IMongoDbContext dbContext) : IHealthService
+public sealed class HealthService(IMongoDbContext dbContext, Microsoft.Extensions.Options.IOptions<Reservations.ReservationPolicy>? policy = null) : IHealthService
 {
     private readonly IMongoDbContext _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
 
@@ -23,7 +23,8 @@ public sealed class HealthService(IMongoDbContext dbContext) : IHealthService
 
         try
         {
-            string[] required = ["001_InitialFoundation", "002_Reservations", "003_Accounts", "004_BookingProcess", "005_GoogleAccounts", "006_SchemaHardening", "007_GuestReservationAccess", "008_ServiceCatalog"];
+            string[] required = ["001_InitialFoundation", "002_Reservations", "003_Accounts", "004_BookingProcess", "005_GoogleAccounts", "006_SchemaHardening", "007_GuestReservationAccess", "008_ServiceCatalog", "021_BusinessIdentifiers", "022_PrefixedBusinessIdentifiers"];
+            if (policy?.Value.RequirePosSettlement == true) { required = [.. required, "023_SettlementCheckout"]; }
             var applied = await _dbContext.Migrations.Find(Builders<MigrationRecord>.Filter.In(x => x.MigrationId, required)).Project(x => x.MigrationId).ToListAsync(ct);
             if (required.All(applied.Contains))
             {

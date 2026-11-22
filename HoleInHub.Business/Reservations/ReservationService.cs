@@ -66,7 +66,7 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
             PaymentStatus = request.Service == "WholeShop" ? "AwaitingDeposit" : "NotRequired",
             AccountId = accountId,
             Email = verifiedEmail,
-            Reference = $"HIH-{Guid.NewGuid().ToString("N")[..10].ToUpperInvariant()}",
+            ReservationId = $"HIH-{Guid.NewGuid().ToString("N")[..10].ToUpperInvariant()}",
             Service = request.Service,
             ServiceEntryId = entry?.Id ?? request.ServiceEntryId,
             ServiceRevision = entry?.Revision,

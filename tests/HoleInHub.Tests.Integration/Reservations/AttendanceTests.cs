@@ -61,6 +61,51 @@ public sealed partial class AttendanceTests(MongoDbFixture fixture) : IClassFixt
         new(store, new OutboxPersistence(context), Options.Create(new ReservationPolicy()), clock);
 
     [Fact]
+    public async Task DepartureReleasesBaysAndFinalCheckoutRequiresVerifiedSettlement()
+    {
+        var (store, context) = await Setup();
+        var migration = new Migration_023_SettlementCheckout();
+        await migration.UpAsync(context.Database, default);
+        await migration.UpAsync(context.Database, default);
+        var clock = new Clock();
+        var service = new ReservationService(store, new(context), Options.Create(new ReservationPolicy { RequirePosSettlement = true }), clock);
+        var booking = await store.InsertAsync(Booking(), default);
+        Task<AttendanceResult> Apply(AttendanceCommand command) => service.RecordAttendanceAsync(command, "staff", default);
+        Assert.Equal(AttendanceResult.Applied, await Apply(Command(booking.Id)));
+        clock.Now = Start.AddMinutes(30);
+        Assert.Equal(AttendanceResult.NotEligible, await Apply(Command(booking.Id, "check-out", 1, "Finished")));
+        Assert.Equal(AttendanceResult.Applied, await Apply(Command(booking.Id, "end-session", 1, "Guest left")));
+        var released = await store.InsertAsync(Booking(), default);
+        Assert.NotEqual(booking.Id, released.Id);
+        var departed = await store.ByIdAsync(booking.Id, default);
+        Assert.Equal(AttendanceRules.AwaitingSettlement, departed!.Status);
+        var correction = Command(booking.Id, "correct", 2, "Correct departure") with
+        {
+            CorrectedStatus = "Completed",
+            ArrivalUtc = Start,
+            DepartureUtc = clock.Now
+        };
+        Assert.Equal(AttendanceResult.NotEligible, await Apply(correction));
+        var legacy = Service(store, context, clock);
+        Assert.Equal(AttendanceResult.NotEligible, await legacy.RecordAttendanceAsync(Command(booking.Id, "check-out", 2), "staff", default));
+        var final = Command(booking.Id, "complete-checkout", 2);
+        Assert.Equal(AttendanceResult.NotEligible, await Apply(final));
+        var records = context.Database.GetCollection<ReservationRecord>("reservations");
+        await records.UpdateOneAsync(x => x.Id == booking.Id, Builders<ReservationRecord>.Update.Set(
+            x => x.FinalSettlement, new PosSettlement("another reservation", "bill-1", clock.Now)));
+        Assert.Equal(AttendanceResult.NotEligible, await Apply(final));
+        clock.Now = Start.AddMinutes(42);
+        await records.UpdateOneAsync(x => x.Id == booking.Id, Builders<ReservationRecord>.Update.Set(
+            x => x.FinalSettlement, new PosSettlement(booking.Reference, "bill-1", clock.Now)));
+        Assert.Equal(AttendanceResult.Applied, await Apply(final));
+        Assert.Equal(AttendanceResult.AlreadyApplied, await Apply(final));
+        var completed = await store.ByIdAsync(booking.Id, default);
+        Assert.Equal("Completed", completed!.Status);
+        Assert.Equal(Start.AddMinutes(30), completed.CheckedOutUtc);
+        Assert.Equal(clock.Now, completed.CheckoutCompletedUtc);
+    }
+
+    [Fact]
     public async Task ArrivalOpensAnHourEarlyAndCanBeClosedBeforeTheScheduledStart()
     {
         var (store, context) = await Setup();

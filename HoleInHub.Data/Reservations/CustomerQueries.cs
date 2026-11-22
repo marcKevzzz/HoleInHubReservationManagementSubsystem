@@ -5,7 +5,7 @@ using MongoDB.Driver;
 
 namespace HoleInHub.Data.Reservations;
 
-public sealed record CustomerContactRecord(ReservationRecord Contact, string Kind);
+public sealed record CustomerContactRecord(ReservationRecord Contact, string Kind, string? CustomerId = null);
 public sealed record CustomerDirectoryRecords(IReadOnlyList<CustomerContactRecord> Items, bool HasMore);
 public sealed record CustomerProfileRecords(CustomerContactRecord Customer, IReadOnlyList<ReservationRecord> Bookings,
     long Total, long Upcoming, long Completed, long Cancelled, bool HasMore);
@@ -62,7 +62,7 @@ public sealed partial class ReservationPersistence
                 { "input", new BsonDocument("$concat", new BsonArray { new BsonDocument("$ifNull", new BsonArray { "$FirstName", "" }), " ", new BsonDocument("$ifNull", new BsonArray { "$LastName", "" }) }) },
                 { "regex", Regex.Escape(term) }, { "options", "i" }
             }));
-            search = filter.Regex(x => x.Email, literal) | filter.Eq(x => x.Reference, term.ToUpperInvariant()) | name;
+            search = filter.Regex(x => x.Email, literal) | filter.Eq(x => x.ReservationId, term.ToUpperInvariant()) | name;
             if (phones.Length > 0) { search |= filter.In(x => x.Phone, phones); }
         }
         // shortcut: contact grouping scans matching reservations; add indexed search fields when measured volume exceeds the query budget.

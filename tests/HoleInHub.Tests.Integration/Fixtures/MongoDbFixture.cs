@@ -1,5 +1,8 @@
 using HoleInHub.Data.Configuration;
 using HoleInHub.Data.Context;
+using HoleInHub.Data.Extensions;
+using HoleInHub.Data.Migrations;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -15,6 +18,10 @@ public sealed class MongoDbFixture : IAsyncLifetime
     public string DatabaseName { get; }
     public IMongoClient Client { get; private set; } = null!;
     public bool IsServerAvailable { get; private set; }
+    public static IReadOnlyList<IMongoMigration> Migrations { get; } = new ServiceCollection().AddHoleInHubMigrations()
+        .Where(service => service.ServiceType == typeof(IMongoMigration))
+        .Select(service => (IMongoMigration)Activator.CreateInstance(service.ImplementationType!)!)
+        .OrderBy(migration => migration.MigrationId, StringComparer.Ordinal).ToArray();
 
     public MongoDbFixture()
     {

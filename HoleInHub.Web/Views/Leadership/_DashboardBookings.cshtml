@@ -6,7 +6,7 @@
     <ol class="dashboard-booking-list">
     @foreach (var booking in Model.Slice.Bookings)
     {
-        <li><div><a asp-controller="BookingReview" asp-action="Details" asp-route-id="@booking.Id" asp-route-returnDashboard="@Model.Context.DashboardUrl">@booking.Reference</a><strong>@booking.Guest</strong><span>@booking.Service · @string.Join(", ", booking.Bays)</span><span>@DashboardMetrics.Local(booking.StartUtc).ToString("d MMM, h:mm tt") – @DashboardMetrics.Local(booking.EndUtc).ToString("d MMM, h:mm tt")</span></div><span class="staff-status" data-status="@booking.Status">@booking.Status</span></li>
+        <li><div><a asp-controller="BookingReview" asp-action="Details" asp-route-id="@booking.Id" asp-route-returnDashboard="@Model.Context.DashboardUrl">Reservation ID @booking.Reference</a><strong>@booking.Guest</strong><span>@booking.Service · @string.Join(", ", booking.Bays)</span><span>@DashboardMetrics.Local(booking.StartUtc).ToString("d MMM, h:mm tt") – @DashboardMetrics.Local(booking.EndUtc).ToString("d MMM, h:mm tt")</span></div><span class="staff-status" data-status="@booking.Status">@booking.Status</span></li>
     }
     </ol>
     <nav class="dashboard-pagination" aria-label="Matching reservation pages">

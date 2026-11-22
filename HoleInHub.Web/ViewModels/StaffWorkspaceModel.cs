@@ -7,4 +7,9 @@ public sealed record StaffWorkspaceModel(DateOnly Day, DateOnly Today, IReadOnly
 
 public sealed record StaffBookingLookup(DateOnly Day, string Search, IReadOnlyList<StaffScheduleEntry> Matches, string? Error);
 
+public sealed record StaffScheduleList(string From, string To, int Page, IReadOnlyList<DashboardBooking> Bookings, long Total,
+    string? Error = null);
+
+public sealed record ScheduleViewLinks(string From, string To, bool List, string? CustomerProfileId);
+
 public sealed record StaffBookingLinkModel(StaffScheduleEntry Entry, DateOnly Day, string Location, string Css, string? Style = null, bool Wide = false);

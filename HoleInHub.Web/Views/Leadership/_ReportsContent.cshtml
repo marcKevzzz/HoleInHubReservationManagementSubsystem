@@ -1,0 +1,111 @@
+@using HoleInHub.Business.Reservations
+@using Microsoft.AspNetCore.WebUtilities
+@model ReportsViewModel
+@{
+    var data = Model.Report;
+    var from = Model.From.ToString("yyyy-MM-dd");
+    var to = Model.To.ToString("yyyy-MM-dd");
+    var period = Model.From == Model.To ? Model.From.ToString("d MMM yyyy") : $"{Model.From:d MMM yyyy} – {Model.To:d MMM yyyy}";
+    string Link(string? status, int page = 1, string? preset = null, bool export = false) =>
+        QueryHelpers.AddQueryString(export ? "/manager/reports/export.xlsx" : "/manager/reports", new Dictionary<string, string?> {
+            ["from"] = preset is null ? from : null, ["to"] = preset is null ? to : null,
+            ["preset"] = preset, ["service"] = Model.Service, ["status"] = status, ["page"] = page > 1 ? page.ToString() : null });
+    var statuses = data.Rows.GroupBy(row => row.Status).ToDictionary(group => group.Key, group => group.Count());
+}
+<section class="staff-workspace dashboard-page reports-page" data-reports>
+    <header class="staff-workspace-heading dashboard-heading">
+        <h1>Reports</h1>
+        <div class="dashboard-toolbar">
+            <details class="dashboard-period">
+                <summary aria-label="@($"Change report filters for {period}")"><partial name="_StaffIcon" model='"calendar"' /><span>@period</span><partial name="_StaffIcon" model='"chevron-down"' /></summary>
+                <div class="dashboard-period-panel">
+                    <nav class="dashboard-presets" aria-label="Quick periods">
+                        @foreach (var (days, label) in new[] { ("1", "Today"), ("7", "Last 7 days"), ("30", "Last 30 days") })
+                        {
+                            <a href="@Link(Model.Status, preset: days)" data-report-link>@label</a>
+                        }
+                    </nav>
+                    <form action="/manager/reports" method="get" data-report-filter>
+                        <label for="report-from">From</label><input id="report-from" type="date" name="from" value="@from" required />
+                        <label for="report-to">To</label><input id="report-to" type="date" name="to" value="@to" required />
+                        <label for="report-service">Service</label>
+                        <select name="service" id="report-service"><option value="">All services</option>
+                            @foreach (var service in data.Services)
+                            { <option value="@service.Key" selected="@(service.Key == Model.Service)">@service.Value</option> }
+                        </select>
+                        @if (Model.Status is not null) { <input type="hidden" name="status" value="@Model.Status" /> }
+                        <button type="submit" class="button">Apply filters</button>
+                    </form>
+                </div>
+            </details>
+            <a class="button button-secondary report-export" data-report-export href="@Link(Model.Status, export: true)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 16v4h14v-4"/></svg>
+                Export Excel
+            </a>
+        </div>
+    </header>
+    <div class="reports-skeleton" aria-hidden="true">
+        <div class="reports-skeleton-metrics">@for (var i = 0; i < 4; i++) { <div><span></span><b></b></div> }</div>
+        <div class="reports-grid">
+            @for (var chart = 0; chart < 2; chart++)
+            {
+                <div class="reports-panel"><span></span><div class="reports-skeleton-bars">@foreach (var height in new[] { 36, 62, 49, 83, 57, 72, 94 }) { <i style="--bar-height:@(height)%"></i> }</div></div>
+            }
+        </div>
+    </div>
+    <div data-report-results>
+    <dl class="dashboard-summary">
+        <div><dt>Total reservations</dt><dd><a data-report-link href="@Link(null)#report-reservations">@data.Rows.Count</a></dd></div>
+        @foreach (var status in new[] { "Completed", "Cancelled", "No-show" })
+        {
+            <div><dt>@(status == "No-show" ? "No-shows" : status)</dt><dd><a data-report-link aria-label="@($"{statuses.GetValueOrDefault(status)} {status} reservations")" href="@Link(status)#report-reservations">@statuses.GetValueOrDefault(status)</a></dd><span class="dashboard-kpi-context">@(data.Rows.Count == 0 ? "0%" : (statuses.GetValueOrDefault(status) / (double)data.Rows.Count).ToString("0.#%")) of total</span></div>
+        }
+    </dl>
+    @if (data.Rows.Count == 0)
+    {
+        <partial name="_DashboardEmptyState" model='@("reports", "No reservations in this period", "Choose another date range or service to see booking activity.")' />
+    }
+    else
+    {
+        <div class="reports-grid">
+            @foreach (var chart in new[] {
+                (Title: "Reservation volume", Unit: "Reservations", Values: data.Volume.Select(pair => (Label: pair.Key, Value: (double)pair.Value))),
+                (Title: "Service usage", Unit: "Reservations", Values: data.ServiceCounts.OrderByDescending(pair => pair.Value).ThenBy(pair => pair.Key).Select(pair => (Label: data.Services.GetValueOrDefault(pair.Key, pair.Key), Value: (double)pair.Value))),
+                (Title: "Reserved bay-hours", Unit: "Bay-hours", Values: data.BayHours.Select(pair => (Label: pair.Key, Value: pair.Value)))
+            })
+            {
+                <section class="reports-panel" data-report-chart data-trend="@(chart.Title == "Reservation volume" && Model.From != Model.To ? "true" : "false")" data-horizontal="@(chart.Title == "Service usage" ? "true" : "false")">
+                    <h2>@chart.Title</h2><p data-chart-unit="@chart.Unit">@(chart.Title == "Reserved bay-hours" ? "Confirmed, checked-in and completed sessions by Manila hour." : chart.Title == "Reservation volume" ? (Model.From == Model.To ? "Reservations by Manila hour." : "Reservations by Manila date.") : "Reservations by service.")</p>
+                    @if (chart.Values.Any(x => x.Value > 0))
+                    {
+                        <div class="dashboard-chart-frame" hidden><canvas aria-hidden="true"></canvas></div>
+                        <div data-report-values>
+                            <table><thead><tr><th scope="col">@(chart.Title == "Reservation volume" ? (Model.From == Model.To ? "Hour" : "Date") : chart.Title == "Service usage" ? "Service" : "Hour")</th><th scope="col">@chart.Unit</th></tr></thead>
+                            <tbody>@foreach (var point in chart.Values) { <tr><th scope="row">@point.Label</th><td data-value="@point.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)">@point.Value.ToString("0.##")</td></tr> }</tbody></table>
+                        </div>
+                    }
+                    else { <p>No @chart.Unit.ToLowerInvariant() for this period.</p> }
+                </section>
+            }
+            <section class="reports-panel">
+                <h2>Customer trends</h2><p>Returning customers completed a visit before this period.</p>@{
+                    var matched = data.NewCustomers + data.ReturningCustomers;
+                    var newShare = matched == 0 ? 0 : (double)data.NewCustomers / matched * 100;
+                }
+                <div class="reports-customer-chart">
+                    <div class="reports-customer-donut" data-customer-donut role="img" aria-label="@($"{data.NewCustomers} new customers and {data.ReturningCustomers} returning customers")" style="--new-share:@(newShare.ToString(System.Globalization.CultureInfo.InvariantCulture))%" data-empty="@(matched == 0 ? "true" : "false")">
+                        <canvas hidden aria-hidden="true"></canvas>
+                        <span>@matched<small>Matched customers</small></span>
+                    </div>
+                    <dl class="reports-facts">
+                        <div><dt class="reports-customer-new">New customers</dt><dd>@data.NewCustomers</dd></div>
+                        <div><dt class="reports-customer-returning">Returning customers</dt><dd>@data.ReturningCustomers</dd></div>
+                    </dl>
+                </div>
+                @if (data.UnmatchedReservations > 0) { <p>@data.UnmatchedReservations @(data.UnmatchedReservations == 1 ? "reservation has" : "reservations have") no matched customer.</p> }
+            </section>
+        </div>
+    }
+    <partial name="_ReportList" model="@(new ReportListViewModel(Model.From, Model.To, Model.Service, Model.Status, Model.Page, Model.PageCount, Model.Rows, statuses))" />
+    </div>
+</section>

@@ -21,7 +21,7 @@ public sealed record DashboardSlice(IReadOnlyList<DashboardBooking> Bookings, bo
 
 public static class DashboardMetrics
 {
-    public static readonly string[] BookedStatuses = ["Confirmed", "Checked-In", "Completed"];
+    public static readonly string[] BookedStatuses = ["Confirmed", "Checked-In", AttendanceRules.AwaitingSettlement, "Completed"];
     public static DateTime Utc(DateOnly day) => TimeZoneInfo.ConvertTimeToUtc(day.ToDateTime(TimeOnly.MinValue), ReservationRules.Manila);
     public static DateTime Local(DateTime utc) => TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), ReservationRules.Manila);
     public static string ServiceLabel(string id) => id switch
@@ -187,6 +187,9 @@ public sealed partial class ReservationService
         }
 
         var rows = await persistence.ReadDashboardSliceAsync(DashboardMetrics.Utc(from), DashboardMetrics.Utc(to.AddDays(1)), service, statuses, exclude, intervals, byStart, page, ct);
-        return new(rows.Take(20).Select(x => new DashboardBooking(x.Id, x.Reference, x.Guest.Trim(), DashboardMetrics.ServiceLabel(x.Service), x.Status, x.StartUtc, x.EndUtc, x.ResourceIds)).ToArray(), rows.Count > 20);
+        return new(rows.Take(20).Select(ToDashboardBooking).ToArray(), rows.Count > 20);
     }
+
+    private static DashboardBooking ToDashboardBooking(DashboardRow row) => new(row.Id, row.Reference, row.Guest.Trim(),
+        DashboardMetrics.ServiceLabel(row.Service), row.Status, row.StartUtc, row.EndUtc, row.ResourceIds);
 }

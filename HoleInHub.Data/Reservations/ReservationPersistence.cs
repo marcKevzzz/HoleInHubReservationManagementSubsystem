@@ -180,7 +180,7 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
                         Id = $"{record.Id}:expired:{recipient}",
                         Recipient = recipient,
                         Subject = "Reservation request expired",
-                        Body = $"Request {record.Reference} expired before confirmation. Its bay hold has been released.",
+                        Body = $"Your request (Reservation ID: {record.Reference}) expired before confirmation. Its bay hold has been released.",
                         DueUtc = now,
                         ReservationId = record.Id,
                         RequiredStatus = "Expired"
@@ -300,7 +300,7 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
                         Id = $"{record.Id}:overdue:{recipient}",
                         Recipient = recipient,
                         Subject = $"Overdue review: {record.Reference}",
-                        Body = $"Request {record.Reference} is still awaiting staff review. Its bay hold has been released and confirmation depends on availability.",
+                        Body = $"Request (Reservation ID: {record.Reference}) is still awaiting staff review. Its bay hold has been released and confirmation depends on availability.",
                         DueUtc = now,
                         ReservationId = record.Id,
                         RequiredStatus = "Pending"

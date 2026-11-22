@@ -150,10 +150,21 @@ public sealed class CustomersAccessTests
         try
         {
             await new Migration_002_Reservations().UpAsync(context.Database, default);
-            await context.Database.GetCollection<ReservationRecord>("reservations").InsertManyAsync([a, b]);
             await new Migration_018_CustomerProfiles().UpAsync(context.Database, default);
-            var profileId = (await new HoleInHub.Data.Customers.CustomerProfilePersistence(context).ReadAsync(a.Id, default))!.Profile.Id;
+            var reservations = new ReservationPersistence(context);
+            await reservations.InsertAsync(a, default);
+            await reservations.InsertAsync(b, default);
+            var record = (await new HoleInHub.Data.Customers.CustomerProfilePersistence(context).ReadAsync(a.Id, default))!.Profile;
+            var profileId = record.Id;
+            Assert.Matches("^CUS-[0-9A-F]{16}$", record.CustomerId);
+            var byId = await client.GetStringAsync("/staff/customers?search=" + record.CustomerId.ToLowerInvariant());
+            Assert.Contains("role=\"columnheader\">Customer ID</span>", byId);
+            Assert.Contains("Customer ID </span>" + record.CustomerId, byId);
+            Assert.Contains($"href=\"/staff/customers/{a.Id}\"", byId);
+            Assert.DoesNotContain($"href=\"/staff/customers/{b.Id}\"", byId);
+            Assert.Contains("No matching contacts", await client.GetStringAsync("/staff/customers?search=" + record.CustomerId[..^1]));
             var details = await client.GetStringAsync($"/staff/customers/{a.Id}");
+            Assert.Contains("Customer ID " + record.CustomerId, details);
             Assert.Contains("customer-profile-header", details);
             Assert.Contains("aria-label=\"New booking\"", details);
             Assert.DoesNotContain("Account history", details);

@@ -14,7 +14,8 @@
     "ResourceIds",
     "Attendees",
     "IdempotencyKey",
-    "PayloadHash"
+    "PayloadHash",
+    "reservation_id"
   ],
   "properties": {
     "_id": {
@@ -31,7 +32,7 @@
     },
     "Email": {
       "bsonType": "string",
-      "minLength": 1,
+      "minLength": 0,
       "maxLength": 254
     },
     "Reference": {
@@ -57,7 +58,8 @@
         "Cancelled",
         "Rejected",
         "Expired",
-        "No-show"
+        "No-show",
+        "Awaiting settlement"
       ]
     },
     "StartUtc": {
@@ -244,7 +246,12 @@
               "ReservationCompleted",
               "ScheduleChangeRequested",
               "ScheduleChangeApproved",
-              "ScheduleChangeDeclined"
+              "ScheduleChangeDeclined",
+              "ReservationNoShow",
+              "AttendanceCorrected",
+              "ReservationExtended",
+              "SessionEnded",
+              "FinancialCheckoutCompleted"
             ]
           },
           "ReservationStatus": {
@@ -256,7 +263,8 @@
               "Cancelled",
               "Rejected",
               "Expired",
-              "No-show"
+              "No-show",
+              "Awaiting settlement"
             ]
           },
           "CommandId": {
@@ -278,7 +286,8 @@
               "Cancelled",
               "Rejected",
               "Expired",
-              "No-show"
+              "No-show",
+              "Awaiting settlement"
             ]
           },
           "ScheduleChange": {
@@ -375,9 +384,84 @@
                 "maxLength": 500
               }
             }
+          },
+          "AttendanceBefore": {
+            "bsonType": "object",
+            "required": [
+              "Status",
+              "StartUtc",
+              "EndUtc"
+            ],
+            "properties": {
+              "Status": {
+                "enum": [
+                  "Pending",
+                  "Confirmed",
+                  "Checked-In",
+                  "Completed",
+                  "Cancelled",
+                  "Rejected",
+                  "Expired",
+                  "No-show"
+                ]
+              },
+              "StartUtc": {
+                "bsonType": "date"
+              },
+              "EndUtc": {
+                "bsonType": "date"
+              },
+              "CheckedInUtc": {
+                "bsonType": "date"
+              },
+              "CheckedOutUtc": {
+                "bsonType": "date"
+              }
+            }
+          },
+          "AttendanceAfter": {
+            "bsonType": "object",
+            "required": [
+              "Status",
+              "StartUtc",
+              "EndUtc"
+            ],
+            "properties": {
+              "Status": {
+                "enum": [
+                  "Pending",
+                  "Confirmed",
+                  "Checked-In",
+                  "Completed",
+                  "Cancelled",
+                  "Rejected",
+                  "Expired",
+                  "No-show"
+                ]
+              },
+              "StartUtc": {
+                "bsonType": "date"
+              },
+              "EndUtc": {
+                "bsonType": "date"
+              },
+              "CheckedInUtc": {
+                "bsonType": "date"
+              },
+              "CheckedOutUtc": {
+                "bsonType": "date"
+              }
+            }
           }
         }
       }
+    },
+    "BookingSource": {
+      "enum": [
+        "Walk-in",
+        "Phone",
+        "Messaging"
+      ]
     },
     "Revision": {
       "bsonType": [
@@ -495,6 +579,34 @@
           "bsonType": "string",
           "minLength": 1,
           "maxLength": 500
+        }
+      }
+    },
+    "reservation_id": {
+      "bsonType": "string",
+      "pattern": "\\S"
+    },
+    "CheckoutCompletedUtc": {
+      "bsonType": "date"
+    },
+    "FinalSettlement": {
+      "bsonType": "object",
+      "required": [
+        "ReservationId",
+        "BillReference",
+        "VerifiedUtc"
+      ],
+      "properties": {
+        "ReservationId": {
+          "bsonType": "string",
+          "minLength": 1
+        },
+        "BillReference": {
+          "bsonType": "string",
+          "minLength": 1
+        },
+        "VerifiedUtc": {
+          "bsonType": "date"
         }
       }
     }

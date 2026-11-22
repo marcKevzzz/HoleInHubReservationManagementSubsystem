@@ -6,6 +6,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/HoleInHub.Tests.Unit/HoleInHub.Tests.Unit.csproj" />
     <Project Path="tests/HoleInHub.Tests.Web/HoleInHub.Tests.Web.csproj" />
+    <Project Path="tests/HoleInHub.BrowserFixture/HoleInHub.BrowserFixture.csproj" />
     <Project Path="tests/HoleInHub.Tests.Integration/HoleInHub.Tests.Integration.csproj" />
   </Folder>
 </Solution>

@@ -16,6 +16,13 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
 {
     private DateOnly Today => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(clock.GetUtcNow(), ReservationRules.Manila).DateTime);
 
+    private string? ScheduleListReturn()
+    {
+        var url = Request.Query["returnSchedule"].FirstOrDefault();
+        var list = Url.Action(nameof(List));
+        return list is not null && Url.IsLocalUrl(url) && (url == list || url!.StartsWith(list + "?", StringComparison.Ordinal)) ? url : null;
+    }
+
     private static bool TryScheduleDate(string? date, out DateOnly day) =>
         DateOnly.TryParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out day)
         && day > DateOnly.MinValue && day < DateOnly.MaxValue;
@@ -64,7 +71,7 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
         var day = validDate ? selected : today;
         var dateError = date is not null && !validDate ? "Choose a valid date. Showing today’s schedule." : null;
         if (dateError is not null) { new ToastNotice("warning", "Invalid date", dateError).Store(TempData); }
-        var lookup = await LookupBookingsAsync(day, reference, ct);
+        var lookup = await LookupBookingsAsync(day, Request.Query["reservation_id"].FirstOrDefault() ?? reference, ct);
 
         await reservations.ProcessPendingAsync(ct);
         var bays = await reservations.GetStaffScheduleAsync(day, ct);
@@ -85,17 +92,42 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
         return Request.Headers["X-Staff-Schedule"] == "true" ? PartialView("_StaffSchedule", model) : View(model);
     }
 
+    [HttpGet("/staff/reservations/list")]
+    public async Task<IActionResult> List(string? from, string? to, CancellationToken ct, int page = 1)
+    {
+        if (!Request.Query.ContainsKey("from") && !Request.Query.ContainsKey("to"))
+        {
+            from = to = Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        }
+        var model = new StaffScheduleList(from ?? "", to ?? "", page, [], 0);
+        if (!TryScheduleDate(from, out var start) || !TryScheduleDate(to, out var end))
+        {
+            return View(model with { Error = "Choose a valid start date and end date." });
+        }
+        if (!ModelState.IsValid) { return View(model with { Error = "Choose a valid page." }); }
+        try
+        {
+            var (bookings, total) = await reservations.GetScheduleListAsync(start, end, page, ct);
+            if (page > 1 && bookings.Count == 0)
+            {
+                return RedirectToAction(nameof(List), new { from, to, page = Math.Max(1, (total + 19) / 20), customerProfileId = Request.Query["customerProfileId"].FirstOrDefault() });
+            }
+            return View(model with { Bookings = bookings, Total = total });
+        }
+        catch (ReservationValidationException invalid) { return View(model with { Error = invalid.Message }); }
+    }
+
     [HttpGet("/staff/reservations/search")]
     public async Task<IActionResult> Search(string? date, string? reference, CancellationToken ct) =>
-        PartialView("_StaffSearchResults", await LookupBookingsAsync(TryScheduleDate(date, out var day) ? day : Today, reference, ct));
+        PartialView("_StaffSearchResults", await LookupBookingsAsync(TryScheduleDate(date, out var day) ? day : Today, Request.Query["reservation_id"].FirstOrDefault() ?? reference, ct));
 
     private async Task<StaffBookingLookup> LookupBookingsAsync(DateOnly day, string? reference, CancellationToken ct)
     {
         var search = reference?.Trim() ?? "";
-        if (search.Length > 100) { return new(day, search[..100], [], "Enter a reference or guest name of 100 characters or fewer."); }
+        if (search.Length > 100) { return new(day, search[..100], [], "Enter a reservation ID or guest name of 100 characters or fewer."); }
         if (search.Length == 0) { return new(day, "", [], null); }
         var matches = await reservations.SearchStaffBookingsAsync(search, ct);
-        return new(day, search, matches, matches.Count == 0 ? "No booking matches that reference or guest name." : null);
+        return new(day, search, matches, matches.Count == 0 ? "No booking matches that reservation ID or guest name." : null);
     }
 
     [HttpGet("/staff/reservations/new")]
@@ -328,6 +360,7 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
         ViewData["CustomerId"] = customerId is { Length: > 0 and <= 100 } ? customerId : null;
         ViewData["CustomerView"] = customerView == "upcoming" ? "upcoming" : null;
         ViewData["CustomerPage"] = Math.Clamp(customerPage, 1, 1000);
+        ViewData["ScheduleListUrl"] = ScheduleListReturn();
         var context = await reservations.GetStaffReviewAsync(id, ct);
         if (context is null)
         {
@@ -355,7 +388,8 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
             next = (await LoadQueueAsync(filter, day, sort, ct, nextPage)).Items.FirstOrDefault()?.Id;
         }
         return View(new StaffReviewDetail(context, queue, bays.Where(bay => context.Booking.ResourceIds.Contains(bay.Id)).ToArray(), fromQueue, date,
-            previous, next) { PreviousPage = previousPage, NextPage = nextPage });
+            previous, next)
+        { PreviousPage = previousPage, NextPage = nextPage });
     }
 
     [HttpGet("/staff/reservations/{id}/actions")]
@@ -393,7 +427,7 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
         {
             new ToastNotice("warning", "Schedule change not saved", error.Message).Store(TempData);
         }
-        return RedirectToAction(nameof(Details), new { id, date, fromQueue, filter = fromQueue ? "changes" : null, day, sort, page });
+        return RedirectToAction(nameof(Details), new { id, date, fromQueue, filter = fromQueue ? "changes" : null, day, sort, page, returnSchedule = ScheduleListReturn() });
     }
 
     [HttpPost("/staff/reservations/{id}/attendance"), ValidateAntiForgeryToken]
@@ -422,12 +456,14 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
                                 : form.Action == "check-out" ? "Guest already checked out" : "Action already saved"),
                         _ when form.Action == "no-show" => new ToastNotice("success", "Marked as no-show", "Remaining bay time was released."),
                         _ when form.Action == "correct" => new ToastNotice("success", "Attendance corrected"),
+                        _ when form.Action == "end-session" => new ToastNotice("success", "Session ended", "Bays released. Final checkout requires POS settlement."),
+                        _ when form.Action == "complete-checkout" => new ToastNotice("success", "Checkout completed"),
                         _ when form.Action == "extend" => new ToastNotice("success", "Session extended"),
                         _ when form.Action == "check-in" => new ToastNotice("success", "Guest checked in"),
                         _ => new ToastNotice("success", "Guest checked out", "Remaining bay time was released.")
                     };
                     toast.Store(TempData);
-                    return RedirectToAction(nameof(Details), new { id, date, fromQueue, filter, day, sort, page });
+                    return RedirectToAction(nameof(Details), new { id, date, fromQueue, filter, day, sort, page, returnSchedule = ScheduleListReturn() });
                 }
                 ModelState.AddModelError("", "This action is unavailable for the current state, session time or bay availability. Review the latest booking details.");
             }
@@ -489,6 +525,6 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
         {
             new ToastNotice("warning", "Decision not saved", error.Message).Store(TempData);
         }
-        return RedirectToAction(nameof(Details), new { id, date, fromQueue = fromQueue ? true : (bool?)null, filter, day, sort, page });
+        return RedirectToAction(nameof(Details), new { id, date, fromQueue = fromQueue ? true : (bool?)null, filter, day, sort, page, returnSchedule = ScheduleListReturn() });
     }
 }

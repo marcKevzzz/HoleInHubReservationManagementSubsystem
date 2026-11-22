@@ -190,3 +190,58 @@
     .dashboard-loading-layout {animation:dashboard-loading-pulse 1.4s ease-in-out infinite alternate}
     @keyframes dashboard-loading-pulse {from {opacity:.6} to {opacity:1}}
 }
+
+.reports-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:16px}
+.reports-panel {min-width:0;padding:24px;border-radius:8px;background:var(--color-paper)}
+.reports-panel>p,.reports-facts dt {color:var(--color-muted);font-size:.85rem}
+.reports-panel>p {margin:6px 0 16px}
+.reports-page>.reports-panel {margin-top:16px}
+.reports-facts {display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:12px;margin-block:24px}
+.reports-facts dd {margin:0;font-size:1.5rem;font-variant-numeric:tabular-nums}
+.reports-statuses {display:flex;flex-wrap:wrap;gap:4px 12px}
+.reports-statuses a {display:inline-flex;align-items:center;min-height:36px;color:var(--color-green);font-size:.8rem}
+.reports-statuses [aria-current] {font-weight:600;text-decoration:underline;text-underline-offset:4px}
+.reports-page :is(a,summary,input,select,button,[tabindex]):focus-visible {outline:2px solid var(--color-green);outline-offset:2px}
+@media(max-width:720px) {.reports-grid {grid-template-columns:minmax(0,1fr)}.reports-panel {padding:16px}}
+.reports-page { --report-placeholder: var(--color-line); }
+.reports-skeleton { display:none; }
+.reports-page[aria-busy=true]:not([data-report-list-loading]) .reports-skeleton { display:block; }
+.reports-page[aria-busy=true]:not([data-report-list-loading]) [data-report-results] { display:none; }
+.reports-skeleton-metrics { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px; }
+.reports-skeleton-metrics > div { min-height:100px;padding:20px;background:var(--color-paper);border-radius:8px; }
+.reports-skeleton :is(span,b,i) { display:block;background:var(--report-placeholder);border-radius:4px; }
+.reports-skeleton span { width:62%;height:12px; }
+.reports-skeleton b { width:34%;height:28px;margin-top:14px; }
+.reports-skeleton-bars { height:220px;display:flex;gap:6%;align-items:end;margin-top:22px;border-bottom:1px solid var(--color-line); }
+.reports-skeleton-bars i { flex:1;height:var(--bar-height); }
+@media (max-width:720px) { .reports-skeleton-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (prefers-reduced-motion:no-preference) {
+    .reports-skeleton :is(span,b,i) { animation:report-loading 1.3s ease-in-out infinite alternate; }
+    [data-report-results] { animation:report-enter .26s ease-out; }
+}
+@keyframes report-loading { from { opacity:.55 } to { opacity:1 } }
+@keyframes report-enter { from { transform:translateY(5px) } to { transform:translateY(0) } }
+
+[data-report-list-loading] #report-reservations { opacity:.65; }
+.reports-page .report-export { font-weight:400; display:inline-flex;align-items:center;gap:8px; }
+
+.reports-customer-chart {display:grid;justify-items:center;gap:20px;margin-block:20px}
+.reports-customer-chart .reports-facts {display:flex;justify-content:center;flex-wrap:wrap;gap:10px 24px;margin:0}
+.reports-customer-chart .reports-facts > div {display:flex;align-items:center;gap:8px}
+.reports-customer-donut {display:grid;place-items:center;position:relative;isolation:isolate;width:min(100%,180px);aspect-ratio:1;border-radius:50%;background:conic-gradient(var(--color-chart-booked) var(--new-share),var(--color-ink) 0)}
+.reports-customer-donut[data-empty=true] {background:var(--color-line)}
+.reports-customer-donut::before {content:"";position:absolute;inset:16px;border-radius:50%;background:var(--color-paper);z-index:-1}
+.reports-customer-donut span {text-align:center;font-size:1.65rem;font-weight:600;line-height:1.15}
+.reports-customer-donut small {display:block;font-size:.7rem;font-weight:400;color:var(--color-muted)}
+.reports-customer-chart dt::before {content:"";display:inline-block;width:.65rem;height:.65rem;margin-inline-end:.5rem;border-radius:50%;background:var(--color-ink)}
+.reports-customer-chart .reports-customer-new::before {background:var(--color-chart-booked)}
+
+.reports-page #report-reservations {margin-top:24px}
+
+.reports-customer-chart .reports-facts dd {font-size:.85rem}
+.reports-customer-donut-enhanced {background:none}
+.reports-customer-donut-enhanced::before {display:none}
+.reports-customer-donut canvas {position:absolute;inset:0}
+.reports-customer-donut > span {position:relative;pointer-events:none}
+.reports-facts dt button {min-height:32px;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer}
+.reports-facts dt button:hover {text-decoration:underline;text-underline-offset:3px}
