@@ -122,7 +122,7 @@ function animatePage(root) {
           scrollTrigger: { trigger: heading, start: 'top 90%', end: 'top 45%', scrub: .8 },
         })
           .from(heading.querySelectorAll('.split-word'), { yPercent: 110, duration: 1, stagger: .08 })
-          .from(heading.parentElement.querySelector('.button'), { y: 24, opacity: 0, duration: .7 }, .35);
+          .from(heading.parentElement.querySelectorAll('.button'), { y: 24, opacity: 0, duration: .7 }, .35);
       });
 
       root.querySelectorAll('.venue-contact-heading').forEach(heading => {

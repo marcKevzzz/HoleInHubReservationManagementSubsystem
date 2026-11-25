@@ -1,11 +1,11 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const vm=require('node:vm'),fs=require('node:fs');
-function setup(observe=true){
+function setup(observe=true,clickOnly=false){
  const events={},timers=new Map(),requests=[],updates=[];let intersect,clock=0,nextTimer=0;
  const row={dataset:{unreadId:'notice-1',activityTicks:'638900000000000000'},removed:false,
   querySelector:()=>({remove(){row.removed=true;}}),removeAttribute(){delete row.dataset.unreadId;}};
- const document={hidden:false,querySelector:()=>({action:'/staff/notifications/read-visible',elements:{__RequestVerificationToken:{value:'csrf'}}}),
+ const document={hidden:false,querySelector:()=>({action:'/staff/notifications/read-visible',dataset:{readOn:clickOnly?'click':undefined},elements:{__RequestVerificationToken:{value:'csrf'}}}),
   querySelectorAll:()=>[row],addEventListener:(type,handler)=>events[type]=handler,dispatchEvent:event=>updates.push(event.detail)};
  class Observer{constructor(callback){intersect=callback;}observe(){}unobserve(){}}
  vm.runInNewContext(fs.readFileSync(require.resolve('../HoleInHub.Web/wwwroot/js/notification-read.js'),'utf8'),{
@@ -48,3 +48,7 @@ test('clicking during the delay saves immediately without a duplicate delayed re
  assert.equal(ui.requests.length,1);
  await ui.advance(5000);assert.equal(ui.requests.length,1);
 });
+
+test('customer notifications stay unread until activated, never on focus or a visibility timer',async()=>{const ui=setup(true,true);assert.equal(ui.events.focusin,undefined);await ui.advance(60000);assert.equal(ui.requests.length,0);assert.equal(ui.row.removed,false);ui.events.click({target:{closest:selector=>selector==='.account-inbox-options'?null:ui.row}});await ui.advance(0);assert.equal(ui.requests.length,1);assert.equal(ui.row.removed,true);assert.equal(ui.row.dataset.unreadId,undefined);});
+
+test('opening customer notification options does not mark the message read',async()=>{const ui=setup(true,true);ui.events.click({target:{closest:()=>({})}});await ui.advance(0);assert.equal(ui.requests.length,0);assert.equal(ui.row.removed,false);});

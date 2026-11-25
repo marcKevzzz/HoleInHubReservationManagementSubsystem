@@ -3,9 +3,9 @@
 @{ViewData["Title"] = "Transactions"; ViewData["AccountPage"] = "transactions";}
 <div class="page-content account-hub">
     <partial name="_AccountNavigation" />
-    <header class="account-heading" data-motion="load"><h1>@T("TRANSACTIONS")</h1></header>
-    @if (Model.Count == 0) { <div class="account-empty" data-motion="load"><h2>@T("No transactions yet.")</h2><p>@T("Whole-shop deposit activity will appear here.")</p><a href="/my-reservations">@T("View your reservations")</a></div> }
-    else { <div class="account-transactions" data-motion="load">@foreach (var booking in Model) {
+    <header class="account-heading"><h1>@T("TRANSACTIONS")</h1><p class="account-muted">@T("View your whole-shop deposit activity and payment status.")</p></header>
+    @if (Model.Count == 0) { <div class="account-empty"><h2>@T("No transactions yet.")</h2><p>@T("Whole-shop deposit activity will appear here.")</p><a href="/my-reservations">@T("View your reservations")</a></div> }
+    else { <div class="account-transactions">@foreach (var booking in Model) {
         <article class="account-transaction">
             <div><h2>@T("Reservation ID") @booking.Reference</h2><p class="account-muted">Requested @TimeZoneInfo.ConvertTimeFromUtc(booking.CreatedUtc, ReservationRules.Manila).ToString("dd MMM yyyy · h:mm tt")</p><p>Payment reference: @(booking.PaymentReference ?? "Not recorded")</p></div>
             <dl><div><dt>@T("Rental total")</dt><dd>@(booking.RentalTotal is decimal rental ? $"₱{rental:N2}" : T("Not recorded"))</dd></div><div><dt>@T("Deposit")</dt><dd>@(booking.DepositAmount is decimal deposit ? $"₱{deposit:N2}" : T("Not recorded"))</dd></div><div><dt>@T("Payment status")</dt><dd>@HoleInHubReservationManagementSubsystem.ViewModels.ReservationLabels.Payment(booking.PaymentStatus)</dd></div><div><dt>@T("Reservation status")</dt><dd>@booking.Status</dd></div></dl>

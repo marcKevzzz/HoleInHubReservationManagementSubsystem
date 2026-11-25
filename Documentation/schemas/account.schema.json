@@ -31,6 +31,8 @@
       "minLength" : 0,
       "maxLength" : 30
     },
+    "Age" : { "bsonType" : "int", "minimum" : 1, "maximum" : 120 },
+    "Address" : { "bsonType" : "string", "minLength" : 3, "maxLength" : 300 },
     "GoogleSubject" : {
       "bsonType" : "string",
       "minLength" : 1

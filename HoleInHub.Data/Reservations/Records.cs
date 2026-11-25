@@ -68,6 +68,7 @@ public sealed class ReservationRecord
     [BsonElement("PayloadHash")] public string SubmissionHash { get; set; } = "";
     public List<HistoryRecord> History { get; set; } = [];
     [BsonIgnoreIfNull] public int[]? CustomerReadHistory { get; set; }
+    [BsonIgnoreIfNull] public int[]? CustomerDismissedHistory { get; set; }
 }
 
 public sealed class HistoryRecord

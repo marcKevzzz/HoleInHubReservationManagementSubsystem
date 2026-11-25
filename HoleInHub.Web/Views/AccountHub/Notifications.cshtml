@@ -1,26 +1,36 @@
 @using HoleInHub.Business.Reservations
 @model CustomerNotificationPage
-@{ ViewData["Title"] = "Notifications"; ViewData["AccountPage"] = "notifications"; }
+@{ ViewData["Title"] = "Notifications"; ViewData["AccountPage"] = "notifications"; var filter = ViewData["NotificationFilter"] as string ?? "all"; }
 <div class="page-content account-hub">
     <partial name="_AccountNavigation" />
     <header class="account-heading">
         <h1>@T("Notifications")</h1>
         <p class="account-muted">@T("Updates about your reservations and deposits.")</p>
     </header>
+    <div class="account-inbox-tools">
+        <nav class="account-reservation-tabs" aria-label="@T("Notification filters")">
+            <a href="/notifications" aria-current="@(filter == "all" ? "page" : null)">@T("All")</a>
+            <a href="/notifications?filter=unread" aria-current="@(filter == "unread" ? "page" : null)">@T("Unread")</a>
+        </nav>
+        <form method="post" asp-action="NotificationAction" class="account-inbox-action">
+            <input type="hidden" name="operation" value="read-all" /><input type="hidden" name="filter" value="@filter" />
+            <button type="submit" class="account-text-link">@T("Mark all as read")</button>
+        </form>
+    </div>
     @if (Model.Items.Count == 0 && Model.Page == 1)
     {
         <section class="account-inbox-empty" aria-labelledby="inbox-empty-title">
             <span class="account-inbox-icon"><partial name="_StaffIcon" model='"notifications"' /></span>
             <div>
-                <h2 id="inbox-empty-title">@T("No notifications yet")</h2>
-                <p>@T("Booking updates will appear here after you make a reservation.")</p>
+                <h2 id="inbox-empty-title">@(filter == "unread" ? T("You're all caught up") : T("No notifications yet"))</h2>
+                <p>@(filter == "unread" ? T("You have no unread notifications.") : T("Booking updates will appear here after you make a reservation."))</p>
                 <a class="account-text-link" href="/my-reservations">@T("My reservations")</a>
             </div>
         </section>
     }
     else
     {
-        <form method="post" asp-action="MarkNotificationsRead" data-read-visible hidden></form>
+        <form method="post" asp-action="MarkNotificationsRead" data-read-visible data-read-on="click" hidden></form>
         <ul class="account-inbox">
             @foreach (var item in Model.Items)
             {
@@ -42,14 +52,22 @@
                             <partial name="_StaffIcon" model='"arrow-up-right-compact"' />
                         </span>
                     </a>
+                    <details class="account-inbox-options">
+                        <summary aria-label="@T("Notification options")"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></summary>
+                        <form method="post" asp-action="NotificationAction" class="account-inbox-action">
+                            <input type="hidden" name="id" value="@item.Id" /><input type="hidden" name="activityTicks" value="@item.AtUtc.Ticks" /><input type="hidden" name="filter" value="@filter" />
+                            @if (item.Unread) { <button type="submit" name="operation" value="read">@T("Mark as read")</button> }
+                            <button type="submit" name="operation" value="delete">@T("Delete notification")</button>
+                        </form>
+                    </details>
                 </li>
             }
         </ul>
         @if (Model.Page > 1 || Model.HasMore)
         {
             <nav class="account-inbox-pager" aria-label="@T("Notification pages")">
-                @if (Model.Page > 1) { <a asp-action="Notifications" asp-route-page="@(Model.Page - 1)">@T("Newer notifications")</a> }
-                @if (Model.HasMore) { <a asp-action="Notifications" asp-route-page="@(Model.Page + 1)">@T("Older notifications")</a> }
+                @if (Model.Page > 1) { <a asp-action="Notifications" asp-route-filter="@filter" asp-route-page="@(Model.Page - 1)">@T("Newer notifications")</a> }
+                @if (Model.HasMore) { <a asp-action="Notifications" asp-route-filter="@filter" asp-route-page="@(Model.Page + 1)">@T("Older notifications")</a> }
             </nav>
         }
     }

@@ -1,18 +1,23 @@
 @using HoleInHub.Web.ViewModels
 @model AccountProfileModel
-@{ ViewData["Title"] = "My profile"; ViewData["AccountPage"] = "profile"; }
+@{ ViewData["Title"] = "My profile"; ViewData["AccountPage"] = "profile"; var editing = ViewData["ProfileEditing"] is true || !ViewData.ModelState.IsValid; }
 <div class="page-content account-hub">
     <partial name="_AccountNavigation" />
-    <header class="account-heading" data-motion="load"><h1>@T("MY PROFILE")</h1></header>
-    <div class="account-profile-layout" data-motion="load">
+    <header class="account-heading"><h1>@T("MY PROFILE")</h1><p class="account-muted">@T("Keep your personal and contact details up to date.")</p></header>
+    <div class="account-profile-layout">
         <div><h2>@T("Contact details")</h2></div>
         <form class="account-profile-form" method="post" action="/my-profile" novalidate>
             @Html.AntiForgeryToken()
             @if (TempData["ProfileSaved"] is string message) { <p class="account-feedback" role="status">@message</p> }
             <div asp-validation-summary="ModelOnly" class="account-errors" role="alert"></div>
+            <fieldset data-profile-fields disabled="@(!editing)">
             <div class="account-name-fields">
                 <div><div class="profile-input-wrap"><input asp-for="FirstName" data-profile-contact placeholder=" " pattern="@HoleInHub.Business.Accounts.ContactRules.NamePattern" autocomplete="given-name" required maxlength="100" aria-describedby="FirstName-error" aria-invalid="@(ViewData.ModelState["FirstName"]?.Errors.Count>0?"true":"false")" /><label asp-for="FirstName">@T("First name")</label></div><span asp-validation-for="FirstName" id="FirstName-error" aria-live="polite" class="account-errors"></span></div>
                 <div><div class="profile-input-wrap"><input asp-for="LastName" data-profile-contact placeholder=" " pattern="@HoleInHub.Business.Accounts.ContactRules.NamePattern" autocomplete="family-name" required maxlength="100" aria-describedby="LastName-error" aria-invalid="@(ViewData.ModelState["LastName"]?.Errors.Count>0?"true":"false")" /><label asp-for="LastName">@T("Last name")</label></div><span asp-validation-for="LastName" id="LastName-error" aria-live="polite" class="account-errors"></span></div>
+            </div>
+            <div class="account-name-fields">
+                <div><div class="profile-input-wrap"><input asp-for="Age" type="text" inputmode="numeric" placeholder=" " maxlength="3" data-profile-contact aria-describedby="Age-error" aria-invalid="@(ViewData.ModelState["Age"]?.Errors.Count>0?"true":"false")" /><label asp-for="Age">@T("Age (optional)")</label></div><span asp-validation-for="Age" id="Age-error" aria-live="polite" class="account-errors"></span></div>
+                <div><div class="profile-input-wrap"><input asp-for="Address" placeholder=" " autocomplete="street-address" maxlength="300" pattern="@HoleInHub.Business.Accounts.ContactRules.AddressPattern" data-profile-contact aria-describedby="Address-error" aria-invalid="@(ViewData.ModelState["Address"]?.Errors.Count>0?"true":"false")" /><label asp-for="Address">@T("Address (optional)")</label></div><span asp-validation-for="Address" id="Address-error" aria-live="polite" class="account-errors"></span></div>
             </div>
             <div class="profile-phone-field">
                 <partial name="_PhoneCountry" />
@@ -21,8 +26,10 @@
             </div>
             <noscript><p class="account-muted">@T("Include the country code for international numbers.")</p></noscript>
             <span asp-validation-for="Phone" id="Phone-error" aria-live="polite" class="account-errors"></span>
+            </fieldset>
             <div class="account-email"><span>@T("Email address")</span><p>@ViewData["Email"]</p></div>
-            <button class="button" type="submit">@T("Save changes")</button>
+            <a href="/my-profile?edit=true" class="button" data-profile-edit hidden="@editing">@T("Edit information")</a>
+            <button class="button" type="submit" data-profile-save hidden="@(!editing)">@T("Save changes")</button>
         </form>
     </div>
 </div>

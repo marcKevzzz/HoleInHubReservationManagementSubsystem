@@ -932,3 +932,21 @@ Photo 4: Coaching|사진 4: 코칭
 Photo 5: Family play|사진 5: 가족 플레이
 Photo 6: The venue|사진 6: 시설 전경
 Photo 7: Social seating|사진 7: 공용 좌석 공간
+
+Age (optional)|나이 (선택 사항)
+Address (optional)|주소 (선택 사항)
+View your whole-shop deposit activity and payment status.|단독 대관 예약금 내역과 결제 상태를 확인하세요.
+Keep your personal and contact details up to date.|개인 정보와 연락처를 최신 상태로 유지하세요.
+View your upcoming sessions and past reservations.|예정된 세션과 지난 예약을 확인하세요.
+Notification filters|알림 필터
+Unread|읽지 않음
+Mark all as read|모두 읽음으로 표시
+Mark as read|읽음으로 표시
+Delete notification|알림 삭제
+Notification options|알림 옵션
+You're all caught up|모든 알림을 확인했습니다
+You have no unread notifications.|읽지 않은 알림이 없습니다.
+Edit information|정보 수정
+Reservation summary|예약 요약
+Total reservations|전체 예약
+No reservations in this view.|이 보기에는 예약이 없습니다.

@@ -7,6 +7,8 @@ public sealed class AccountRecord
     public string FirstName { get; set; } = "";
     public string LastName { get; set; } = "";
     public string Phone { get; set; } = "";
+    [BsonIgnoreIfNull] public int? Age { get; set; }
+    [BsonIgnoreIfNull] public string? Address { get; set; }
     [BsonIgnoreIfNull] public string? GoogleSubject { get; set; }
     [BsonId] public string Id { get; set; } = Guid.NewGuid().ToString("N");
     [BsonElement("account_id")] public string AccountId => BusinessIdentifier.Format("ACC", Id);

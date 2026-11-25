@@ -3,4 +3,20 @@
 @model ReservationDto
 @inject TimeProvider Clock
 @{var start=TimeZoneInfo.ConvertTimeFromUtc(Model.StartUtc,ReservationRules.Manila);var end=TimeZoneInfo.ConvertTimeFromUtc(Model.EndUtc,ReservationRules.Manila);var detailsUrl=ViewData["GuestAccess"] is true?"/guest/reservations/details/"+Uri.EscapeDataString(Model.Id):Url.Action("Details","Reservations",new{id=Model.Id});}
-<article class="account-reservation" data-motion="stagger"><div class="account-date"><time datetime="@Model.StartUtc.ToString("O")"><span>@start.ToString("dd")</span>@start.ToString("MMM yyyy")</time></div><div><h2>@ReservationLabels.Service(Model.Service)</h2><p>@start.ToString("h:mm tt")–@end.ToString("h:mm tt")</p><p class="account-muted">@(Model.Service == "WholeShop" ? "Exclusive use" : string.Join(", ", Model.ResourceIds.Select(id => Model.ResourceNames.GetValueOrDefault(id, id)))) · @Model.Attendees @(Model.Attendees == 1 ? "guest" : "guests")</p><p class="account-reference">@T("Reservation ID") @Model.Reference</p></div><div class="account-reservation-status"><strong>@(ReservationService.IsReviewOverdue(Model, Clock.GetUtcNow().UtcDateTime) ? "Pending · Overdue" : Model.Status)</strong>@if(Model.Status=="Pending" && Model.Service=="WholeShop"){<p>Awaiting deposit</p><p>Deposit due @TimeZoneInfo.ConvertTimeFromUtc(Model.ReviewDeadlineUtc,ReservationRules.Manila).ToString("dd MMM · h:mm tt")</p>}<a class="button button-secondary" href="@detailsUrl" aria-label="View details for @Model.Reference">View details</a></div></article>
+<article class="account-reservation" data-status="@Model.Status" data-motion="stagger">
+    <div class="account-date"><time datetime="@Model.StartUtc.ToString("O")"><span>@start.ToString("dd")</span>@start.ToString("MMM yyyy")</time></div>
+    <div class="account-reservation-copy">
+        <h2><partial name="_StaffIcon" model='@(Model.Service == "VIP" ? "vip-bay" : Model.Service == "WholeShop" ? "resources" : "regular-bay")' />@T(ReservationLabels.Service(Model.Service))</h2>
+        <p><partial name="_StaffIcon" model='"pending"' />@start.ToString("h:mm tt")–@end.ToString("h:mm tt")</p>
+        <p class="account-muted"><partial name="_StaffIcon" model='"customers"' />@(Model.Service == "WholeShop" ? T("Exclusive use") : string.Join(", ", Model.ResourceIds.Select(id => Model.ResourceNames.GetValueOrDefault(id, id)))) · @Model.Attendees @T(Model.Attendees == 1 ? "guest" : "guests")</p>
+        <p class="account-reference">@T("Reservation ID") @Model.Reference</p>
+    </div>
+    <div class="account-reservation-status">
+        <strong>@(ReservationService.IsReviewOverdue(Model, Clock.GetUtcNow().UtcDateTime) ? T("Pending · Overdue") : T(Model.Status))</strong>
+        @if(Model.Status=="Pending" && Model.Service=="WholeShop")
+        {
+            <p>@T("Awaiting deposit")</p><p>@T("Deposit due") @TimeZoneInfo.ConvertTimeFromUtc(Model.ReviewDeadlineUtc,ReservationRules.Manila).ToString("dd MMM · h:mm tt")</p>
+        }
+        <a class="button button-secondary" href="@detailsUrl" aria-label="@T("View details") @Model.Reference">@T("View details")</a>
+    </div>
+</article>

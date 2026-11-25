@@ -4,6 +4,9 @@ namespace HoleInHub.Business.Accounts;
 
 public static class ContactRules
 {
+    public const string AddressPattern = @"[^\p{C}]{3,300}";
+    public static bool IsProfileDetails(int? age, string? address) => (age is null or >= 1 and <= 120)
+        && (string.IsNullOrWhiteSpace(address) || Regex.IsMatch(address.Trim(), @"\A" + AddressPattern + @"\z", RegexOptions.CultureInvariant));
     public const string NamePattern = @" *[\p{L}\p{M}][\p{L}\p{M} .,’'\-]*";
     // Keep known PH/KR prefixes out of the general international-number fallback.
     public const string PhonePattern = @"(?:09[0-9]{9}|\+?63(?:9[0-9]{9}|[2-8][0-9]{8})|010[0-9]{8}|02[0-9]{7,8}|\+?82(?:10[0-9]{8}|2[0-9]{7,8}|[3-6][1-5][0-9]{7,8}|70[0-9]{8})|(?!(?:09|010|02|\+?63|\+?82))\+?[0-9]{7,15})";

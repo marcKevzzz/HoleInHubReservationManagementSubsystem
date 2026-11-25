@@ -1327,3 +1327,8 @@ details.booking-cancellation > form {
 }
 
 .booking-cancel-dialog .logout-actions .button-tertiary { border: 0; box-shadow: none; }
+.booking-status-sidebar[data-status] .booking-current-status { color:var(--reservation-status-color,var(--color-green)) }
+:is(.booking-status-sidebar,.account-reservation):is([data-status="Cancelled"],[data-status="Rejected"],[data-status="No-show"]) { --reservation-status-color:var(--color-error) }
+:is(.booking-status-sidebar,.account-reservation):is([data-status="Pending"],[data-status="Expired"]) { --reservation-status-color:var(--color-chart-pending) }
+:is(.booking-status-sidebar,.account-reservation):is([data-status="Completed"],[data-status="Checked-In"]) { --reservation-status-color:var(--color-chart-arrived) }
+@media(max-width:700px){.booking-status-layout > .booking-status-sidebar{grid-row:1}.booking-status-layout > .booking-status-main{grid-row:2}}

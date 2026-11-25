@@ -100,6 +100,7 @@
         document.addEventListener('visibilitychange', refreshUnread);
         window.addEventListener('focus', refreshUnread);
         window.setInterval(refreshUnread, 20000);
+        if ([...badges].some(badge => badge.hasAttribute?.('data-unread-deferred'))) void refreshUnread();
     }
 
     window.addEventListener('pageshow', () => {

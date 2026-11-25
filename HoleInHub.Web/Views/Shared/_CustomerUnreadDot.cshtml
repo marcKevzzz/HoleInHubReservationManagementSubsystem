@@ -4,11 +4,12 @@
 @if (User.Identity?.IsAuthenticated == true && !StaffRoles.Workspace.Any(User.IsInRole) && User.FindFirstValue(ClaimTypes.NameIdentifier) is { } accountId)
 {
     const string unreadKey = "CustomerNotificationUnread";
+    var deferred = ViewData["AccountPage"] is string;
     if (Context.Items[unreadKey] is not bool)
     {
-        Context.Items[unreadKey] = await Reservations.GetCustomerNotificationBadgeAsync(accountId, Context.RequestAborted) ?? false;
+        Context.Items[unreadKey] = !deferred && (await Reservations.GetCustomerNotificationBadgeAsync(accountId, Context.RequestAborted) ?? false);
     }
-    <span class="account-unread-badge" data-customer-unread hidden="@(Context.Items[unreadKey] is not true)">
+    <span class="account-unread-badge" data-customer-unread data-unread-deferred="@(deferred ? "true" : null)" hidden="@(Context.Items[unreadKey] is not true)">
         <span class="account-unread-dot" aria-hidden="true"></span><span class="sr-only">@T("Unread notifications")</span>
     </span>
 }

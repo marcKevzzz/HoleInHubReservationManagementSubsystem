@@ -158,3 +158,110 @@
         transition: width .22s ease, transform .22s ease;
     }
 }
+
+/* Each account tab owns an equal-width indicator and touch target. */
+.account-navigation { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; overflow: visible; position: sticky; top: var(--account-header-height,100px); z-index: 35; background: var(--color-paper) }
+.account-navigation > a { display: flex; justify-content: center; align-items: center; min-height: 56px; padding-inline: 12px; width: 100%; text-align: center; box-sizing: border-box }
+.account-navigation > a { white-space: normal; min-width: 0 }
+.account-navigation[data-hover-indicator]{position:sticky}
+@media(max-width:700px){.account-navigation > a{padding-inline:4px;font-size:11px;line-height:1.4;overflow-wrap:anywhere}}
+.account-navigation .account-notification-link .account-unread-badge { inset-inline-start: auto; inset-inline-end: 4px }
+.account-inbox-item[data-unread-id]:not([data-unread-id=""]) .account-inbox-link { background: var(--color-green); color: var(--color-paper) }
+.account-inbox-item[data-unread-id]:not([data-unread-id=""]) :is(.account-inbox-copy>span,.account-inbox-copy>small,.account-inbox-side,.account-inbox-side time) { color: var(--color-kpi-on-primary) }
+.account-inbox-item[data-unread-id]:not([data-unread-id=""]) .account-inbox-icon { background: color-mix(in srgb,var(--color-paper) 15%,var(--color-green)); color: var(--color-paper) }
+.account-inbox-item[data-unread-id]:not([data-unread-id=""]) .account-unread-dot { background: var(--color-paper) }
+
+.account-inbox-tools { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 24px }
+.account-inbox-tools .account-reservation-tabs { flex: 1; min-width: 180px }
+.account-inbox-action button { font: inherit; color: var(--color-ink); background: transparent; border: 0; cursor: pointer; min-height: 44px; padding: 10px 12px; text-align: left }
+.account-inbox-action button:is(:hover,:focus-visible) { background: var(--color-staff-surface) }
+.account-inbox-item { position: relative }
+.account-inbox-item:has(.account-inbox-options) .account-inbox-link { padding-right: 64px }
+.account-inbox-options { position: absolute; top: 12px; right: 8px; z-index: 2 }
+.account-inbox-options summary { list-style: none; width: 44px; height: 44px; display: grid; place-items: center; cursor: pointer; color: var(--color-ink) }
+.account-inbox-options summary::-webkit-details-marker { display: none }
+.account-inbox-options summary svg { width: 20px; height: 20px; fill: currentColor }
+.account-inbox-item[data-unread-id]:not([data-unread-id=""]) .account-inbox-options summary { color: var(--color-paper) }
+.account-inbox-options form { position: absolute; right: 0; min-width: 180px; padding: 4px; background: var(--color-paper); border: 1px solid var(--color-line); box-shadow: 0 8px 20px rgb(16 17 15 / 10%) }
+.account-inbox-options form button { display: block; width: 100%; white-space: nowrap }
+.account-inbox-options summary:focus-visible { outline: 2px solid currentColor; outline-offset: -4px }
+.account-hub[data-loading] > :not(.account-navigation):not(.pin-spacer):not(.account-loading-skeleton) { display: none }
+.account-loading-skeleton { padding-top: 0; min-height: 400px }
+.account-skeleton-block { position: relative; overflow: hidden; background: var(--color-staff-surface); margin-bottom: 20px }
+.account-skeleton-title { width: min(60%, 360px); height: 48px }
+.account-skeleton-description { width: min(85%, 560px); height: 16px; margin-bottom: 40px }
+.account-skeleton-row { height: 88px; width: 100%; border-bottom: 1px solid var(--color-line) }
+.account-skeleton-empty-title{width:min(70%,280px);height:28px;margin-top:96px}
+.account-skeleton-empty-copy{width:min(85%,420px);height:16px}
+.account-skeleton-link{width:160px;height:16px;margin-top:28px}
+.account-skeleton-filters{height:44px;width:180px;margin-bottom:24px}
+.account-skeleton-notification,.account-skeleton-reservation{height:120px;background:transparent;border-block:1px solid var(--color-line)}
+.account-skeleton-notification::before,.account-skeleton-reservation::before{content:'';position:absolute;inset:22px 16px;background:linear-gradient(var(--color-staff-surface),var(--color-staff-surface)) 0 0/40px 40px no-repeat,linear-gradient(var(--color-staff-surface),var(--color-staff-surface)) 60px 0/35% 18px no-repeat,linear-gradient(var(--color-staff-surface),var(--color-staff-surface)) 60px 30px/55% 14px no-repeat,linear-gradient(var(--color-staff-surface),var(--color-staff-surface)) 60px 56px/30% 12px no-repeat}
+.account-skeleton-reservation{height:170px}
+.account-skeleton-profile{display:grid;grid-template-columns:1fr 1.3fr;gap:64px;background:transparent;border-top:1px solid var(--color-line);padding-top:36px}
+.account-skeleton-section{height:24px;width:160px;background:var(--color-staff-surface)}
+.account-skeleton-fields{display:grid;grid-template-columns:1fr 1fr;gap:28px 24px}
+.account-skeleton-fields>div{height:56px;background:var(--color-staff-surface);border-bottom:1px solid var(--color-control-line)}
+.account-skeleton-fields>.wide{grid-column:1/-1}
+.account-skeleton-fields>.account-skeleton-save{width:170px;height:44px}
+@media(max-width:700px){.account-skeleton-profile{grid-template-columns:1fr;gap:28px}.account-skeleton-fields{grid-template-columns:1fr}.account-skeleton-title{height:40px}}
+.account-inbox-action button:disabled{opacity:.55;cursor:wait}
+.account-heading > .account-muted{color:var(--color-green)}
+.account-arriving .account-hub > :not(.account-navigation):not(.pin-spacer):not(.account-loading-skeleton){visibility:hidden}
+.account-profile-form fieldset{border:0;margin:0;padding:0;min-width:0}
+.account-profile-form [data-profile-edit]{margin-bottom:0}
+.account-profile-form [hidden]{display:none!important}
+.account-profile-form fieldset:disabled input{color:var(--color-ink);opacity:1;cursor:default}
+.account-inbox-tools .account-text-link{text-decoration:none;position:relative;background:transparent}
+.account-inbox-tools .account-text-link::after{content:'';position:absolute;left:12px;right:12px;bottom:8px;height:1px;background:currentColor;transform:scaleX(0);transform-origin:right}
+.account-inbox-tools .account-text-link:is(:hover,:focus-visible){background:transparent;color:var(--color-green)}
+.account-inbox-tools .account-text-link:is(:hover,:focus-visible)::after{transform:scaleX(1);transform-origin:left}
+@media(prefers-reduced-motion:no-preference){.account-inbox-tools .account-text-link::after{transition:transform .35s var(--ease)}}
+.account-reservation-overview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 24px;margin:0 0 24px;border-bottom:1px solid var(--color-line)}
+.account-reservation-overview>div{display:flex;align-items:center;gap:8px;padding:14px 0;color:var(--color-green)}
+.account-reservation-overview dt{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--color-green)}
+.account-reservation-overview dd{margin:0;font-size:11px;line-height:1;color:var(--color-green)}
+.account-reservation-overview .staff-icon{width:18px;height:18px;flex:none}
+.account-reservations{display:grid;gap:16px;padding-top:24px}
+.account-reservation{grid-template-columns:130px minmax(0,1fr) auto;gap:24px;padding:0 24px 0 0;border:1px solid var(--color-line);background:var(--color-paper);border-radius:8px}
+.account-reservation .account-date{display:flex;align-items:center;justify-content:center;padding:24px 12px;background:var(--color-green);color:var(--color-paper);align-self:stretch;text-align:center;border-radius:7px 0 0 7px}
+.account-reservation-copy,.account-reservation-status{padding-block:24px}
+.account-reservation .account-date span{font-size:40px}
+.account-hub .account-reservation h2{display:flex;align-items:center;gap:10px;font-weight:700;color:var(--color-green);font-size:20px}
+.account-reservation-copy>p{display:flex;align-items:center;gap:8px;overflow-wrap:anywhere}
+.account-reservation-copy .staff-icon{width:16px;height:16px;flex:none;color:var(--color-green)}
+.account-reservation-copy h2 .staff-icon{width:22px;height:22px}
+.account-reservation-status{display:flex;flex-direction:column;align-items:flex-end;gap:12px;max-width:230px}
+.account-reservation-status strong{color:var(--reservation-status-color,var(--color-green));background:color-mix(in srgb,var(--reservation-status-color,var(--color-green)) 10%,var(--color-paper));font-size:12px;line-height:1.5;margin:0;padding:5px 10px;border-radius:4px}
+.account-reservation-status p{margin:0}
+.account-reservation-status .button{margin-top:auto}
+.account-hub .account-reservation-empty{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;border:0;margin-top:0;padding:clamp(56px,8vw,96px) 0;gap:20px}
+.account-hub .account-reservation-empty h2{font-family:var(--display);font-size:clamp(36px,5vw,60px);line-height:1.2;letter-spacing:1px;text-transform:uppercase;margin:0}
+.account-reservation-empty p{margin:0;color:var(--color-green)}
+.account-skeleton-overview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;background:transparent}
+.account-skeleton-overview>div{height:16px;margin-block:14px;background:var(--color-staff-surface)}
+@media(max-width:700px){.account-skeleton-overview{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}}
+@media(max-width:700px){.account-reservation-overview{grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}.account-reservation-overview dt{font-size:12px}.account-reservation{grid-template-columns:76px minmax(0,1fr);gap:0 16px;padding:0 16px 0 0}.account-reservation .account-date{grid-row:1/3;padding:12px 4px;font-size:10px}.account-reservation .account-date span{font-size:32px}.account-hub .account-reservation h2{font-size:18px}.account-reservation-status{grid-column:2;grid-row:2;justify-self:stretch;max-width:none;flex-direction:row;align-items:center;flex-wrap:wrap;justify-content:space-between;padding-top:0;padding-bottom:16px}.account-reservation-copy{padding-block:16px}.account-reservation-status .button{margin-top:0;min-width:0;width:100%}.account-reservation-status p{width:100%}}
+.account-past-empty{padding-top:24px}
+.account-reservation-status{align-items:flex-start;min-width:170px}
+.account-reservation-status strong{background:transparent;padding:0;border-radius:0}
+.account-reservation:focus-within{border-color:var(--color-green);background:var(--color-staff-surface)}
+@media(hover:hover) and (pointer:fine){.account-reservation:hover{border-color:var(--color-green);background:var(--color-staff-surface);box-shadow:0 4px 16px color-mix(in srgb,var(--color-green) 10%,transparent)}}
+@media(prefers-reduced-motion:no-preference){.account-reservation{transition:background-color .2s var(--ease),border-color .2s var(--ease),box-shadow .2s var(--ease)}}
+.account-navigation>a,.account-reservation-tabs>a{color:var(--color-green)}
+.account-navigation>a[aria-current=page]{background:var(--color-green);color:var(--color-paper)}
+.account-hub .account-navigation a[aria-current=page]:is(:hover,:focus-visible){color:var(--color-paper)}
+.account-booking-filters{gap:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr))}
+.account-booking-filters>a{display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;padding:14px 8px;min-height:56px;font-family:var(--display);font-size:12px;letter-spacing:.5px;text-transform:uppercase}
+.account-booking-filters>a>span{display:inline-flex;align-items:center;justify-content:center;flex:none;min-width:1em;height:1em;padding-inline:2px;border-radius:50%;background:var(--color-green);color:var(--color-paper);font-size:inherit;line-height:1;letter-spacing:0;margin:0;font-variant-numeric:tabular-nums}
+.account-booking-filters[data-hover-indicator]::after{background:var(--color-green);height:2px}
+@media(max-width:700px){.account-booking-filters>a{gap:6px;padding-inline:2px}.account-reservation-status{min-width:0}}
+.account-hub .account-booking-filters>a[aria-current=page],.account-hub .account-booking-filters>a[aria-current=page]:is(:hover,:focus-visible){background:transparent;color:var(--color-green)}
+.account-inbox-tools .account-reservation-tabs>a{display:flex;justify-content:center;align-items:center;flex:0 0 84px;min-height:48px}
+@media(max-width:700px){.account-booking-filters{grid-template-columns:repeat(3,minmax(0,1fr))}.account-booking-filters[data-hover-indicator]::after{display:none}.account-booking-filters[data-hover-indicator]>a[aria-current=page]{border-bottom-color:var(--color-green)}}
+@media(prefers-reduced-motion:no-preference) {
+ .account-skeleton-block::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, color-mix(in srgb,var(--color-paper) 65%,transparent), transparent); transform: translateX(-100%); animation: account-skeleton-shimmer 1.4s ease-in-out infinite }
+ @keyframes account-skeleton-shimmer { to { transform: translateX(100%) } }
+ .account-inbox-options[open] form { animation: account-options-enter .16s ease-out }
+ @keyframes account-options-enter { from { opacity: 0; transform: translateY(-4px) } to { opacity: 1; transform: translateY(0) } }
+}

@@ -118,7 +118,9 @@ For example, a cancellation request has EventType CancellationRequested and Rese
 
 ## Account document: accounts
 
-Fields: `_id`, Email, NormalizedEmail, PasswordHash, SecurityStamp, Version, EmailConfirmed, AccessFailedCount, LockoutEndUtc, Roles, FirstName, LastName, Phone and optional GoogleSubject. See [account.schema.json](schemas/account.schema.json).
+Fields: `_id`, Email, NormalizedEmail, PasswordHash, SecurityStamp, Version, EmailConfirmed, AccessFailedCount, LockoutEndUtc, Roles, FirstName, LastName, Phone and optional GoogleSubject, Age and Address. See [account.schema.json](schemas/account.schema.json).
+
+Customer profiles may store an optional whole-number Age (1-120) and an optional single-line Address (3-300 characters, without control characters). Missing legacy values remain unset; contact edits do not change reservation snapshots. These additive fields use the existing account update and version check. The installed account validator permits additional properties, so this expansion does not modify an applied migration or require a schema rollout.
 
 - NormalizedEmail is the normalized lookup value, uniquely indexed.
 - PasswordHash stores password verification data, not plaintext; Google-only accounts can have an empty password hash.
@@ -229,3 +231,8 @@ Full merges redirect staff aliases to the main profile; selected-booking merges 
 ### POS settlement checkout (migration 023)
 
 Awaiting settlement releases the bays while preserving the scheduled interval and actual departure (CheckedOutUtc). FinalSettlement contains ReservationId, BillReference and VerifiedUtc and is reserved for verified, full-reservation POS settlement. CheckoutCompletedUtc records the later staff completion. Existing reservations can omit both fields. See the [checkout specification](specs/pos-settlement-checkout.md) and [implementation plan](plans/pos-settlement-checkout.md).
+
+
+### Customer inbox preferences
+
+Reservations may carry optional `CustomerReadHistory` and `CustomerDismissedHistory` arrays of history indices. These preferences apply only to the owning account. Inbox deletion adds a dismissal marker; it does not delete the reservation or audit history. Both inbox queries and unread badges omit dismissed entries. Mark all as read includes eligible entries through the action timestamp across all pages. These additive preferences are allowed by the installed validator and require no changes to applied migrations.

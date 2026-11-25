@@ -4,9 +4,9 @@ const vm = require('node:vm');
 const fs = require('node:fs');
 const path = require('node:path');
 const source = fs.readFileSync(path.join(__dirname, '../HoleInHub.Web/wwwroot/js/account-menu.js'), 'utf8');
-function setup(withPopup = true, fetch = undefined) {
+function setup(withPopup = true, fetch = undefined, deferred = false) {
     const triggerEvents={}, popupEvents={}, modalEvents={}, formEvents={}, windowEvents={}, documentEvents={};
-    const badges=[{hidden:false},{hidden:false}];
+    const badges=[{hidden:deferred},{hidden:deferred}];badges.forEach(badge=>badge.hasAttribute=name=>deferred&&name==='data-unread-deferred');
     const trigger={setAttribute(key,value){this[key]=value;},addEventListener:(name,callback)=>triggerEvents[name]=callback};
     const popup={id:'account-menu',open:false,showPopover(){this.open=true;popupEvents.toggle?.({newState:'open'});},hidePopover(){this.open=false;popupEvents.toggle?.({newState:'closed'});},matches(){return this.open;},contains:()=>false,addEventListener:(name,callback)=>popupEvents[name]=callback};
     const cancel={},logout={hasAttribute:()=>false,focus(){this.focused=true;}};
@@ -85,3 +85,5 @@ test('visible pages pick up new unread notifications without a reload',async()=>
     ui.document.hidden=false;await ui.documentEvents.visibilitychange();
     assert.equal(calls,1);assert.ok(ui.badges.every(badge=>!badge.hidden));
 });
+
+test('deferred account badges refresh immediately once for all four tabs',async()=>{let calls=0;const ui=setup(true,async url=>{calls++;assert.equal(url,'/notifications/unread');return {ok:true,redirected:false,json:async()=>({unread:true})};},true);await new Promise(resolve=>setImmediate(resolve));assert.equal(calls,1);assert.ok(ui.badges.every(b=>!b.hidden));});

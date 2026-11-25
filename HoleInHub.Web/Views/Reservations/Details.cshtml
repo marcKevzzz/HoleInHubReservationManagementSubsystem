@@ -103,7 +103,7 @@
                 </ol>
             </section>
         </div>
-        <aside class="booking-status-sidebar" aria-labelledby="booking-status">
+        <aside class="booking-status-sidebar" data-status="@Model.Status" aria-labelledby="booking-status">
             <h2 id="booking-status">@T("Reservation status")</h2>
             <p class="booking-current-status">@(overdue ? T("Pending · Overdue") : needsRebooking ? T("Choose another time") : T(Model.Status))</p>
             @if (Model.Status == "Pending")

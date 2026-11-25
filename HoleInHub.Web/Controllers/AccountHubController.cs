@@ -13,10 +13,28 @@ namespace HoleInHubReservationManagementSubsystem.Controllers;
 public sealed class AccountHubController(UserManager<AccountUser> users, ReservationService reservations) : Controller
 {
     [HttpGet("/notifications")]
-    public async Task<IActionResult> Notifications(int page, CancellationToken ct)
+    public async Task<IActionResult> Notifications(int page, CancellationToken ct, string? filter = null)
     {
         if (StaffRoles.Workspace.Any(User.IsInRole)) { return Forbid(); }
-        return View(await reservations.GetCustomerNotificationsAsync(User.FindFirstValue(ClaimTypes.NameIdentifier)!, page, ct));
+        ViewData["NotificationFilter"] = filter == "unread" ? "unread" : "all";
+        return View(await reservations.GetCustomerNotificationsAsync(User.FindFirstValue(ClaimTypes.NameIdentifier)!, page, ct, filter == "unread"));
+    }
+
+    [HttpPost("/notifications/action"), ValidateAntiForgeryToken, RequestSizeLimit(32768)]
+    public async Task<IActionResult> NotificationAction(string operation, string? id, long activityTicks, string? filter, CancellationToken ct)
+    {
+        if (StaffRoles.Workspace.Any(User.IsInRole)) { return Forbid(); }
+        if (!ModelState.IsValid) { return BadRequest(); }
+        var accountId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        if (operation == "read-all") { await reservations.MarkAllCustomerNotificationsReadAsync(accountId, ct); }
+        else if (!string.IsNullOrEmpty(id) && activityTicks > 0 && operation is "read" or "delete")
+        {
+            var row = new NotificationReadRow(id, activityTicks);
+            if (operation == "read") { await reservations.MarkCustomerNotificationsReadAsync(accountId, [row], ct); }
+            else if (!await reservations.DismissCustomerNotificationAsync(accountId, row, ct)) { return BadRequest(); }
+        }
+        else { return BadRequest(); }
+        return RedirectToAction(nameof(Notifications), new { filter = filter == "unread" ? "unread" : "all" });
     }
 
     [HttpGet("/notifications/unread")]
@@ -39,19 +57,12 @@ public sealed class AccountHubController(UserManager<AccountUser> users, Reserva
     [HttpGet("/transactions")]
     public async Task<IActionResult> Transactions(CancellationToken ct)
     {
-        var user = await users.GetUserAsync(User);
-        if (user is null)
-        {
-            return Challenge();
-        }
-
-        await reservations.ProcessPendingAsync(ct);
-        var records = await reservations.GetOwnedAsync(user.Id, ct);
+        var records = await reservations.GetOwnedAsync(User.FindFirstValue(ClaimTypes.NameIdentifier)!, ct);
         return View(records.Where(x => x.Service == "WholeShop" && x.PaymentStatus != "NotRequired").OrderByDescending(x => x.CreatedUtc).ToArray());
     }
 
     [HttpGet("/my-profile")]
-    public async Task<IActionResult> Profile(CancellationToken ct)
+    public async Task<IActionResult> Profile(CancellationToken ct, bool edit = false)
     {
         ct.ThrowIfCancellationRequested();
         var user = await users.GetUserAsync(User);
@@ -60,8 +71,9 @@ public sealed class AccountHubController(UserManager<AccountUser> users, Reserva
             return Challenge();
         }
 
+        ViewData["ProfileEditing"] = edit;
         ViewData["Email"] = user.Email;
-        return View(new AccountProfileModel { FirstName = user.FirstName, LastName = user.LastName, Phone = HoleInHub.Business.Accounts.ContactRules.PhoneDigits(user.Phone) });
+        return View(new AccountProfileModel { FirstName = user.FirstName, LastName = user.LastName, Phone = HoleInHub.Business.Accounts.ContactRules.PhoneDigits(user.Phone), Age = user.Age, Address = user.Address });
     }
 
     [HttpPost("/my-profile"), ValidateAntiForgeryToken]
@@ -84,6 +96,8 @@ public sealed class AccountHubController(UserManager<AccountUser> users, Reserva
             return View(model);
         }
 
+        user.Age = model.Age;
+        user.Address = string.IsNullOrWhiteSpace(model.Address) ? null : model.Address.Trim();
         user.FirstName = model.FirstName.Trim();
         user.LastName = model.LastName.Trim();
         user.Phone = HoleInHub.Business.Accounts.ContactRules.PhoneDigits(model.Phone);

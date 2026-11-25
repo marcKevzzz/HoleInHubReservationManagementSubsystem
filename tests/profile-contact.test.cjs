@@ -20,7 +20,7 @@ test('profile country options normalize local and pasted international numbers w
     }
 });
 
-function setup(reduced = false) {
+function setup(reduced = false, extras = false, locked = false) {
     const input = value => ({ value, pattern: " *[\\p{L}\\p{M}][\\p{L}\\p{M} .,’'\\-]*", events: {}, attributes: {},
         addEventListener(name, fn) { this.events[name] = fn; },
         getAttribute(name) { return this.attributes[name]; }, setAttribute(name, value) { this.attributes[name] = value; },
@@ -29,16 +29,28 @@ function setup(reduced = false) {
     const first = input('Joshua'), last = input('Andres'), shown = input('09171234567'), country = input('PH');
     const rule = fs.readFileSync(require.resolve('../HoleInHub.Business/Accounts/ContactRules.cs'), 'utf8').match(/PhonePattern = @"([^"]+)"/)[1];
     shown.dataset = { phonePattern: rule };
-    const fields = { '[name="FirstName"]': first, '[name="LastName"]': last, '#PhoneDisplay': shown, '#PhoneCountry': country };
+    const age=input(''),address=input('');address.pattern='[^\\p{C}]{3,300}';
+    const fields = { '[name="FirstName"]': first, '[name="LastName"]': last, '#PhoneDisplay': shown, '#PhoneCountry': country, '[name="Age"]': extras?age:null, '[name="Address"]':extras?address:null };
+    const gate = { disabled: true }, edit = input(''), save = { hidden: true };
+    if (locked) Object.assign(fields, { '[data-profile-fields]': gate, '[data-profile-edit]': edit, '[data-profile-save]': save });
     const form = { events: {}, querySelector: key => fields[key], addEventListener(name, fn) { this.events[name] = fn; } };
-    const errors = Object.fromEntries(['FirstName-error', 'LastName-error', 'Phone-error'].map(id => [id, {}]));
+    const errors = Object.fromEntries(['FirstName-error', 'LastName-error', 'Phone-error','Age-error','Address-error'].map(id => [id, {}]));
     const shakes = [];
     vm.runInNewContext(fs.readFileSync(require.resolve('../HoleInHub.Web/wwwroot/js/profile-contact.js'), 'utf8'), {
         document: { querySelector: () => form, getElementById: id => errors[id] }, Event: class {},
         window: { matchMedia: () => ({ matches: reduced }), gsap: { fromTo: (...args) => shakes.push(args) }, addEventListener() {} },
     });
-    return { first, last, shown, country, form, errors, shakes };
+    return { first, last, shown, country, form, errors, shakes, age, address, gate, edit, save };
 }
+
+test('profile stays locked until Edit information is selected', () => {
+    const ui = setup(false, true, true);
+    let prevented = false;
+    ui.form.events.submit({ preventDefault() { prevented = true; } });
+    assert(prevented); assert(ui.gate.disabled); assert(ui.save.hidden);
+    ui.edit.events.click({ preventDefault() {} });
+    assert.equal(ui.gate.disabled, false); assert(ui.edit.hidden); assert.equal(ui.save.hidden, false); assert(ui.first.focused);
+});
 
 test('invalid submission marks fields, shows errors and shakes, while reduced motion stays static', () => {
     for (const reduced of [false, true]) {
@@ -115,3 +127,5 @@ test('each country blocks extra typed or pasted digits without truncating a save
         assert.equal(ui.shown.value, value + '99');
     }
 });
+
+test('optional age and address reject invalid ranges and control characters',()=>{for(const [age,address,valid] of [['','','true'],['25','50 Holy Spirit Drive','true'],['0','AB','false'],['121','123 Main Street','false'],['2.5','123 Main Street','false'],['25','A\u0000B','false']]){const ui=setup(false,true);ui.age.value=age;ui.address.value=address;let blocked=false;ui.form.events.submit({preventDefault(){blocked=true;}});assert.equal(!blocked,valid==='true',age+' '+address);}});

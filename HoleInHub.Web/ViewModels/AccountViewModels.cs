@@ -11,6 +11,10 @@ public class AccountContactModel
 }
 public sealed class AccountProfileModel : AccountContactModel
 {
+    [Range(1, 120, ErrorMessage = "Enter an age from 1 to 120.")]
+    public int? Age { get; set; }
+    [StringLength(300, MinimumLength = 3), RegularExpression(ContactRules.AddressPattern, ErrorMessage = "Enter an address from 3 to 300 characters without control characters.")]
+    public string? Address { get; set; }
     public string? PhoneCountry { get; set; }
 }
 public sealed class SignUpModel : AccountContactModel

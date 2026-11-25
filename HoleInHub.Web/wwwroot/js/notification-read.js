@@ -1,6 +1,7 @@
 (() => {
     const form = document.querySelector('[data-read-visible]');
     if (!form) return;
+    const clickOnly = form.dataset?.readOn === 'click';
 
     const token = form.elements.__RequestVerificationToken.value;
     const visible = new Set();
@@ -9,7 +10,7 @@
     let timer;
     let sending = false;
 
-    const observer = window.IntersectionObserver ? new IntersectionObserver(entries => {
+    const observer = !clickOnly && window.IntersectionObserver ? new IntersectionObserver(entries => {
         for (const { target, intersectionRatio } of entries) {
             if (intersectionRatio > 0) visible.add(target);
             else visible.delete(target);
@@ -19,7 +20,8 @@
 
     const unreadRow = '[data-unread-id]:not([data-unread-id=""])';
     for (const row of document.querySelectorAll(unreadRow)) observer?.observe(row);
-    for (const type of ['click', 'focusin']) document.addEventListener(type, event => {
+    for (const type of clickOnly ? ['click'] : ['click', 'focusin']) document.addEventListener(type, event => {
+        if (clickOnly && event.target.closest('.account-inbox-options')) return;
         const row = event.target.closest(unreadRow);
         if (!row || document.hidden) return;
         pending.add(row);

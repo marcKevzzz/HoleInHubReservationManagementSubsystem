@@ -31,6 +31,16 @@ if (typeof document !== 'undefined') (() => {
     if (!form) return;
     const first = form.querySelector('[name="FirstName"]'), last = form.querySelector('[name="LastName"]');
     const phone = form.querySelector('#PhoneDisplay'), country = form.querySelector('#PhoneCountry');
+    const age = form.querySelector('[name="Age"]'), address = form.querySelector('[name="Address"]');
+    const fields = form.querySelector('[data-profile-fields]');
+    const edit = form.querySelector('[data-profile-edit]');
+    edit?.addEventListener('click', event => {
+        event.preventDefault();
+        fields.disabled = false;
+        edit.hidden = true;
+        form.querySelector('[data-profile-save]').hidden = false;
+        first.focus();
+    });
     const phonePattern = new RegExp('^(?:' + phone.dataset.phonePattern + ')$');
     const saved = ProfilePhone.saved(phone.value);
     country.value = saved.country;
@@ -50,12 +60,14 @@ if (typeof document !== 'undefined') (() => {
         window.gsap.fromTo(input, { x: -5 }, { x: 0, duration: .4, ease: 'elastic.out(1,.3)', clearProps: 'transform', overwrite: true });
     };
     const checks = [[first, 'FirstName-error', 'First name is required.'], [last, 'LastName-error', 'Last name is required.'], [phone, 'Phone-error', 'Contact number is required.']];
+    if (age) checks.push([age, 'Age-error', '']);
+    if (address) checks.push([address, 'Address-error', '']);
     const setError = (input, id, message, animate = true) => {
         document.getElementById(id).textContent = message;
         input.setAttribute('aria-invalid', message ? 'true' : 'false');
         if (message && animate) shake(input === phone ? phone.closest('.profile-phone-field') : input);
     };
-    const typeError = input => input === phone ? 'Invalid input. Numbers only are allowed.' : 'Invalid input. Text only; numbers are not allowed.';
+    const typeError = input => input === age ? 'Enter a whole-number age from 1 to 120.' : input === address ? 'Enter an address without control characters.' : input === phone ? 'Invalid input. Numbers only are allowed.' : 'Invalid input. Text only; numbers are not allowed.';
     const maximumError = () => `Use no more than ${ProfilePhone.countries[country.value].digits} digits after the country code.`;
     const validate = ([input, id, required], animate = true) => {
         const value = input.value.trim();
@@ -65,13 +77,15 @@ if (typeof document !== 'undefined') (() => {
             else if (!ProfilePhone.fits(country.value, value)) error = maximumError();
             else if (!phonePattern.test(ProfilePhone.full(country.value, value))) error = 'Check the contact number and selected country code.';
         }
-        if (value && input !== phone && !new RegExp('^(?:' + input.pattern + ')$', 'u').test(value)) error = 'Use letters only; numbers are not allowed.';
+        if (value && input === age && (!/^[0-9]+$/.test(value) || Number(value) < 1 || Number(value) > 120)) error = typeError(input);
+        if (value && input === address && !new RegExp('^(?:' + input.pattern + ')$', 'u').test(value)) error = 'Enter an address from 3 to 300 characters without control characters.';
+        if (value && (input === first || input === last) && !new RegExp('^(?:' + input.pattern + ')$', 'u').test(value)) error = 'Use letters only; numbers are not allowed.';
         setError(input, id, error, animate);
         return !error;
     };
     checks.forEach(check => {
         const [input, id] = check;
-        const invalidType = value => input === phone ? /[^0-9+ ()-]/.test(value) : /\p{N}/u.test(value);
+        const invalidType = value => input === age ? /[^0-9]/.test(value) : input === address ? /\p{C}/u.test(value) : input === phone ? /[^0-9+ ()-]/.test(value) : /\p{N}/u.test(value);
         input.addEventListener('beforeinput', event => {
             if (!event.data || event.isComposing) return;
             if (invalidType(event.data)) { event.preventDefault(); setError(input, id, typeError(input)); return; }
@@ -100,12 +114,13 @@ if (typeof document !== 'undefined') (() => {
                 if (!ProfilePhone.fits(country.value, input.value)) { setError(input, id, maximumError()); return; }
                 input.value = ProfilePhone.national(country.value, input.value);
             }
-            if (input.getAttribute('aria-invalid') === 'true') validate(check, false);
+            if (input === age || input === address || input.getAttribute('aria-invalid') === 'true') validate(check, false);
         });
         input.addEventListener('compositionend', () => validate(check));
     });
     country.addEventListener('change', () => { hint(); if (phone.value) validate(checks[2]); });
     form.addEventListener('submit', event => {
+        if (fields?.disabled) { event.preventDefault(); return; }
         const invalid = checks.filter(check => !validate(check));
         if (invalid.length) { event.preventDefault(); invalid[0][0].focus(); return; }
         phone.value = ProfilePhone.full(country.value, phone.value);

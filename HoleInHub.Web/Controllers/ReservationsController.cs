@@ -68,10 +68,9 @@ public sealed class ReservationsController(ReservationService reservations, Gues
     [Authorize, ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public async Task<IActionResult> Index(string? view, CancellationToken ct)
     {
-        await reservations.ProcessPendingAsync(ct);
         var records = await reservations.GetOwnedAsync(User.FindFirstValue(ClaimTypes.NameIdentifier)!, ct);
         var now = clock.GetUtcNow().UtcDateTime;
-        return View(new MyReservationsViewModel { Upcoming = records.Where(x => x.IsUpcoming(now)).OrderBy(x => x.StartUtc).ToArray(), Past = records.Where(x => !x.IsUpcoming(now)).OrderByDescending(x => x.StartUtc).ToArray(), ShowPast = view == "past" });
+        return View(new MyReservationsViewModel { Upcoming = records.Where(x => x.IsUpcoming(now)).OrderBy(x => x.StartUtc).ToArray(), Past = records.Where(x => !x.IsUpcoming(now)).OrderByDescending(x => x.StartUtc).ToArray(), Filter = view is "upcoming" or "past" or "completed" or "cancelled" or "expired" ? view : "all" });
     }
     [Authorize] public async Task<IActionResult> Details(string id, CancellationToken ct) { Response.Headers.CacheControl = "no-store"; ViewData["DemoPayments"] = DemoAllowed; await reservations.ProcessPendingAsync(ct); var booking = await reservations.GetOwnedAsync(User.FindFirstValue(ClaimTypes.NameIdentifier)!, id ?? "", ct); return booking is null ? NotFound() : View(booking); }
     [AllowAnonymous]

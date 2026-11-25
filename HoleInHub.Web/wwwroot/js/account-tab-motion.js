@@ -1,4 +1,21 @@
 (() => {
+    const accountNav = document.querySelector('.account-navigation');
+    const header = document.querySelector('.site-header');
+    if (accountNav && header) {
+        const offset = () => header.getBoundingClientRect().height;
+        const updateOffset = () => accountNav.style.setProperty('--account-header-height', offset() + 'px');
+        updateOffset();
+        window.addEventListener('resize', updateOffset);
+        if (window.ScrollSmoother?.get() && window.ScrollTrigger) {
+            accountNav.style.position = 'relative';
+            accountNav.style.top = '0';
+            window.ScrollTrigger.create({
+                trigger: accountNav, start: () => 'top ' + offset(),
+                endTrigger: accountNav.closest('.account-hub'), end: () => 'bottom ' + (offset() + accountNav.offsetHeight),
+                pin: true, pinReparent: true, pinSpacing: false, invalidateOnRefresh: true,
+            });
+        }
+    }
     if (!window.ResizeObserver) return;
     for (const nav of document.querySelectorAll('.account-navigation, .account-reservation-tabs')) {
         const current = nav.querySelector('a[aria-current="page"]');

@@ -26,10 +26,10 @@ public sealed partial class ReservationService
     };
     private static readonly string[] CustomerEventTypes = CustomerEvents.Keys.ToArray();
 
-    public async Task<CustomerNotificationPage> GetCustomerNotificationsAsync(string accountId, int page, CancellationToken ct)
+    public async Task<CustomerNotificationPage> GetCustomerNotificationsAsync(string accountId, int page, CancellationToken ct, bool unreadOnly = false)
     {
         page = Math.Clamp(page, 1, int.MaxValue / CustomerNotificationPageSize);
-        var rows = await persistence.ReadCustomerNotificationsAsync(accountId, CustomerEventTypes, (page - 1) * CustomerNotificationPageSize, CustomerNotificationPageSize + 1, ct);
+        var rows = await persistence.ReadCustomerNotificationsAsync(accountId, CustomerEventTypes, (page - 1) * CustomerNotificationPageSize, CustomerNotificationPageSize + 1, ct, unreadOnly);
         var items = rows.Take(CustomerNotificationPageSize).Select(row =>
         {
             var (title, message, icon) = CustomerEvents[row.EventType];
@@ -49,6 +49,13 @@ public sealed partial class ReservationService
 
     public async Task<int> MarkCustomerNotificationsReadAsync(string accountId, NotificationReadRow[] rows, CancellationToken ct)
     {
+        var requests = CustomerReadRequests(rows);
+        if (requests.Count > 0) { await persistence.MarkCustomerNotificationsReadAsync(accountId, CustomerEventTypes, requests, ct); }
+        return await persistence.HasUnreadCustomerNotificationsAsync(accountId, CustomerEventTypes, ct) ? 1 : 0;
+    }
+
+    private static List<CustomerNotificationRead> CustomerReadRequests(NotificationReadRow[] rows)
+    {
         var requests = new List<CustomerNotificationRead>();
         foreach (var row in rows)
         {
@@ -57,7 +64,17 @@ public sealed partial class ReservationService
                 || row.ActivityTicks <= 0 || row.ActivityTicks > DateTime.MaxValue.Ticks) { continue; }
             requests.Add(new(bookingId, index, new DateTime(row.ActivityTicks, DateTimeKind.Utc)));
         }
-        if (requests.Count > 0) { await persistence.MarkCustomerNotificationsReadAsync(accountId, CustomerEventTypes, requests, ct); }
-        return await persistence.HasUnreadCustomerNotificationsAsync(accountId, CustomerEventTypes, ct) ? 1 : 0;
+        return requests;
+    }
+
+    public Task MarkAllCustomerNotificationsReadAsync(string accountId, CancellationToken ct) =>
+        persistence.MarkAllCustomerNotificationsReadAsync(accountId, CustomerEventTypes, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime, ct);
+
+    public async Task<bool> DismissCustomerNotificationAsync(string accountId, NotificationReadRow row, CancellationToken ct)
+    {
+        var requests = CustomerReadRequests([row]);
+        if (requests.Count != 1) { return false; }
+        await persistence.DismissCustomerNotificationsAsync(accountId, CustomerEventTypes, requests, ct);
+        return true;
     }
 }

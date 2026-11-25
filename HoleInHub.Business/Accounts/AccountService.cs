@@ -8,6 +8,8 @@ public sealed record AccountDetails(string Id, string Email, string NormalizedEm
     public string FirstName { get; init; } = "";
     public string LastName { get; init; } = "";
     public string Phone { get; init; } = "";
+    public int? Age { get; init; }
+    public string? Address { get; init; }
     public string? GoogleSubject { get; init; }
 }
 
@@ -146,9 +148,10 @@ public sealed class AccountService(AccountPersistence persistence, TimeProvider 
     public async Task<AccountDetails?> FindByEmailAsync(string email, CancellationToken ct) => Map(await persistence.FindByEmailAsync(email, ct));
     public async Task<AccountDetails?> FindByGoogleSubjectAsync(string subject, CancellationToken ct) => Map(await persistence.FindByGoogleSubjectAsync(subject, ct));
     public Task<bool> CreateAsync(AccountDetails account, CancellationToken ct) => persistence.CreateAsync(ToRecord(account), ct);
-    public Task<bool> UpdateAsync(AccountDetails account, string expectedVersion, CancellationToken ct) => persistence.UpdateAsync(ToRecord(account), expectedVersion, ct);
-    private static AccountDetails? Map(AccountRecord? a) => a is null ? null : new(a.Id, a.Email, a.NormalizedEmail, a.PasswordHash, a.SecurityStamp, a.Version, a.EmailConfirmed, a.AccessFailedCount, a.LockoutEndUtc, a.Roles) { FirstName = a.FirstName, LastName = a.LastName, Phone = a.Phone, GoogleSubject = a.GoogleSubject };
-    private static AccountRecord ToRecord(AccountDetails a) => new() { Id = a.Id, Email = a.Email, NormalizedEmail = a.NormalizedEmail, PasswordHash = a.PasswordHash, SecurityStamp = a.SecurityStamp, Version = a.Version, EmailConfirmed = a.EmailConfirmed, AccessFailedCount = a.AccessFailedCount, LockoutEndUtc = a.LockoutEndUtc, Roles = a.Roles, FirstName = a.FirstName, LastName = a.LastName, Phone = ContactRules.PhoneDigits(a.Phone), GoogleSubject = a.GoogleSubject };
+    public Task<bool> UpdateAsync(AccountDetails account, string expectedVersion, CancellationToken ct) => ContactRules.IsProfileDetails(account.Age, account.Address)
+        ? persistence.UpdateAsync(ToRecord(account), expectedVersion, ct) : Task.FromResult(false);
+    private static AccountDetails? Map(AccountRecord? a) => a is null ? null : new(a.Id, a.Email, a.NormalizedEmail, a.PasswordHash, a.SecurityStamp, a.Version, a.EmailConfirmed, a.AccessFailedCount, a.LockoutEndUtc, a.Roles) { FirstName = a.FirstName, LastName = a.LastName, Phone = a.Phone, GoogleSubject = a.GoogleSubject, Age = a.Age, Address = a.Address };
+    private static AccountRecord ToRecord(AccountDetails a) => new() { Id = a.Id, Email = a.Email, NormalizedEmail = a.NormalizedEmail, PasswordHash = a.PasswordHash, SecurityStamp = a.SecurityStamp, Version = a.Version, EmailConfirmed = a.EmailConfirmed, AccessFailedCount = a.AccessFailedCount, LockoutEndUtc = a.LockoutEndUtc, Roles = a.Roles, FirstName = a.FirstName, LastName = a.LastName, Phone = ContactRules.PhoneDigits(a.Phone), GoogleSubject = a.GoogleSubject, Age = a.Age, Address = a.Address };
 }
 
 public sealed record AccountDirectoryEntry(string Id, string Email, string Name, string[] Roles, bool EmailConfirmed);
