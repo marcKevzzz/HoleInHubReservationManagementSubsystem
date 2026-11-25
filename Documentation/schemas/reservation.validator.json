@@ -252,7 +252,8 @@
                 "AttendanceCorrected",
                 "ReservationExtended",
                 "SessionEnded",
-                "FinancialCheckoutCompleted"
+                "FinancialCheckoutCompleted",
+                "CoachAssigned"
               ]
             },
             "ReservationStatus": {
@@ -610,8 +611,146 @@
             "bsonType": "date"
           }
         }
+      },
+      "class_session_id": {
+        "bsonType": "string",
+        "pattern": "^CLS-[0-9A-F]{16}\\z"
+      },
+      "Learners": {
+        "bsonType": "array",
+        "minItems": 1,
+        "maxItems": 8,
+        "items": {
+          "bsonType": "object",
+          "required": [
+            "_id",
+            "Name",
+            "AgeCategory",
+            "State",
+            "Attendance"
+          ],
+          "properties": {
+            "_id": {
+              "bsonType": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "Name": {
+              "bsonType": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "AgeCategory": {
+              "enum": [
+                "Adult",
+                "Minor"
+              ]
+            },
+            "GuardianId": {
+              "bsonType": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "State": {
+              "enum": [
+                "Enrolled",
+                "Cancelled"
+              ]
+            },
+            "Attendance": {
+              "enum": [
+                "Unmarked",
+                "Present",
+                "Absent"
+              ]
+            }
+          }
+        }
+      },
+      "Guardians": {
+        "bsonType": "array",
+        "minItems": 0,
+        "maxItems": 8,
+        "items": {
+          "bsonType": "object",
+          "required": [
+            "_id",
+            "Name",
+            "Relationship"
+          ],
+          "properties": {
+            "_id": {
+              "bsonType": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "Name": {
+              "bsonType": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "Relationship": {
+              "bsonType": "string",
+              "minLength": 1,
+              "maxLength": 120
+            }
+          }
+        }
+      },
+      "PricePerLearner": {
+        "bsonType": "decimal",
+        "minimum": 0
+      },
+      "coach_id": {
+        "bsonType": "string"
+      },
+      "CoachName": {
+        "bsonType": "string"
       }
-    }
+    },
+    "oneOf": [
+      {
+        "required": [
+          "class_session_id",
+          "Learners",
+          "Guardians",
+          "PricePerLearner"
+        ],
+        "properties": {
+          "Service": {
+            "enum": [
+              "KpgaGroup"
+            ]
+          }
+        }
+      },
+      {
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "class_session_id"
+              ]
+            },
+            {
+              "required": [
+                "Learners"
+              ]
+            },
+            {
+              "required": [
+                "Guardians"
+              ]
+            },
+            {
+              "required": [
+                "PricePerLearner"
+              ]
+            }
+          ]
+        }
+      }
+    ]
   },
   "$expr": {
     "$lt": [

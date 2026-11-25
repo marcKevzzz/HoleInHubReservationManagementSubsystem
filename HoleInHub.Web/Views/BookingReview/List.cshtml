@@ -40,7 +40,7 @@
                             {
                                 <tr>
                                     <th scope="row"><a class="staff-link" asp-action="Details" asp-route-id="@booking.Id" asp-route-returnSchedule="@returnSchedule">@booking.Reference</a></th>
-                                    <td>@booking.Guest</td><td>@booking.Service</td><td>@string.Join(", ", booking.Bays)</td>
+                                    <td>@booking.Guest</td><td>@booking.Service @if(booking.PackageDates.Length > 0){<small>@string.Join(" · ", booking.PackageDates.Select(x => DashboardMetrics.Local(x).ToString("d MMM")))</small>} @if(booking.LearnerSeats is int seats){<small>· @seats learner seat@(seats == 1 ? "" : "s")</small>}</td><td>@string.Join(", ", booking.Bays)</td>
                                     <td>@DashboardMetrics.Local(booking.StartUtc).ToString("d MMM yyyy, h:mm tt")</td>
                                     <td>@DashboardMetrics.Local(booking.EndUtc).ToString("d MMM yyyy, h:mm tt")</td>
                                     <td><span class="staff-status" data-status="@booking.Status">@(booking.Status == "Checked-In" ? "Checked in" : booking.Status)</span></td>

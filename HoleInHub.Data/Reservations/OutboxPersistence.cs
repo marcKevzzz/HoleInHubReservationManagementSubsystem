@@ -38,6 +38,11 @@ public sealed partial class OutboxPersistence(IMongoDbContext context)
         var reservation = await context.Database.GetCollection<ReservationRecord>("reservations")
             .Find(x => x.Id == message.ReservationId).FirstOrDefaultAsync(ct);
         if (reservation is null || (message.RequiredStatus is not null && reservation.Status != message.RequiredStatus)) { return false; }
+        if (message.ProgramLessonId is string lesson)
+        {
+            return reservation.Email == message.Recipient && reservation.Status is ("Confirmed" or "Checked-In" or "Completed")
+                && reservation.PackageSeats?.Any(x => x.SessionId == lesson && x.State != "Cancelled") == true;
+        }
         if (message.ReminderStartUtc is { } reminderStart)
         {
             return reservation.Status == "Confirmed" && reservation.CheckedInUtc == null && !reservation.CancellationRequested

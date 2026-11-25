@@ -41,6 +41,13 @@ internal static class ReportWorkbook
                     Local(row.StartUtc), Local(row.EndUtc), row.Status}))
         ];
 
+        if (matches.Any(row => row.PackageDates.Length > 0))
+        {
+            tabs = [.. tabs, ("Package lessons", ["Reservation ID", "Included dates (Manila)", "Learners marked present"],
+                matches.Where(row => row.PackageDates.Length > 0).Select(row => new object[] { row.Reference,
+                    string.Join(" · ", row.PackageDates.Select(Local)), row.AttendedLessons }))];
+        }
+
         using var output = new MemoryStream();
         using (var archive = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true))
         {

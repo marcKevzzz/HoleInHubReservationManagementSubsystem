@@ -246,3 +246,34 @@ fieldset.service-rule-grid {border:0;border-bottom:1px solid var(--color-line);m
 .service-editor [data-whole-shop-bays]{color:var(--color-muted);font-size:.8rem}
 
 .service-image-id {position:absolute;top:0;left:0;max-width:80%;padding:2px 5px;background:var(--color-paper);color:var(--color-ink);font-size:.75rem;overflow-wrap:anywhere;pointer-events:none}
+
+.coach-editor .coach-profile { border-top:1px solid var(--color-line); padding-block:1.25rem 2rem; }
+.coach-profile .auth-input-wrap { width:min(100%,38rem); }
+.coach-editor .coach-schedule-grid { align-items:start; }
+.coach-schedule-grid summary small { margin-inline-start:auto; color:var(--color-muted); font-size:.8rem; font-weight:400; }
+.coach-schedule-grid .service-configuration-content { display:grid; gap:1rem; }
+.coach-schedule-grid .service-configuration-content > button { justify-self:start; }
+
+.coach-contact-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1.5rem; }
+.coach-contact-fields .auth-input-wrap { width:100%; }
+.staff-shell .coach-editor .coach-hours legend { font:inherit; font-size:.875rem; font-weight:600; }
+.staff-shell .coach-editor .coach-hours :is(input[type="date"],input[type="time"],.app-select-trigger,select) {
+    box-sizing:border-box; height:44px; min-height:44px; margin:0; padding-block:0; background:transparent;
+}
+@media(max-width:760px) { .coach-contact-fields { grid-template-columns:1fr; gap:.75rem; } }
+
+.coach-skeleton-list > div, .coach-skeleton-editor { display:grid; gap:1rem; border-top:1px solid var(--color-line); padding-block:1.25rem; }
+.coach-skeleton-list .staff-skeleton-fill { height:.875rem; width:min(15rem,65%); }
+.coach-skeleton-list .staff-skeleton-fill:first-child { height:1.25rem; width:8rem; }
+.coach-skeleton-list .staff-skeleton-fill:last-child { width:3rem; }
+.coach-skeleton-editor .staff-skeleton-fill { height:1rem; width:min(100%,19rem); }
+.coach-skeleton-editor .coach-contact-fields { padding-block:1rem; }
+.coach-skeleton-editor .coach-contact-fields:last-child { border-top:1px solid var(--color-line); }
+
+.coach-profile .coach-contact-fields { row-gap:1.75rem; align-items:end; }
+.coach-profile .profile-phone-field { display:flex; align-items:center; gap:.5rem; min-width:0; border-bottom:1px solid var(--color-control-line); }
+.coach-profile .profile-phone-field .auth-input-wrap { flex:1; min-width:0; }
+.coach-profile .profile-phone-field input { border-bottom:0; }
+.coach-remove svg { width:1.125rem; height:1.125rem; }
+.coach-editor .coach-remove:is(:hover,:focus-visible) { color:var(--color-danger,#b42318); }
+.coach-editor .coach-remove { display:inline-grid; place-items:center; width:44px; height:44px; padding:0; color:var(--color-muted); }

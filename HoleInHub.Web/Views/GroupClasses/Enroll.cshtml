@@ -1,0 +1,5 @@
+@using HoleInHub.Business.Reservations
+@model SubmitReservationRequest
+@{ Layout = "_StaffLayout"; ViewData["Title"] = "Book learner seats"; }
+<partial name="~/Views/Reservations/_FamilyBooking.cshtml" model="Model" />
+@section Scripts { <script src="~/js/family-booking.js" asp-append-version="true"></script> }

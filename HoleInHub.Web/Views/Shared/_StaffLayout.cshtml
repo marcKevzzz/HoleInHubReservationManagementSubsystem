@@ -51,10 +51,12 @@
         ("Reservations", "BookingReview", "Index", "calendar", "Schedule", true),
         ("Reservations", "BookingReview", "Queue", "queue", "Review queue", true),
         ("Reservations", "BookingReview", "Cancellations", "close", "Cancellations", true),
+        ("Reservations", "GroupClasses", "Index", "calendar", "Lesson schedule", Reservations.SharedClassesEnabled),
+        ("People", "Coaches", "Index", "coach", "Coaches", true),
         ("People", "Customers", "Index", "customers", "Customers", true),
         ("People", "Leadership", "People", "roles", "Team & access", managesVenue),
         ("Administration", "Leadership", "Resources", "resources", "Resources", isAdmin),
-        ("Administration", "ServiceManagement", "Index", "queue", "Services", isAdmin),
+        ("Administration", "ServiceManagement", "Index", "queue", "Services", isAdmin || User.IsInRole("Manager")),
         ("Administration", "Activity", "Index", "history", "Activity", true),
         ("Administration", notificationController, "Index", "notifications", "Notifications", true),
         ("Venue management", "Leadership", "Reports", "reports", "Reports", managesVenue),
@@ -123,7 +125,7 @@
                             var active = link.Action == "People" && isTeamPage || controller == link.Controller && (link.Controller switch
                             {
                                 "BookingReview" => link.Action == "Cancellations" ? isCancellations : !isQueue && !isCancellations,
-                                "Customers" or "Activity" or "ServiceManagement" => true,
+                                "GroupClasses" or "Customers" or "Activity" or "ServiceManagement" => true,
                                 _ => action == link.Action
                             });
                             var skeletonLayout = link.Action switch
@@ -131,7 +133,7 @@
                                 "Dashboard" => "dashboard", "Queue" => "queue", "Cancellations" => "cancellations",
                                 "People" => "team", "Reports" => "reports", "Settings" => "settings",
                                 "Resources" => "resources", "Services" => "services",
-                                _ => link.Controller == "Settings" ? "settings" : link.Controller == "ServiceManagement" ? "services" : link.Controller == "NotificationDelivery" ? "delivery" : link.Controller == "StaffNotifications" ? "notifications" : link.Controller == "Activity" ? "activity" : link.Controller == "Customers" ? "customers" : "schedule"
+                                _ => link.Controller == "Coaches" ? "coaches" : link.Controller == "Settings" ? "settings" : link.Controller == "ServiceManagement" ? "services" : link.Controller == "NotificationDelivery" ? "delivery" : link.Controller == "StaffNotifications" ? "notifications" : link.Controller == "Activity" ? "activity" : link.Controller == "Customers" ? "customers" : "schedule"
                             };
                             <a data-nav-layout="@skeletonLayout" asp-controller="@link.Controller" asp-action="@link.Action" asp-route-date="@(isReservations ? date : null)"
                                aria-label="@(link.Controller == notificationController && notificationUnread > 0 ? F("Notifications, {0} new", notificationUnread > 99 ? "99+" : notificationUnread.ToString()) : isReservations && link.Action == "Cancellations" && pendingCancellations > 0 ? F("Cancellations, {0} pending", pendingCancellations) : T(link.Label))"

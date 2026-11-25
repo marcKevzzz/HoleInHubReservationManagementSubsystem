@@ -99,16 +99,40 @@ public sealed partial class ReservationService
         if (participants.Length > 0) { BookingRules.ValidateParticipants(service, bays, participants, allowEmptyBays); }
     }
 
-    private static void ValidateStoredCapacity(ReservationRecord record, IReadOnlyList<ResourceRecord> selected) =>
+    private static void ValidateStoredCapacity(ReservationRecord record, IReadOnlyList<ResourceRecord> selected)
+    {
+        if (record.NonPlayerGuests is int visitors && record.Participants.Length == 0)
+        {
+            if (visitors < 0 || visitors > record.Attendees) { throw new ReservationValidationException("Include non-playing guests in the total guest count.", "NonPlayerGuests"); }
+            var players = record.Attendees - visitors;
+            var bays = selected.Select(MapResource).ToArray();
+            var rows = bays.Select(b => new ParticipantRecord { ResourceId = b.Id }).ToArray();
+            for (var i = 0; i < bays.Length; i++)
+            {
+                rows[i].Players = Math.Min(players, Math.Min(bays[i].MaxPlayers, bays[i].MaxTotalGuests - (bays[i].MaxNonPlayers ?? bays[i].MaxTotalGuests)));
+                players -= rows[i].Players;
+            }
+            for (var i = 0; i < bays.Length; i++)
+            {
+                var extra = Math.Min(players, bays[i].MaxPlayers - rows[i].Players);
+                rows[i].Players += extra;
+                players -= extra;
+                rows[i].NonPlayers = Math.Min(visitors, Math.Min(bays[i].MaxTotalGuests - rows[i].Players, bays[i].MaxNonPlayers ?? bays[i].MaxTotalGuests));
+                visitors -= rows[i].NonPlayers;
+            }
+            if (players != 0 || visitors != 0) { throw new ReservationValidationException("Check the number of non-playing guests for the selected bays.", "NonPlayerGuests"); }
+            record.Participants = rows;
+        }
         ValidateBookingCapacity(record.Service, selected.Select(MapResource).ToArray(), record.Attendees,
             record.Participants.Select(p => new BayParticipants { ResourceId = p.ResourceId, Players = p.Players, NonPlayers = p.NonPlayers }).ToArray(),
-            allowEmptyBays: record.PolicyVersion != 1);
+            allowEmptyBays: record.PolicyVersion != 1 || record.NonPlayerGuests.HasValue);
+    }
 
     private static ParticipantRecord[] ConfirmParticipants(ReservationRecord record, IReadOnlyList<ResourceRecord> selected,
         BayParticipants[]? participants, DateTime now)
     {
         var bays = selected.Select(MapResource).OrderBy(bay => bay.Id, StringComparer.Ordinal).ToArray();
-        if ((participants is null || participants.Length == 0) && record.ReviewDeadlineUtc <= now)
+        if (participants is null || participants.Length == 0)
         {
             participants = BookingRules.AssignOverdueParticipants(bays, record.Attendees);
         }

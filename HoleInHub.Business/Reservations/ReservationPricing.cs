@@ -21,6 +21,8 @@ public sealed partial class ReservationService
             if (bays.Count == 0 || bays.Any(bay => !bay.Available))
             { throw new ReservationValidationException(BookingRules.WholeShopUnavailable, nameof(SubmitReservationRequest.StartTime)); }
         }
+        if (RequiresCoach(service) && !(await GetAvailabilityAsync(date, startTime, durationMinutes, service, ct, serviceEntryId)).Any(bay => bay.Available))
+        { throw new ReservationValidationException(CoachUnavailable, nameof(SubmitReservationRequest.StartTime)); }
         return PriceBooking(record, service, date, startTime, durationMinutes, bayCount);
     }
 

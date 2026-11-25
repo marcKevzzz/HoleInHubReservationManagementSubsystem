@@ -1,24 +1,6 @@
 const { test, expect } = require('@playwright/test');
 const { randomUUID } = require('node:crypto');
-const { signInManager } = require('./fixture.cjs');
-
-async function verificationCode(request, email) {
-    const inbox = 'http://127.0.0.1:8025/api/v1';
-    let message;
-    await expect.poll(async () => {
-        const response = await request.get(inbox + '/search', { params: { query: 'to:' + email } });
-        expect(response.ok()).toBeTruthy();
-        const result = await response.json();
-        message = result.messages.find(item => item.Subject === 'Your booking verification code'
-            && item.To.some(recipient => recipient.Address === email));
-        return Boolean(message);
-    }, { timeout: 45_000, intervals: [300, 1000] }).toBe(true);
-    const response = await request.get(inbox + '/message/' + message.ID);
-    const body = await response.json();
-    const match = body.Text.match(/\b\d{6}\b/);
-    if (!match) throw new Error('The fixture verification email contained no six-digit code.');
-    return match[0];
-}
+const { signInManager, verificationCode } = require('./fixture.cjs');
 
 test('guest receives a receipt and the approved reservation is visible to the guest', async ({ page, browser, request }, info) => {
     if (process.env.HIH_REPORT_BENCHMARK === '1') {
@@ -44,11 +26,16 @@ test('guest receives a receipt and the approved reservation is visible to the gu
     await availableBay.click();
     await expect(page.locator('[name=QuoteKey]')).toHaveValue(/.+/);
     await page.locator('#step-next').click();
-    await page.getByLabel('First name').fill('Browser');
-    await page.getByLabel('Last name').fill('Guest');
+    await page.locator('#FirstName').fill('Browser');
+    await page.locator('#LastName').fill('Guest');
     await page.locator('#Phone').fill('09123456789');
     await page.locator('#Email').fill(email);
-    await page.locator('#Attendees').fill('1');
+    await page.locator('#ContactAge').fill('32');
+    await page.locator('#ContactAddress').fill('Quezon City');
+    const playerLimit = Number(await availableBay.locator('input').getAttribute('data-max-players'));
+    const totalLimit = Number(await availableBay.locator('input').getAttribute('data-max-guests'));
+    await page.locator('#Attendees').fill(String(Math.min(playerLimit + 1, totalLimit)));
+    if (totalLimit > playerLimit) await page.locator('#NonPlayerGuests').fill('1');
     const privacy = page.getByRole('checkbox', { name: /privacy policy/i });
     await privacy.focus();
     await page.keyboard.press('Space');
@@ -77,7 +64,7 @@ test('guest receives a receipt and the approved reservation is visible to the gu
     const reference = await page.locator('.booking-reference').innerText();
     expect(reference).toMatch(/^HIH-[A-F0-9]{10}$/);
 
-    const staffContext = await browser.newContext({ ...info.project.use, baseURL: 'https://localhost:54893', ignoreHTTPSErrors: true });
+    const staffContext = await browser.newContext({ ...info.project.use, baseURL: info.project.use.baseURL, ignoreHTTPSErrors: true });
     try {
         const staff = await staffContext.newPage();
         await signInManager(staff);

@@ -20,6 +20,15 @@ public sealed record PosSettlement(string ReservationId, string BillReference, D
 
 public sealed class ReservationRecord
 {
+    [BsonIgnoreIfNull] public PackageSeat[]? PackageSeats { get; set; }
+    [BsonElement("package_id"), BsonIgnoreIfNull] public string? PackageId { get; set; }
+    [BsonIgnoreIfNull] public ClassSessionRecord[]? PackageDates { get; set; }
+    [BsonIgnoreIfNull] public string? NextClassReminderBase { get; set; }
+    [BsonIgnoreIfDefault] public bool NextClassReminderQueued { get; set; }
+    [BsonElement("class_session_id"), BsonIgnoreIfNull] public string? ClassSessionId { get; set; }
+    [BsonIgnoreIfNull] public ClassLearnerRecord[]? Learners { get; set; }
+    [BsonIgnoreIfNull] public ClassGuardianRecord[]? Guardians { get; set; }
+    [BsonIgnoreIfNull] public decimal? PricePerLearner { get; set; }
     public long Revision { get; set; }
     [BsonIgnoreIfNull] public PosSettlement? FinalSettlement { get; set; }
     [BsonIgnoreIfNull] public DateTime? CheckoutCompletedUtc { get; set; }
@@ -37,6 +46,8 @@ public sealed class ReservationRecord
     public string? PaymentReference { get; set; }
     public decimal? RentalTotal { get; set; }
     public decimal? DepositAmount { get; set; }
+    [BsonElement("coach_id"), BsonIgnoreIfNull] public string? CoachId { get; set; }
+    [BsonIgnoreIfNull] public string? CoachName { get; set; }
     public bool CoachConfirmed { get; set; }
     public bool CancellationRequested { get; set; }
     [BsonIgnoreIfNull] public ScheduleChangeRecord? ScheduleChange { get; set; }
@@ -62,6 +73,9 @@ public sealed class ReservationRecord
     public string LastName { get; set; } = "";
     public string Phone { get; set; } = "";
     public int Attendees { get; set; }
+    [BsonIgnoreIfNull] public int? ContactAge { get; set; }
+    [BsonIgnoreIfNull] public string? ContactAddress { get; set; }
+    [BsonIgnoreIfNull] public int? NonPlayerGuests { get; set; }
     public string Notes { get; set; } = "";
     public bool PrivacyAccepted { get; set; }
     public string IdempotencyKey { get; set; } = "";
@@ -140,6 +154,7 @@ public sealed class ScheduleBlock
 public sealed class OutboxRecord
 {
     [BsonId] public string Id { get; set; } = "";
+    [BsonElement("outbox_id")] public string OutboxId => BusinessIdentifier.Format("OUT", Id);
     public string Recipient { get; set; } = "";
     public string Subject { get; set; } = "";
     public string Body { get; set; } = "";
@@ -151,6 +166,7 @@ public sealed class OutboxRecord
     public DateTime? SentUtc { get; set; }
     public int Attempts { get; set; }
     public bool Failed { get; set; }
+    [BsonIgnoreIfNull] public string? ProgramLessonId { get; set; }
     [BsonIgnoreIfNull] public DateTime? ReminderStartUtc { get; set; }
     [BsonIgnoreIfNull] public DateTime? ExpiresUtc { get; set; }
     [BsonIgnoreIfNull] public string? VerificationId { get; set; }

@@ -107,7 +107,7 @@ jobs:
       working-directory: HoleInHub.Web
       run: |
         npx playwright install --with-deps chromium
-        npm run test:browser
+        npm run test:browser:all
 
     - name: MongoDB Logs on Failure
       if: failure()

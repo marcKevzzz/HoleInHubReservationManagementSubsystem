@@ -19,7 +19,7 @@ public sealed partial class ReservationPersistence
             var ids = selected.Select(item => item.Id).ToArray();
             var bookings = await Reservations.Find(s, Builders<ReservationRecord>.Filter.In(x => x.Id, ids))
                 .ToListAsync(token);
-            if (bookings.Count != selected.Count)
+            if (bookings.Count != selected.Count || bookings.Any(x => x.ClassSessionId != null))
             {
                 throw new AllocationConflictException("A selected booking is no longer available.");
             }

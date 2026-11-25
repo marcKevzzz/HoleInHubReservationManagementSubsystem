@@ -1,0 +1,26 @@
+@using HoleInHub.Business.Reservations
+@model PackageEditor
+@{ Layout = "_StaffLayout"; ViewData["Title"] = "Package dates"; }
+<section class="staff-workspace service-admin service-editor">
+<a class="flow-back" asp-controller="ServiceManagement" asp-action="Edit" asp-route-id="@Model.Offering"><partial name="_BackArrow" /> Back to service</a>
+<header class="staff-workspace-heading"><h1>Package dates</h1></header>
+<form method="post" asp-action="Packages" asp-route-offering="@Model.Offering" class="service-editor-section">
+<h2>@Model.Title</h2><p>Select @Model.Count lessons · ₱@Model.Price.ToString("N2") per learner for the full package.</p>
+<div asp-validation-summary="All" class="staff-error" role="alert"></div>
+<div class="auth-input-wrap"><input type="date" name="deadline" id="registration-deadline" required value="@ViewData.ModelState.GetValueOrDefault("deadline")?.AttemptedValue" /><label for="registration-deadline">Register by (11:59 PM Manila)</label></div>
+<fieldset data-package-count="@Model.Count"><legend>Published classes · Manila time</legend>
+@foreach(var session in Model.Sessions){
+<label class="staff-create-confirm"><input type="checkbox" name="sessions" data-remaining="@(session.Capacity-session.HeldSeats)" value="@session.Id" checked="@(Context.Request.HasFormContentType && Context.Request.Form["sessions"].Contains(session.Id))" />
+@DashboardMetrics.Local(session.StartUtc).ToString("ddd, d MMM yyyy · h:mm tt") · @(session.Capacity-session.HeldSeats) seats left</label>
+}
+</fieldset>
+<p data-package-preview role="status" aria-live="polite"></p><button class="button" disabled="@(Model.Sessions.Length < Model.Count)">Publish package</button>
+</form>
+@foreach(var pack in Model.Packages){
+<section class="service-editor-section"><h2>@pack.Id</h2><ul>@foreach(var id in pack.Sessions){
+<li>@(Model.Sessions.FirstOrDefault(x=>x.Id==id) is {} session ? DashboardMetrics.Local(session.StartUtc).ToString("ddd, d MMM yyyy · h:mm tt") : id)</li>
+}</ul><form asp-action="ClosePackage" asp-route-offering="@Model.Offering" asp-route-id="@pack.Id" method="post"><button class="button button-secondary">Close enrollment</button></form></section>
+}
+</section>
+
+@section Scripts { <script src="~/js/package-dates.js" asp-append-version="true"></script> }

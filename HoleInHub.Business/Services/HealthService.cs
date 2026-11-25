@@ -25,6 +25,8 @@ public sealed class HealthService(IMongoDbContext dbContext, Microsoft.Extension
         {
             string[] required = ["001_InitialFoundation", "002_Reservations", "003_Accounts", "004_BookingProcess", "005_GoogleAccounts", "006_SchemaHardening", "007_GuestReservationAccess", "008_ServiceCatalog", "021_BusinessIdentifiers", "022_PrefixedBusinessIdentifiers"];
             if (policy?.Value.RequirePosSettlement == true) { required = [.. required, "023_SettlementCheckout"]; }
+            if (policy?.Value.SharedClassesEnabled == true) { required = [.. required, "025_SharedGroupClasses", "026_ClassPackages"]; }
+            if (policy?.Value.PhilippineCoachSchedulesEnabled == true) { required = [.. required, "027_CoachDirectory"]; }
             var applied = await _dbContext.Migrations.Find(Builders<MigrationRecord>.Filter.In(x => x.MigrationId, required)).Project(x => x.MigrationId).ToListAsync(ct);
             if (required.All(applied.Contains))
             {

@@ -140,7 +140,7 @@
                                 var label = command switch { "cancel" => "Cancel reservation", "keep" => "Keep reservation", "coach" => "Confirm coach", "approve" => "Approve booking", "approve-change" => "Approve schedule change", "decline-change" => "Decline schedule change", _ => "Reject booking" };
                                 <button type="button" class="queue-action" data-queue-decision="@command"
                                         data-actions-url="@Url.Action("Actions", new { id = item.Id, date, filter = Model.Filter, day = Model.Day, sort = Model.Sort, page = Model.Page })"
-                                        title="@label" aria-label="@label">@label</button>
+                                        title="@label" aria-label="@label"><partial name="_StaffIcon" model='@(command is "reject" or "decline-change" or "cancel" ? "close" : "check")' /><span>@(command switch { "approve" or "approve-change" => "Approve", "reject" or "decline-change" => "Reject", "cancel" => "Cancel", "keep" => "Keep", _ => label })</span></button>
                             }
                         }
                     </div>

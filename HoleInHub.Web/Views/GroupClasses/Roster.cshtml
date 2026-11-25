@@ -1,0 +1,46 @@
+@using HoleInHub.Business.Reservations
+@inject TimeProvider Clock
+@model ValueTuple<StaffClassSession,ReservationDto[]>
+@{ Layout = "_StaffLayout"; ViewData["Title"] = "Registered learners"; var session=Model.Item1; }
+<div class="staff-workspace class-attendance-page">
+@if (Context.Request.Query["bookingId"].FirstOrDefault() is string bookingId) {
+    <a class="flow-back" asp-controller="BookingReview" asp-action="Details" asp-route-id="@bookingId"><partial name="_BackArrow" /> Back to booking</a>
+} else {
+    <a class="flow-back" asp-action="Index" asp-route-from="@Context.Request.Query["from"]"><partial name="_BackArrow" /> Back to lesson schedule</a>
+}
+<header class="staff-workspace-heading"><div><h1>Registered learners</h1><p>Class ID @session.Id</p></div>
+<div class="lesson-actions">
+@if(session.State=="Open" && session.Capacity > session.HeldSeats){<a class="button" asp-action="Enroll" asp-route-id="@session.Id">Register learners</a>}
+@if(User.IsInRole("Manager") || User.IsInRole("Admin")){
+@if(session.State=="Open"){<form asp-action="Close" asp-route-id="@session.Id" method="post"><button class="button button-secondary">Close enrollment</button></form>}
+@if(session.State=="Closed"){<form asp-action="Release" asp-route-id="@session.Id" method="post"><button class="button button-secondary">Release class bays</button></form>}}
+</div></header>
+<div class="lesson-facts">
+<div><strong>@DashboardMetrics.Local(session.StartUtc).ToString("dddd, d MMM yyyy")</strong><span>@DashboardMetrics.Local(session.StartUtc).ToString("h:mm tt") – @DashboardMetrics.Local(session.EndUtc).ToString("h:mm tt") Manila</span></div>
+<div><strong>@string.Join(", ", session.Bays)</strong><span>Assigned bays</span></div>
+<div><strong>@session.HeldSeats of @session.Capacity</strong><span>Seats reserved</span></div>
+<div><strong>@session.State</strong><span>Enrollment</span></div>
+</div>
+<section class="lesson-register">
+@if(TempData["ClassMessage"] is string message){<p role="status">@message</p>}
+@if(Model.Item2.Length==0){<p>No family reservations for this class.</p>}else{
+<div class="dashboard-table-wrap"><table><thead><tr><th>Learner</th><th>Reservation ID</th><th>Booking status</th><th>Enrollment</th><th>Attendance</th><th>Action</th></tr></thead><tbody>
+@foreach(var booking in Model.Item2){foreach(var learner in booking.Learners){var seat = booking.PackageSeats.FirstOrDefault(x => x.SessionId == session.Id && x.LearnerId == learner.Id);<tr><th>@learner.Name</th><td><a asp-controller="BookingReview" asp-action="Details" asp-route-id="@booking.Id">@booking.Reference</a></td><td>@booking.Status</td><td>@(seat?.State ?? learner.State)
+@if(seat?.State == "Requested"){<form asp-action="Absence" asp-route-id="@session.Id" method="post"><input type="hidden" name="reservationId" value="@booking.Id"/><input type="hidden" name="learnerId" value="@learner.Id"/><button class="button" name="decision" value="Approve">Approve absence</button><button class="button button-secondary" name="decision" value="Decline">Decline</button></form>}
+</td><td>@((seat?.State ?? learner.State) == "Cancelled" ? "Not applicable" : (seat?.Attendance ?? learner.Attendance) == "Unmarked" ? "Not marked yet" : seat?.Attendance ?? learner.Attendance)
+@if((seat?.State ?? learner.State)!="Cancelled" && (booking.Status=="Confirmed" || booking.Status=="Checked-In" || (seat != null && booking.Status=="Completed")) && Clock.GetUtcNow().UtcDateTime >= session.StartUtc){
+<form asp-action="Attendance" asp-route-id="@session.Id" method="post">
+<input type="hidden" name="reservationId" value="@booking.Id" /><input type="hidden" name="learnerId" value="@learner.Id" />
+<button class="button button-secondary" name="attendance" value="Present" aria-label="Mark @learner.Name present">Present</button>
+<button class="button button-secondary" name="attendance" value="Absent" aria-label="Mark @learner.Name absent">Absent</button></form>}</td><td><a class="customer-profile-link" asp-controller="BookingReview" asp-action="Details" asp-route-id="@booking.Id" aria-label="Review @booking.Reference for @learner.Name"><partial name="_StaffIcon" model='"arrow-right"' /></a></td></tr>}}
+</tbody></table></div>}
+</section></div>
+
+<dialog class="logout-confirmation" id="class-decision" aria-labelledby="class-decision-label">
+    <h2 id="class-decision-label">Confirm class update?</h2>
+    <form method="dialog" class="logout-actions">
+        <button value="cancel" class="button button-secondary" autofocus>Cancel</button>
+        <button value="confirm" class="button">Confirm</button>
+    </form>
+</dialog>
+@section Scripts { <script src="~/js/class-roster.js" asp-append-version="true"></script> }

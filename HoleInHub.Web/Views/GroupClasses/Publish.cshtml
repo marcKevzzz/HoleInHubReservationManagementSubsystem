@@ -1,0 +1,12 @@
+@model PublishGroupClassForm
+@{ Layout = "_StaffLayout"; ViewData["Title"] = "Publish a group class"; }
+<div class="staff-workspace service-admin service-editor"><a class="flow-back" asp-controller="ServiceManagement" asp-action="Index"><partial name="_BackArrow" /> Back to services</a><header class="staff-workspace-heading service-admin-heading"><h1>Publish a group class</h1></header>
+<section class="service-editor-section service-detail-fields"><form asp-action="Publish" method="post" class="staff-create-form">
+<div asp-validation-summary="All" role="alert" class="staff-error"></div>
+<label asp-for="Offering">Group lesson</label><select asp-for="Offering" required>@foreach(var item in Model.Offerings){<option value="@item.Id">@item.Name</option>}</select>
+<label asp-for="Date">Tuesday class date</label><input asp-for="Date" type="date" required /><p class="attendance-note">3:00–4:00 PM, Manila time</p>
+<fieldset><legend>Regular bays</legend>@foreach(var bay in Model.Bays){<label class="staff-create-confirm"><input type="checkbox" name="BayIds" value="@bay.Id" checked="@Model.BayIds.Contains(bay.Id)" /> @bay.Name</label>}</fieldset>
+<div class="auth-input-wrap"><input asp-for="Capacity" type="number" min="1" max="8" required placeholder=" " /><label asp-for="Capacity">Learner seats</label><span asp-validation-for="Capacity"></span></div>
+<div class="auth-input-wrap"><input asp-for="Price" type="number" min="0.01" step="0.01" required placeholder=" " /><label asp-for="Price">Single-class price per learner (₱)</label><span asp-validation-for="Price"></span></div>
+<p class="attendance-note">Publishing reserves the selected bays for this class.</p>
+<button class="button" type="submit">Publish class</button><a class="button button-secondary" asp-controller="ServiceManagement" asp-action="Index">Cancel</a></form></section></div>
