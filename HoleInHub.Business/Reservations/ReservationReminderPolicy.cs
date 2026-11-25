@@ -8,7 +8,7 @@ public static class ReservationReminderPolicy
 {
     public static OutboxRecord? Create(ReservationRecord reservation, DateTime now)
     {
-        if (reservation.Status != "Confirmed" || reservation.CheckedInUtc is not null || reservation.CancellationRequested
+        if (reservation.PackageId != null || reservation.Status != "Confirmed" || reservation.CheckedInUtc is not null || reservation.CancellationRequested
             || reservation.StartUtc <= now || reservation.StartUtc > now.AddMinutes(15)
             || !MailAddress.TryCreate(reservation.Email, out var address) || address.Address != reservation.Email)
         {

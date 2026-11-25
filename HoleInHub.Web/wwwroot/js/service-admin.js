@@ -10,13 +10,15 @@
     }
     const dialog = document.querySelector('[data-service-confirm]');
     let pending, saving = false;
-    async function save(form, buttons) {
+    async function save(form, buttons, submitter) {
         if (saving) return;
+        const body = new FormData(form);
+        if (submitter?.name) body.set(submitter.name, submitter.value);
         saving = true;
         form.setAttribute("aria-busy", "true");
         buttons.forEach(button => button.disabled = true);
         try {
-            const response = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } });
+            const response = await fetch(form.action, { method: 'POST', body, headers: { Accept: 'application/json' } });
             const result = await response.json();
             if (response.ok && result.redirect) { window.location.assign(result.redirect); return; }
             if (form.elements.ImpactAcknowledgement) {
@@ -386,10 +388,23 @@
         shake(event.target);
         if (event.target === form.querySelector(':invalid')) { notify('Check the highlighted fields.'); event.target.focus(); }
     }, true);
+    const setup = form.querySelector('[data-lesson-setup]');
+    if (setup) {
+        const update = () => {
+            setup.hidden = form.elements.BookingService.value !== 'KpgaGroup';
+            form.querySelector('#service-availability').hidden = !setup.hidden;
+            form.querySelector('label[for="MaxPax"]').textContent = setup.hidden ? 'Maximum guests per booking (optional)' : 'Maximum learners per booking (optional)';
+            const action = setup.querySelector('button');
+            if (action) action.textContent = document.querySelector('#Active').checked ? 'Save and schedule dates' : 'Activate and schedule dates';
+        };
+        form.elements.BookingService.addEventListener('change', update);
+        document.querySelector('#Active').addEventListener('change', update);
+        update();
+    }
     form.addEventListener('submit', event => {
         event.preventDefault();
         if (!items.length) { imageError.textContent = 'Add at least one image.'; notify(imageError.textContent); shake(gallery); input.focus(); return; }
-        void save(form, [...document.querySelectorAll('[form="service-editor-form"][type=submit]')]);
+        void save(form, [...document.querySelectorAll('[form="service-editor-form"][type=submit], [name=scheduleLessons]')], event.submitter);
     });
     window.addEventListener('pagehide', () => items.filter(item => item.file).forEach(item => URL.revokeObjectURL(item.src)));
 })();

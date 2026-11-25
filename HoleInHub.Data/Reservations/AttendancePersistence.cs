@@ -31,6 +31,7 @@ public sealed partial class ReservationPersistence
         {
             var record = await Reservations.Find(s, x => x.Id == id).FirstOrDefaultAsync(token);
             if (record is null) { return AttendanceWriteResult.NotFound; }
+            if (record.ClassSessionId != null) { return AttendanceWriteResult.NotEligible; }
             await GuardAsync(s, record, token);
             var prior = record.History.FirstOrDefault(x => x.CommandId == commandId);
             if (prior is not null)

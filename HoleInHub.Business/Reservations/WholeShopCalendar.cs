@@ -17,21 +17,23 @@ public sealed partial class ReservationService
         var end = TimeZoneInfo.ConvertTimeToUtc(next.ToDateTime(TimeOnly.MinValue), ReservationRules.Manila);
         var now = (clock ?? TimeProvider.System).GetUtcNow();
         await ProcessPendingAsync(ct);
-        var bays = await GetCatalogAsync(ct);
+        var bays = await GetRentalBaysAsync(service?.Id, ct);
         var occupied = await persistence.ReadOccupiedIntervalsAsync(start, end, bays.Select(bay => bay.Id).ToArray(), now.UtcDateTime, ct);
         var days = new List<WholeShopDayAvailability>();
         for (var day = first; day < next; day = day.AddDays(1))
         {
             var opening = ReservationRules.OpeningHour(day.DayOfWeek) * 60;
             var sessions = new List<WholeShopSessionAvailability>();
-            foreach (var (minute, duration) in new[] { (900, 360), (opening, 1440 - opening) })
+            foreach (var (minute, duration) in HoleInHub.Data.Services.SeasonalRental.IsPackage(service?.Id)
+                ? Enumerable.Range(0, (960 - opening) / 30 + 1).Select(i => (opening + i * 30, 480))
+                : new[] { (900, 360), (opening, 1440 - opening) })
             {
                 var available = false;
                 try
                 {
                     var interval = PreviewServiceInterval(service, day, new TimeOnly(minute / 60, minute % 60), duration, "WholeShop");
                     BookingRules.ValidateLeadTime("WholeShop", interval.Start, now);
-                    available = bays.Count > 0 && !occupied.Any(item => item.StartUtc < interval.End && item.EndUtc > interval.Start);
+                    available = bays.Length > 0 && !occupied.Any(item => item.StartUtc < interval.End && item.EndUtc > interval.Start);
                 }
                 catch (ReservationValidationException) { }
                 sessions.Add(new(minute, duration, available));

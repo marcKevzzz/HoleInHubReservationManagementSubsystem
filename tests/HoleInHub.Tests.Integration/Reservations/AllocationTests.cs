@@ -17,7 +17,7 @@ public sealed class AllocationTests(MongoDbFixture fixture) : IClassFixture<Mong
     private static ReservationRecord Request(string[] ids, string service = "Regular") => new() { AccountId = Guid.NewGuid().ToString("N"), Email = "customer@example.test", IdempotencyKey = Guid.NewGuid().ToString("N"), SubmissionHash = "test", StartUtc = new DateTime(2026, 11, 3, 4, 0, 0, DateTimeKind.Utc), EndUtc = new DateTime(2026, 11, 3, 5, 0, 0, DateTimeKind.Utc), CreatedUtc = DateTime.UtcNow, ReviewDeadlineUtc = DateTime.UtcNow.AddMinutes(30), ResourceIds = ids, Service = service };
 
     [Fact]
-    public async Task LessonAssignsAnAvailableRegularBayAndItsHoldPreventsWholeShopCheckout()
+    public async Task StandaloneLessonIsRejectedAndAnIndividualBayHoldPreventsWholeShopCheckout()
     {
         var (store, context) = await Setup();
         var policy = Options.Create(new ReservationPolicy
@@ -52,10 +52,13 @@ public sealed class AllocationTests(MongoDbFixture fixture) : IClassFixture<Mong
             PrivacyAccepted = true,
             IdempotencyKey = "lesson-program"
         };
+        await Assert.ThrowsAsync<ReservationValidationException>(() => service.ValidateSubmissionAsync(lesson, false, default));
+        await Assert.ThrowsAsync<ReservationValidationException>(() => service.SubmitAsync(lesson, "customer", "customer@example.test", default));
+        lesson.Service = "Regular";
+        lesson.ResourceIds = ["bay-2"];
         await service.ValidateSubmissionAsync(lesson, false, default);
         var booked = await service.SubmitAsync(lesson, "customer", "customer@example.test", default);
         Assert.Equal("bay-2", Assert.Single(booked.ResourceIds));
-        Assert.Empty(lesson.ResourceIds);
         Assert.Equal(booked.Id, (await service.SubmitAsync(lesson, "customer", "customer@example.test", default)).Id);
         await context.Database.GetCollection<ScheduleBlock>("schedule_blocks").InsertOneAsync(new()
         {
@@ -83,6 +86,63 @@ public sealed class AllocationTests(MongoDbFixture fixture) : IClassFixture<Mong
         var writeConflict = await Assert.ThrowsAsync<ReservationValidationException>(() =>
             service.SubmitAsync(lesson, "customer", "customer@example.test", default, demoAllowed: true));
         Assert.Equal(BookingRules.WholeShopUnavailable, writeConflict.Message);
+    }
+
+    [Theory]
+    [InlineData("ChristmasWholeShop", 40000, 8)]
+    [InlineData("ChristmasRegularBays", 25000, 6)]
+    [InlineData("ChristmasVipBays", 14000, 2)]
+    public async Task SaturdayRentalHoldsIncludedBaysUntilDepositOrExpiry(string entryId, int total, int bayCount)
+    {
+        var (store, context) = await Setup();
+        await new Migration_008_ServiceCatalog().UpAsync(context.Database, default);
+        await new Migration_028_SeasonalRentals().UpAsync(context.Database, default);
+        var catalogStore = new HoleInHub.Data.Services.ServiceCatalogPersistence(context);
+        var catalog = new HoleInHub.Business.Services.ServiceCatalog(catalogStore);
+        var date = new DateOnly(2026, 11, 21);
+        var draft = (await catalog.GetAsync(entryId, default))!;
+        await catalog.SetStateAsync(entryId, draft.Revision, Guid.NewGuid().ToString("N"), "activate", "admin", default, date, date);
+        var clock = new AllocationClock();
+        var service = new ReservationService(store, new OutboxPersistence(context), Options.Create(new ReservationPolicy
+        {
+            Approved = true,
+            DurationsApproved = true,
+            ReviewStart = TimeSpan.FromHours(10),
+            ReviewEnd = TimeSpan.FromHours(22),
+            ReviewDays = [6],
+            StaffEmails = ["staff@example.test"],
+            DemoPaymentsEnabled = true
+        }), clock, serviceCatalog: catalogStore);
+        var request = new SubmitReservationRequest
+        {
+            Service = "WholeShop",
+            ServiceEntryId = entryId,
+            Date = date,
+            StartTime = new(12, 0),
+            DurationMinutes = 480,
+            FirstName = "Casey",
+            LastName = "Player",
+            Phone = "09123456789",
+            Attendees = 4,
+            PrivacyAccepted = true,
+            ResourceIds = (await service.GetRentalBaysAsync(entryId, default)).Select(b => b.Id).ToArray(),
+            IdempotencyKey = Guid.NewGuid().ToString("N")
+        };
+        await service.ValidateSubmissionAsync(request, true, default);
+        var hold = await service.SubmitAsync(request, "customer", "customer@example.test", default, demoAllowed: true);
+        Assert.Equal("Pending", hold.Status);
+        Assert.Equal(total, hold.RentalTotal);
+        Assert.Equal(total / 2, hold.DepositAmount);
+        Assert.Equal(bayCount, hold.ResourceIds.Length);
+        Assert.Equal(clock.GetUtcNow().UtcDateTime.AddHours(1), hold.ReviewDeadlineUtc);
+        await Assert.ThrowsAsync<ReservationValidationException>(() => service.ValidateSubmissionAsync(request, true, default));
+        await store.ExpireAsync(hold.ReviewDeadlineUtc, [], default);
+        Assert.Equal("Expired", (await store.ByIdAsync(hold.Id, default))!.Status);
+        request.IdempotencyKey = Guid.NewGuid().ToString("N");
+        await service.ValidateSubmissionAsync(request, true, default);
+        var retry = await service.SubmitAsync(request, "customer", "customer@example.test", default, demoAllowed: true);
+        Assert.True(await service.DemoPaymentAsync(retry.Id, "success", true, default));
+        Assert.Equal("Confirmed", (await store.ByIdAsync(retry.Id, default))!.Status);
     }
 
     private sealed class AllocationClock : TimeProvider
@@ -218,6 +278,55 @@ public sealed class AllocationTests(MongoDbFixture fixture) : IClassFixture<Mong
     {
         var (store, _) = await Setup(); await store.InsertAsync(Request(["bay-1"]), default); await Assert.ThrowsAsync<AllocationConflictException>(() => store.InsertAsync(Request(["bay-1", "bay-2"]), default)); await store.InsertAsync(Request(["bay-2"]), default);
     }
+    [Fact]
+    public async Task EightHourCalendarAndQuoteRespectFinalHalfHourAndAdjacentBookings()
+    {
+        var (store, context) = await Setup();
+        await new Migration_008_ServiceCatalog().UpAsync(context.Database, default);
+        await new Migration_028_SeasonalRentals().UpAsync(context.Database, default);
+        var date = new DateOnly(2026, 11, 17);
+        var entryId = HoleInHub.Data.Services.SeasonalRental.Whole;
+        var entries = context.Database.GetCollection<HoleInHub.Data.Services.ServiceCatalogRecord>("service_catalog");
+        await entries.UpdateOneAsync(x => x.Id == entryId, Builders<HoleInHub.Data.Services.ServiceCatalogRecord>.Update
+            .Set(x => x.SeasonStart, date).Set(x => x.SeasonEnd, date).Set(x => x.Active, true));
+        var service = new ReservationService(store, new OutboxPersistence(context),
+            Options.Create(new ReservationPolicy { DemoPaymentsEnabled = true }), new AllocationClock(),
+            serviceCatalog: new HoleInHub.Data.Services.ServiceCatalogPersistence(context));
+        var booking = Request(["bay-1"]);
+        booking.StartUtc = new DateTime(2026, 11, 17, 10, 0, 0, DateTimeKind.Utc);
+        booking.EndUtc = booking.StartUtc.AddMinutes(30);
+        await store.InsertAsync(booking, default);
+        var days = await service.GetWholeShopCalendarAsync(2026, 11, entryId, default);
+        var windows = days.Single(day => day.Date == date).Sessions;
+        Assert.True(windows.Single(window => window.StartMinute == 600).Available);
+        Assert.False(windows.Single(window => window.StartMinute == 630).Available);
+        Assert.All(days.Where(day => day.Date != date).SelectMany(day => day.Sessions), window => Assert.False(window.Available));
+        await Assert.ThrowsAsync<ReservationValidationException>(() => service.GetQuoteAsync(date, new TimeOnly(10, 30), 480, "WholeShop", entryId, 8, true, default));
+    }
+
+    [Fact]
+    public async Task SeasonalRentalAndFinalHalfHourBookingHaveOneWinner()
+    {
+        var (store, _) = await Setup();
+        var rental = Request([], "WholeShop");
+        rental.ServiceEntryId = HoleInHub.Data.Services.SeasonalRental.Regular;
+        rental.EndUtc = rental.StartUtc.AddHours(8);
+        var individual = Request(["bay-2"]);
+        individual.StartUtc = rental.EndUtc.AddMinutes(-30);
+        individual.EndUtc = rental.EndUtc;
+        async Task<bool> Attempt(ReservationRecord request)
+        {
+            try { await store.InsertAsync(request, default); return true; }
+            catch (AllocationConflictException) { return false; }
+        }
+        var results = await Task.WhenAll(Attempt(rental), Attempt(individual));
+        Assert.Single(results, won => won);
+        var vip = Request([], "WholeShop");
+        vip.ServiceEntryId = HoleInHub.Data.Services.SeasonalRental.Vip;
+        vip.EndUtc = rental.EndUtc;
+        Assert.Equal(new[] { "vip-7", "vip-8" }, (await store.InsertAsync(vip, default)).ResourceIds);
+    }
+
     [Fact]
     public async Task WholeShopBlocksVipAndRegular()
     {

@@ -18,6 +18,31 @@ namespace HoleInHub.Tests.Integration.Migrations;
 public sealed class BusinessIdentifierMigrationTests(MongoDbFixture fixture) : IClassFixture<MongoDbFixture>
 {
     [Fact]
+    public async Task OutboxUpgradeBackfillsLegacyMessagesAndPreservesTheirDeliveryKeys()
+    {
+        var context = fixture.CreateDbContext();
+        var migration = new Migration_024_OutboxIdentifier();
+        var earlier = MongoDbFixture.Migrations.TakeWhile(m => m.MigrationId != migration.MigrationId);
+        await new MongoMigrationRunner(context, new MongoMigrationLeaseManager(context), earlier).RunAsync();
+        var messages = context.Database.GetCollection<BsonDocument>("outbox");
+        var message = new OutboxRecord { Id = "booking:submitted", Recipient = "guest@example.test", DueUtc = DateTime.UtcNow };
+        var legacy = message.ToBsonDocument();
+        legacy.Remove("outbox_id");
+        await messages.InsertOneAsync(legacy);
+
+        await migration.UpAsync(context.Database, default);
+        await migration.UpAsync(context.Database, default);
+        var saved = await messages.Find(new BsonDocument("_id", message.Id)).SingleAsync();
+        Assert.Equal(message.OutboxId, saved["outbox_id"].AsString);
+        var fresh = new OutboxRecord { Id = "booking:confirmed", Recipient = message.Recipient, DueUtc = message.DueUtc };
+        await context.Database.GetCollection<OutboxRecord>("outbox").InsertOneAsync(fresh);
+        Assert.True(await messages.Find(new BsonDocument("outbox_id", fresh.OutboxId)).AnyAsync());
+        var duplicate = await Assert.ThrowsAsync<MongoWriteException>(() => messages.UpdateOneAsync(
+            new BsonDocument("_id", fresh.Id), Builders<BsonDocument>.Update.Set("outbox_id", message.OutboxId)));
+        Assert.Equal(ServerErrorCategory.DuplicateKey, duplicate.WriteError.Category);
+    }
+
+    [Fact]
     public async Task UpgradePreservesLegacyDocumentsAndRequiresMatchingUniqueIdentifiers()
     {
         var context = fixture.CreateDbContext();

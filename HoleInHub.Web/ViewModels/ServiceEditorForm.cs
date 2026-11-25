@@ -45,6 +45,9 @@ public sealed partial class ServiceEditorForm
     [DisplayFormat(ConvertEmptyStringToNull = false), StringLength(160)] public string RateText { get; set; } = "";
     [DisplayFormat(ConvertEmptyStringToNull = false), StringLength(12000)] public string Details { get; set; } = "";
     [Required] public string BookingService { get; set; } = "Regular";
+    public bool JuniorOnly { get; set; }
+    public DateOnly? SeasonStart { get; set; }
+    public DateOnly? SeasonEnd { get; set; }
     public bool? CustomerSelectsBays { get; set; }
     [DisplayFormat(ConvertEmptyStringToNull = false), StringLength(80)] public string BookingTypeName { get; set; } = "";
     [DisplayFormat(ConvertEmptyStringToNull = false), StringLength(80)] public string NewBookingTypeName { get; set; } = "";
@@ -65,20 +68,25 @@ public sealed partial class ServiceEditorForm
     public List<IFormFile> Uploads { get; set; } = [];
     public ServiceEdit Command()
     {
+        if (SeasonalRental.IsPackage(Id) && Active && (SeasonStart is null || SeasonEnd is null || SeasonEnd < SeasonStart))
+        { throw new ArgumentException("Set a valid season before activation."); }
         var pricing = EditPricing ? PricingRulesFromForm() : null;
         if (RateAmount is null || RateAmount is <= 0 or > 1000000 || RateUnit != "Peso")
         {
             throw new ArgumentException("Enter a PHP rate above zero, up to ₱1,000,000.");
         }
         var original = ParseRate(RateText);
-        var rate = pricing is not null ? PricingRules.Summary(BookingService, pricing)
+        var rate = SeasonalRental.IsPackage(Id) ? $"₱{RateAmount:N0}–₱{PremiumRentalRate:N0} / eight hours" : pricing is not null ? PricingRules.Summary(BookingService, pricing)
             : !Create && original == RateAmount && !RateText.Contains('%')
                 ? RateText : ServiceCatalog.FormatDeposit(RateUnit, RateAmount.Value).Replace(" deposit", "");
         var typeName = BookingTypeName == "__new" ? NewBookingTypeName.Trim() : BookingTypeName;
         if (BookingTypeName == "__new" && string.IsNullOrWhiteSpace(typeName)) { throw new ArgumentException("Enter the new booking type name."); }
         return new(Id, Revision, CommandId, Create, Title, Summary, rate, string.IsNullOrWhiteSpace(Details) ? Summary : Details,
-        BookingService, "Book", "Request a booking", Order, Active, DepositType, DepositValue, Images)
+        BookingService, "Book", "Request a booking", Order, Active, SeasonalRental.IsPackage(Id) ? "Percentage" : DepositType, SeasonalRental.IsPackage(Id) ? 50 : DepositValue, Images)
         {
+            JuniorOnly = JuniorOnly,
+            SeasonStart = SeasonStart,
+            SeasonEnd = SeasonEnd,
             MaxPax = MaxPax,
             CustomerSelectsBays = BookingService == "WholeShop" ? null : CustomerSelectsBays,
             Pricing = pricing,
@@ -91,6 +99,9 @@ public sealed partial class ServiceEditorForm
     private static decimal? ParseRate(string text) => decimal.TryParse(System.Text.RegularExpressions.Regex.Match(text, @"[0-9][0-9,]*(?:\.[0-9]+)?").Value.Replace(",", ""), System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var value) ? value : null;
     public static ServiceEditorForm From(ServiceEdit item) => new ServiceEditorForm
     {
+        JuniorOnly = item.JuniorOnly,
+        SeasonStart = item.SeasonStart,
+        SeasonEnd = item.SeasonEnd,
         MaxPax = item.MaxPax,
         CustomerSelectsBays = item.CustomerSelectsBays,
         Availability = (item.AvailabilityRules ?? ServiceAvailabilityRules.Defaults(item.BookingService)).Select(ServiceAvailabilityRow.From).ToList(),

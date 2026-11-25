@@ -1,11 +1,14 @@
 @using HoleInHub.Business.Services
+@inject Microsoft.Extensions.Options.IOptions<HoleInHub.Business.Reservations.ReservationPolicy> ClassPolicy
 @model ServiceEditorForm
 @{ Layout = "_StaffLayout"; ViewData["Title"] = Model.Create ? "Add service" : "Edit service";
+    var seasonalRental = HoleInHub.Data.Services.SeasonalRental.IsPackage(Model.Id);
     if (string.IsNullOrWhiteSpace(Model.BookingTypeName)) { Model.BookingTypeName = ReservationLabels.Service(Model.BookingService); }
 }
 <section class="staff-workspace service-admin service-editor">
     <a class="flow-back" asp-action="Index"><partial name="_BackArrow" /> Back to services</a>
     <header class="staff-workspace-heading service-admin-heading">
+        @if (Model.BookingService == "PhilippineCoach") { <a class="button button-secondary" data-nav-layout="coaches" asp-controller="Coaches" asp-action="Index">Manage coaches</a> }
         <h1>@ViewData["Title"]</h1>
         <div class="service-admin-actions"><label class="service-switch"><span>Active</span><input form="service-editor-form" id="Active" name="Active" type="checkbox" value="true" checked="@Model.Active" role="switch" /><span class="service-switch-track" aria-hidden="true"></span></label><a class="button button-secondary" asp-action="Index">Cancel</a><button class="button" type="submit" form="service-editor-form" data-action-icon="save">Save service<partial name="_ButtonActionIcon" model='"save"' /></button></div>
     </header>
@@ -34,18 +37,18 @@
         <aside class="service-editor-options">
             <section class="service-editor-section">
 
-                <div class="service-editor-field"><div class="service-field-heading"><label asp-for="BookingService">Service type</label><partial name="_StaffHelp" model='("service-rules-help", "About service types", "Controls how this service reserves capacity and applies review deadlines. Whole-shop rentals require all active bays. Availability and pricing are configured below.")' /></div><select asp-for="BookingService">@foreach (var type in ServiceCatalog.BookingTypes) { <option value="@type">@ReservationLabels.Service(type)</option> }</select></div>
+                <div class="service-editor-field"><div class="service-field-heading"><label asp-for="BookingService">Service type</label><partial name="_StaffHelp" model='("service-rules-help", "About service types", "Controls how this service reserves capacity and applies review deadlines. Whole-shop rentals require all active bays. Availability and pricing are configured below.")' /></div><select asp-for="BookingService">@foreach (var type in ServiceCatalog.BookingTypes) { <option value="@type" disabled="@(seasonalRental && type != "WholeShop")">@ReservationLabels.Service(type)</option> }</select></div>
                 <div class="service-bay-toggle" data-bay-selection>
                     <div class="service-bay-label"><label for="CustomerSelectsBays">Customer bay selection</label><partial name="_StaffHelp" model='("service-bay-help", "How bay selection works", "On: customers choose their bays. Off: one available bay that fits the group is assigned automatically. Whole-shop rentals always reserve all active bays.")' /></div>
                     <label class="service-switch"><input id="CustomerSelectsBays" name="CustomerSelectsBays" type="checkbox" value="true" role="switch" checked="@(Model.CustomerSelectsBays ?? Model.BookingService != "KpgaGroup")" data-explicit="@(Model.CustomerSelectsBays.HasValue ? "true" : "false")" aria-describedby="service-bay-help" /><span class="service-switch-track" aria-hidden="true"></span></label>
                     <input type="hidden" name="CustomerSelectsBays" value="false" />
                 </div>
-                <p class="service-field-help" data-whole-shop-bays hidden>Whole-shop bookings reserve all active bays.</p>
+                <p class="service-field-help" data-whole-shop-bays hidden>@(seasonalRental ? "This package reserves every included bay together for eight hours." : "Whole-shop bookings reserve all active bays.")</p>
             </section>
             <section class="service-editor-section">
-                <label class="service-switch"><span>Deposit</span><input type="checkbox" role="switch" data-deposit-enabled checked="@(Model.DepositType != "None")" /><span class="service-switch-track" aria-hidden="true"></span></label>
+                <label class="service-switch"><span>Deposit</span><input type="checkbox" role="switch" disabled="@seasonalRental" data-deposit-enabled checked="@(Model.DepositType != "None")" /><span class="service-switch-track" aria-hidden="true"></span></label>
                 <input asp-for="DepositType" type="hidden" data-deposit-type />
-                <div class="service-money-field" data-deposit-value><div class="auth-input-wrap"><input asp-for="DepositValue" type="number" min="0.01" max="1000000" step="0.01" placeholder=" " /><label asp-for="DepositValue">Deposit amount</label><span asp-validation-for="DepositValue" data-error-for="DepositValue"></span></div><select data-deposit-unit aria-label="Deposit unit"><option value="Peso" selected="@(Model.DepositType != "Percentage")">₱</option><option value="Percentage" selected="@(Model.DepositType == "Percentage")">%</option></select></div>
+                <div class="service-money-field" data-deposit-value><div class="auth-input-wrap"><input asp-for="DepositValue" readonly="@seasonalRental" type="number" min="0.01" max="1000000" step="0.01" placeholder=" " /><label asp-for="DepositValue">Deposit amount</label><span asp-validation-for="DepositValue" data-error-for="DepositValue"></span></div><select disabled="@seasonalRental" data-deposit-unit aria-label="Deposit unit"><option value="Peso" selected="@(Model.DepositType != "Percentage")">₱</option><option value="Percentage" selected="@(Model.DepositType == "Percentage")">%</option></select></div>
             </section>
         </aside>
             </section>
@@ -59,6 +62,21 @@
             <partial name="_ServiceAvailability" model="Model" />
             <partial name="_ServicePricing" model="Model" />
         </div>
+        @if (ClassPolicy.Value.SharedClassesEnabled)
+        {
+            <section class="service-editor-section lesson-setup" data-lesson-setup hidden="@(Model.BookingService != "KpgaGroup")">
+                <label><input asp-for="JuniorOnly" /> Junior program · learners aged 17 and under</label>
+                <div><h2>Lesson dates and enrollment</h2><p class="service-editor-note">Published class dates determine availability. Set seats for each class and the registration deadline for each package.</p></div>
+                @if (!Model.Create && Model.Active && Model.BookingService == "KpgaGroup")
+                {
+                    <a class="button button-secondary" asp-controller="GroupClasses" asp-action="Packages" asp-route-offering="@Model.Id">Manage lesson schedule</a>
+                }
+                else
+                {
+                <button class="button button-secondary" name="scheduleLessons" value="true" type="submit">@(Model.Active ? "Save and schedule dates" : "Activate and schedule dates")</button>
+                }
+            </section>
+        }
     </form>
     <dialog class="service-image-viewer" data-image-viewer aria-label="Service images"><button type="button" class="service-viewer-close" data-viewer-close aria-label="Close images"><partial name="_StaffIcon" model='"close"' /></button><div data-viewer-content></div></dialog>
 </section>

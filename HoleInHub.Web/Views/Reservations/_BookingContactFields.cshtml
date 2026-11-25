@@ -1,0 +1,23 @@
+@model HoleInHub.Business.Reservations.SubmitReservationRequest
+@foreach (var field in new[] { ("FirstName", "First name", "given-name"), ("LastName", "Last name", "family-name") })
+			{
+				<div class="field"><div class="auth-input-wrap"><input id="@field.Item1" name="@field.Item1" value="@(field.Item1 == "FirstName" ? Model.FirstName : Model.LastName)" autocomplete="@field.Item3" maxlength="100" pattern="@HoleInHub.Business.Accounts.ContactRules.NamePattern" type="text" aria-describedby="@(field.Item1)-feedback" placeholder=" " required /><label for="@field.Item1">@T(field.Item2) *</label></div><span class="field-error" id="@(field.Item1)-feedback" aria-live="polite"></span></div>
+			}
+            <div class="field">
+                <div class="profile-phone-field">
+                    <partial name="_PhoneCountry" />
+                    <div class="auth-input-wrap">
+                        <input asp-for="Phone" data-profile-contact type="tel" inputmode="tel" autocomplete="tel-national" maxlength="24" placeholder=" " required data-phone-pattern="@HoleInHub.Business.Accounts.ContactRules.PhonePattern" aria-describedby="Phone-feedback" />
+                        <label asp-for="Phone">@T("Mobile number") *</label>
+                    </div>
+                </div>
+                <span asp-validation-for="Phone" class="field-error" id="Phone-feedback" aria-live="polite"></span>
+            </div>
+			@if (User.Identity?.IsAuthenticated == true && ViewData["StaffFamilyEntry"] is not true)
+			{
+				<div class="field"><div class="auth-input-wrap"><input asp-for="Email" type="email" autocomplete="email" readonly placeholder=" " aria-readonly="true" aria-describedby="Email-feedback" /><label asp-for="Email">@T("Email address")</label></div><span asp-validation-for="Email" id="Email-feedback" class="field-error" aria-live="polite"></span></div>
+			}
+			else
+			{
+				<div class="field"><div class="auth-input-wrap"><input asp-for="Email" type="email" autocomplete="email" maxlength="254" placeholder=" " aria-describedby="Email-feedback" required /><label asp-for="Email">@T("Email address *")</label></div><span class="field-error" id="Email-feedback" aria-live="polite"></span></div>
+			}

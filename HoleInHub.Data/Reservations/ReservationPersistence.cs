@@ -20,7 +20,14 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
         Builders<ReservationRecord>.Filter.Where(x => x.Status == "Confirmed" || x.Status == "Checked-In" ||
             x.Status == "Pending" && (x.Service == "WholeShop" || x.ReviewDeadlineUtc > now));
 
-    public async Task<string[]> OccupiedAsync(DateTime start, DateTime end, CancellationToken ct, DateTime? now = null) { var records = await Reservations.Find(HoldingCapacity(now ?? DateTime.UtcNow) & Builders<ReservationRecord>.Filter.Where(x => x.StartUtc < end && x.EndUtc > start)).ToListAsync(ct); var blocks = await context.Database.GetCollection<ScheduleBlock>("schedule_blocks").Find(x => x.ReleasedUtc == null && x.StartUtc < end && x.EndUtc > start).ToListAsync(ct); var catalog = await CatalogAsync(ct); return records.SelectMany(x => x.ResourceIds).Concat(blocks.SelectMany(x => x.ResourceIds.Length == 0 ? catalog.Select(r => r.Id) : x.ResourceIds)).Distinct().ToArray(); }
+    public async Task<string[]> OccupiedAsync(DateTime start, DateTime end, CancellationToken ct, DateTime? now = null)
+    {
+        var records = await Reservations.Find(HoldingCapacity(now ?? DateTime.UtcNow) & Builders<ReservationRecord>.Filter.Where(x => x.ClassSessionId == null && x.StartUtc < end && x.EndUtc > start)).Project(x => x.ResourceIds).ToListAsync(ct);
+        var blocks = await Blocks.Find(x => x.ReleasedUtc == null && x.StartUtc < end && x.EndUtc > start).ToListAsync(ct);
+        var classes = await Classes.Find(ClassAllocations(start, end)).Project(x => x.ResourceIds).ToListAsync(ct);
+        var catalog = await CatalogAsync(ct);
+        return records.Concat(classes).SelectMany(ids => ids).Concat(blocks.SelectMany(x => x.ResourceIds.Length == 0 ? catalog.Select(r => r.Id) : x.ResourceIds)).Distinct().ToArray();
+    }
     private async Task GuardAsync(IClientSessionHandle session, ReservationRecord record, CancellationToken ct)
     {
         var guards = context.Database.GetCollection<BsonDocument>("allocation_guards"); var day = TimeZoneInfo.ConvertTimeFromUtc(record.StartUtc, TimeZoneInfo.FindSystemTimeZoneById("Asia/Manila")).ToString("yyyy-MM-dd"); foreach (var id in new[] { "catalog" }.Concat(record.ResourceIds.Order().Select(x => $"{x}:{day}")))
@@ -40,8 +47,9 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
                 item.BookingService == booking.Service && !item.Deleted).FirstOrDefaultAsync(ct)!;
     public async Task<ReservationRecord> InsertAsync(ReservationRecord record, CancellationToken ct, string? encryptedReceipt = null,
         string? customerProfileId = null, Action<ReservationRecord, IReadOnlyList<ResourceRecord>>? validateCapacity = null,
-        Func<ResourceRecord, bool>? automaticBay = null)
+        Func<ResourceRecord, bool>? automaticBay = null, bool requireCoach = false)
     {
+        var requestedCoach = record.CoachId;
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct); timeout.CancelAfter(TimeSpan.FromSeconds(15)); ct = timeout.Token;
         using var session = await context.Client.StartSessionAsync(cancellationToken: ct);
         try
@@ -52,6 +60,8 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
                 else { await GuardCatalogAsync(s, token); }
                 var prior = await Reservations.Find(s, x => x.AccountId == record.AccountId && x.IdempotencyKey == record.IdempotencyKey).FirstOrDefaultAsync(token); if (prior != null)
                 {
+                    if ((record.ClassSessionId != null || prior.ClassSessionId != null) && prior.SubmissionHash != record.SubmissionHash)
+                    { throw new AllocationConflictException("This submission was already received with different details."); }
                     return prior;
                 }
 
@@ -78,6 +88,9 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
                 }
                 if (record.Service == "WholeShop")
                 {
+                    catalog = catalog.Where(bay => HoleInHub.Data.Services.SeasonalRental.Includes(record.ServiceEntryId, bay.Service)).ToList();
+                    if (record.ServiceEntryId == HoleInHub.Data.Services.SeasonalRental.Vip && catalog.Count != 2)
+                    { throw new AllocationConflictException("Both VIP bays are required.", sessionUnavailable: true); }
                     if (record.PolicyVersion >= 2 && !record.ResourceIds.Order().SequenceEqual(catalog.Select(x => x.Id).Order()))
                     {
                         throw new AllocationConflictException("The bay catalog changed. Reload and select the whole-shop session again.", sessionUnavailable: true);
@@ -98,11 +111,14 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
                 var selected = catalog.Where(x => record.ResourceIds.Contains(x.Id)).ToArray();
                 validateCapacity?.Invoke(record, selected);
                 record.ResourceNames = selected.ToDictionary(x => x.Id, x => x.Name);
-                if (await HasAllocationConflictAsync(record, s, token, now))
+                if (record.ClassSessionId is not null) { await ClaimSeatsAsync(s, record, now, token); }
+                else if (await HasAllocationConflictAsync(record, s, token, now))
                 {
                     throw new AllocationConflictException("These bays are no longer available. Please choose another time or bay.", sessionUnavailable: true);
                 }
 
+                if (record.Service == "PhilippineCoach" && (requireCoach || requestedCoach != null))
+                { await ClaimCoachAsync(s, record, requestedCoach, now, token); }
                 if (record.EmailVerificationId != null)
                 {
                     var verified = await context.Database.GetCollection<GuestVerificationRecord>("guest_verifications").UpdateOneAsync(s,
@@ -135,13 +151,16 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
     private async Task<bool> HasAllocationConflictAsync(ReservationRecord record, IClientSessionHandle? session, CancellationToken ct, DateTime now)
     {
         var bookingFilter = Builders<ReservationRecord>.Filter;
-        var overlapping = HoldingCapacity(now) & bookingFilter.Where(x => x.Id != record.Id &&
+        var overlapping = HoldingCapacity(now) & bookingFilter.Where(x => x.ClassSessionId == null && x.Id != record.Id &&
             x.StartUtc < record.EndUtc && x.EndUtc > record.StartUtc) & bookingFilter.AnyIn(x => x.ResourceIds, record.ResourceIds);
         var bookings = session is null ? Reservations.Find(overlapping) : Reservations.Find(session, overlapping);
         if (await bookings.AnyAsync(ct))
         {
             return true;
         }
+        var classFilter = ClassAllocations(record.StartUtc, record.EndUtc) & Builders<ClassSessionRecord>.Filter.AnyIn(x => x.ResourceIds, record.ResourceIds);
+        if (record.ClassSessionId is not null) { classFilter &= Builders<ClassSessionRecord>.Filter.Ne(x => x.ClassSessionId, record.ClassSessionId); }
+        if (await (session is null ? Classes.Find(classFilter) : Classes.Find(session, classFilter)).AnyAsync(ct)) { return true; }
         var blocks = context.Database.GetCollection<ScheduleBlock>("schedule_blocks");
         var blockFilter = Builders<ScheduleBlock>.Filter;
         var blocked = blockFilter.Where(x => x.ReleasedUtc == null && x.StartUtc < record.EndUtc && x.EndUtc > record.StartUtc) &
@@ -152,7 +171,7 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
     {
         var filters = Builders<ReservationRecord>.Filter;
         var eligible = filters.Where(x => x.Status == "Pending" &&
-            (x.Service != "WholeShop" && x.StartUtc <= now ||
+            (x.PackageId != null && x.ReviewDeadlineUtc <= now || x.Service != "WholeShop" && x.StartUtc <= now ||
              x.Service == "WholeShop" && x.PolicyVersion >= 1 && x.ReviewDeadlineUtc <= now));
         var due = await Reservations.Find(eligible).ToListAsync(ct);
         foreach (var record in due)
@@ -171,6 +190,14 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
                         AtUtc = now,
                         Actor = "System"
                     });
+                if (record.ClassSessionId is not null)
+                {
+                    var current = await Reservations.Find(s, eligible & filters.Eq(x => x.Id, record.Id)).FirstOrDefaultAsync(token);
+                    if (current is null) { return false; }
+                    await CancelFamilySeatsAsync(s, current, token);
+                    update = update.Set(x => x.Learners, current.Learners);
+                    if (current.PackageSeats != null) { update = update.Set(x => x.PackageSeats, current.PackageSeats); }
+                }
                 var result = await Reservations.UpdateOneAsync(s, eligible & filters.Eq(x => x.Id, record.Id), update, cancellationToken: token);
                 if (result.ModifiedCount == 0) { return false; }
                 foreach (var recipient in staffEmails.Append(record.Email).Where(email => !string.IsNullOrWhiteSpace(email)).Distinct())

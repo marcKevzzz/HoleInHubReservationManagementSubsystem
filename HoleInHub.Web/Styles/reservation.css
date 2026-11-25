@@ -1988,3 +1988,29 @@ body:has(.reservation-studio) .site-header .header-actions .header-action {
 }
 .reservation-studio #availability-status:empty { display: none; }
 .reservation-studio #coaching-policy-tip[hidden] { display: none; }
+
+.family-booking:has([data-customer-flow="false"]) .booking-layout {grid-template-columns:1fr}
+.family-booking .reservation-title {margin-block:24px}
+.family-booking .reservation-title p {font:inherit;color:var(--color-muted);margin-block-start:10px}
+.family-booking .family-section,.family-booking .family-review {border:0;border-top:1px solid var(--color-line);padding-block:24px;display:grid;gap:16px;min-width:0}
+.family-section legend,.family-review h2 {font-family:var(--font-display);font-size:1.45rem;padding-inline-end:12px}
+.family-booking .family-guardian {border-inline-start:2px solid var(--color-line);padding:0 0 0 16px;min-width:0}
+.family-guardian legend {font:inherit;font-weight:600}
+.family-guardian [data-guardian-fields],.family-guardian {display:grid;gap:12px}
+.family-booking .field {display:grid;gap:6px;min-width:0}
+.family-booking .field :is(input,select) {width:100%;max-width:100%;min-height:44px;padding:8px;border:1px solid var(--color-control-line);background:var(--color-paper)}
+.family-booking .button {justify-self:start}
+.family-booking [hidden] {display:none!important}
+.family-booking :is(button,input,select,a):focus-visible,.family-service:focus-visible {outline:2px solid var(--color-green);outline-offset:3px}
+
+.program-learners { grid-column: 1 / -1; border: 0; padding: 0; min-width: 0 }
+.program-learners [hidden], .program-learners[hidden] { display: none !important }
+.program-learners .family-section, .program-learners .family-guardian { display: grid; grid-template-columns: minmax(0,1fr); gap: 1.25rem; border: 0; border-top: 1px solid var(--color-line); padding: 1rem 0; min-width: 0 }
+.program-learners .family-guardian { margin-block: .5rem; padding-inline-start: 1rem; border-top: 0; border-inline-start: 2px solid var(--color-line) }
+.program-learners [data-guardian-fields] { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem }
+.program-learners [data-guardian-fields] > label { grid-column: 1 / -1 }
+@media (max-width: 600px) { .program-learners [data-guardian-fields] { grid-template-columns: 1fr } }
+.program-learners legend { padding-inline-end: .75rem }
+.program-learners .family-guardian, .program-learners [data-guardian-fields] { grid-column: 1 / -1 }
+.program-session { display: block; border-inline-start: 2px solid var(--color-green); padding: .65rem .85rem }
+.program-date:not(.selected) { text-decoration: underline; text-underline-offset: .25em }

@@ -3,7 +3,7 @@
     if (!section) return;
     const form = section.closest('form');
     const type = form.elements.BookingService;
-    const mode = () => type.value === 'WholeShop' ? 'rental'
+    const mode = () => form.elements.PremiumRentalRate ? 'seasonal' : type.value === 'WholeShop' ? 'rental'
         : ['KpgaPro', 'KpgaGroup'].includes(type.value) ? 'package' : 'hourly';
     const sync = () => {
         for (const group of section.querySelectorAll('[data-price-format]')) {
@@ -11,7 +11,7 @@
             for (const input of group.querySelectorAll('input, select, button')) input.disabled = group.hidden;
         }
         section.querySelector('[data-base-price-label]').textContent = {
-            hourly: 'Base rate per bay/hour (₱)', package: 'Package price (₱)', rental: 'Half-day rate (₱)'
+            seasonal: 'Monday–Thursday rate (₱)', hourly: 'Base rate per bay/hour (₱)', package: 'Package price (₱)', rental: 'Half-day rate (₱)'
         }[mode()];
     };
     function indexRows() {

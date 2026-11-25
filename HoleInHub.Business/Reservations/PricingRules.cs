@@ -100,8 +100,12 @@ public static class PricingRules
             var rate = pricing.RentalOverrides.FirstOrDefault(row => row.Date == date)
                 ?? pricing.RentalOverrides.FirstOrDefault(row => row.Day == date.DayOfWeek);
             var halfDay = durationMinutes == 360;
-            lines.Add(halfDay ? new("Half-day rental", rate?.HalfDayRate ?? pricing.BaseRate)
+            if (durationMinutes == 480) { lines.Add(new("Eight-hour rental", rate?.HalfDayRate ?? pricing.BaseRate)); }
+            else
+            {
+                lines.Add(halfDay ? new("Half-day rental", rate?.HalfDayRate ?? pricing.BaseRate)
                 : new("Whole-day rental", rate?.WholeDayRate ?? pricing.WholeDayRate));
+            }
         }
         else if (IsPackage(service))
         {

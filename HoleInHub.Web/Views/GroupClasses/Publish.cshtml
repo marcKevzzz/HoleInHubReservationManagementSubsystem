@@ -1,0 +1,8 @@
+@model PublishGroupClassForm
+@{ Layout = "_StaffLayout"; ViewData["Title"] = "Publish a group class"; }
+<div class="staff-workspace service-admin service-editor"><a class="flow-back" asp-controller="ServiceManagement" asp-action="Index"><partial name="_BackArrow" /> Back to services</a><header class="staff-workspace-heading service-admin-heading"><h1>Publish a group class</h1></header>
+<section class="service-editor-section service-detail-fields"><form asp-action="Publish" method="post" class="staff-create-form">
+<div asp-validation-summary="All" role="alert" class="staff-error"></div>
+<label asp-for="Offering">Group lesson</label><select asp-for="Offering" required>@foreach(var item in Model.Offerings){<option value="@item.Id">@item.Name</option>}</select>
+<partial name="_ClassDateFields" model="Model" />
+<button class="button" type="submit">Publish class</button><a class="button button-secondary" asp-controller="ServiceManagement" asp-action="Index">Cancel</a></form></section></div>

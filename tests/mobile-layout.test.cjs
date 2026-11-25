@@ -33,7 +33,7 @@ function setup({savedScroll=null,signedIn=false}={}){
     const template={content:{cloneNode(){return {};}}};
     main.querySelector=selector=>selector.includes('template')?template:skeleton;
     const timers=new Map(),windowEvents={},scrolls=[];let timerId=0;
-    document={documentElement:root,querySelector:selector=>({'.staff-rail-toggle':toggle,'.staff-rail':rail,'[data-staff-nav-backdrop]':backdrop,'[data-staff-tooltip]':tooltip,'[data-staff-nav-status]':status})[selector],getElementById:id=>({'main-content':main,'staff-rail-content':drawer})[id]??null,addEventListener(){}};
+    document={documentElement:root,querySelector:selector=>({'.staff-rail-toggle':toggle,'.staff-rail':rail,'[data-staff-nav-backdrop]':backdrop,'[data-staff-tooltip]':tooltip,'[data-staff-nav-status]':status})[selector],getElementById:id=>({'main-content':main,'staff-rail-content':drawer})[id]??null,events:{},addEventListener(name,fn){this.events[name]=fn;}};
     const media={matches:true,events:{},addEventListener(name,fn){this.events[name]=fn;}},reduced={matches:true,addEventListener(){}};
     const writes=[];
     vm.runInNewContext(fs.readFileSync(require.resolve('../HoleInHub.Web/wwwroot/js/staff-sidebar.js'),'utf8'),{document,window:{matchMedia:query=>query.includes('reduced')?reduced:media,addEventListener:(name,fn)=>windowEvents[name]=fn,scrollTo:value=>scrolls.push(value),location:{origin:'http://localhost',href:'http://localhost/staff/dashboard'}},sessionStorage:{getItem:key=>key.endsWith('-scroll')?savedScroll:null,removeItem:key=>writes.push([key,null]),setItem:(...args)=>writes.push(args)},clearTimeout:id=>timers.delete(id),setTimeout:(fn,delay)=>{const id=++timerId;timers.set(id,{fn,delay});return id;},URL,ResizeObserver});
@@ -75,10 +75,10 @@ test('visible viewport tracks the keyboard and browser pan without changing zoom
 
 test('navigation keeps the page still while placing its skeleton in view and restores controls',()=>{
  const ui=setup(),link={href:'http://localhost/staff/settings',dataset:{navLayout:'settings'},getAttribute:()=> 'Settings'};
- ui.rail.events.click({target:{closest:()=>link}});ui.tick(160);
+ ui.document.events.click({target:{closest:()=>link}});ui.tick(160);
  assert.equal(ui.skeleton.hidden,false);assert.equal(ui.content.inert,true);assert.equal(ui.scrolls.length,0);assert.equal(ui.skeleton.style.top,'500px');
  ui.tick(15000);assert.equal(ui.skeleton.hidden,true);assert.equal(ui.content.inert,false);
- ui.rail.events.click({target:{closest:()=>link}});ui.tick(160);ui.windowEvents.pageshow({persisted:true});
+ ui.document.events.click({target:{closest:()=>link}});ui.tick(160);ui.windowEvents.pageshow({persisted:true});
  assert.equal(ui.skeleton.hidden,true);assert.equal(ui.content.inert,false);
 });
 

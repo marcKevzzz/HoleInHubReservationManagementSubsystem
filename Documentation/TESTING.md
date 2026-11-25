@@ -61,7 +61,7 @@ Run the browser journeys from a clean checkout with the local MongoDB replica se
 docker compose -f docker-compose.mongo.yml up -d --wait
 npm --prefix HoleInHub.Web ci
 node HoleInHub.Web/node_modules/playwright/cli.js install chromium
-npm --prefix HoleInHub.Web run test:browser
+npm --prefix HoleInHub.Web run test:browser:all
 ```
 
 The integration test `ReportSummaryChartsCsvAndEveryWorksheetReconcile` checks known totals in the staff report, CSV and all seven workbook tabs. Its fixture covers a reservation spanning midnight across two bays, a day with zero starts, and an empty reporting period.

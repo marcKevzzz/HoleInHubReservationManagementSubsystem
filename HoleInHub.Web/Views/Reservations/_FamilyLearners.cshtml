@@ -1,0 +1,36 @@
+@using HoleInHub.Business.Reservations
+@model ReservationDto
+@inject TimeProvider Clock
+            @if (Model.ClassSessionId is not null)
+            {
+                <section class="booking-detail-section" aria-labelledby="family-learners"><h2 id="family-learners">@T("Learners")</h2>
+                    @if (Model.PackageId != null) { <h3>Package dates · Manila</h3><ul>@foreach(var date in Model.PackageDates){<li>@DashboardMetrics.Local(date).ToString("dddd, d MMM yyyy · h:mm tt")</li>}</ul> }
+                    @foreach (var learner in Model.Learners)
+                    {
+                        var guardian = Model.Guardians.FirstOrDefault(person => person.Id == learner.GuardianId);
+                        <div class="family-learner-detail"><h3>@learner.Name</h3>
+                            <p>@T(learner.AgeCategory is "Minor" or "Under18" ? "Under 18" : "Adult") · @T(learner.State)</p>
+                            @foreach(var seat in Model.PackageSeats.Where(x => x.LearnerId == learner.Id)){
+                                <p>@DashboardMetrics.Local(seat.StartUtc).ToString("ddd, d MMM") · @seat.State</p>
+                                @if(seat.State=="Enrolled" && seat.StartUtc >= Clock.GetUtcNow().UtcDateTime.AddHours(1) && Model.Status is ("Pending" or "Confirmed" or "Checked-In" or "Completed")){
+                                    <form asp-controller="Reservations" asp-action="RequestPackageAbsence" method="post">
+                                    <input type="hidden" name="id" value="@Model.Id" /><input type="hidden" name="token" value="@ViewData["AccessToken"]" />
+                                    <input type="hidden" name="sessionId" value="@seat.SessionId" /><input type="hidden" name="learnerId" value="@learner.Id" />
+                                    <button class="button button-secondary">Request absence for @DashboardMetrics.Local(seat.StartUtc).ToString("d MMM")</button></form>
+                                }
+                            }
+                            @if (guardian is not null) { <p>@T("Parent or guardian"): @guardian.Name · @guardian.Relationship</p> }
+                            @if (Model.PackageId == null && learner.State == "Enrolled" && ReservationService.CanCancelOnline(Model, Clock.GetUtcNow().UtcDateTime))
+                            {
+                                <details><summary>@T("Cancel learner seat")</summary>
+                                    <form asp-controller="Reservations" asp-action="CancelLearner" method="post">
+                                        <input type="hidden" name="id" value="@Model.Id" /><input type="hidden" name="learnerId" value="@learner.Id" /><input type="hidden" name="token" value="@ViewData["AccessToken"]" />
+                                        <p>@T("Cancel the seat for") @learner.Name?</p>
+                                        <button class="button button-secondary" type="submit">@T("Confirm seat cancellation")</button>
+                                    </form>
+                                </details>
+                            }
+                        </div>
+                    }
+                </section>
+            }

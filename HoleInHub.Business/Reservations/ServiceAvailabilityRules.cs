@@ -86,6 +86,13 @@ public sealed partial class ReservationService
 
     public static (DateTime Start, DateTime End) PreviewServiceInterval(ServiceCatalogRecord? entry, DateOnly date, TimeOnly time, int duration, string type)
     {
+        if (SeasonalRental.IsPackage(entry?.Id))
+        {
+            if (duration != 480 || time.Minute % 30 != 0 || entry!.SeasonStart is null || entry.SeasonEnd is null ||
+                date < entry.SeasonStart || date > entry.SeasonEnd || !ServiceAvailabilityRules.Allows(entry.AvailabilityRules ?? [], date, time, duration))
+            { throw new ReservationValidationException("Choose an available eight-hour rental within the season."); }
+            return ReservationRules.Interval(date, time, duration);
+        }
         if (entry?.AvailabilityRules is not { } rules) { return ReservationRules.PreviewInterval(date, time, duration, type); }
         var interval = type == "WholeShop" ? ReservationRules.PreviewInterval(date, time, duration, type)
             : ReservationRules.Interval(date, time, duration);

@@ -21,40 +21,58 @@
 		<div class="booking-visit">
 			<div class="account-date"><time datetime="@Model.StartUtc.ToString("O")"><span>@start.ToString("dd")</span>@start.ToString("MMM yyyy")</time></div>
 			<div>
-				<h2 id="receipt-selection">@ReservationLabels.Service(Model.Service)</h2>
+				<h2 id="receipt-selection">@(Model.RentalTitle ?? ReservationLabels.Service(Model.Service))</h2>
 				<p>@start.ToString("h:mm tt")–@end.ToString("h:mm tt") · Manila time</p>
 			</div>
 		</div>
 		<dl class="booking-facts">
-			<div><dt>Guests</dt><dd>@Model.Attendees</dd></div>
+			<div><dt>@T(Model.ClassSessionId is null ? "Guests" : "Learner seats")</dt><dd>@Model.Attendees</dd></div>
 			@if (pending)
 			{
 				<div><dt>@(wholeShop ? "Deposit deadline" : "Review deadline") · Manila time</dt><dd>@TimeZoneInfo.ConvertTimeFromUtc(Model.ReviewDeadlineUtc, ReservationRules.Manila).ToString("dd MMM yyyy h:mm tt")</dd></div>
 			}
 			@if (Model.RentalTotal is decimal total)
 			{
-				<div><dt>Rental total</dt><dd>₱@total.ToString("N2")</dd></div>
+				<div><dt>@T(Model.ClassSessionId is null ? "Rental total" : "Booking total")</dt><dd>₱@total.ToString("N2")</dd></div>
 			}
 			@if (Model.DepositAmount is decimal deposit)
 			{
 				<div><dt>50% deposit</dt><dd>₱@deposit.ToString("N2")</dd></div>
+                @if (Model.RentalTotal is decimal rentalTotal)
+                { <div><dt>@T("Remaining balance")</dt><dd>₱@((rentalTotal - deposit).ToString("N2"))</dd></div> }
 			}
-			@if (!wholeShop && ReservationLabels.IndicativeRate(Model.Service) is string rate)
+			@if (Model.ClassSessionId is null && !wholeShop && ReservationLabels.IndicativeRate(Model.Service) is string rate)
 			{
 				<div><dt>Indicative rate</dt><dd>@rate</dd></div>
 			}
 		</dl>
+        <partial name="_FamilyLearners" model="Model" />
+        @if (ViewData["SharedClassesEnabled"] is true && Model.PackageId == null && Model.ClassSessionId != null && (Model.Status is "Pending" or "Confirmed" or "Checked-In" or "Completed"))
+        {
+            <section class="booking-detail-section" aria-labelledby="reminder-heading">
+                <h2 id="reminder-heading">@T("Next class reminder")</h2>
+                <p>@T(Model.NextClassReminderQueued ? "Your reminder has been queued for email delivery." : Model.NextClassReminderEnabled
+                    ? "You’ll receive one email when the venue publishes a later class for this program."
+                    : "Get one email for your family when a later class opens. You can decide then whether to book.")</p>
+                @if (!Model.NextClassReminderQueued)
+                {
+                    <form asp-action="ClassReminder" method="post">
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="token" value="@token" />
+                        <button class="button button-secondary" name="enable" value="@(Model.NextClassReminderEnabled ? "false" : "true")">@T(Model.NextClassReminderEnabled ? "Turn off reminder" : "Notify me about the next class")</button>
+                    </form>
+                }
+            </section>
+        }
 		<div class="booking-receipt-next">
 			<div class="booking-receipt-status-copy">
 				<h2 id="receipt-status">Reservation status</h2>
-				<p class="booking-current-status">@Model.Status</p>
+				@if (Model.CoachName != null) { <p>@T("Assigned coach"): @Model.CoachName</p> }
+                <p class="booking-current-status">@Model.Status</p>
 				@if (canDeposit)
 				{
-					<p>Submit the simulated deposit to confirm your reservation. No real money is collected.</p>
-					<form asp-action="Checkout" asp-route-id="@Model.Id" method="post" class="checkout-payment-form">
-						<input type="hidden" name="token" value="@token" />
-						<button class="button" name="outcome" value="success">Simulate deposit · ₱@Model.DepositAmount?.ToString("N2")</button>
-					</form>
+					<p>Complete your deposit to confirm your reservation.</p>
+					<a class="button" asp-action="Checkout" asp-route-id="@Model.Id" asp-route-token="@token">@T("Review deposit")</a>
 				}
 				else if (pending)
 				{
@@ -69,20 +87,24 @@
 							{
 								<text>Check this page for the latest deposit status and deadline.</text>
 							}
-							else if (Model.ReviewStartsUtc is { } begins && begins > DateTime.UtcNow)
+							else if (Model.PackageId != null)
+                            {
+                                <text>Your seats in every lesson are held for one hour while staff review your registration.</text>
+                            }
+                            else if (Model.ReviewStartsUtc is { } begins && begins > DateTime.UtcNow)
 							{
-								<text>Staff review begins @TimeZoneInfo.ConvertTimeFromUtc(begins, ReservationRules.Manila).ToString("ddd, d MMM, h:mm tt") Manila time. Your selected bays are held until the review deadline.</text>
+								<text>Staff review begins @TimeZoneInfo.ConvertTimeFromUtc(begins, ReservationRules.Manila).ToString("ddd, d MMM, h:mm tt") Manila time. @(Model.ClassSessionId is null ? "Your selected bays are held until the review deadline." : "Your learner seats are held until the review deadline.")</text>
 							}
 							else
 							{
-								<text>The review clock pauses outside operating hours and resumes at the next opening. Your selected bays are held until the review deadline.</text>
+								<text>The review clock pauses outside operating hours and resumes at the next opening. @(Model.ClassSessionId is null ? "Your selected bays are held until the review deadline." : "Your learner seats are held until the review deadline.")</text>
 							}
 						</span>
 					</div>
 				}
 				else if (wholeShop && Model.Status == "Confirmed" && Model.PaymentStatus == "DepositReceived")
 				{
-					<p>Simulated deposit recorded. No real money was collected.</p>
+					<p>Deposit verified.</p>
 				}
 			</div>
 			<a class="button receipt-status-link @(canDeposit ? "button-tertiary" : null)" asp-action="Status" asp-route-id="@Model.Id" asp-route-token="@token" asp-route-guest="@(ViewData["GuestAccess"] is true ? "true" : null)">

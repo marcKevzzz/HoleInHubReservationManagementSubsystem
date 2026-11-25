@@ -14,7 +14,8 @@ using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 
 const string uri = "mongodb://localhost:27017/?replicaSet=rs0";
-const string origin = "https://localhost:54893";
+var port = int.Parse(Environment.GetEnvironmentVariable("HIH_BROWSER_PORT") ?? "54893");
+var origin = $"https://localhost:{port}";
 if (!Guid.TryParseExact(Environment.GetEnvironmentVariable("HIH_BROWSER_RUN_ID"), "D", out var runId)) { throw new InvalidOperationException("A browser fixture run ID is required."); }
 var database = "test_browser_" + runId.ToString("N");
 var pin = Environment.GetEnvironmentVariable("HIH_BROWSER_MANAGER_PIN");
@@ -60,6 +61,13 @@ try
     }
     var store = new ReservationPersistence(context);
     var today = DateOnly.FromDateTime(HoleInHub.Business.Reservations.DashboardMetrics.Local(DateTime.UtcNow));
+    if (Environment.GetEnvironmentVariable("HIH_BROWSER_RENTAL") == "1")
+    {
+        var services = context.Database.GetCollection<HoleInHub.Data.Services.ServiceCatalogRecord>("service_catalog");
+        await services.UpdateOneAsync(x => x.Id == HoleInHub.Data.Services.SeasonalRental.Vip,
+            Builders<HoleInHub.Data.Services.ServiceCatalogRecord>.Update.Set(x => x.SeasonStart, today)
+                .Set(x => x.SeasonEnd, today.AddMonths(2)).Set(x => x.Active, true));
+    }
     var sample = new List<(string Customer, string Status, string Service, int Offset)> {
         ("Repeat", "Completed", "Regular", -12), ("Repeat", "Completed", "Regular", -1), ("New", "Cancelled", "VIP", -2) };
     if (Environment.GetEnvironmentVariable("HIH_REPORT_BENCHMARK") == "1")
@@ -119,7 +127,7 @@ async Task Run(string project, string[] arguments)
 {
     var root = Directory.GetParent(web)!.FullName;
     var start = new ProcessStartInfo("dotnet") { WorkingDirectory = web, UseShellExecute = false };
-    foreach (var argument in new[] { "run", "--no-build", "--no-launch-profile", "--project", Path.Combine(root, project), "--" }.Concat(arguments))
+    foreach (var argument in new[] { "run", "-c", new DirectoryInfo(AppContext.BaseDirectory).Parent!.Name, "--no-build", "--no-launch-profile", "--project", Path.Combine(root, project), "--" }.Concat(arguments))
     {
         start.ArgumentList.Add(argument);
     }
@@ -147,12 +155,19 @@ async Task Run(string project, string[] arguments)
         ["Smtp__Port"] = "1025",
         ["Smtp__UseStartTls"] = "false",
         ["Smtp__From"] = "fixture@browser.example.test",
+        ["ReservationPolicy__SharedClassesEnabled"] = "true",
+        ["ReservationPolicy__PhilippineCoachSchedulesEnabled"] = "true",
         ["ReservationPolicy__Approved"] = "true",
         ["ReservationPolicy__DurationsApproved"] = "true",
         ["ReservationPolicy__ReviewStart"] = "00:00:00",
         ["ReservationPolicy__ReviewEnd"] = "1.00:00:00",
         ["ReservationPolicy__StaffEmails__0"] = "staff@browser.example.test"
     };
+    if (Environment.GetEnvironmentVariable("HIH_BROWSER_RENTAL") == "1")
+    {
+        settings["DOTNET_ENVIRONMENT"] = settings["ASPNETCORE_ENVIRONMENT"] = "Development";
+        settings["ReservationPolicy__DemoPaymentsEnabled"] = "true";
+    }
     for (var day = 0; day < 7; day++) { settings["ReservationPolicy__ReviewDays__" + day] = day.ToString(); }
     foreach (var (name, value) in settings) { start.Environment[name] = value; }
     using var child = Process.Start(start)!;

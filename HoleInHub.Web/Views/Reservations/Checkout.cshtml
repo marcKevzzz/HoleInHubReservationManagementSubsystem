@@ -18,19 +18,16 @@
             <div class="booking-visit">
                 <div class="account-date"><time datetime="@Model.StartUtc.ToString("O")"><span>@start.ToString("dd")</span>@start.ToString("MMM yyyy")</time></div>
                 <div>
-                    <h2 id="checkout-experience">@T("Whole-shop rental")</h2>
+                    <h2 id="checkout-experience">@(Model.RentalTitle ?? T("Whole-shop rental"))</h2>
                     <p>@start.ToString("h:mm tt")–@end.ToString("h:mm tt")</p>
                     <p class="booking-muted">Exclusive use · @Model.Attendees guests</p>
                 </div>
             </div>
             <dl class="checkout-pricing">
                 <div class="checkout-total"><dt>@T("Rental total")</dt><dd>₱@Model.RentalTotal?.ToString("N2")</dd></div>
-                <div class="checkout-deposit"><dt>@T("50% deposit")</dt><dd>₱@Model.DepositAmount?.ToString("N2")</dd></div>
+                <div class="checkout-deposit"><dt>@T("Deposit due")</dt><dd>₱@Model.DepositAmount?.ToString("N2")</dd></div>
+                <div><dt>@T("Remaining balance")</dt><dd>₱@((Model.RentalTotal - Model.DepositAmount)?.ToString("N2"))</dd></div>
             </dl>
-            <div class="checkout-disclosure">
-                <p>@T("Simulated checkout. No real money is collected.")</p>
-                <p class="booking-muted">@T("This is not a payment receipt.")</p>
-            </div>
         </section>
         <aside class="checkout-action-panel" aria-labelledby="checkout-action-title">
             <dl class="checkout-deadline">
@@ -40,14 +37,10 @@
             @if(Model.Status=="Pending"&&Model.ReviewDeadlineUtc>DateTime.UtcNow)
             {
                 <h2 id="checkout-action-title">@T("Confirm your reservation")</h2>
-                <p class="checkout-action-copy">@T("A successful simulated deposit confirms your whole-shop reservation automatically.")</p>
+                <p class="checkout-action-copy">@T("Your reservation is confirmed when the deposit is verified.")</p>
                 <form method="post" class="checkout-payment-form">
                     <input type="hidden" name="token" value="@token" />
-                    <button class="button" name="outcome" value="success">@T("Simulate successful deposit")</button>
-                    <details class="checkout-options"><summary>@T("Other demo outcomes")</summary><div class="checkout-alternate-actions">
-                        <button class="button button-secondary" name="outcome" value="failure" data-no-icon>@T("Simulate failure")</button>
-                        <button class="button button-tertiary" name="outcome" value="cancel" data-no-icon>@T("Cancel checkout")</button>
-                    </div></details>
+                    <button class="button">@T("Pay") ₱@Model.DepositAmount?.ToString("N2")</button>
                 </form>
                 <p class="checkout-retry-note">@T("Failed or cancelled checkout can be retried before the deadline.")</p>
             }

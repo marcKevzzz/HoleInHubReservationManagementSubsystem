@@ -1,0 +1,87 @@
+@using HoleInHub.Business.Reservations
+@model PackageEditor
+@{
+    var classForm = (PublishGroupClassForm)ViewData["ClassDate"]!;
+    var composing = Model.Packages.Length == 0 || Context.Request.Query.ContainsKey("newPackage") || (ViewData.ModelState.ErrorCount > 0 && ViewData["ClassDateError"] is not true);
+    Layout = "_StaffLayout"; ViewData["Title"] = "Package dates"; }
+<section class="staff-workspace service-admin service-editor">
+<a class="flow-back" asp-controller="ServiceManagement" asp-action="Edit" asp-route-id="@Model.Offering"><partial name="_BackArrow" /> Back to service</a>
+<header class="staff-workspace-heading review-heading">
+    <div><h1>@Model.Title</h1><p>@Model.Count lessons · ₱@Model.Price.ToString("N2") per learner</p></div>
+    <div class="service-admin-actions review-header-actions">
+        @if (composing) {
+        <button class="button" id="publish-package" form="lesson-package-form" disabled="@(Model.Sessions.Length < Model.Count)">Publish package</button>
+        } else { <a class="button button-secondary" asp-action="Packages" asp-route-offering="@Model.Offering" asp-route-newPackage="true">New package</a> }
+    </div>
+</header>
+@foreach (var pack in Model.Packages)
+{
+    <section class="service-editor-section published-lessons">
+        <header class="lesson-package-heading"><div><h2>Published package</h2><small>@pack.Id</small></div>
+            <form asp-action="ClosePackage" asp-route-offering="@Model.Offering" asp-route-id="@pack.Id" method="post">
+                <button class="button button-secondary">Close enrollment</button>
+            </form>
+        </header>
+        <p>@pack.Sessions.Length lessons · ₱@pack.Price.ToString("N2") per learner
+        @if (pack.Deadline.HasValue) { <span> · Registration closes @DashboardMetrics.Local(pack.Deadline.Value.AddMinutes(-1)).ToString("d MMM yyyy, h:mm tt") Manila</span> }</p>
+        <ul class="lesson-schedule-list">
+        @foreach (var id in pack.Sessions)
+        {
+            var session = Model.Sessions.FirstOrDefault(x => x.Id == id);
+            <li>@if (session != null) {
+                <span>@DashboardMetrics.Local(session.StartUtc).ToString("ddd, d MMM yyyy") · @DashboardMetrics.Local(session.StartUtc).ToString("h:mm tt")–@DashboardMetrics.Local(session.EndUtc).ToString("h:mm tt")</span>
+                <a asp-action="Packages" asp-route-offering="@Model.Offering" asp-route-editing="@id" asp-fragment="class-date-form">Edit class</a>
+            } else { <span>@id</span> }</li>
+        }
+        </ul>
+    </section>
+}
+<div class="review-columns lesson-columns">
+<form id="class-date-form" asp-action="Publish" method="post" class="service-editor-section staff-create-form">
+<h2>@(classForm.Editing == null ? "Add a class" : "Edit class")</h2>
+<input type="hidden" name="Editing" value="@classForm.Editing" /><input type="hidden" name="Revision" value="@classForm.Revision" />
+@if (classForm.Editing != null && Model.Sessions.Any(x => x.Id == classForm.Editing && x.HeldSeats > 0))
+{ ViewData["ScheduleLocked"] = true; <p class="service-editor-note">This class has reserved seats. You can change its capacity.</p> }
+<input type="hidden" name="schedule" value="true" /><input type="hidden" name="Offering" value="@Model.Offering" />
+@if (ViewData["ClassDateError"] is true) { <div asp-validation-summary="All" role="alert" class="staff-error"></div> }
+@if (classForm.Editing == null && Model.Count > 1)
+{ <p>Choose the first class date. Weekly classes repeat on the same weekday with the time, bays and learner limit below.</p> }
+<partial name="_ClassDateFields" model='(PublishGroupClassForm)ViewData["ClassDate"]!' />
+<div class="lesson-form-actions">
+@if (classForm.Editing == null && Model.Count > 1)
+{
+    <button class="button" name="WeeklyPackage" value="true">Add @Model.Count weekly classes</button>
+}
+<button class="button button-secondary">@(classForm.Editing == null ? "Add class date" : "Save class changes")</button>
+@if (classForm.Editing != null) { <a asp-action="Packages" asp-route-offering="@Model.Offering">Cancel</a> }</div>
+</form>
+<div>
+@if (composing) {
+<form id="lesson-package-form" method="post" asp-action="Packages" asp-route-offering="@Model.Offering" class="service-editor-section staff-create-form">
+<h2>Publish lesson package</h2>
+@if (ViewData["ClassDateError"] is not true) { <div asp-validation-summary="All" class="staff-error" role="alert"></div> }
+<div class="auth-input-wrap"><input type="date" name="deadline" id="registration-deadline" required value="@ViewData.ModelState.GetValueOrDefault("deadline")?.AttemptedValue" /><label for="registration-deadline">Registration deadline (11:59 PM Manila)</label></div>
+<p class="service-editor-note">Choose a deadline before the first lesson.</p>
+<fieldset data-package-count="@Model.Count"><legend>Select @Model.Count class dates</legend>
+@if (Model.Sessions.Length == 0) { <p class="service-editor-note">Add a class date to begin assembling the package.</p> }
+@foreach(var session in Model.Sessions){
+<label class="lesson-date-option"><input type="checkbox" name="sessions" data-remaining="@(session.Capacity-session.HeldSeats)" value="@session.Id" checked="@(Context.Request.HasFormContentType && Context.Request.Form["sessions"].Contains(session.Id))" />
+@DashboardMetrics.Local(session.StartUtc).ToString("ddd, d MMM yyyy · h:mm tt")–@DashboardMetrics.Local(session.EndUtc).ToString("h:mm tt") · @(session.Capacity-session.HeldSeats) seats left</label>
+}
+</fieldset>
+<p data-package-preview role="status" aria-live="polite"></p>
+</form>
+}
+@if (Model.Sessions.Any(x => !Model.Packages.Any(p => p.Sessions.Contains(x.Id)))) {
+<section class="service-editor-section"><h2>Unpublished classes</h2><ul class="lesson-schedule-list">
+@foreach (var session in Model.Sessions.Where(x => !Model.Packages.Any(p => p.Sessions.Contains(x.Id)))) {
+<li><span>@DashboardMetrics.Local(session.StartUtc).ToString("ddd, d MMM yyyy · h:mm tt")</span><a asp-action="Packages" asp-route-offering="@Model.Offering" asp-route-editing="@session.Id" asp-fragment="class-date-form">Edit class</a></li>
+}
+</ul></section>
+}
+</div>
+</div>
+
+</section>
+
+@section Scripts { <script src="~/js/package-dates.js" asp-append-version="true"></script> }

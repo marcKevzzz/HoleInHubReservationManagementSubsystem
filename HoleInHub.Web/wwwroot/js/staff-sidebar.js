@@ -276,10 +276,10 @@
         for (const [element, inert] of loadingContent) element.inert = inert;
         loadingContent = [];
     }
-    rail.addEventListener('click', event => {
-        const link = event.target.closest('a[href]');
+    document.addEventListener('click', event => {
+        const link = event.target.closest('a[href][data-nav-layout]');
         if (!link || event.defaultPrevented || event.button || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || link.target || link.download) return;
-        if (mobile.matches) render(true);
+        if (mobile.matches && rail.contains(link)) render(true);
         const url = new URL(link.href);
         if (url.origin !== window.location.origin || !/^\/(staff|manager|admin)(\/|$)/.test(url.pathname)
             || url.href === window.location.href || url.hash) return;

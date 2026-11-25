@@ -6,6 +6,10 @@ public sealed class DashboardRow
 {
     public string Id { get; set; } = "";
     public string Reference { get; set; } = "";
+    public int? LearnerSeats { get; set; }
+    public string? ClassSessionId { get; set; }
+    public ClassSessionRecord[]? PackageDates { get; set; }
+    public PackageSeat[]? PackageSeats { get; set; }
     public string Guest { get; set; } = "";
     public string Service { get; set; } = "";
     public string Status { get; set; } = "";
@@ -23,6 +27,10 @@ public sealed partial class ReservationPersistence
     {
         Id = x.Id,
         Reference = x.Reference,
+        ClassSessionId = x.ClassSessionId,
+        LearnerSeats = x.ClassSessionId == null ? null : (int?)x.Learners!.Count(l => l.State == "Enrolled"),
+        PackageDates = x.PackageDates,
+        PackageSeats = x.PackageSeats,
         Guest = (x.FirstName ?? "") + " " + (x.LastName ?? ""),
         Service = x.Service,
         Status = x.Status,
@@ -35,7 +43,7 @@ public sealed partial class ReservationPersistence
     };
 
     private static FilterDefinition<ReservationRecord> Overlaps(DateTime start, DateTime end) =>
-        Builders<ReservationRecord>.Filter.Where(x => x.StartUtc < end && x.EndUtc > start);
+        Builders<ReservationRecord>.Filter.Where(x => (x.StartUtc < end && x.EndUtc > start) || (x.PackageDates != null && x.PackageDates.Any(d => d.StartUtc < end && d.EndUtc > start)));
 
     // Explicit bound: callers reject an oversized range rather than reporting truncated totals.
     public Task<List<DashboardRow>> ReadDashboardRowsAsync(DateTime start, DateTime end, CancellationToken ct) =>

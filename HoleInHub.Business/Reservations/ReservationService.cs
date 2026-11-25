@@ -15,6 +15,11 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         if (settings is not null) { runtimePolicy = await settings.PolicyAsync(ct); }
     }
     public async Task<IReadOnlyList<ResourceDto>> GetCatalogAsync(CancellationToken ct) => (await persistence.CatalogAsync(ct)).Select(MapResource).ToArray();
+    public async Task<ResourceDto[]> GetRentalBaysAsync(string? entryId, CancellationToken ct)
+    {
+        var bays = (await GetCatalogAsync(ct)).Where(bay => SeasonalRental.Includes(entryId, bay.Service)).ToArray();
+        return entryId == SeasonalRental.Vip && bays.Length != 2 ? [] : bays;
+    }
     public async Task<IReadOnlyList<AvailabilityDto>> GetAvailabilityAsync(DateOnly date, TimeOnly startTime, int durationMinutes,
         string service, CancellationToken ct, string? serviceEntryId = null)
     {
@@ -23,12 +28,20 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         BookingRules.ValidateLeadTime(service, start, now);
         await ProcessPendingAsync(ct);
         var occupied = await persistence.OccupiedAsync(start, end, ct, now.UtcDateTime);
-        return (await GetCatalogAsync(ct)).Where(bay => service == "WholeShop" || bay.Service == BookingRules.ResourceService(service))
-            .Select(bay => new AvailabilityDto(bay, !occupied.Contains(bay.Id))).ToArray();
+        var coachAvailable = !RequiresCoach(service) || (await persistence.AvailableCoachesAsync(start, end, now.UtcDateTime, ct)).Count > 0;
+        var bays = service == "WholeShop" ? await GetRentalBaysAsync(serviceEntryId, ct)
+            : (await GetCatalogAsync(ct)).Where(bay => bay.Service == BookingRules.ResourceService(service));
+        return bays
+            .Select(bay => new AvailabilityDto(bay, coachAvailable && !occupied.Contains(bay.Id))).ToArray();
     }
-    public async Task<ReservationDto> SubmitAsync(SubmitReservationRequest request, string accountId, string verifiedEmail, CancellationToken ct, string? guestSessionHash = null, string? accessTokenHash = null, bool demoAllowed = false, string? encryptedReceipt = null)
+    public Task<ReservationDto> SubmitAsync(SubmitReservationRequest request, string accountId, string verifiedEmail, CancellationToken ct, string? guestSessionHash = null, string? accessTokenHash = null, bool demoAllowed = false, string? encryptedReceipt = null) =>
+        SubmitCoreAsync(request, accountId, verifiedEmail, ct, guestSessionHash, accessTokenHash, demoAllowed, encryptedReceipt, null, null, "Customer");
+
+    private async Task<ReservationDto> SubmitCoreAsync(SubmitReservationRequest request, string accountId, string verifiedEmail, CancellationToken ct,
+        string? guestSessionHash, string? accessTokenHash, bool demoAllowed, string? encryptedReceipt, string? staffSource, string? customerProfileId, string actor)
     {
-        if (string.IsNullOrWhiteSpace(accountId) || !System.Net.Mail.MailAddress.TryCreate(verifiedEmail, out var address) || address.Address != verifiedEmail)
+        if (string.IsNullOrWhiteSpace(accountId) || (staffSource is null || verifiedEmail.Length > 0) &&
+            (!System.Net.Mail.MailAddress.TryCreate(verifiedEmail, out var address) || address.Address != verifiedEmail))
         {
             throw new ReservationValidationException("Verify your email before submitting a request.");
         }
@@ -36,15 +49,31 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         await LoadOperationalPolicyAsync(ct);
         ValidateDetails(request, demoAllowed);
         var hash = Fingerprint(request, verifiedEmail);
+        if (staffSource is not null) { hash = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(new { hash, staffSource, customerProfileId }))); }
         var prior = await persistence.ByKeyAsync(accountId, request.IdempotencyKey, ct); if (prior != null) { if (prior.SubmissionHash != hash) { throw new ReservationValidationException("This submission key was already used for another request. Reload the form."); } return Map(prior); }
         var entry = await ResolveBookingServiceAsync(request.Service, request.ServiceEntryId, ct);
-        var automaticBay = BookingRules.AssignsSingleBay(request.Service, entry?.CustomerSelectsBays);
-        ValidateBaySelection(request, automaticBay);
+        if (request.Service == "KpgaGroup" &&
+            request.ClassSessionId?.StartsWith("PKG-", StringComparison.Ordinal) != true)
+        { throw new ReservationValidationException("Choose a published lesson package to register.", nameof(request.ClassSessionId)); }
+        var package = request.ClassSessionId?.StartsWith("PKG-", StringComparison.Ordinal) == true
+            ? (await persistence.PackagesAsync(request.ServiceEntryId ?? request.Service, ct)).SingleOrDefault(x => x.PackageId == request.ClassSessionId)
+                ?? throw new ReservationValidationException("This package has closed. Choose another schedule.")
+            : null;
+        ClassSessionRecord? session = null;
+        if (package != null)
+        {
+            if (!SharedClassesEnabled) { throw new ReservationValidationException("Package enrollment is closed."); }
+            session = await persistence.ClassAsync(package.ClassSessionIds[0], ct) ?? throw new ReservationValidationException("Choose an available package.");
+        }
+        else if (request.ClassSessionId != null) { session = await AvailableFamilyClassAsync(request, ct); }
+        var learnerPrice = package?.PricePerLearner ?? session?.PricePerLearner;
+        var automaticBay = session is null && BookingRules.AssignsSingleBay(request.Service, entry?.CustomerSelectsBays);
+        if (session is null) { ValidateBaySelection(request, automaticBay); }
         ValidateServiceCapacity(entry, request.Attendees);
         var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime;
         effectivePolicy.ValidateCoverage(new DateTimeOffset(now), BookingRules.ReviewMinutes(request.Service));
-        var (start, end) = PreviewServiceInterval(entry, request.Date, request.StartTime, request.DurationMinutes, request.Service);
-        var quote = ValidateQuote(entry, request, automaticBay ? 1 : request.ResourceIds.Length);
+        var (start, end) = session is null ? PreviewServiceInterval(entry, request.Date, request.StartTime, request.DurationMinutes, request.Service) : (session.StartUtc, session.EndUtc);
+        var quote = session is null ? ValidateQuote(entry, request, automaticBay ? 1 : request.ResourceIds.Length) : null;
         BookingRules.ValidateWindow(request.Service, start, new DateTimeOffset(now));
         if (start <= now)
         {
@@ -52,22 +81,27 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         }
 
         await ProcessPendingAsync(ct);
-        var reviewDeadline = GetReviewDeadline(request.Service, start, new DateTimeOffset(now));
-        var reviewStart = request.Service == "WholeShop" ? (DateTime?)null : ReviewClock.AddMinutes(new DateTimeOffset(now), 0, effectivePolicy);
+        var reviewDeadline = package != null ? now.AddHours(1) : GetReviewDeadline(request.Service, start, new DateTimeOffset(now));
+        var reviewStart = package != null ? now : request.Service == "WholeShop" ? (DateTime?)null : ReviewClock.AddMinutes(new DateTimeOffset(now), 0, effectivePolicy);
         var alertMinutes = request.Service == "Regular" ? new[] { 15, 25 } : new[] { 30, 50 };
         var record = new ReservationRecord
         {
+            ClassSessionId = session?.ClassSessionId,
+            PackageId = package?.PackageId,
+            PricePerLearner = learnerPrice,
+            BookingSource = staffSource,
             PolicyVersion = request.Participants.Length == 0 ? 2 : 1,
             EmailVerificationId = guestSessionHash,
             AccessTokenHash = accessTokenHash,
             Participants = request.Participants.Select(x => new ParticipantRecord { ResourceId = x.ResourceId, Players = x.Players, NonPlayers = x.NonPlayers }).ToArray(),
-            RentalTotal = quote.Total,
-            DepositAmount = quote.DepositAmount > 0 ? quote.DepositAmount : null,
+            RentalTotal = quote?.Total ?? learnerPrice * request.Attendees,
+            DepositAmount = quote?.DepositAmount > 0 ? quote.DepositAmount : null,
             PaymentStatus = request.Service == "WholeShop" ? "AwaitingDeposit" : "NotRequired",
             AccountId = accountId,
             Email = verifiedEmail,
             ReservationId = $"HIH-{Guid.NewGuid().ToString("N")[..10].ToUpperInvariant()}",
             Service = request.Service,
+            RentalTitle = SeasonalRental.IsPackage(entry?.Id) ? entry!.Title : null,
             ServiceEntryId = entry?.Id ?? request.ServiceEntryId,
             ServiceRevision = entry?.Revision,
             StartUtc = start,
@@ -75,26 +109,31 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
             CreatedUtc = now,
             ReviewDeadlineUtc = reviewDeadline,
             ReviewStartsUtc = reviewStart,
-            ReviewAlertsUtc = reviewStart.HasValue ? alertMinutes.Select(minutes => ReviewClock.AddMinutes(new DateTimeOffset(now), minutes, effectivePolicy)).ToArray() : null,
-            ResourceIds = automaticBay ? [] : request.ResourceIds,
+            ReviewAlertsUtc = reviewStart.HasValue ? alertMinutes.Select(minutes => package != null ? now.AddMinutes(minutes) : ReviewClock.AddMinutes(new DateTimeOffset(now), minutes, effectivePolicy)).ToArray() : null,
+            ResourceIds = session?.ResourceIds ?? (automaticBay ? [] : request.ResourceIds),
             FirstName = request.FirstName.Trim(),
             LastName = request.LastName.Trim(),
             Phone = HoleInHub.Business.Accounts.ContactRules.PhoneDigits(request.Phone),
             Attendees = request.Attendees,
+            ContactAge = request.ContactAge,
+            ContactAddress = request.ContactAddress?.Trim(),
+            NonPlayerGuests = request.NonPlayerGuests,
             Notes = request.Notes?.Trim() ?? "",
             PrivacyAccepted = request.PrivacyAccepted,
             IdempotencyKey = request.IdempotencyKey,
             SubmissionHash = hash,
-            History = [new HistoryRecord { EventType = "SubmissionCreated", ReservationStatus = "Pending", Status = "Pending", AtUtc = now, Actor = "Customer" }]
+            History = [new HistoryRecord { EventType = "SubmissionCreated", ReservationStatus = "Pending", Status = "Pending", AtUtc = now, Actor = actor }]
         };
+        if (session is not null) { (record.Learners, record.Guardians) = BuildFamilyRoster(request, entry?.JuniorOnly == true); }
         try
         {
-            var saved = await persistence.InsertAsync(record, ct, encryptedReceipt, validateCapacity: ValidateStoredCapacity,
-                automaticBay: automaticBay ? bay => bay.Service == BookingRules.ResourceService(request.Service)
+            var saved = await persistence.InsertAsync(record, ct, encryptedReceipt, customerProfileId, validateCapacity: ValidateStoredCapacity,
+                requireCoach: RequiresCoach(request.Service), automaticBay: automaticBay ? bay => bay.Service == BookingRules.ResourceService(request.Service)
                     && MapResource(bay).MaxTotalGuests >= request.Attendees : null);
             if (saved.SubmissionHash != hash) { throw new ReservationValidationException("This submission key was already used for another request."); }
             return Map(saved);
         }
+        catch (HoleInHub.Data.Customers.CustomerProfileConflictException error) { throw new ReservationValidationException(error.Message); }
         catch (AllocationConflictException e) when (e.SessionUnavailable && request.Service == "WholeShop")
         { throw new ReservationValidationException(BookingRules.WholeShopUnavailable, nameof(request.StartTime)); }
         catch (AllocationConflictException e) when (e.SessionUnavailable && automaticBay)
@@ -131,6 +170,15 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         {
             throw new ReservationValidationException("Whole-shop online checkout is not enabled. Please contact the venue.");
         }
+        if (request.ClassSessionId is not null)
+        {
+            if (request.Service != "KpgaGroup" || string.IsNullOrWhiteSpace(request.ClassSessionId) || request.ClassSessionId.Length > 100
+                || request.ResourceIds is not { Length: 0 } || request.Participants is not { Length: 0 } || request.Learners is not { Length: >= 1 and <= 8 })
+            { throw new ReservationValidationException("Choose a published KPGA Group class and enter its learners."); }
+            request.Attendees = request.Learners.Length;
+        }
+        else if (request.Learners is not null || request.Guardians is not null)
+        { throw new ReservationValidationException("Choose a published class before adding learners."); }
 
         if (!HoleInHub.Business.Accounts.ContactRules.IsName(request.FirstName) || !HoleInHub.Business.Accounts.ContactRules.IsName(request.LastName))
         {
@@ -140,6 +188,8 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         {
             throw new ReservationValidationException(HoleInHub.Business.Accounts.ContactRules.PhoneError);
         }
+        if (request.ContactAge is < 0 or > 120) { throw new ReservationValidationException("Enter an age between 0 and 120.", nameof(request.ContactAge)); }
+        if (request.ContactAddress?.Length > 250) { throw new ReservationValidationException("Use up to 250 characters for your address.", nameof(request.ContactAddress)); }
         if (!request.PrivacyAccepted || request.Notes?.Length > 1000 || request.ResourceIds == null || request.ResourceIds.Length > 8 || request.ResourceIds.Distinct().Count() != request.ResourceIds.Length || request.ResourceIds.Any(string.IsNullOrWhiteSpace) || request.Participants == null || string.IsNullOrWhiteSpace(request.IdempotencyKey) || request.IdempotencyKey.Length > 100)
         {
             throw new ReservationValidationException("Complete your contact details, consent, and bay selection.");
@@ -168,6 +218,17 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         var now = (clock ?? TimeProvider.System).GetUtcNow();
         effectivePolicy.ValidateCoverage(now, BookingRules.ReviewMinutes(request.Service));
         var entry = await ResolveBookingServiceAsync(request.Service, request.ServiceEntryId, ct);
+        if (request.ClassSessionId is not null)
+        {
+            BuildFamilyRoster(request, entry?.JuniorOnly == true);
+            var session = await AvailableFamilyClassAsync(request, ct);
+            ValidateServiceCapacity(entry, request.Attendees);
+            BookingRules.ValidateWindow(request.Service, session.StartUtc, now);
+            if (!request.ClassSessionId.StartsWith("PKG-", StringComparison.Ordinal)) { GetReviewDeadline(request.Service, session.StartUtc, now); }
+            return;
+        }
+        if (request.Service == "KpgaGroup")
+        { throw new ReservationValidationException("Choose a published lesson package to register."); }
         var automaticBay = BookingRules.AssignsSingleBay(request.Service, entry?.CustomerSelectsBays);
         ValidateBaySelection(request, automaticBay);
         ValidateServiceCapacity(entry, request.Attendees);
@@ -178,7 +239,7 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         if (request.Service == "WholeShop" && (available.Count == 0 || available.Any(bay => !bay.Available)))
         { throw new ReservationValidationException(BookingRules.WholeShopUnavailable, nameof(request.StartTime)); }
         if (available.All(bay => !bay.Available))
-        { throw new ReservationValidationException(BookingRules.NoBaysAvailable, nameof(request.StartTime)); }
+        { throw new ReservationValidationException(RequiresCoach(request.Service) ? CoachUnavailable : BookingRules.NoBaysAvailable, nameof(request.StartTime)); }
         if (automaticBay)
         {
             var assigned = available.FirstOrDefault(bay => bay.Available && bay.Resource.MaxTotalGuests >= request.Attendees);
@@ -307,7 +368,7 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
             await LoadOperationalPolicyAsync(ct);
             var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime;
             return await persistence.TransitionAsync(id, action, actor, now, effectivePolicy.StaffEmails, ct, reason?.Trim() ?? "", expectedRevision, rebookUrl,
-                confirmParticipants: (record, selected) => ConfirmParticipants(record, selected, participants, now));
+                requireCoach: PhilippineCoachSchedulesEnabled, confirmParticipants: (record, selected) => ConfirmParticipants(record, selected, participants, now));
         }
         catch (AllocationConflictException error) { throw new ReservationValidationException(error.Message); }
     }
@@ -326,6 +387,16 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
     { AttendanceBefore = MapAttendance(h.AttendanceBefore), AttendanceAfter = MapAttendance(h.AttendanceAfter) }).ToArray(), x.Notes)
     {
         PolicyVersion = x.PolicyVersion,
+        ClassSessionId = x.ClassSessionId,
+        PricePerLearner = x.PricePerLearner,
+        Learners = x.Learners?.Select(l => new FamilyLearnerDto(l.Id, l.Name, l.AgeCategory == "Minor" ? "Under18" : "Adult", l.GuardianId, l.State, l.Attendance)).ToArray() ?? [],
+        Guardians = x.Guardians?.Select(g => new FamilyGuardianDto(g.Id, g.Name, g.Relationship)).ToArray() ?? [],
+        PackageSeats = x.PackageSeats?.Select(s => new PackageSeatView(s.SessionId, x.PackageDates!.First(d => d.ClassSessionId == s.SessionId).StartUtc, s.LearnerId, s.State, s.Attendance)).ToArray() ?? [],
+        PackageId = x.PackageId,
+        PackageDates = x.PackageDates?.Select(d => d.StartUtc).ToArray() ?? [],
+        NextClassReminderEnabled = x.NextClassReminderBase != null,
+        NextClassReminderQueued = x.NextClassReminderQueued,
+        RentalTitle = x.RentalTitle,
         ServiceEntryId = x.ServiceEntryId,
         Revision = x.Revision,
         CheckedInUtc = x.CheckedInUtc,
@@ -341,6 +412,10 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         BookingSource = x.BookingSource,
         RentalTotal = x.RentalTotal,
         DepositAmount = x.DepositAmount,
+        CoachId = x.CoachId,
+        ContactAge = x.ContactAge,
+        ContactAddress = x.ContactAddress,
+        CoachName = x.CoachName,
         CoachConfirmed = x.CoachConfirmed,
         CancellationRequested = x.CancellationRequested
     };

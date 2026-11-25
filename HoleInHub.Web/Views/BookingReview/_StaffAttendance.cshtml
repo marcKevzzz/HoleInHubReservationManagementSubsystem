@@ -15,6 +15,15 @@
         CommandId = Guid.NewGuid().ToString("N")
     };
 }
+@if (booking.ClassSessionId is string classId)
+{
+    <section class="review-section class-attendance-summary" aria-labelledby="attendance-heading">
+        <h2 id="attendance-heading">Class attendance</h2>
+        @if (ViewData["AttendanceClass"] is StaffClassSession lesson) { <p><strong>@lesson.HeldSeats of @lesson.Capacity</strong> seats reserved</p> }
+        <a class="button button-secondary" asp-controller="GroupClasses" asp-action="Roster" asp-route-id="@classId" asp-route-bookingId="@booking.Id">View registered learners</a>
+    </section>
+    return;
+}
 <section class="review-section review-attendance" aria-labelledby="attendance-heading">
     <div class="attendance-heading"><div class="attendance-title"><h2 id="attendance-heading">Attendance</h2>
     @if (Model.Context.NeedsFollowUp)
@@ -28,7 +37,7 @@
     <div asp-validation-summary="All" class="staff-error" role="alert"></div>
     @if (Model.Context.CheckoutCompletedUtc is DateTime completed)
     {
-        <p class="attendance-note">Checkout completed @StaffReviewQueue.Local(completed).ToString("d MMM yyyy, h:mm tt") Manila time · POS bill @Model.Context.SettlementBill</p>
+        <p class="attendance-note">Checkout completed @StaffReviewQueue.Local(completed).ToString("d MMM yyyy, h:mm tt") Manila time ï¿½ POS bill @Model.Context.SettlementBill</p>
     }
     @if (booking.Status == AttendanceRules.AwaitingSettlement)
     {

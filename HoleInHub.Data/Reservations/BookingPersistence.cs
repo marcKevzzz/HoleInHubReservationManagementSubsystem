@@ -185,7 +185,7 @@ public sealed partial class ReservationPersistence
 
     public async Task<bool> TransitionAsync(string id, string action, string actor, DateTime now, string[] staffEmails, CancellationToken ct,
         string reason = "", long? expectedRevision = null, string? rebookUrl = null,
-        Func<ReservationRecord, IReadOnlyList<ResourceRecord>, ParticipantRecord[]>? confirmParticipants = null)
+        Func<ReservationRecord, IReadOnlyList<ResourceRecord>, ParticipantRecord[]>? confirmParticipants = null, bool requireCoach = false)
     {
         using var session = await context.Client.StartSessionAsync(cancellationToken: ct);
         return await session.WithTransactionAsync(async (s, token) =>
@@ -200,7 +200,7 @@ public sealed partial class ReservationPersistence
             if (expectedRevision.HasValue && record.Revision != expectedRevision.Value) { return false; }
             // The guard makes expiry, payment, approval and cancellation compete on the same allocation.
             var update = Builders<ReservationRecord>.Update;
-            var pending = record.Status == "Pending" && (record.Service == "WholeShop"
+            var pending = record.Status == "Pending" && (record.Service == "WholeShop" || record.PackageId != null
                 ? record.ReviewDeadlineUtc > now : record.StartUtc > now);
             var selfService = action == "request-cancellation" && record.Service != "WholeShop";
             UpdateDefinition<ReservationRecord> change;
@@ -212,10 +212,15 @@ public sealed partial class ReservationPersistence
                     {
                         throw new AllocationConflictException("The bay is no longer available for this session. Check the schedule before approving.");
                     }
+                    if (record.Service == "PhilippineCoach" && (requireCoach || record.CoachId != null))
+                    {
+                        if (record.CoachId == null) { throw new AllocationConflictException("Assign a coach before approving this lesson."); }
+                        await ClaimCoachAsync(s, record, record.CoachId, now, token);
+                    }
                     record.Status = "Confirmed";
                     history = "Confirmed";
                     change = update.Set(x => x.Status, record.Status);
-                    if (confirmParticipants is not null && record.Participants.Length == 0)
+                    if (record.PackageId == null && confirmParticipants is not null && record.Participants.Length == 0)
                     {
                         var bays = await Resources.Find(s, Builders<ResourceRecord>.Filter.Eq(x => x.Active, true) &
                             Builders<ResourceRecord>.Filter.In(x => x.Id, record.ResourceIds)).ToListAsync(token);
@@ -232,6 +237,7 @@ public sealed partial class ReservationPersistence
                 case "reject" when pending:
                     record.Status = "Rejected"; history = "Rejected"; change = update.Set(x => x.Status, record.Status).Set(x => x.CancellationRequested, false); break;
                 case "coach" when pending && record.Service is "PhilippineCoach" or "KpgaPro" or "KpgaGroup":
+                    if (requireCoach && record.Service == "PhilippineCoach" && record.CoachId == null) { return false; }
                     if (record.CoachConfirmed)
                     {
                         return true;
@@ -261,6 +267,12 @@ public sealed partial class ReservationPersistence
                     history = "Cancellation declined"; change = update.Set(x => x.CancellationRequested, false); break;
                 default: return false;
             }
+            if (record.ClassSessionId != null && record.Status is "Rejected" or "Cancelled")
+            {
+                await CancelFamilySeatsAsync(s, record, token);
+                change = change.Set(x => x.Learners, record.Learners);
+                if (record.PackageSeats != null) { change = change.Set(x => x.PackageSeats, record.PackageSeats); }
+            }
             var eventType = action switch
             {
                 "approve" => "ReservationConfirmed",
@@ -276,6 +288,26 @@ public sealed partial class ReservationPersistence
             var message = action == "reschedule"
                 ? $"The original slot for your booking (Reservation ID: {record.Reference}) is no longer available. Choose another time: {rebookUrl}"
                 : selfService ? $"You cancelled your booking (Reservation ID: {record.Reference}). Any remaining bay hold has been released." : null;
+            if (action == "approve" && record.PackageDates is { Length: > 0 } lessons && !string.IsNullOrWhiteSpace(record.Email))
+            {
+                message = $"Your lesson registration {record.Reference} is confirmed. Your seats are guaranteed for these classes (Manila time): " +
+                    string.Join(", ", lessons.Select(d => d.StartUtc.AddHours(8).ToString("ddd, dd MMM yyyy h:mm tt"))) + ".";
+                foreach (var lesson in lessons.Where(d => d.StartUtc > now))
+                {
+                    var due = lesson.StartUtc.AddHours(-24);
+                    await context.Database.GetCollection<OutboxRecord>("outbox").InsertOneAsync(s, new OutboxRecord
+                    {
+                        Id = $"{id}:lesson:{lesson.ClassSessionId}",
+                        ProgramLessonId = lesson.ClassSessionId,
+                        ReservationId = id,
+                        Recipient = record.Email,
+                        DueUtc = due < now ? now : due,
+                        ExpiresUtc = lesson.StartUtc,
+                        Subject = "Your upcoming KPGA lesson",
+                        Body = $"Your confirmed lesson is on {lesson.StartUtc.AddHours(8):ddd, dd MMM yyyy} at {lesson.StartUtc.AddHours(8):h:mm tt} Manila time. Your seats are reserved under {record.Reference}."
+                    }, cancellationToken: token);
+                }
+            }
             await NotifyAsync(s, record, $"action:{record.History.Count}:{action}", history, token, message);
             if (action == "request-cancellation")
             {

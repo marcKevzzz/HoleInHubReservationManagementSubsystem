@@ -82,6 +82,7 @@ public sealed class ReservationsController(ReservationService reservations, Gues
         var (type, entryId) = BookingChoice(service);
         var model = new SubmitReservationRequest
         {
+            ClassSessionId = type == "KpgaGroup" ? Request.Query["classSessionId"].FirstOrDefault() : null,
             Date = date ?? DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, ReservationRules.Manila).DateTime.AddDays(1)),
             StartTime = startTime ?? new TimeOnly(11, 0),
             DurationMinutes = durationMinutes ?? 60,
@@ -159,8 +160,23 @@ public sealed class ReservationsController(ReservationService reservations, Gues
     }
     private async Task PrepareAsync(SubmitReservationRequest request, CancellationToken ct)
     {
+        ViewData["SharedClassesEnabled"] = reservations.SharedClassesEnabled;
+        if (reservations.SharedClassesEnabled && request.Service == "KpgaGroup")
+        {
+            ViewData["ClassSessions"] = await reservations.FamilyClassesAsync(request.ServiceEntryId, 1, ct);
+        }
         ViewData["Resources"] = await reservations.GetCatalogAsync(ct);
-        ViewData["BookingServices"] = await catalog.GetActiveAsync(ct);
+        var services = await catalog.GetActiveAsync(ct);
+        ViewData["BookingServices"] = services;
+        if (reservations.SharedClassesEnabled)
+        {
+            var programs = new Dictionary<string, FamilyClassOption[]>();
+            foreach (var offering in services.Where(x => x.BookingService == "KpgaGroup"))
+            {
+                programs[offering.Id] = (await reservations.FamilyClassesAsync(offering.Id, 1, ct, showClosedPrograms: true)).ToArray();
+            }
+            ViewData["Programs"] = programs;
+        }
         GuestSession();
         ViewData["NowUtc"] = clock.GetUtcNow().ToString("O");
         ViewData["DemoPayments"] = DemoAllowed;
@@ -172,11 +188,29 @@ public sealed class ReservationsController(ReservationService reservations, Gues
         var (type, entryId) = BookingChoice(request.Service);
         request.Service = type;
         request.ServiceEntryId = entryId;
+        if (reservations.SharedClassesEnabled && type == "KpgaGroup")
+        {
+            var form = await Request.ReadFormAsync(ct);
+            if (!int.TryParse(form["learnerCount"], out var count) || count is < 1 or > 8)
+            {
+                return BadRequest();
+            }
+
+            ViewData["LearnerCount"] = count;
+            if (form["intent"] == "familyForm" || form["ReviewedClassSessionId"] != request.ClassSessionId
+                || form["ReviewedLearnerCount"] != count.ToString() || request.Learners?.Length != count)
+            {
+                ModelState.Clear();
+                await PrepareAsync(request, ct);
+                return View(request);
+            }
+        }
+
         if (!ContactRules.IsName(request.FirstName)) { ModelState.AddModelError(nameof(request.FirstName), ContactRules.NameError); }
         if (!ContactRules.IsName(request.LastName)) { ModelState.AddModelError(nameof(request.LastName), ContactRules.NameError); }
         if (!ContactRules.IsPhone(request.Phone)) { ModelState.AddModelError(nameof(request.Phone), ContactRules.PhoneError); }
         if (User.Identity?.IsAuthenticated == true) { request.Email = User.FindFirstValue(ClaimTypes.Email); ModelState.Remove(nameof(request.Email)); }
-        if (request.Service == "WholeShop") { request.ResourceIds = (await reservations.GetCatalogAsync(ct)).Select(x => x.Id).ToArray(); }
+        if (request.Service == "WholeShop") { request.ResourceIds = (await reservations.GetRentalBaysAsync(entryId, ct)).Select(x => x.Id).ToArray(); }
         // The public form collects one total; never fabricate a player/non-player split.
         request.Participants = [];
         var session = GuestSession();
@@ -281,9 +315,19 @@ public sealed class ReservationsController(ReservationService reservations, Gues
         }
         var statusPath = account ? "/Reservations" : $"/Reservations/Status?token={access}";
         var localStart = request.Date.ToDateTime(request.StartTime);
+        var sessionDetails = $"Session: {localStart:dd MMM yyyy h:mm tt} (Asia/Manila)";
+        if (request.ClassSessionId != null)
+        {
+            var lesson = (await reservations.FamilyClassesAsync(request.ServiceEntryId, 1, ct)).FirstOrDefault(x => x.ClassSessionId == request.ClassSessionId);
+            if (lesson != null)
+            {
+                DateTime[] dates = lesson.Dates.Length > 0 ? lesson.Dates : [lesson.StartUtc];
+                sessionDetails = "Lessons (Asia/Manila): " + string.Join(", ", dates.Select(x => DashboardMetrics.Local(x).ToString("dd MMM yyyy h:mm tt")));
+            }
+        }
         var receipt = "protected:" + protection.CreateProtector("BookingEmail").Protect(
-            $"Hi {request.FirstName.Trim()},\n\nYour reservation request has been received.\nReservation status: Pending\nExperience: {ReservationLabels.Service(request.Service)}\nSession: {localStart:dd MMM yyyy h:mm tt} (Asia/Manila)\nNumber of guests: {request.Attendees}\n\n" +
-            (request.Service == "WholeShop" ? "Complete the 50% deposit before the deadline shown in your booking. No real money is collected.\n\n" : "Your request is awaiting staff approval. Review runs during operating hours and resumes at the next opening. Your selected bays are held while Pending. Check your booking for the review deadline. This email does not confirm your reservation.\n\n") +
+            $"Hi {request.FirstName.Trim()},\n\nYour reservation request has been received.\nReservation status: Pending\nExperience: {ReservationLabels.Service(request.Service)}\n{sessionDetails}\nNumber of guests: {request.Attendees}\n\n" +
+            (request.Service == "WholeShop" ? "Complete the 50% deposit before the deadline shown in your booking.\n\n" : "Your request is awaiting staff approval. Review runs during operating hours and resumes at the next opening. Your selected bays are held while Pending. Check your booking for the review deadline. This email does not confirm your reservation.\n\n") +
             $"View your reservation ID, details and updates: {publicBase.TrimEnd('/')}{statusPath}");
         var result = await reservations.SubmitAsync(request, owner, verifiedEmail, ct,
             account ? null : GuestBookingService.Hash(session), account ? null : GuestBookingService.Hash(access), DemoAllowed, receipt);
@@ -295,8 +339,30 @@ public sealed class ReservationsController(ReservationService reservations, Gues
         var booking = await AccessibleAsync(id, token, ct);
         ViewData["AccessToken"] = token;
         ViewData["DemoPayments"] = DemoAllowed;
+        ViewData["SharedClassesEnabled"] = reservations.SharedClassesEnabled;
         return booking == null ? NotFound() : View(booking);
     }
+    [AllowAnonymous, HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ClassReminder(string id, string? token, bool enable, CancellationToken ct)
+    {
+        var booking = await AccessibleAsync(id, token, ct);
+        if (booking?.ClassSessionId == null || !reservations.SharedClassesEnabled) { return NotFound(); }
+        var origin = emailOptions.Value.PublicBaseUrl.TrimEnd('/');
+        if (enable && (!Uri.TryCreate(origin, UriKind.Absolute, out var uri) ||
+            (uri.Scheme != "https" && !(environment.IsDevelopment() && uri.Scheme == "http"))))
+        { return Problem("Reminder email links are unavailable."); }
+        await reservations.SetClassReminderAsync(id, enable ? origin : null, ct);
+        return RedirectToAction(nameof(Confirmation), new { id, token });
+    }
+
+    [AllowAnonymous, HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> RequestPackageAbsence(string id, string? token, string sessionId, string learnerId, CancellationToken ct)
+    {
+        if (await AccessibleAsync(id, token, ct) == null) { return NotFound(); }
+        if (!await reservations.UpdatePackageSeatAsync(id, sessionId, learnerId, "Request", ct)) { return BadRequest("This seat is no longer eligible."); }
+        return RedirectToAction(nameof(Confirmation), new { id, token });
+    }
+
     private async Task<ReservationDto?> AccessibleAsync(string? id, string? token, CancellationToken ct)
     {
         Response.Headers.CacheControl = "no-store";
@@ -340,7 +406,8 @@ public sealed class ReservationsController(ReservationService reservations, Gues
         return booking is null ? MissingAccess(id, token) : booking.Service != "WholeShop" ? NotFound() : View(booking);
     }
     [AllowAnonymous, HttpPost, ValidateAntiForgeryToken, EnableRateLimiting("accounts")]
-    public async Task<IActionResult> Checkout(string id, string? token, string outcome, CancellationToken ct)
+    [ActionName("Checkout")]
+    public async Task<IActionResult> SubmitDeposit(string id, string? token, CancellationToken ct)
     {
         if (!DemoAllowed)
         {
@@ -355,17 +422,35 @@ public sealed class ReservationsController(ReservationService reservations, Gues
 
         try
         {
+            var outcome = policy.Value.TestDepositOutcome;
             var accepted = await reservations.DemoPaymentAsync(id, outcome, DemoAllowed, ct);
             if (accepted && outcome == "success")
             {
                 return RedirectToAction(nameof(Confirmation), new { id, token });
             }
 
-            TempData["BookingMessage"] = accepted ? "Demo payment outcome recorded. No money was collected." : "This hold has ended. The late demo result requires reconciliation; it does not confirm a booking.";
+            TempData["BookingMessage"] = accepted ? "The deposit was not completed. You can retry before the deadline." : "This hold has ended. Contact the venue for assistance.";
         }
         catch (ReservationValidationException error) { TempData["BookingMessage"] = error.Message; }
         return ViewData["GuestAccess"] is true ? RedirectToAction("Details", "GuestReservations", new { id }) : RedirectToAction(nameof(Status), new { id, token });
     }
+    [AllowAnonymous, HttpPost, ValidateAntiForgeryToken, EnableRateLimiting("accounts")]
+    public async Task<IActionResult> CancelLearner(string id, string learnerId, string? token, CancellationToken ct)
+    {
+        var booking = await AccessibleAsync(id, token, ct);
+        if (booking is null)
+        {
+            return MissingAccess(id, token);
+        }
+
+        if (!await reservations.CancelFamilyLearnerAsync(id, learnerId, "Customer", ct))
+        {
+            return BadRequest("This learner seat cannot be cancelled.");
+        }
+
+        return RedirectToAction(nameof(Confirmation), new { id, token });
+    }
+
     [AllowAnonymous, HttpPost, ValidateAntiForgeryToken, EnableRateLimiting("accounts")]
     public async Task<IActionResult> RequestCancellation(string? id, string? token, CancellationToken ct)
     {

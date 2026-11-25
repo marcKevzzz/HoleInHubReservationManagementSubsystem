@@ -66,6 +66,12 @@ public sealed partial class LeadershipController
                 LocalTime(row.StartUtc), LocalTime(row.EndUtc), row.Status];
             csv.AppendJoin(",", fields.Select(Escape)).Append("\r\n");
         }
+        if (rows.Any(x => x.PackageDates.Length > 0))
+        {
+            Section("Package reservation ID", "Included dates (Manila)", "Learners marked present");
+            foreach (var row in rows.Where(x => x.PackageDates.Length > 0))
+            { Write(row.Reference, string.Join(" · ", row.PackageDates.Select(LocalTime)), row.AttendedLessons.ToString()); }
+        }
         Section("Report filters (Manila)", "Value");
         Write("From", from.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
         Write("To", to.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));

@@ -1,0 +1,32 @@
+@using HoleInHub.Business.Reservations
+@model SubmitReservationRequest
+@{ var junior = ViewData["JuniorOnly"] is true; }
+            @for (var i = 0; i < (int)ViewData["RosterCount"]!; i++)
+            {
+                var learner = Model.Learners?.ElementAtOrDefault(i);
+                var guardian = Model.Guardians?.ElementAtOrDefault(i);
+                var guardianIndex = learner?.GuardianIndex ?? i;
+                <fieldset class="family-section" data-family-learner="@i">
+                    <legend>@T(junior ? "Child" : "Learner") @(i + 1)</legend>
+                    <label hidden="@junior"><input disabled="@junior" type="checkbox" name="Learners[@i].IsBookingContact" value="true" checked="@(learner?.IsBookingContact == true)" data-participating /> @T("I'm participating")</label>
+                    <div class="fields-grid" data-learner-name>
+                        <div class="field"><div class="auth-input-wrap"><input id="learner-first-@i" name="Learners[@i].FirstName" value="@learner?.FirstName" maxlength="100" autocomplete="off" placeholder=" " /><label for="learner-first-@i">@T("First name *")</label></div></div>
+                        <div class="field"><div class="auth-input-wrap"><input id="learner-last-@i" name="Learners[@i].LastName" value="@learner?.LastName" maxlength="100" autocomplete="off" placeholder=" " /><label for="learner-last-@i">@T("Last name *")</label></div></div>
+                    </div>
+                    <div class="fields-grid"><div class="field"><div class="auth-input-wrap"><input id="age-@i" type="number" min="0" max="@(junior ? 17 : 120)" step="1" inputmode="numeric" name="Learners[@i].Age" value="@learner?.Age" data-age required placeholder=" " /><label for="age-@i">@T("Age in years *")</label></div></div></div>
+                    <fieldset class="family-guardian" data-guardian disabled="@junior" hidden="@junior"><legend>@T("Parent or guardian")</legend>
+                        <div class="field" hidden="@(i == 0)"><label for="guardian-index-@i">@T("Use guardian details from")</label>
+                            <select id="guardian-index-@i" name="Learners[@i].GuardianIndex" data-guardian-index data-native-select>
+                                <option value="@i" selected="@(guardianIndex == i)">@T("Enter guardian details")</option>
+                                @for (var previous = 0; previous < i; previous++)
+                                { <option value="@previous" selected="@(guardianIndex == previous)">@T("Learner") @(previous + 1)</option> }
+                            </select>
+                        </div>
+                        <div data-guardian-fields>
+                            <label><input type="checkbox" name="Guardians[@i].IsBookingContact" value="true" checked="@(guardian?.IsBookingContact == true)" data-contact-guardian /> @T("I'm the guardian")</label>
+                            <div class="field" data-guardian-name><div class="auth-input-wrap"><input id="guardian-name-@i" name="Guardians[@i].Name" value="@guardian?.Name" maxlength="100" autocomplete="off" placeholder=" " /><label for="guardian-name-@i">@T("Guardian name")</label></div></div>
+                            <div class="field"><div class="auth-input-wrap"><input id="relationship-@i" name="Guardians[@i].Relationship" value="@guardian?.Relationship" maxlength="100" autocomplete="off" placeholder=" " /><label for="relationship-@i">@T("Relationship to learner")</label></div></div>
+                        </div>
+                    </fieldset>
+                </fieldset>
+            }

@@ -16,7 +16,12 @@ public sealed record DashboardSnapshot(DateOnly From, DateOnly To, DateTime Gene
     public DashboardBaseline? Previous { get; init; }
     public int FollowUpsDue { get; init; }
 }
-public sealed record DashboardBooking(string Id, string Reference, string Guest, string Service, string Status, DateTime StartUtc, DateTime EndUtc, string[] Bays);
+public sealed record DashboardBooking(string Id, string Reference, string Guest, string Service, string Status, DateTime StartUtc, DateTime EndUtc, string[] Bays)
+{
+    public DateTime[] PackageDates { get; init; } = [];
+    public int AttendedLessons { get; init; }
+    public int? LearnerSeats { get; init; }
+}
 public sealed record DashboardSlice(IReadOnlyList<DashboardBooking> Bookings, bool HasMore);
 
 public static class DashboardMetrics
@@ -191,5 +196,6 @@ public sealed partial class ReservationService
     }
 
     private static DashboardBooking ToDashboardBooking(DashboardRow row) => new(row.Id, row.Reference, row.Guest.Trim(),
-        DashboardMetrics.ServiceLabel(row.Service), row.Status, row.StartUtc, row.EndUtc, row.ResourceIds);
+        DashboardMetrics.ServiceLabel(row.Service), row.Status, row.StartUtc, row.EndUtc, row.ResourceIds)
+    { LearnerSeats = row.LearnerSeats, PackageDates = row.PackageDates?.Select(x => x.StartUtc).ToArray() ?? [], AttendedLessons = row.PackageSeats?.Count(x => x.Attendance == "Present") ?? 0 };
 }

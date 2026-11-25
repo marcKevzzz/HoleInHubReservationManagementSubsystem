@@ -132,12 +132,20 @@
                 <summary>Booking details &amp; notes</summary>
                 <dl class="review-facts">
                     <dt>When</dt><dd><strong>@start.ToString("ddd, d MMM yyyy")</strong><br />@start.ToString("h:mm tt")–@(start.Date == end.Date ? end.ToString("h:mm tt") : end.ToString("d MMM, h:mm tt")) · @durationLabel </dd>
-                    <dt>Where</dt><dd>@StaffReviewQueue.Bays(booking) · @ReservationLabels.Service(booking.Service)</dd>
+                    <dt>Where</dt><dd>@StaffReviewQueue.Bays(booking) · @(booking.RentalTitle ?? ReservationLabels.Service(booking.Service))</dd>
                     <dt>Arrived</dt><dd>@(booking.CheckedInUtc is DateTime arrived ? StaffReviewQueue.Local(arrived).ToString("d MMM yyyy, h:mm tt") : "Not recorded")</dd>
                     <dt>Departed</dt><dd>@(booking.CheckedOutUtc is DateTime departed ? StaffReviewQueue.Local(departed).ToString("d MMM yyyy, h:mm tt") : "Not recorded")</dd>
                     <dt>Guests</dt><dd>@booking.Attendees <small>Includes non-players</small></dd>
                     <dt>Deposit</dt><dd>@ReservationLabels.Payment(booking.PaymentStatus) @if (booking.DepositAmount is { } amount) { <span>· ₱@amount.ToString("N2")</span> }</dd>
                     @if (booking.PaymentReference is not null) { <dt>Payment ref.</dt><dd>@booking.PaymentReference</dd> }
+                    @if (booking.Service == "PhilippineCoach") {
+                        <dt>Assigned coach</dt><dd>@(booking.CoachName ?? "Unassigned")
+                        @if (booking.Status is "Pending" or "Confirmed" && booking.StartUtc > DateTime.UtcNow) {
+                            <a class="staff-hover-link" asp-controller="Coaches" asp-action="Assignment" asp-route-id="@booking.Id">Change assignment</a>
+                        }</dd>
+                    }
+                    @if (booking.ContactAge.HasValue) { <dt>Customer age</dt><dd>@booking.ContactAge</dd> }
+                    @if (!string.IsNullOrWhiteSpace(booking.ContactAddress)) { <dt>Customer address</dt><dd>@booking.ContactAddress</dd> }
                     @if (coaching) { <dt>Coach</dt><dd>@(booking.CoachConfirmed ? "Confirmed" : "Confirmation required")</dd> }
                     @foreach (var p in booking.Participants)
                     {

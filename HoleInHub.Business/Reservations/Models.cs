@@ -13,6 +13,9 @@ public sealed class SubmitReservationRequest
     public string LastName { get; set; } = "";
     public string Phone { get; set; } = "";
     public int Attendees { get; set; } = 1;
+    public int? ContactAge { get; set; }
+    public string? ContactAddress { get; set; }
+    public int? NonPlayerGuests { get; set; }
     public string? Notes { get; set; }
     public bool PrivacyAccepted { get; set; }
     public string IdempotencyKey { get; set; } = "";
@@ -20,6 +23,12 @@ public sealed class SubmitReservationRequest
     public string? ServiceEntryId { get; set; }
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
     public string? QuoteKey { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? ClassSessionId { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public FamilyLearnerInput[]? Learners { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public FamilyGuardianInput[]? Guardians { get; set; }
 }
 public sealed record ResourceDto(string Id, string Name, string Service)
 {
@@ -30,6 +39,16 @@ public sealed record ResourceDto(string Id, string Name, string Service)
 public sealed record AvailabilityDto(ResourceDto Resource, bool Available);
 public sealed record ReservationDto(string Id, string Reference, string Service, string Status, DateTime StartUtc, DateTime EndUtc, DateTime ReviewDeadlineUtc, string[] ResourceIds, string FirstName, string LastName, string Phone, int Attendees, IReadOnlyList<ReservationHistoryDto> History, string Notes = "")
 {
+    public string? PackageId { get; init; }
+    public PackageSeatView[] PackageSeats { get; init; } = [];
+    public DateTime[] PackageDates { get; init; } = [];
+    public bool NextClassReminderEnabled { get; init; }
+    public bool NextClassReminderQueued { get; init; }
+    public string? ClassSessionId { get; init; }
+    public decimal? PricePerLearner { get; init; }
+    public IReadOnlyList<FamilyLearnerDto> Learners { get; init; } = [];
+    public IReadOnlyList<FamilyGuardianDto> Guardians { get; init; } = [];
+    public string? RentalTitle { get; init; }
     public string? ServiceEntryId { get; init; }
     public bool IsUpcoming(DateTime nowUtc) => EndUtc > nowUtc && Status is "Pending" or "Confirmed" or "Checked-In";
     public long Revision { get; init; }
@@ -44,6 +63,10 @@ public sealed record ReservationDto(string Id, string Reference, string Service,
     public string? BookingSource { get; init; }
     public decimal? RentalTotal { get; init; }
     public decimal? DepositAmount { get; init; }
+    public string? CoachId { get; init; }
+    public int? ContactAge { get; init; }
+    public string? ContactAddress { get; init; }
+    public string? CoachName { get; init; }
     public bool CoachConfirmed { get; init; }
     public bool CancellationRequested { get; init; }
     public ScheduleChangeDto? ScheduleChange { get; init; }
@@ -61,6 +84,8 @@ public sealed class ReservationValidationException(string message, string? field
 }
 public sealed class ReservationPolicy
 {
+    public bool PhilippineCoachSchedulesEnabled { get; set; }
+    public bool SharedClassesEnabled { get; set; }
     public bool RequirePosSettlement { get; set; }
     public bool Approved { get; set; }
     public bool DurationsApproved { get; set; }
@@ -68,6 +93,7 @@ public sealed class ReservationPolicy
     public TimeSpan ReviewEnd { get; set; }
     public int[] ReviewDays { get; set; } = []; public string[] StaffEmails { get; set; } = [];
     public string? StaffEmailOverride { get; set; }
+    public string TestDepositOutcome { get; set; } = "success";
     public bool DemoPaymentsEnabled { get; set; }
     public void ValidateCoverage(DateTimeOffset now, int minutes = 30)
     {

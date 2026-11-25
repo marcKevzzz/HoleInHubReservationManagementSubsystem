@@ -50,7 +50,7 @@ public sealed partial class ReservationService
         {
             await persistence.DecideScheduleChangeAsync(id, commandId, revision, true, resources, actor,
                 upgrading ? $"Regular to VIP upgrade: {sourceResourceId} to {resourceId}. Staff confirmed customer agreement to VIP pricing." : "Moved on the staff timeline.",
-                now.UtcDateTime, ct, proposal, upgrading, validateCapacity: ValidateStoredCapacity, validateSession: ValidateChangedSession);
+                now.UtcDateTime, ct, proposal, upgrading, validateCapacity: ValidateStoredCapacity, validateSession: ValidateChangedSession, requireCoach: PhilippineCoachSchedulesEnabled);
         }
         catch (AllocationConflictException error) { throw new ReservationValidationException(error.Message); }
     }
@@ -131,7 +131,7 @@ public sealed partial class ReservationService
         try
         {
             return await persistence.DecideScheduleChangeAsync(id, proposal, revision, approve, resources, actor, reason?.Trim() ?? "",
-                (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime, ct, validateCapacity: ValidateStoredCapacity, validateSession: ValidateChangedSession);
+                (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime, ct, validateCapacity: ValidateStoredCapacity, validateSession: ValidateChangedSession, requireCoach: PhilippineCoachSchedulesEnabled);
         }
         catch (AllocationConflictException error) { throw new ReservationValidationException(error.Message); }
     }
