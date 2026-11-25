@@ -79,6 +79,9 @@
                 @if(staffEntry){<label for="family-source">Booking source</label><select name="source" id="family-source" required><option value="">Choose source</option>@foreach(var src in new[]{"Walk-in","Phone","Messaging"}){<option selected="@((ViewData["Source"] as string)==src)">@src</option>}</select>}
                 <div class="fields-grid">
                     <partial name="~/Views/Reservations/_BookingContactFields.cshtml" model="Model" />
+                    <label>Your age * <input asp-for="ContactAge" type="number" min="18" max="120" required /></label>
+                    <label>Your address * <input asp-for="ContactAddress" maxlength="250" required /></label>
+                    @{ ViewData["BookingRelationship"] = true; }
                     <div class="field booking-notes"><div class="auth-input-wrap"><textarea asp-for="Notes" maxlength="1000" rows="2" placeholder=" "></textarea><label asp-for="Notes">@T("Notes (optional)")</label></div></div>
                 </div>
             </fieldset>

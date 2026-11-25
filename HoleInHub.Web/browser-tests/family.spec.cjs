@@ -75,6 +75,9 @@ test(packageBooking ? 'book two children into a four-date lesson package' : 'a s
         await expect(guest.locator('#learner-first-1')).toBeVisible();
         const email = 'family-' + require('node:crypto').randomUUID() + '@example.test';
         await guest.locator('#FirstName').fill('Parent');
+        await guest.locator('#ContactAge').fill('30');
+        await guest.locator('#ContactAddress').fill('Quezon City');
+        if (await guest.locator('#JuniorRelationship').isVisible()) await guest.locator('#JuniorRelationship').fill('Parent');
         await guest.locator('#LastName').fill('Guest');
         await guest.locator('#Phone').fill('09123456789');
         await guest.locator('#Email').fill(email);

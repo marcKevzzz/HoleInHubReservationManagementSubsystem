@@ -99,6 +99,8 @@ public sealed class GuestBookingFlowTests
         ["StartTime"] = service == "WholeShop" ? "15:00" : "14:00",
         ["DurationMinutes"] = service == "WholeShop" ? "360" : "60",
         ["ResourceIds"] = "bay-2",
+        ["ContactAge"] = "30",
+        ["ContactAddress"] = "Quezon City",
         ["FirstName"] = "Guest",
         ["LastName"] = "Player",
         ["Phone"] = "09123456789",

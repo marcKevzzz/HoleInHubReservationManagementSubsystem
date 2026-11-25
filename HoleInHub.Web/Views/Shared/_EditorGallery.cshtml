@@ -1,0 +1,14 @@
+@using HoleInHub.Business.Services
+@model string[]
+            <section class="service-editor-section service-image-section">
+                <h2>Images</h2>
+                <div class="service-editor-gallery" data-service-gallery data-fallback="@ViewData["GalleryFallback"]">
+                    @if (Model.Length == 0 && ViewData["GalleryFallback"] is string cover) { <img class="bay-default-cover" src="@cover" alt="Venue overview" /> }
+                    @foreach (var image in Model)
+                    {
+                        <figure data-service-image data-path="@image"><img src="@image" alt="Gallery photo" />@if (BusinessIds.ServiceImage(image) is string imageId) { <figcaption>Image ID @imageId</figcaption> }<input type="hidden" name="Images" value="@image" /></figure>
+                    }
+                </div>
+                <label class="service-upload" data-image-add title="Add up to 8 images · JPEG, PNG or WebP · 4 MB each"><input id="Uploads" name="Uploads" type="file" multiple accept="image/jpeg,image/png,image/webp" data-service-uploads /><span><partial name="_StaffIcon" model='"plus"' /><span class="sr-only">Add images</span></span></label>
+                <p class="service-field-error" data-images-error role="alert"></p>
+            </section>

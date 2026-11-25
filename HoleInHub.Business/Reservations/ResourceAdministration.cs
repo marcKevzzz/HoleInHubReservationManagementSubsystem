@@ -2,11 +2,24 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using HoleInHub.Data.Reservations;
+using HoleInHub.Data.Services;
+using HoleInHub.Business.Services;
 
 namespace HoleInHub.Business.Reservations;
 
 public sealed record ResourceDirectoryEntry(string Id, string Name, string Service, bool Active,
-    int MaxPlayers, int MaxTotalGuests, int? MaxNonPlayers, long Revision);
+    int MaxPlayers, int MaxTotalGuests, int? MaxNonPlayers, long Revision)
+{
+    public bool HasSavedPresentation { get; init; }
+    public string Location { get; init; } = "";
+    public string Description { get; init; } = "";
+    public string[] Images { get; init; } = [];
+}
+
+public sealed record BayPresentationEdit(string Location, string Description, string[] Images, string[] ImageOrder, IReadOnlyList<byte[]> Uploads)
+{
+    public string[] LegacyImages { get; init; } = [];
+}
 public sealed class ResourceCapacityWarningException(string message, string acknowledgement) : Exception(message)
 {
     public string Acknowledgement { get; } = acknowledgement;
@@ -18,11 +31,12 @@ public sealed partial class ReservationService
         (await persistence.ReadResourceDirectoryAsync(ct)).Select(x =>
         {
             var bay = MapResource(x);
-            return new ResourceDirectoryEntry(x.Id, x.Name, x.Service, x.Active, bay.MaxPlayers, bay.MaxTotalGuests, bay.MaxNonPlayers, x.Revision);
+            return new ResourceDirectoryEntry(x.Id, x.Name, x.Service, x.Active, bay.MaxPlayers, bay.MaxTotalGuests, bay.MaxNonPlayers, x.Revision)
+            { HasSavedPresentation = bay.HasSavedPresentation, Location = bay.Location, Description = bay.Description, Images = bay.Images };
         }).ToArray();
 
     public async Task AddBayAsync(string id, string name, string service, int? maxPlayers, int? maxTotalGuests,
-        int? maxNonPlayers, CancellationToken ct)
+        int? maxNonPlayers, CancellationToken ct, BayPresentationEdit? presentation = null)
     {
         id = id.Trim().ToLowerInvariant();
         name = name.Trim();
@@ -32,7 +46,8 @@ public sealed partial class ReservationService
             throw new ReservationValidationException("Enter a bay name, a unique ID using letters, numbers or hyphens, and a bay type.");
         }
         var bay = BuildResource(id, name, service, maxPlayers, maxTotalGuests, maxNonPlayers);
-        try { await persistence.AddResourceAsync(bay, ct); }
+        var images = PrepareBayGallery(bay, presentation, []);
+        try { await persistence.AddResourceAsync(bay, ct, images); }
         catch (AllocationConflictException ex) { throw new ReservationValidationException(ex.Message); }
     }
 
@@ -42,7 +57,7 @@ public sealed partial class ReservationService
         catch (AllocationConflictException ex) { throw new ReservationValidationException(ex.Message); }
     }
     public async Task<bool> EditBayAsync(string id, string name, string service, int? maxPlayers, int? maxTotalGuests,
-        int? maxNonPlayers, long? expectedRevision, string? acknowledgement, CancellationToken ct)
+        int? maxNonPlayers, long? expectedRevision, string? acknowledgement, CancellationToken ct, BayPresentationEdit? presentation = null)
     {
         name = name.Trim();
         if (string.IsNullOrWhiteSpace(id) || id.Length > 32 || name.Length is < 1 or > 80 || service is not ("Regular" or "VIP"))
@@ -50,12 +65,35 @@ public sealed partial class ReservationService
         if (expectedRevision is null or < 0)
         { throw new ReservationValidationException("Reload the inventory before editing this bay."); }
         var bay = BuildResource(id, name, service, maxPlayers, maxTotalGuests, maxNonPlayers);
+        var prior = presentation is null ? null : await persistence.GetResourceAsync(id, ct);
+        if (presentation is not null && prior is null) { return false; }
+        var images = PrepareBayGallery(bay, presentation, prior?.Images ?? presentation?.LegacyImages ?? []);
         try
         {
             return await persistence.EditResourceAsync(bay, expectedRevision.Value, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime, ct,
-                (current, edited, catalog, upcoming) => VerifyCapacityChange(current, edited, catalog, upcoming, acknowledgement));
+                (current, edited, catalog, upcoming) => VerifyCapacityChange(current, edited, catalog, upcoming, acknowledgement), images);
         }
         catch (AllocationConflictException ex) { throw new ReservationValidationException(ex.Message); }
+    }
+
+    private static ServiceImageRecord[] PrepareBayGallery(ResourceRecord bay, BayPresentationEdit? edit, string[] existing)
+    {
+        if (edit is null) { return []; }
+        bay.Location = edit.Location.Trim();
+        bay.Description = edit.Description.Trim();
+        if (bay.Location.Length > 100 || bay.Description.Length > 500)
+        { throw new ReservationValidationException("Use up to 100 characters for the location and 500 for the description."); }
+        if (edit.Images.Length + edit.Uploads.Count > 8 || edit.Uploads.Sum(bytes => (long)bytes.Length) > 20 * 1024 * 1024)
+        { throw new ReservationValidationException("Choose up to eight photos and upload up to 20 MB per save."); }
+        if (edit.Images.Any(path => !existing.Contains(path)) || edit.Images.Distinct().Count() != edit.Images.Length)
+        { throw new ReservationValidationException("Reload the current bay photos and try again."); }
+        try
+        {
+            var (images, paths) = ServiceCatalog.PrepareGallery("bay:" + bay.Id, edit.Images, edit.ImageOrder, edit.Uploads);
+            bay.Images = paths;
+            return images;
+        }
+        catch (ArgumentException ex) { throw new ReservationValidationException(ex.Message); }
     }
 
     private static ResourceRecord BuildResource(string id, string name, string service, int? maxPlayers, int? maxTotalGuests, int? maxNonPlayers)
@@ -79,6 +117,23 @@ public sealed partial class ReservationService
 
     private static ResourceDto MapResource(ResourceRecord bay) => new(bay.Id, bay.Name, bay.Service)
     {
+        HasSavedPresentation = bay.Images is not null,
+        Location = bay.Location ?? bay.Id switch
+        {
+            "bay-1" => "Front row · Left",
+            "bay-2" => "Front row · Centre",
+            "bay-3" => "Front row · Right",
+            "bay-4" => "Rear row · Left",
+            "bay-5" => "Rear row · Centre",
+            "bay-6" => "Rear row · Right",
+            "vip-1" or "vip-7" => "VIP area · Left",
+            "vip-2" or "vip-8" => "VIP area · Right",
+            _ => ""
+        },
+        Description = bay.Description ?? (bay.Service == "VIP"
+            ? "A private simulator bay for a focused practice session or a round with your group."
+            : "An open simulator bay for solo practice or a shared round with friends."),
+        Images = bay.Images ?? [],
         MaxPlayers = bay.MaxPlayers ?? 6,
         MaxTotalGuests = bay.MaxTotalGuests ?? (bay.Service == "VIP" ? 10 : 8),
         MaxNonPlayers = bay.MaxNonPlayers

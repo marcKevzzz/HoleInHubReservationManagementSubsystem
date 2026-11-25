@@ -18,7 +18,7 @@
     }
     document.addEventListener('click', event => {
         const link = event.target.closest('a[href]');
-        if (event.defaultPrevented || !link || event.button || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || reduced.matches || !window.gsap || link.hasAttribute('download') || link.hasAttribute('data-social-placeholder') || (link.target && link.target !== '_self')) return;
+        if (link?.hasAttribute('data-booking-media') || event.defaultPrevented || !link || event.button || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || reduced.matches || !window.gsap || link.hasAttribute('download') || link.hasAttribute('data-social-placeholder') || (link.target && link.target !== '_self')) return;
         const destination = new URL(link.href, location.href);
         if (destination.origin !== location.origin || !/^https?:$/.test(destination.protocol) || destination.hash ||
             (accountRoute.test(location.pathname) && accountRoute.test(destination.pathname)) ||

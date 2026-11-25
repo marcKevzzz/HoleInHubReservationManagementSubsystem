@@ -20,6 +20,22 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         var bays = (await GetCatalogAsync(ct)).Where(bay => SeasonalRental.Includes(entryId, bay.Service)).ToArray();
         return entryId == SeasonalRental.Vip && bays.Length != 2 ? [] : bays;
     }
+    public async Task<Dictionary<int, string[]>> GetBayDayAsync(DateOnly date, string service, CancellationToken ct)
+    {
+        var midnight = DashboardMetrics.Utc(date);
+        var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime;
+        var occupancy = await persistence.ReadBayOccupancyAsync(midnight, midnight.AddDays(1), now, ct);
+        var ids = (await GetCatalogAsync(ct)).Where(bay => bay.Service == service).Select(bay => bay.Id).ToArray();
+        var slots = new Dictionary<int, string[]>();
+        for (var minute = ReservationRules.OpeningHour(date.DayOfWeek) * 60; minute < 1440; minute += 30)
+        {
+            var start = midnight.AddMinutes(minute);
+            var overlaps = occupancy.Where(row => row.StartUtc < start.AddMinutes(30) && row.EndUtc > start).ToArray();
+            slots[minute] = ids.Where(id => !overlaps.Any(row => row.ResourceIds.Length == 0 || row.ResourceIds.Contains(id))).ToArray();
+        }
+        return slots;
+    }
+
     public async Task<IReadOnlyList<AvailabilityDto>> GetAvailabilityAsync(DateOnly date, TimeOnly startTime, int durationMinutes,
         string service, CancellationToken ct, string? serviceEntryId = null)
     {

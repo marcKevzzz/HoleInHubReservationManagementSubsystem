@@ -1,4 +1,5 @@
 using HoleInHub.Data.Context;
+using HoleInHub.Data.Services;
 using MongoDB.Bson;
 using MongoDB.Driver;
 namespace HoleInHub.Data.Reservations;
@@ -217,7 +218,10 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
             }, cancellationToken: ct);
         }
     }
-    public async Task AddResourceAsync(ResourceRecord resource, CancellationToken ct)
+    public Task<ResourceRecord?> GetResourceAsync(string id, CancellationToken ct) =>
+        Resources.Find(x => x.Id == id).FirstOrDefaultAsync(ct)!;
+
+    public async Task AddResourceAsync(ResourceRecord resource, CancellationToken ct, IReadOnlyList<ServiceImageRecord>? images = null)
     {
         using var session = await context.Client.StartSessionAsync(cancellationToken: ct);
         await session.WithTransactionAsync(async (s, token) =>
@@ -227,6 +231,7 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
             if (await Reservations.Find(s, x => x.Service == "WholeShop" &&
                 (x.Status == "Checked-In" || ((x.Status == "Pending" || x.Status == "Confirmed") && x.EndUtc > now))).AnyAsync(token))
             { throw new AllocationConflictException("Resource catalog changes require resolving active whole-shop allocations first."); }
+            await ServiceCatalogPersistence.StoreImagesAsync(context, s, images ?? [], token);
             try { await Resources.InsertOneAsync(s, resource, cancellationToken: token); }
             catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey)
             { throw new AllocationConflictException("A bay with that ID already exists."); }
@@ -235,7 +240,8 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
     }
 
     public async Task<bool> EditResourceAsync(ResourceRecord edited, long expectedRevision, DateTime now, CancellationToken ct,
-        Action<ResourceRecord, ResourceRecord, IReadOnlyList<ResourceRecord>, IReadOnlyList<ReservationRecord>>? validateCapacityChange = null)
+        Action<ResourceRecord, ResourceRecord, IReadOnlyList<ResourceRecord>, IReadOnlyList<ReservationRecord>>? validateCapacityChange = null,
+        IReadOnlyList<ServiceImageRecord>? images = null)
     {
         using var session = await context.Client.StartSessionAsync(cancellationToken: ct);
         return await session.WithTransactionAsync(async (s, token) =>
@@ -266,6 +272,11 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
             var update = Builders<ResourceRecord>.Update.Set(x => x.Name, edited.Name).Set(x => x.Service, edited.Service)
                 .Set(x => x.MaxPlayers, edited.MaxPlayers).Set(x => x.MaxTotalGuests, edited.MaxTotalGuests)
                 .Set(x => x.MaxNonPlayers, edited.MaxNonPlayers).Inc(x => x.Revision, 1);
+            if (edited.Images is not null)
+            {
+                update = update.Set(x => x.Images, edited.Images).Set(x => x.Location, edited.Location).Set(x => x.Description, edited.Description);
+                await ServiceCatalogPersistence.StoreImagesAsync(context, s, images ?? [], token);
+            }
             await Resources.UpdateOneAsync(s, x => x.Id == edited.Id, update, cancellationToken: token);
             return true;
         }, cancellationToken: ct);

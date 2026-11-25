@@ -19,17 +19,7 @@
         <p class="service-field-error service-save-error" data-save-error role="alert"></p>
         <div asp-validation-summary="All" class="staff-error" role="alert"></div>
         <div id="service-details" class="service-editor-main service-composition">
-            <section class="service-editor-section service-image-section">
-                <h2>Images</h2>
-                <div class="service-editor-gallery" data-service-gallery>
-                    @foreach (var image in Model.Images)
-                    {
-                        <figure data-service-image data-path="@image"><img src="@image" alt="Service image" />@if (BusinessIds.ServiceImage(image) is string imageId) { <figcaption>Image ID @imageId</figcaption> }<input type="hidden" name="Images" value="@image" /></figure>
-                    }
-                </div>
-                <label class="service-upload" data-image-add title="Add up to 8 images · JPEG, PNG or WebP · 4 MB each"><input asp-for="Uploads" type="file" multiple accept="image/jpeg,image/png,image/webp" data-service-uploads /><span><partial name="_StaffIcon" model='"plus"' /><span class="sr-only">Add images</span></span></label>
-                <p class="service-field-error" data-images-error role="alert"></p>
-            </section>
+            <partial name="_EditorGallery" model="Model.Images" />
             <section class="service-editor-section service-detail-fields">
                 <h2>Service details</h2>
                 <div class="auth-input-wrap"><input asp-for="Title" required maxlength="120" placeholder=" " /><label asp-for="Title">Service / offer name</label><span asp-validation-for="Title" data-error-for="Title"></span></div>
@@ -78,9 +68,10 @@
             </section>
         }
     </form>
-    <dialog class="service-image-viewer" data-image-viewer aria-label="Service images"><button type="button" class="service-viewer-close" data-viewer-close aria-label="Close images"><partial name="_StaffIcon" model='"close"' /></button><div data-viewer-content></div></dialog>
+    <partial name="_EditorGalleryViewer" />
 </section>
 @section Scripts {
+    <script src="~/js/editor-gallery.js" asp-append-version="true"></script>
     <script src="~/js/service-admin.js" asp-append-version="true"></script>
     <script src="~/js/service-availability.js" asp-append-version="true"></script>
     <script src="~/js/service-pricing.js" asp-append-version="true"></script>

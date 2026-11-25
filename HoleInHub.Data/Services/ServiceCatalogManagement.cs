@@ -21,6 +21,15 @@ public sealed partial class ServiceCatalogPersistence
     public Task<ServiceImageRecord?> ImageAsync(string id, CancellationToken ct) =>
         context.Database.GetCollection<ServiceImageRecord>("service_images").Find(x => x.Id == id).FirstOrDefaultAsync(ct)!;
 
+    internal static async Task StoreImagesAsync(IMongoDbContext context, IClientSessionHandle session, IReadOnlyList<ServiceImageRecord> images, CancellationToken ct)
+    {
+        foreach (var image in images)
+        {
+            await context.Database.GetCollection<ServiceImageRecord>("service_images")
+                .ReplaceOneAsync(session, x => x.Id == image.Id, image, new ReplaceOptions { IsUpsert = true }, ct);
+        }
+    }
+
     public async Task SaveAsync(ServiceCatalogRecord record, long revision, bool create,
         IReadOnlyList<ServiceImageRecord> images, CancellationToken ct,
         Action<IReadOnlyList<HoleInHub.Data.Reservations.ReservationRecord>>? checkImpacts = null)
@@ -68,11 +77,7 @@ public sealed partial class ServiceCatalogPersistence
                 checkImpacts(bookings);
             }
 
-            foreach (var image in images)
-            {
-                await context.Database.GetCollection<ServiceImageRecord>("service_images")
-                    .ReplaceOneAsync(s, x => x.Id == image.Id, image, new ReplaceOptions { IsUpsert = true }, token);
-            }
+            await StoreImagesAsync(context, s, images, token);
             record.Revision = (prior?.Revision ?? -1) + 1;
             if (create)
             {

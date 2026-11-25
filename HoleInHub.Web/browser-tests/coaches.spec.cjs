@@ -82,6 +82,8 @@ test('staff schedule, customer coach assignment and reassignment', async ({ page
         await guest.locator('#step-next').click();
         const email = 'coaching-' + randomUUID() + '@browser.example.test';
         await guest.locator('#FirstName').fill('Coach');
+        await guest.locator('#ContactAge').fill('30');
+        await guest.locator('#ContactAddress').fill('Quezon City');
         await guest.locator('#LastName').fill('Guest');
         await guest.locator('#Phone').fill('09123456789');
         await guest.locator('#Email').fill(email);

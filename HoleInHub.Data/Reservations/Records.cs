@@ -9,6 +9,9 @@ public sealed class ResourceRecord
     [BsonElement("resource_id")] public string ResourceId => Id;
     public string Name { get; set; } = "";
     public string Service { get; set; } = "Regular";
+    [BsonIgnoreIfNull] public string? Location { get; set; }
+    [BsonIgnoreIfNull] public string? Description { get; set; }
+    [BsonIgnoreIfNull] public string[]? Images { get; set; }
     [BsonIgnoreIfNull] public int? MaxPlayers { get; set; }
     [BsonIgnoreIfNull] public int? MaxTotalGuests { get; set; }
     [BsonIgnoreIfNull] public int? MaxNonPlayers { get; set; }

@@ -107,7 +107,9 @@ public sealed partial class ReservationService
         {
             if (!ContactRules.IsName(contact))
             { throw new ReservationValidationException("Enter the parent or guardian’s contact name."); }
-            guardians[0] = new() { Id = Guid.NewGuid().ToString("N"), Name = contact, Relationship = "Parent or guardian" };
+            if (request.JuniorRelationship is { } relationship && (!ContactRules.IsName(relationship) || relationship.Length > 100))
+            { throw new ReservationValidationException("Enter your relationship to the learner.", nameof(request.JuniorRelationship)); }
+            guardians[0] = new() { Id = Guid.NewGuid().ToString("N"), Name = contact, Relationship = request.JuniorRelationship?.Trim() ?? "Parent or guardian" };
         }
         var roster = new List<ClassLearnerRecord>();
         foreach (var learner in learners)

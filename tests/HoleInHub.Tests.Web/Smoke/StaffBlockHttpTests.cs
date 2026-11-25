@@ -596,19 +596,33 @@ public sealed partial class StaffBlockHttpTests
 
     [Theory]
     [InlineData("Staff")]
-    [InlineData("Manager")]
     [InlineData("Customer")]
-    public async Task OnlyAdminsCanManageResourceInventory(string role)
+    public async Task OnlyVenueManagersCanManageResourceInventory(string role)
     {
         await using var factory = Factory("test_resource_access");
         using var client = Client(factory, role);
         Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/admin/resources")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/admin/resources/new")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/admin/resources/bay/bay-1")).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await client.PostAsync("/admin/resources", new FormUrlEncodedContent([]))).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await client.PostAsync("/admin/resources/active", new FormUrlEncodedContent([]))).StatusCode);
     }
 
+    [Theory]
+    [InlineData("Manager")]
+    [InlineData("Admin")]
+    public async Task VenueManagersCanOpenBayEditorWithDefaultCover(string role)
+    {
+        await using var factory = Factory("test_resource_editor_access");
+        using var client = Client(factory, role);
+        var html = await client.GetStringAsync("/admin/resources/new");
+        Assert.Contains("multipart/form-data", html);
+        Assert.Contains("/media/facebook/venue-overview.webp", html);
+        Assert.Contains("name=\"Uploads\"", html);
+        Assert.Contains("name=\"EditPresentation\"", html);
+    }
     [Fact, Trait("Category", "Integration")]
-    public async Task ResourceActionsSupportModalsToastsAndReservationConflicts()
+    public async Task ManagerCanManageBaysThroughResourcePagesWithBookingSafeguards()
     {
         var database = "test_resource_http_" + Guid.NewGuid().ToString("N");
         await using var factory = Factory(database);
@@ -617,9 +631,11 @@ public sealed partial class StaffBlockHttpTests
         try
         {
             await new Migration_002_Reservations().UpAsync(context.Database, default);
-            using var client = Client(factory, "Admin");
+            using var client = Client(factory, "Manager");
             var html = await client.GetStringAsync("/admin/resources");
-            Assert.Contains("data-resource-add-dialog", html);
+            Assert.Contains("/admin/resources/new", html);
+            var create = await client.GetStringAsync("/admin/resources/new");
+            Assert.Contains("multipart/form-data", create);
             Assert.Contains("data-resource-confirm", html);
             var token = WebUtility.HtmlDecode(Regex.Match(html, "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"").Groups[1].Value);
             Assert.NotEmpty(token);

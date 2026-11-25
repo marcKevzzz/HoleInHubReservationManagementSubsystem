@@ -14,6 +14,8 @@ test('VIP rental skips bay selection and confirms after the deposit', async ({ p
     await expect(page.locator('[name=QuoteKey]')).toHaveValue(/.+/);
     await page.locator('#step-next').click();
     await page.locator('#FirstName').fill('Rental');
+    await page.locator('#ContactAge').fill('30');
+    await page.locator('#ContactAddress').fill('Quezon City');
     await page.locator('#LastName').fill('Guest');
     await page.locator('#Phone').fill('09123456789');
     await page.locator('#Email').fill(email);

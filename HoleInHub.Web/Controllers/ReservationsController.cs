@@ -30,6 +30,14 @@ public sealed class ReservationsController(ReservationService reservations, Gues
         catch (ReservationValidationException error) { return BadRequest(new { message = CustomerText.Error(error.Message) }); }
     }
 
+    [AllowAnonymous, HttpGet, ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> BayDay(DateOnly date, string service, CancellationToken ct)
+    {
+        if (!ModelState.IsValid || date == DateOnly.MinValue || date == DateOnly.MaxValue || service is not ("VIP" or "Regular"))
+        { return BadRequest(); }
+        return Json(await reservations.GetBayDayAsync(date, service, ct));
+    }
+
     private static (string Type, string? EntryId) BookingChoice(string? value)
     {
         var parts = (value ?? "").Split(':', 2);
@@ -206,6 +214,9 @@ public sealed class ReservationsController(ReservationService reservations, Gues
             }
         }
 
+        if (request.ContactAge is null) { ModelState.AddModelError(nameof(request.ContactAge), "Enter your age."); }
+        else if (request.ContactAge is < 18 or > 120) { ModelState.AddModelError(nameof(request.ContactAge), "Invalid age."); }
+        if (string.IsNullOrWhiteSpace(request.ContactAddress)) { ModelState.AddModelError(nameof(request.ContactAddress), "Enter your address."); }
         if (!ContactRules.IsName(request.FirstName)) { ModelState.AddModelError(nameof(request.FirstName), ContactRules.NameError); }
         if (!ContactRules.IsName(request.LastName)) { ModelState.AddModelError(nameof(request.LastName), ContactRules.NameError); }
         if (!ContactRules.IsPhone(request.Phone)) { ModelState.AddModelError(nameof(request.Phone), ContactRules.PhoneError); }

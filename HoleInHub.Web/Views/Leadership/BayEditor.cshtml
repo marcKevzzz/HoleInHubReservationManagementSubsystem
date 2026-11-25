@@ -1,0 +1,46 @@
+@model BayEditorForm
+@{
+    var create = ViewData["CreateBay"] is true;
+    ViewData["Title"] = create ? "Add bay" : Model.Name;
+    ViewData["GalleryFallback"] = "/media/facebook/venue-overview.webp";
+}
+<section class="staff-workspace service-admin service-editor">
+    <a class="flow-back" asp-action="Resources"><partial name="_BackArrow" /> Back to resources</a>
+    <header class="staff-workspace-heading service-admin-heading">
+        <h1>@ViewData["Title"]</h1>
+        <div class="service-admin-actions">
+            <a class="button button-secondary" asp-action="Resources">Cancel</a>
+            <button class="button" type="submit" form="bay-editor" data-action-icon="save">Save bay<partial name="_ButtonActionIcon" model='"save"' /></button>
+        </div>
+    </header>
+    <form id="bay-editor" class="service-editor-grid" method="post" asp-action="@(create ? "AddBay" : "EditBay")" enctype="multipart/form-data">
+        <input type="hidden" name="EditPresentation" value="true" />
+        <input asp-for="ExpectedRevision" type="hidden" /><input asp-for="CapacityAcknowledgement" type="hidden" />
+        <div asp-validation-summary="All" class="staff-error" role="alert"></div>
+        <p class="service-field-error" data-save-error role="alert"></p>
+        <div class="service-editor-main service-composition">
+            <partial name="_EditorGallery" model="Model.Images" />
+            <section class="service-editor-section service-detail-fields">
+                <h2>Bay details</h2>
+                <div class="auth-input-wrap"><input asp-for="Name" required maxlength="80" placeholder=" " /><label asp-for="Name">Bay name</label></div>
+                <div class="auth-input-wrap"><input asp-for="Id" readonly="@(!create)" required maxlength="32" placeholder=" " /><label asp-for="Id">Resource ID</label></div>
+                <div class="service-editor-field"><label asp-for="Service">Bay type</label><select asp-for="Service"><option>Regular</option><option>VIP</option></select></div>
+                <div class="auth-input-wrap"><input asp-for="Location" maxlength="100" placeholder=" " /><label asp-for="Location">Location in the venue</label></div>
+                <div class="auth-input-wrap"><textarea asp-for="Description" rows="3" maxlength="500" placeholder=" "></textarea><label asp-for="Description">Booking card description</label></div>
+            </section>
+        </div>
+        <section class="service-editor-section">
+            <h2>Capacity</h2>
+            <div class="fields-grid">
+                <div class="auth-input-wrap"><input asp-for="MaxPlayers" type="number" min="1" placeholder=" " /><label asp-for="MaxPlayers">Maximum players</label></div>
+                <div class="auth-input-wrap"><input asp-for="MaxTotalGuests" type="number" min="1" placeholder=" " /><label asp-for="MaxTotalGuests">Maximum total guests</label></div>
+                <div class="auth-input-wrap"><input asp-for="MaxNonPlayers" type="number" min="0" placeholder=" " /><label asp-for="MaxNonPlayers">Maximum non-playing guests</label></div>
+            </div>
+        </section>
+    </form>
+    <partial name="_EditorGalleryViewer" />
+</section>
+@section Scripts {
+    <script src="~/js/editor-gallery.js" asp-append-version="true"></script>
+    <script src="~/js/bay-editor.js" asp-append-version="true"></script>
+}

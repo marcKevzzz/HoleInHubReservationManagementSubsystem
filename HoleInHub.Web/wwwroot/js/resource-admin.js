@@ -1,77 +1,11 @@
 (() => {
     const page = document.querySelector('.resource-admin');
-    const add = page?.querySelector('[data-resource-add-dialog]');
     const confirm = page?.querySelector('[data-resource-confirm]');
-    const edit = page?.querySelector('[data-resource-edit-dialog]');
-    if (typeof add?.showModal !== 'function' || typeof confirm?.showModal !== 'function') return;
-    add.append(page.querySelector('[data-resource-add-content]'));
+    if (!confirm?.showModal) return;
     let opener, pending, saving = false;
-    const reduced = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? true;
-    function dismiss(dialog) {
-        if (saving) return;
-        if (dialog === confirm || reduced() || !window.gsap) { dialog.close(); return; }
-        window.gsap.killTweensOf(dialog);
-        window.gsap.to(dialog, {x:64,opacity:0,duration:.2,ease:'power2.in',onComplete:() => dialog.close()});
-    }
-    function open(dialog, trigger) {
-        if (saving) return;
-        opener = trigger;
-        const error = dialog.querySelector('[data-resource-error]');
-        error.hidden = true;
-        error.textContent = '';
-        dialog.showModal();
-        if (dialog !== confirm && !reduced() && window.gsap) {
-            window.gsap.killTweensOf(dialog);
-            window.gsap.fromTo(dialog, {x:64,opacity:0}, {x:0,opacity:1,duration:.28,ease:'power3.out',clearProps:'transform,opacity'});
-        }
-    }
-    if (edit) {
-        const form = edit.querySelector('form');
-        const clearAcknowledgement = () => { form.elements.capacityAcknowledgement.value = ''; };
-        form.addEventListener('input', clearAcknowledgement);
-        form.addEventListener('change', clearAcknowledgement);
-    }
-    page.querySelector('[data-resource-add]').addEventListener('click', event => {
-        event.preventDefault();
-        open(add, event.currentTarget);
-        add.querySelector('[name=name]').focus();
-    });
-    for (const dialog of [add, confirm]) {
-        dialog.querySelector('[data-resource-cancel]')?.addEventListener('click', () => dismiss(dialog));
-        dialog.addEventListener('cancel', event => { event.preventDefault(); dismiss(dialog); });
-        dialog.addEventListener('close', () => opener?.focus({ preventScroll: true }));
-    }
-    for (const dialog of [add, edit].filter(Boolean)) {
-        dialog.querySelector('[data-resource-close]')?.addEventListener('click', () => dismiss(dialog));
-        let pressedOutside = false;
-        function outside(event) {
-            const bounds = dialog.getBoundingClientRect();
-            return event.target === dialog && (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom);
-        }
-        dialog.addEventListener('pointerdown', event => { pressedOutside = outside(event); });
-        dialog.addEventListener('click', event => { if (pressedOutside && outside(event)) dismiss(dialog); pressedOutside = false; });
-        dialog.addEventListener('close', () => { window.gsap?.killTweensOf(dialog); window.gsap?.set(dialog, {clearProps:'transform,opacity'}); });
-    }
-    if (edit) {
-        edit.addEventListener('cancel', event => { event.preventDefault(); dismiss(edit); });
-        edit.addEventListener('close', () => opener?.focus({ preventScroll: true }));
-        for (const button of page.querySelectorAll('[data-resource-edit]')) {
-            button.addEventListener('click', () => {
-                const form = edit.querySelector('form');
-                form.elements.id.value = button.dataset.bayId;
-                form.elements.name.value = button.dataset.bayName;
-                form.elements.service.value = button.dataset.bayService;
-                form.elements.expectedRevision.value = button.dataset.bayRevision;
-                form.elements.maxPlayers.value = button.dataset.bayMaxPlayers;
-                form.elements.maxTotalGuests.value = button.dataset.bayMaxTotalGuests;
-                form.elements.maxNonPlayers.value = button.dataset.bayMaxNonPlayers ?? '';
-                form.elements.capacityAcknowledgement.value = '';
-                open(edit, button);
-                form.elements.name.focus();
-            });
-        }
-        edit.querySelector('form').addEventListener('submit', event => { event.preventDefault(); void save(event.currentTarget, edit); });
-    }
+    confirm.querySelector('[data-resource-cancel]').addEventListener('click', () => { if (!saving) confirm.close(); });
+    confirm.addEventListener('cancel', event => { if (saving) event.preventDefault(); });
+    confirm.addEventListener('close', () => opener?.focus({ preventScroll: true }));
     for (const form of page.querySelectorAll('[data-resource-state]')) {
         form.addEventListener('submit', event => {
             event.preventDefault();
@@ -87,7 +21,9 @@
             const label = restore ? 'Restore bay' : 'Retire bay';
             if (window.HoleInHubButtons) window.HoleInHubButtons.setLabel(button, label);
             else button.textContent = label;
-            open(confirm, form.querySelector('button'));
+            opener = form.querySelector('button');
+            confirm.querySelector('[data-resource-error]').hidden = true;
+            confirm.showModal();
         });
     }
     async function save(form, dialog) {
@@ -128,6 +64,5 @@
             dialog.removeAttribute('aria-busy');
         }
     }
-    add.querySelector('form').addEventListener('submit', event => { event.preventDefault(); void save(event.currentTarget, add); });
     confirm.querySelector('[data-resource-commit]').addEventListener('click', () => { if (pending) void save(pending, confirm); });
 })();

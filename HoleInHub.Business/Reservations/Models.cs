@@ -13,6 +13,7 @@ public sealed class SubmitReservationRequest
     public string LastName { get; set; } = "";
     public string Phone { get; set; } = "";
     public int Attendees { get; set; } = 1;
+    public string? JuniorRelationship { get; set; }
     public int? ContactAge { get; set; }
     public string? ContactAddress { get; set; }
     public int? NonPlayerGuests { get; set; }
@@ -32,6 +33,10 @@ public sealed class SubmitReservationRequest
 }
 public sealed record ResourceDto(string Id, string Name, string Service)
 {
+    public bool HasSavedPresentation { get; init; }
+    public string Location { get; init; } = "";
+    public string Description { get; init; } = "";
+    public string[] Images { get; init; } = [];
     public int MaxPlayers { get; init; } = 6;
     public int MaxTotalGuests { get; init; } = Service == "VIP" ? 10 : 8;
     public int? MaxNonPlayers { get; init; }

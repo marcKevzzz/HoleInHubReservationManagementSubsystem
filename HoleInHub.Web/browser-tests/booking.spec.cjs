@@ -27,6 +27,8 @@ test('guest receives a receipt and the approved reservation is visible to the gu
     await expect(page.locator('[name=QuoteKey]')).toHaveValue(/.+/);
     await page.locator('#step-next').click();
     await page.locator('#FirstName').fill('Browser');
+    await page.locator('#ContactAge').fill('30');
+    await page.locator('#ContactAddress').fill('Quezon City');
     await page.locator('#LastName').fill('Guest');
     await page.locator('#Phone').fill('09123456789');
     await page.locator('#Email').fill(email);

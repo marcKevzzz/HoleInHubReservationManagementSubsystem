@@ -60,19 +60,7 @@ public sealed class ServiceManagementController(ServiceCatalog catalog) : Contro
         {
             try
             {
-                if (form.Uploads.Count > 8 || form.Uploads.Any(file => file.Length > 4194304)
-                    || form.Uploads.Sum(file => file.Length) > 20 * 1024 * 1024)
-                {
-                    throw new ArgumentException("Choose up to eight images, 4 MB each and 20 MB in total.");
-                }
-
-                var uploads = new List<byte[]>();
-                foreach (var file in form.Uploads)
-                {
-                    using var stream = new MemoryStream();
-                    await file.CopyToAsync(stream, ct);
-                    uploads.Add(stream.ToArray());
-                }
+                var uploads = await EditorImageUploads.ReadAsync(form.Uploads, ct);
                 if (scheduleLessons)
                 {
                     if (form.BookingService != "KpgaGroup" || !HttpContext.RequestServices.GetRequiredService<Microsoft.Extensions.Options.IOptions<ReservationPolicy>>().Value.SharedClassesEnabled)

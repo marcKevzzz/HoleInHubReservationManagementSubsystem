@@ -61,9 +61,12 @@ function setup(count, enhance=false, motion, reduced=false, layout=false, bayCho
     baySelection.map={'[type=checkbox]':baySwitch};
     Object.assign(form.map,{'[name=BookingService]':bookingRules,'[data-bay-selection]':baySelection,'[data-whole-shop-bays]':wholeShopNote});
     const resizeCallbacks=[];
-    if(layout){const details=new Element();details.getBoundingClientRect=()=>({bottom:600+(enabled.checked?100:0)+(typePicker.value==='__new'?80:0)});gallery.getBoundingClientRect=()=>({top:100});wrap.getBoundingClientRect=()=>({height:100});newType.getBoundingClientRect=()=>({height:80});form.map['.service-detail-fields']=details;}
+    if(layout){form.querySelectorAll=selector=>selector==='[data-deposit-value], [data-new-type]'?[wrap,newType]:[];const details=new Element();details.getBoundingClientRect=()=>({bottom:600+(enabled.checked?100:0)+(typePicker.value==='__new'?80:0)});gallery.getBoundingClientRect=()=>({top:100});wrap.getBoundingClientRect=()=>({height:100});newType.getBoundingClientRect=()=>({height:80});form.map['.service-detail-fields']=details;}
     class Transfer{constructor(){this.files=[];this.items={add:file=>this.files.push(file)};}}
-    vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../HoleInHub.Web/wwwroot/js/service-admin.js'),'utf8'),{document:{addEventListener(){},querySelector:s=>s==='[data-service-editor]'?form:s==='[data-image-viewer]'?viewer:null,createElement:()=>new Element()},window:{innerWidth:1200,gsap:motion,matchMedia:()=>({matches:reduced}),addEventListener(){}},ResizeObserver:class{constructor(callback){resizeCallbacks.push(callback);}observe(){}},DataTransfer:Transfer,URL:{revokeObjectURL(){},createObjectURL:()=>'/blob/new'},Event:class {constructor(type){this.type=type;}},HTMLElement:Element});
+    const environment = {document:{addEventListener(){},querySelector:s=>s==='[data-service-editor]'?form:s==='[data-image-viewer]'?viewer:null,createElement:()=>new Element()},window:{innerWidth:1200,gsap:motion,matchMedia:()=>({matches:reduced}),addEventListener(){}},ResizeObserver:class{constructor(callback){resizeCallbacks.push(callback);}observe(){}},DataTransfer:Transfer,URL:{revokeObjectURL(){},createObjectURL:()=>'/blob/new'},Event:class {constructor(type){this.type=type;}},HTMLElement:Element};
+    const context = vm.createContext(environment);
+    vm.runInContext(readScript('editor-gallery.js'), context);
+    vm.runInContext(readScript('service-admin.js'), context);
     return {gallery,viewer,enabled,unit,amount,amountWrap:wrap,deposit,uploads,error,form,rate,typePicker,newType,newTypeInput,bookingRules,baySelection,baySwitch,wholeShopNote,resize:()=>resizeCallbacks.forEach(callback=>callback())};
 }
 

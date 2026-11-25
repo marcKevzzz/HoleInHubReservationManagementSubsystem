@@ -17,6 +17,38 @@ public sealed class AllocationTests(MongoDbFixture fixture) : IClassFixture<Mong
     private static ReservationRecord Request(string[] ids, string service = "Regular") => new() { AccountId = Guid.NewGuid().ToString("N"), Email = "customer@example.test", IdempotencyKey = Guid.NewGuid().ToString("N"), SubmissionHash = "test", StartUtc = new DateTime(2026, 11, 3, 4, 0, 0, DateTimeKind.Utc), EndUtc = new DateTime(2026, 11, 3, 5, 0, 0, DateTimeKind.Utc), CreatedUtc = DateTime.UtcNow, ReviewDeadlineUtc = DateTime.UtcNow.AddMinutes(30), ResourceIds = ids, Service = service };
 
     [Fact]
+    public async Task BayPhotosSaveInOrderAndStaleOrForeignPhotoChangesLeaveTheGalleryIntact()
+    {
+        var (store, context) = await Setup();
+        var service = new ReservationService(store, new OutboxPersistence(context), Options.Create(new ReservationPolicy()));
+        byte[] first = [0xff, 0xd8, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 1];
+        byte[] second = [0xff, 0xd8, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 2];
+        var photos = new BayPresentationEdit("Near reception", "Practice bay", [], ["upload:1", "upload:0"], [first, second]);
+        await service.AddBayAsync("practice", "Practice", "Regular", null, null, null, default, photos);
+
+        var bay = Assert.Single(await service.GetCatalogAsync(default), x => x.Id == "practice");
+        Assert.True(bay.HasSavedPresentation);
+        Assert.Equal("Near reception", bay.Location);
+        Assert.Equal("Practice bay", bay.Description);
+        Assert.Equal(2, bay.Images.Length);
+        var media = new HoleInHub.Data.Services.ServiceCatalogPersistence(context);
+        var cover = await media.ImageAsync(bay.Images[0].Split('/')[^1], default);
+        Assert.Equal(second, cover!.Content);
+
+        Task<bool> Edit(BayPresentationEdit change, long revision) =>
+            service.EditBayAsync("practice", "Practice", "Regular", null, null, null, revision, null, default, change);
+
+        var cleared = new BayPresentationEdit("", "", [], [], []);
+        await Assert.ThrowsAsync<ReservationValidationException>(() => Edit(cleared, 99));
+        await Assert.ThrowsAsync<ReservationValidationException>(() => Edit(cleared with { Images = ["/media/services/foreign"] }, 0));
+        Assert.Equal(bay.Images, (await store.GetResourceAsync("practice", default))!.Images);
+        Assert.True(await Edit(cleared, 0));
+        var after = Assert.Single(await service.GetResourceDirectoryAsync(default), x => x.Id == "practice");
+        Assert.True(after.HasSavedPresentation);
+        Assert.Empty(after.Images);
+    }
+
+    [Fact]
     public async Task StandaloneLessonIsRejectedAndAnIndividualBayHoldPreventsWholeShopCheckout()
     {
         var (store, context) = await Setup();

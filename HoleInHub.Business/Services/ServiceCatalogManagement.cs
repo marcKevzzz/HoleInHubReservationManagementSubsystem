@@ -131,6 +131,33 @@ public sealed partial class ServiceCatalog
 
         throw new ArgumentException("Choose JPEG, PNG or WebP images.");
     }
+    internal static (ServiceImageRecord[] Images, string[] Paths) PrepareGallery(string ownerId, string[] retained, string[] order, IReadOnlyList<byte[]> uploads)
+    {
+        var images = uploads.Select(bytes =>
+        {
+            var hash = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(ownerId).Concat(bytes).ToArray());
+            return new ServiceImageRecord
+            {
+                Id = Convert.ToHexString(hash)[..32].ToLowerInvariant(),
+                ContentType = ImageType(bytes),
+                Content = bytes
+            };
+        }).ToArray();
+        var paths = retained.Concat(images.Select(image => "/media/services/" + image.Id)).Distinct().ToArray();
+        if (order.Length > 0)
+        {
+            var ordered = order.Select(key => key.StartsWith("upload:", StringComparison.Ordinal)
+                && int.TryParse(key[7..], out var index) && index >= 0 && index < images.Length
+                    ? "/media/services/" + images[index].Id : key).ToArray();
+            if (ordered.Length != paths.Length || ordered.Distinct().Count() != paths.Length || ordered.Any(path => !paths.Contains(path)))
+            {
+                throw new ArgumentException("Reload the image order and try again.");
+            }
+            paths = ordered;
+        }
+        return (images, paths);
+    }
+
     public async Task SaveAsync(ServiceEdit edit, IReadOnlyList<byte[]> uploads, string actor, CancellationToken ct)
     {
         Validate(edit);
@@ -151,28 +178,7 @@ public sealed partial class ServiceCatalog
             throw new ArgumentException("Keep at least one image and at most eight. Upload up to 20 MB in one save.");
         }
 
-        var images = uploads.Select(bytes =>
-        {
-            var hash = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(edit.Id).Concat(bytes).ToArray());
-            return new ServiceImageRecord
-            {
-                Id = Convert.ToHexString(hash)[..32].ToLowerInvariant(),
-                ContentType = ImageType(bytes),
-                Content = bytes
-            };
-        }).ToArray();
-        var paths = edit.Images.Concat(images.Select(image => "/media/services/" + image.Id)).Distinct().ToArray();
-        if (edit.ImageOrder.Length > 0)
-        {
-            var ordered = edit.ImageOrder.Select(key => key.StartsWith("upload:", StringComparison.Ordinal)
-                && int.TryParse(key[7..], out var index) && index >= 0 && index < images.Length
-                    ? "/media/services/" + images[index].Id : key).ToArray();
-            if (ordered.Length != paths.Length || ordered.Distinct().Count() != paths.Length || ordered.Any(path => !paths.Contains(path)))
-            {
-                throw new ArgumentException("Reload the image order and try again.");
-            }
-            paths = ordered;
-        }
+        var (images, paths) = PrepareGallery(edit.Id, edit.Images, edit.ImageOrder, uploads);
         var commandHash = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(new { edit = edit with { ImpactAcknowledgement = null }, paths, actor })));
         var record = new ServiceCatalogRecord
         {
