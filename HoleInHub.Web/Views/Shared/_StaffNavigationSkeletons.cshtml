@@ -1,7 +1,7 @@
 @using HoleInHub.Business.Accounts
 @using HoleInHub.Web.Accounts
 @{
-    var layouts = new List<string> { "dashboard", "activity", "schedule", "queue", "cancellations", "customers", "delivery", "notifications", "profile" };
+    var layouts = new List<string> { "dashboard", "activity", "schedule", "queue", "cancellations", "customers", "delivery", "notifications", "profile", "coaches", "coach-editor" };
     if (User.ManagesVenue()) { layouts.AddRange(["team", "reports", "settings"]); }
     if (User.IsInRole(StaffRoles.Admin)) { layouts.AddRange(["resources", "services"]); }
 }
@@ -25,7 +25,7 @@
                         }
                     </div>
                 }
-                else if (layout is "customers" or "team" or "services" || layout == "settings" && User.IsInRole(StaffRoles.Admin))
+                else if (layout is "coaches" or "coach-editor" or "customers" or "team" or "services" || layout == "settings" && User.IsInRole(StaffRoles.Admin))
                 {
                     <span class="staff-skeleton-fill staff-skeleton-action"></span>
                 }
@@ -34,7 +34,25 @@
             {
                 <span class="staff-skeleton-fill staff-skeleton-description"></span>
             }
-            @if (layout == "schedule")
+            @if (layout == "coaches")
+            {
+                <div class="coach-skeleton-list">
+                    @for (var i = 0; i < 3; i++)
+                    {
+                        <div><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill"></span></div>
+                    }
+                </div>
+            }
+            else if (layout == "coach-editor")
+            {
+                <div class="coach-skeleton-editor">
+                    <span class="staff-skeleton-fill staff-skeleton-section-title"></span>
+                    <span class="staff-skeleton-fill"></span>
+                    <div class="coach-contact-fields"><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill"></span></div>
+                    <div class="coach-contact-fields"><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill"></span></div>
+                </div>
+            }
+            else if (layout == "schedule")
             {
                 <div class="staff-skeleton-tools">
                     <span class="staff-skeleton-fill staff-skeleton-date"></span>

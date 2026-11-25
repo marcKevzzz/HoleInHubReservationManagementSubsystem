@@ -9,7 +9,8 @@
     "build": "npm run copy:vendor && npm run build:css",
     "watch:css": "tailwindcss -i ./Styles/site.css -o ./wwwroot/css/site.css --watch",
     "test:ui": "node --test \"../tests/*.test.cjs\" \"../tests/HoleInHub.Tests.Web/Smoke/*.test.cjs\"",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "test:browser:all": "playwright test --project=desktop && playwright test --project=mobile"
   },
   "dependencies": {
     "chart.js": "4.6.1",

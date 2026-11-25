@@ -124,7 +124,7 @@ public sealed class BookingProcessTests(MongoDbFixture fixture) : IClassFixture<
         var (store, guests, context) = await Setup(); var now = DateTime.UtcNow;
         await guests.IssueAsync(new GuestVerificationRecord { Id = "session", Email = "guest@example.test", CodeHash = "hash", SentUtc = now, ExpiresUtc = now.AddMinutes(10) }, new OutboxRecord { Id = "code", Recipient = "guest@example.test" }, default);
         Assert.True(await guests.VerifyAsync("session", "guest@example.test", "hash", now, default));
-        var request = Request(); request.EmailVerificationId = "session"; request.AccessTokenHash = "access-hash";
+        var request = Request(); request.CreatedUtc = now; request.EmailVerificationId = "session"; request.AccessTokenHash = "access-hash";
         await store.InsertAsync(request, default, "protected:receipt");
         Assert.Equal(request.Id, (await store.InsertAsync(request, default)).Id);
         var next = Request(); next.EmailVerificationId = "session"; next.ResourceIds = ["bay-3"]; next.Participants = [new ParticipantRecord { ResourceId = "bay-3", Players = 1 }];

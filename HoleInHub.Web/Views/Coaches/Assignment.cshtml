@@ -1,0 +1,27 @@
+@using HoleInHub.Business.Reservations
+@model IReadOnlyList<CoachDto>
+@{
+    Layout = "_StaffLayout"; ViewData["Title"] = "Assign coach";
+    var booking = (ReservationDto)ViewData["Booking"]!;
+}
+<section class="staff-workspace service-admin service-editor">
+    <a class="flow-back" asp-controller="BookingReview" asp-action="Details" asp-route-id="@booking.Id"><partial name="_BackArrow" /> Back to booking</a>
+    <header class="staff-workspace-heading service-admin-heading"><h1>Assign coach</h1></header>
+    <section class="service-editor-section">
+        <p><strong>@booking.Reference</strong> · @booking.Status · @StaffReviewQueue.Local(booking.StartUtc).ToString("ddd, d MMM yyyy · h:mm tt") – @StaffReviewQueue.Local(booking.EndUtc).ToString("h:mm tt") Manila</p>
+        <p>Current coach: @(booking.CoachName ?? "Unassigned")</p>
+        <div asp-validation-summary="All" class="staff-error" role="alert"></div>
+        @if (Model.Count == 0) { <p>No coach is available for the full booking.</p> }
+        else
+        {
+            <form asp-action="Assignment" asp-route-id="@booking.Id" method="post" class="coach-assignment">
+                <input type="hidden" name="revision" value="@booking.Revision" />
+                <label class="service-field">Available coach<select name="coachId" required><option value="">Choose a coach</option>
+                    @foreach (var coach in Model) { <option value="@coach.Id" selected="@(coach.Id == ViewData["AttemptedCoachId"] as string)">@coach.Name</option> }
+                </select></label>
+                <button class="button" type="submit">Save assignment</button>
+            </form>
+        }
+        <a class="staff-hover-link" asp-action="Assignment" asp-route-id="@booking.Id">Refresh available coaches</a>
+    </section>
+</section>

@@ -140,7 +140,7 @@ Codes expire after ten minutes, permit five attempts and have a one-minute resen
 
 ## Notification delivery queue
 
-`outbox` fields: `_id`, Recipient, Subject, Body, ReservationId, RequiredStatus, DueUtc, LeaseUntilUtc, LeaseToken, SentUtc, Attempts and Failed. See [notification.schema.json](schemas/notification.schema.json).
+`outbox` fields: `_id`, `outbox_id` (migration 024, unique `OUT-` plus 16 uppercase hexadecimal characters), Recipient, Subject, Body, ReservationId, RequiredStatus, DueUtc, LeaseUntilUtc, LeaseToken, SentUtc, Attempts and Failed. See [notification.schema.json](schemas/notification.schema.json).
 
 DueUtc is when a message becomes eligible. LeaseUntilUtc is the expiry of one worker's temporary claim; LeaseToken identifies that claim so a stale worker cannot complete a newer claim. Attempts counts deliveries and Failed marks exhausted attempts. Sensitive verification/status email bodies use Data Protection. Delivery is at least once; a crash after sending can result in a duplicate. See [OPERATIONS.md](OPERATIONS.md) for individual failed-message replay.
 
@@ -229,3 +229,15 @@ Full merges redirect staff aliases to the main profile; selected-booking merges 
 ### POS settlement checkout (migration 023)
 
 Awaiting settlement releases the bays while preserving the scheduled interval and actual departure (CheckedOutUtc). FinalSettlement contains ReservationId, BillReference and VerifiedUtc and is reserved for verified, full-reservation POS settlement. CheckoutCompletedUtc records the later staff completion. Existing reservations can omit both fields. See the [checkout specification](specs/pos-settlement-checkout.md) and [implementation plan](plans/pos-settlement-checkout.md).
+
+### Shared KPGA Group classes (migration 025)
+
+A class_sessions record holds the class_session_id, schedule, assigned bays, capacity, claimed seats, enrollment state and single-class price per learner. Related reservations carry class_session_id and their own learner and guardian entries. Legacy participant counts describe allocation by bay and cannot identify a learner.
+
+Run the existing Migrator CLI before enabling ReservationPolicy__SharedClassesEnabled. Managers publish only venue-approved future Tuesday classes, with capacity bounded by the offering, eight learners and the selected bays’ player limits. The single-class price is entered explicitly in pesos. The system does not derive it from the four-class promotional price. Confirm spectator occupancy and mixed-age eligibility before publication. Disabling the setting stops new enrollment. Existing class holds, rosters and cancellations remain available to authorized staff and booking holders.
+
+### Fixed-date lesson packages (migration 026)
+
+The class_packages collection stores a unique package_id, service offering, ordered published class IDs, full price per learner, enrollment state and revision. Closing enrollment preserves existing bookings. Package reservations snapshot the lesson dates and keep one seat entry per learner per date. Submitting claims every required seat in one transaction. Approving an absence releases only the associated seat.
+
+Program registration closes at the exclusive UTC instant RegistrationEndsUtc, midnight in Manila after the manager-selected deadline. Older packages use midnight at the start of the first lesson date. A pending program registration holds seats for one hour. Approval queues the full schedule and one outbox message per reservation and class, due 24 hours before that lesson and expiring at its start. Delivery rechecks booking status, recipient and learner enrollment.

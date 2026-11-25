@@ -58,14 +58,28 @@ public sealed partial class ReservationService
         var hours = Enumerable.Range(0, 24).ToDictionary(Hour, _ => 0d);
         var volume = from == to ? hours.Keys.ToDictionary(hour => hour, _ => 0)
             : Enumerable.Range(0, to.DayNumber - from.DayNumber + 1).ToDictionary(offset => Day(from.AddDays(offset)), _ => 0);
+        var countedClasses = new HashSet<string>();
         foreach (var row in rows)
         {
-            var clippedStart = row.StartUtc < start ? start : row.StartUtc;
+            var firstIncluded = row.PackageDates?.Where(d => d.StartUtc < end && d.EndUtc > start)
+                .Select(d => d.StartUtc).DefaultIfEmpty(row.StartUtc).Min() ?? row.StartUtc;
+            var clippedStart = firstIncluded < start ? start : firstIncluded;
             var local = DashboardMetrics.Local(clippedStart);
             volume[from == to ? Hour(local.Hour) : Day(DateOnly.FromDateTime(local))]++;
             if (!DashboardMetrics.BookedStatuses.Contains(row.Status)) { continue; }
-            var clippedEnd = row.EndUtc > end ? end : row.EndUtc;
-            var bays = row.ResourceIds.Distinct().Count();
+            if (row.PackageDates != null)
+            {
+                foreach (var date in row.PackageDates.Where(x => x.StartUtc < end && x.EndUtc > start && countedClasses.Add(x.ClassSessionId)))
+                { AddHours(date.StartUtc, date.EndUtc, date.ResourceIds); }
+            }
+            else if (row.ClassSessionId == null || countedClasses.Add(row.ClassSessionId))
+            { AddHours(row.StartUtc, row.EndUtc, row.ResourceIds); }
+        }
+        void AddHours(DateTime begins, DateTime ends, string[] resources)
+        {
+            var clippedStart = begins < start ? start : begins;
+            var clippedEnd = ends > end ? end : ends;
+            var bays = resources.Distinct().Count();
             for (var cursor = clippedStart; cursor < clippedEnd;)
             {
                 var nextHour = cursor.Date.AddHours(cursor.Hour + 1);

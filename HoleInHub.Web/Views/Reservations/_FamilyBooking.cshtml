@@ -1,0 +1,118 @@
+@using HoleInHub.Business.Reservations
+@model SubmitReservationRequest
+@{
+    var sessions = ViewData["ClassSessions"] as IReadOnlyList<FamilyClassOption> ?? [];
+    var selected = sessions.FirstOrDefault(item => item.ClassSessionId == Model.ClassSessionId);
+    var count = Math.Clamp(ViewData["LearnerCount"] as int? ?? Math.Max(1, Model.Learners?.Length ?? 0), 1, 8);
+    var service = Model.ServiceEntryId is null || Model.ServiceEntryId == "KpgaGroup" ? "KpgaGroup" : $"KpgaGroup:{Model.ServiceEntryId}";
+    var staffEntry = ViewData["StaffFamilyEntry"] is true;
+    var offering = (ViewData["BookingServices"] as IReadOnlyList<HoleInHub.Business.Services.ServiceCatalogItem>)
+        ?.FirstOrDefault(item => item.Id == (Model.ServiceEntryId ?? "KpgaGroup"));
+    var signedIn = !staffEntry && User.Identity?.IsAuthenticated == true;
+    var hasRoster = selected is not null || Model.Learners?.Length > 0;
+}
+<div class="reservation-page reservation-studio family-booking">
+    <a class="flow-back" asp-controller="@(staffEntry ? "GroupClasses" : "Reservations")" asp-action="@(staffEntry ? "Index" : "Create")"><partial name="_BackArrow" /> @T(staffEntry ? "Lesson schedule" : "All experiences")</a>
+    <header class="reservation-title"><h1>@T("MAKE A RESERVATION")</h1></header>
+    <div class="booking-layout"><div class="booking-main">
+    @if (!staffEntry)
+    {
+        var titles = new[] { "Experience", selected?.RegistrationEndsUtc != null ? "Program schedule" : "Date & time", "Contact details", "Review" };
+        <nav class="step-line" aria-label="@T("Booking steps")">
+        @for (var i = 0; i < titles.Length; i++)
+        {
+            var current = i == (selected == null ? 1 : 2);
+            <span class="step-tab @(current ? "current" : null)" data-family-step="@i" aria-current="@(current ? "step" : null)"><span class="step-tab-num">@((i+1).ToString("00"))</span><span class="step-tab-name">@T(titles[i])</span></span>
+        }
+        </nav>
+    }
+    @if (!staffEntry && selected is null && !hasRoster)
+    {
+        <partial name="_ClassCalendar" model="Model" />
+    }
+    else
+    {
+    <form asp-controller="@(staffEntry ? "GroupClasses" : "Reservations")" asp-action="@(staffEntry ? "Enroll" : "Create")" method="post" data-family-booking data-customer-flow="@(!staffEntry ? "true" : "false")">
+        @if (selected?.Dates.Length > 0) { <section class="booking-detail-section"><h2>Program schedule · Manila</h2><p>Register by @DashboardMetrics.Local(selected.RegistrationEndsUtc!.Value.AddMinutes(-1)).ToString("d MMM yyyy, h:mm tt") Manila. Staff have one hour to confirm your registration. Once confirmed, your seats are guaranteed and we’ll email you 24 hours before each lesson.</p><ul>@foreach(var date in selected.Dates){<li>@DashboardMetrics.Local(date).ToString("dddd, d MMM yyyy · h:mm tt")</li>}</ul></section> }
+        <input type="hidden" name="plain" value="1" /><input type="hidden" asp-for="IdempotencyKey" /><input type="hidden" asp-for="QuoteKey" />
+        <input type="hidden" name="Service" value="@service" />
+        <input type="hidden" name="ReviewedClassSessionId" value="@selected?.ClassSessionId" />
+        <input type="hidden" name="ReviewedLearnerCount" value="@count" />
+        <div asp-validation-summary="All" class="booking-errors" role="alert"></div>
+        @if (ViewData["RecoveryMessage"] is string feedback) { <p class="notice" role="status">@feedback</p> }
+        @if (sessions.Count == 0) { <p class="notice" role="status">@T("There are no published classes with seats available.")</p> }
+        @if (sessions.Count > 0 || hasRoster)
+        {
+            <fieldset class="booking-step family-section"><legend>@T(staffEntry ? "Choose your class" : "Contact details")</legend>
+                @if (!staffEntry && selected != null) {
+                    <p>@DashboardMetrics.Local(selected.StartUtc).ToString("ddd, d MMM yyyy · h:mm tt") · @selected.RemainingSeats @T("learner seats left")
+                    </p>
+                }
+                <details open="@(staffEntry || selected == null)"><summary>@T("Change class or package")</summary>
+                <div class="field"><label asp-for="ClassSessionId">@T("Class time · Asia/Manila")</label>
+                    <select asp-for="ClassSessionId" data-native-select required>
+                        <option value="">@T("Choose a class")</option>
+                        @if (selected is null && Model.ClassSessionId is not null) {
+                            <option value="@Model.ClassSessionId" selected disabled>@T("Previously selected class is unavailable")</option>
+                        }
+                        @foreach (var session in sessions)
+                        {
+                            var start = DashboardMetrics.Local(session.StartUtc);
+                            var end = DashboardMetrics.Local(session.EndUtc);
+                            <option value="@session.ClassSessionId" data-remaining="@session.RemainingSeats">@start.ToString("dddd, d MMM yyyy · h:mm tt")–@end.ToString("h:mm tt") · @(session.Dates.Length > 0 ? $"{session.Dates.Length} lessons · " : "")@session.RemainingSeats @T("learner seats left") · ₱@session.Price.ToString("N2") @T("per learner")</option>
+                        }
+                    </select>
+                </div>
+                </details><div class="field"><label for="learner-count">@T("Number of learners")</label>
+                    <select name="learnerCount" id="learner-count" data-native-select>
+                        @for (var n = 1; n <= Math.Max(count, selected?.RemainingSeats ?? sessions.Select(x => x.RemainingSeats).DefaultIfEmpty(0).Max()) && n <= 8; n++)
+                        { <option value="@n" selected="@(n == count)">@n</option> }
+                    </select>
+                </div>
+                <button class="button button-secondary" type="submit" name="intent" value="familyForm" formnovalidate>@T("Update class and learners")</button>
+            </fieldset>
+        }
+        @if (hasRoster)
+        {
+            <fieldset class="family-section"><legend>@T("Booked by")</legend>
+                @if(staffEntry){<label for="family-source">Booking source</label><select name="source" id="family-source" required><option value="">Choose source</option>@foreach(var src in new[]{"Walk-in","Phone","Messaging"}){<option selected="@((ViewData["Source"] as string)==src)">@src</option>}</select>}
+                <div class="fields-grid">
+                    <partial name="~/Views/Reservations/_BookingContactFields.cshtml" model="Model" />
+                    <div class="field booking-notes"><div class="auth-input-wrap"><textarea asp-for="Notes" maxlength="1000" rows="2" placeholder=" "></textarea><label asp-for="Notes">@T("Notes (optional)")</label></div></div>
+                </div>
+            </fieldset>
+            ViewData["RosterCount"] = count;
+            <partial name="~/Views/Reservations/_LearnerFields.cshtml" model="Model" />
+            @if (selected is not null)
+            {
+                <button type="button" class="button" hidden data-family-review-next>@T("Review reservation")</button>
+                <section class="family-review" aria-labelledby="family-total"><h2 id="family-total">@T("Review your request")</h2>
+                    <button type="button" class="button button-secondary" hidden data-family-review-back>@T("Back to contact details")</button>
+                    <p data-family-review-names></p><p>@DashboardMetrics.Local(selected.StartUtc).ToString("dddd, d MMM yyyy · h:mm tt") Manila</p>
+                    <dl class="booking-facts"><div><dt>@T("Price per learner")</dt><dd>₱@selected.Price.ToString("N2")</dd></div>
+                    <div><dt>@T("Learner seats")</dt><dd>@count</dd></div><div><dt>@T("Booking total")</dt><dd>₱@((selected.Price * count).ToString("N2"))</dd></div></dl>
+                    <p>@T("Seats are held when your request is submitted for staff review. Staff must confirm the coach before approval.")</p>
+                    <label><input asp-for="PrivacyAccepted" required /> @T("I have read the") <a href="#legal-privacy-modal" data-open-policy-dialog="privacy">@T("privacy policy")</a> @T("and understand how my reservation details will be used.")</label>
+                    @if (signedIn && !User.HasClaim("email_verified", "true")) { <a class="button" href="/account/verify-email">@T("Verify email to submit")</a> }
+                    else { <button type="submit" class="button" data-family-submit>@T("Submit reservation")</button> }
+                </section>
+            }
+        }
+    </form>
+    }
+    </div>
+    @if (!staffEntry && offering != null)
+    {
+        <aside class="reservation-summary">
+            <img src="@offering.ImagePath" alt="" />
+            <div class="summary"><h3>@T(offering.Title)</h3>
+                @if (selected == null) { <p>@T(offering.Summary)</p> }
+                else {
+                    <dl class="booking-facts"><div><dt>@T("Class time · Asia/Manila")</dt><dd>@DashboardMetrics.Local(selected.StartUtc).ToString("ddd, d MMM · h:mm tt")</dd></div>
+                    <div><dt>@T("Price per learner")</dt><dd>₱@selected.Price.ToString("N2")</dd></div></dl>
+                }
+            </div>
+        </aside>
+    }
+    </div>
+</div>

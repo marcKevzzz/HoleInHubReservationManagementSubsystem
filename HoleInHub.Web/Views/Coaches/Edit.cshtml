@@ -1,0 +1,127 @@
+@using HoleInHub.Business.Reservations
+@model CoachEditorForm
+@{
+    Layout = "_StaffLayout";
+    ViewData["Title"] = Model.Id is null ? "Add coach" : "Edit coach";
+    var shiftCount = Model.Weekly.Count(row => row.Start.HasValue && row.End.HasValue);
+    var exceptionCount = Model.Exceptions.Count(row => row.Date.HasValue);
+    var focus = ViewData["RowFocus"] as string;
+}
+<section class="staff-workspace service-admin service-editor coach-editor">
+    <a class="flow-back" data-nav-layout="coaches" asp-action="Index"><partial name="_BackArrow" /> Back to coaches</a>
+    <form method="post" asp-action="Save" novalidate>
+        <header class="staff-workspace-heading service-admin-heading">
+            <h1>@ViewData["Title"]</h1>
+            <div class="service-admin-actions">
+                <label class="service-switch"><span>Active</span><input asp-for="Active" role="switch" /><span class="service-switch-track" aria-hidden="true"></span></label>
+                <a class="button button-secondary" data-nav-layout="coaches" asp-action="Index">Cancel</a>
+                <button class="button" type="submit">Save coach<partial name="_ButtonActionIcon" model='"save"' /></button>
+            </div>
+        </header>
+        <input asp-for="Id" type="hidden" /><input asp-for="Revision" type="hidden" />
+        @if (focus is null && !ViewData.ModelState.IsValid)
+        {
+            <section class="staff-error" role="alert" tabindex="-1" autofocus>
+                <h2>Coach could not be saved</h2>
+                <ul>
+                    @foreach (var field in ViewData.ModelState.Where(x => x.Value?.Errors.Count > 0))
+                    {
+                        foreach (var error in field.Value!.Errors)
+                        {
+                            <li>@if (field.Key == "" || field.Key is "Id" or "Revision")
+                            { @error.ErrorMessage }
+                            else
+                            { <a href="#@Html.Id(field.Key)">@error.ErrorMessage</a> }</li>
+                        }
+                    }
+                </ul>
+                @if (ViewData["StaleProfile"] is true) { <a data-nav-layout="coach-editor" asp-action="Edit" asp-route-id="@Model.Id">Reopen latest profile</a> }
+            </section>
+        }
+        @if (ViewData["Conflicts"] is IEnumerable<CoachBookingConflictDto> conflicts)
+        {
+            <section class="service-editor-section"><h2>Affected bookings</h2>
+                <ul class="coach-conflicts">
+                @foreach (var clash in conflicts)
+                {
+                    <li><strong>@clash.Reference</strong>
+                        <span>@StaffReviewQueue.Local(clash.StartUtc).ToString("ddd, d MMM yyyy · h:mm tt") – @StaffReviewQueue.Local(clash.EndUtc).ToString("h:mm tt") Manila</span>
+                        <span>@clash.Status</span>
+                        <a class="staff-hover-link" asp-controller="BookingReview" asp-action="Details" asp-route-id="@clash.Id" aria-label="Review booking @clash.Reference">Review booking</a>
+                    </li>
+                }
+                </ul>
+            </section>
+        }
+        <section class="service-editor-section service-detail-fields coach-profile">
+            <h2>Coach details</h2>
+            <div class="coach-contact-fields">
+                <div class="auth-input-wrap"><input asp-for="Name" maxlength="100" required placeholder=" " aria-describedby="Name-error" />
+                <label asp-for="Name">Coach name</label><span id="Name-error" class="service-field-error" asp-validation-for="Name"></span></div>
+                <div class="auth-input-wrap"><input asp-for="Title" maxlength="100" placeholder=" " /><label asp-for="Title">Professional title (optional)</label><span asp-validation-for="Title"></span></div>
+                <div class="profile-phone-field"><partial name="_PhoneCountry" />
+                <div class="auth-input-wrap"><input asp-for="Phone" inputmode="tel" autocomplete="tel-national" type="tel" maxlength="30" placeholder=" " aria-describedby="Phone-error" />
+                    <label asp-for="Phone">Contact number (optional)</label><span id="Phone-error" class="service-field-error" asp-validation-for="Phone"></span></div></div>
+                <div class="auth-input-wrap"><input asp-for="Email" type="email" maxlength="254" placeholder=" " aria-describedby="Email-error" />
+                    <label asp-for="Email">Email address (optional)</label><span id="Email-error" class="service-field-error" asp-validation-for="Email"></span></div>
+            </div>
+        </section>
+        <div class="service-configuration-grid coach-schedule-grid">
+            <details class="service-configuration-section service-disclosure" open="@(focus?.StartsWith("Weekly") == true || focus == "add-week" || ViewData.ModelState.Any(x => x.Key.StartsWith("Weekly[") && x.Value?.Errors.Count > 0))">
+                <summary><span>Weekly hours</span><small>@shiftCount @(shiftCount == 1 ? "shift" : "shifts")</small></summary>
+                <div class="service-configuration-content">
+                @for (var i = 0; i < Model.Weekly.Count; i++)
+                {
+                    <fieldset class="coach-hours"><legend>Shift @(i + 1)</legend>
+                        <div><label asp-for="Weekly[i].Day">Day</label>
+                            <select asp-for="Weekly[i].Day" asp-items="Html.GetEnumSelectList<DayOfWeek>()" autofocus="@(focus == $"Weekly[{i}].Day")" aria-describedby="@Html.IdFor(m => m.Weekly[i].Day)-error"></select>
+                            <span id="@Html.IdFor(m => m.Weekly[i].Day)-error" class="service-field-error" asp-validation-for="Weekly[i].Day"></span></div>
+                        <div><label asp-for="Weekly[i].Start">Start</label>
+                            <input type="time" asp-for="Weekly[i].Start" asp-format="{0:HH:mm}" aria-describedby="@Html.IdFor(m => m.Weekly[i].Start)-error" />
+                            <span id="@Html.IdFor(m => m.Weekly[i].Start)-error" class="service-field-error" asp-validation-for="Weekly[i].Start"></span></div>
+                        <div><label asp-for="Weekly[i].End">End</label>
+                            <input type="time" asp-for="Weekly[i].End" asp-format="{0:HH:mm}" aria-describedby="@Html.IdFor(m => m.Weekly[i].End)-error" />
+                            <span id="@Html.IdFor(m => m.Weekly[i].End)-error" class="service-field-error" asp-validation-for="Weekly[i].End"></span></div>
+                        <button class="coach-remove" data-no-icon name="intent" value="remove-week:@i" type="submit" formnovalidate aria-label="Remove shift @(i + 1)" title="Remove"><partial name="_StaffIcon" model='"trash"' /></button>
+                    </fieldset>
+                }
+                <button class="button button-secondary" id="add-week" name="intent" value="add-week" type="submit" formnovalidate autofocus="@(focus == "add-week")">Add shift</button>
+                </div>
+            </details>
+            <details class="service-configuration-section service-disclosure" open="@(focus?.StartsWith("Exceptions") == true || focus == "add-date" || ViewData.ModelState.Any(x => x.Key.StartsWith("Exceptions[") && x.Value?.Errors.Count > 0))">
+                <summary><span>Date exceptions</span><small>@exceptionCount @(exceptionCount == 1 ? "date" : "dates")</small></summary>
+                <div class="service-configuration-content">
+                @for (var i = 0; i < Model.Exceptions.Count; i++)
+                {
+                    <fieldset class="coach-hours"><legend>Exception @(i + 1)</legend>
+                        <div><label asp-for="Exceptions[i].Date">Date</label>
+                            <input type="date" asp-for="Exceptions[i].Date" asp-format="{0:yyyy-MM-dd}" autofocus="@(focus == $"Exceptions[{i}].Date")" aria-describedby="@Html.IdFor(m => m.Exceptions[i].Date)-error" />
+                            <span id="@Html.IdFor(m => m.Exceptions[i].Date)-error" class="service-field-error" asp-validation-for="Exceptions[i].Date"></span></div>
+                        <div><label asp-for="Exceptions[i].Start">Start</label>
+                            <input type="time" asp-for="Exceptions[i].Start" asp-format="{0:HH:mm}" aria-describedby="@Html.IdFor(m => m.Exceptions[i].Start)-error" />
+                            <span id="@Html.IdFor(m => m.Exceptions[i].Start)-error" class="service-field-error" asp-validation-for="Exceptions[i].Start"></span></div>
+                        <div><label asp-for="Exceptions[i].End">End</label>
+                            <input type="time" asp-for="Exceptions[i].End" asp-format="{0:HH:mm}" aria-describedby="@Html.IdFor(m => m.Exceptions[i].End)-error" />
+                            <span id="@Html.IdFor(m => m.Exceptions[i].End)-error" class="service-field-error" asp-validation-for="Exceptions[i].End"></span></div>
+                        <button class="coach-remove" data-no-icon name="intent" value="remove-date:@i" type="submit" formnovalidate aria-label="Remove exception @(i + 1)" title="Remove"><partial name="_StaffIcon" model='"trash"' /></button>
+                    </fieldset>
+                }
+                <button class="button button-secondary" id="add-date" name="intent" value="add-date" type="submit" formnovalidate autofocus="@(focus == "add-date")">Add exception</button>
+                </div>
+            </details>
+        </div>
+    </form>
+</section>
+
+<dialog id="coach-remove-dialog" class="logout-confirmation" aria-labelledby="coach-remove-title">
+    <h2 id="coach-remove-title">Remove this row?</h2>
+    <p>Save the coach to apply this schedule change.</p>
+    <form method="dialog" class="logout-actions">
+        <button class="button button-secondary" value="cancel" autofocus>Cancel</button>
+        <button class="button" value="remove">Remove</button>
+    </form>
+</dialog>
+@section Scripts {
+    <script src="~/js/profile-contact.js" asp-append-version="true"></script>
+    <script src="~/js/coach-editor.js" asp-append-version="true"></script>
+}

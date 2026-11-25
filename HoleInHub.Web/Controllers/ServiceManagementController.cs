@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 namespace HoleInHubReservationManagementSubsystem.Controllers;
 
-[Authorize(Policy = HoleInHub.Web.Accounts.StaffAuthorization.Workspace, Roles = StaffRoles.Admin)]
+[Authorize(Policy = HoleInHub.Web.Accounts.StaffAuthorization.Workspace, Roles = StaffRoles.VenueManagement)]
 [AutoValidateAntiforgeryToken, ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 [Route("admin/services")]
 public sealed class ServiceManagementController(ServiceCatalog catalog) : Controller

@@ -1295,3 +1295,43 @@ html.people-create-open {overflow:hidden;scrollbar-gutter:stable}
 .customer-directory-merge-enabled .customer-identity-cell {display:grid;grid-template-columns:24px minmax(0,1fr);gap:10px;align-items:center;min-width:0}
 .customer-directory-merge-enabled .customer-identity-cell>div {grid-column:2;grid-row:1;min-width:0}
 .customer-directory-merge-enabled .customer-identity-cell>.customer-merge-grip {grid-column:1;grid-row:1}
+
+.coach-editor .service-editor-section { gap: .75rem; }
+.coach-editor .service-editor-section > button { justify-self: start; }
+.coach-hours { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)) auto; align-items:start; gap:.75rem; min-width:0; border:0; border-bottom:1px solid var(--color-line); padding:.5rem 0 .75rem; }
+.coach-hours legend {font-weight:500}
+.coach-hours label { display:block; font-size:.8rem; color:var(--color-muted); }
+.staff-shell .coach-hours :is(input,select) { width:100%; min-width:0; min-height:44px; font:inherit; border:0; border-bottom:1px solid var(--color-control-line); border-radius:0; color:var(--color-ink); background:var(--color-paper); padding:.4rem 0; }
+.coach-remove { align-self:center; border:0; background:transparent; min-height:44px; cursor:pointer; }
+.coach-conflicts {list-style:none;padding:0}
+.coach-conflicts li {display:flex;flex-wrap:wrap;align-items:center;gap:.5rem 1rem;border-bottom:1px solid var(--color-line);padding:.75rem 0}
+.coach-assignment {display:grid;gap:1rem;justify-items:start}
+.coach-editor :is(input,select,button,a):focus-visible,.coach-assignment :is(select,button):focus-visible { outline:2px solid var(--color-green); outline-offset:2px; }
+@media (max-width: 640px) {
+    .coach-hours {grid-template-columns:repeat(2,minmax(0,1fr))}
+    .coach-hours > div:first-of-type {grid-column:1/-1}
+    .coach-remove {justify-self:start}
+    .coach-conflicts li {display:grid}
+}
+
+.review-row-actions .queue-action {display:inline-flex;align-items:center;gap:.35rem;white-space:nowrap}
+.queue-action svg {width:1rem;height:1rem;flex:none}
+.class-attendance-page .staff-workspace-heading {display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.class-attendance-page .review-section {display:grid;gap:1rem}
+.class-attendance-page .review-section > a {justify-self:start}
+.class-attendance-page .dashboard-table-wrap {overflow-x:auto}
+.class-attendance-page table {width:100%;border-collapse:collapse;text-align:start}
+.class-attendance-page :is(td,th) {text-align:start;padding:.85rem 1rem;border-bottom:1px solid var(--color-line)}
+
+.staff-workspace .review-section:is(.schedule-change-review,.class-attendance-summary) { background:transparent; padding-inline:0; }
+.class-attendance-summary p { margin-block:.5rem; }
+.lesson-actions,.lesson-facts { display:flex; align-items:center; flex-wrap:wrap; gap:1rem; }
+.lesson-facts { padding-block:1.25rem; margin-bottom:1.5rem; border-block:1px solid var(--color-line); }
+.lesson-facts > div { flex:1 1 10rem; display:grid; gap:.4rem; padding-inline:1rem; border-inline-start:1px solid var(--color-line); }
+.lesson-facts > div:first-child { padding-inline-start:0; border:0; }
+.class-attendance-page thead {background:var(--color-line)}
+.class-attendance-page tbody {background:var(--color-paper)}
+.class-attendance-page .customer-profile-link svg {width:1.1rem;height:1.1rem}
+.class-attendance-page .schedule-list-filter {margin-block:1.25rem}
+.class-attendance-page .staff-workspace-heading {flex-wrap:wrap}
+.class-attendance-page .customer-profile-link::after { content:none; }

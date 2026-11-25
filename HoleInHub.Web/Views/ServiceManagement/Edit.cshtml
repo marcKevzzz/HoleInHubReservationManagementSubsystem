@@ -1,4 +1,5 @@
 @using HoleInHub.Business.Services
+@inject Microsoft.Extensions.Options.IOptions<HoleInHub.Business.Reservations.ReservationPolicy> ClassPolicy
 @model ServiceEditorForm
 @{ Layout = "_StaffLayout"; ViewData["Title"] = Model.Create ? "Add service" : "Edit service";
     if (string.IsNullOrWhiteSpace(Model.BookingTypeName)) { Model.BookingTypeName = ReservationLabels.Service(Model.BookingService); }
@@ -6,7 +7,9 @@
 <section class="staff-workspace service-admin service-editor">
     <a class="flow-back" asp-action="Index"><partial name="_BackArrow" /> Back to services</a>
     <header class="staff-workspace-heading service-admin-heading">
+        @if (Model.BookingService == "PhilippineCoach") { <a class="button button-secondary" data-nav-layout="coaches" asp-controller="Coaches" asp-action="Index">Manage coaches</a> }
         <h1>@ViewData["Title"]</h1>
+                    @if (ClassPolicy.Value.SharedClassesEnabled && !Model.Create && Model.Active && Model.BookingService == "KpgaGroup") { <a class="button button-secondary" asp-controller="GroupClasses" asp-action="Publish" asp-route-offering="@Model.Id">Publish a class</a><a class="button button-secondary" asp-controller="GroupClasses" asp-action="Packages" asp-route-offering="@Model.Id">Package dates</a> }
         <div class="service-admin-actions"><label class="service-switch"><span>Active</span><input form="service-editor-form" id="Active" name="Active" type="checkbox" value="true" checked="@Model.Active" role="switch" /><span class="service-switch-track" aria-hidden="true"></span></label><a class="button button-secondary" asp-action="Index">Cancel</a><button class="button" type="submit" form="service-editor-form" data-action-icon="save">Save service<partial name="_ButtonActionIcon" model='"save"' /></button></div>
     </header>
     <form id="service-editor-form" asp-action="Save" method="post" enctype="multipart/form-data" data-service-editor class="service-editor-grid">

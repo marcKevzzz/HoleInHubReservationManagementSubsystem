@@ -4,6 +4,7 @@ namespace HoleInHub.Business.Accounts;
 
 public sealed record QueuedEmail(string Id, string Recipient, string Subject, string Body, string? ReservationId, string? RequiredStatus, string? LeaseToken)
 {
+    public string? ProgramLessonId { get; init; }
     public DateTime? ReminderStartUtc { get; init; }
     public DateTime? ExpiresUtc { get; init; }
     public string? VerificationId { get; init; }
@@ -17,6 +18,7 @@ public sealed class NotificationService(OutboxPersistence persistence)
         var record = await persistence.ClaimAsync(DateTime.UtcNow, ct);
         return record is null ? null : new(record.Id, record.Recipient, record.Subject, record.Body, record.ReservationId, record.RequiredStatus, record.LeaseToken)
         {
+            ProgramLessonId = record.ProgramLessonId,
             ReminderStartUtc = record.ReminderStartUtc,
             ExpiresUtc = record.ExpiresUtc,
             VerificationId = record.VerificationId,
@@ -29,6 +31,7 @@ public sealed class NotificationService(OutboxPersistence persistence)
         Recipient = email.Recipient,
         ReservationId = email.ReservationId,
         RequiredStatus = email.RequiredStatus,
+        ProgramLessonId = email.ProgramLessonId,
         ReminderStartUtc = email.ReminderStartUtc,
         ExpiresUtc = email.ExpiresUtc,
         VerificationId = email.VerificationId,

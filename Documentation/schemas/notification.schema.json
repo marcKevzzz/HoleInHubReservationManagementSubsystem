@@ -1,6 +1,6 @@
 {
   "bsonType" : "object",
-  "required" : ["_id", "Recipient", "DueUtc"],
+  "required" : ["_id", "Recipient", "DueUtc", "outbox_id"],
   "properties" : {
     "_id" : {
       "bsonType" : "string",
@@ -43,6 +43,7 @@
     },
     "Failed" : {
       "bsonType" : "bool"
-    }
+    },
+    "outbox_id" : { "bsonType" : "string", "pattern" : "^OUT-[0-9A-F]{16}\\z" }
   }
 }

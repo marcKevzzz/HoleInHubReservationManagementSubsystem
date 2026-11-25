@@ -23,7 +23,7 @@ public sealed partial class ReservationPersistence
                 if (prior.CommandHash != proposal.PayloadHash) { throw new AllocationConflictException("This form was already submitted with different details. Reload the booking."); }
                 return true;
             }
-            if (booking.Revision != revision || !eligible(booking) || booking.ScheduleChange?.Status == "Pending")
+            if (booking.ClassSessionId != null || booking.Revision != revision || !eligible(booking) || booking.ScheduleChange?.Status == "Pending")
             {
                 throw new AllocationConflictException("The booking changed or already has a request. Reload its latest details.");
             }
@@ -54,7 +54,7 @@ public sealed partial class ReservationPersistence
     public async Task<(string Reference, DateTime StartUtc, DateTime EndUtc)> DecideScheduleChangeAsync(string id, string proposalId, long revision, bool approve,
         string[] resources, string actor, string reason, DateTime now, CancellationToken ct, ScheduleChangeRecord? directMove = null,
         bool vipUpgrade = false, Action<ReservationRecord, IReadOnlyList<ResourceRecord>>? validateCapacity = null,
-        Action<ReservationRecord, HoleInHub.Data.Services.ServiceCatalogRecord?>? validateSession = null)
+        Action<ReservationRecord, HoleInHub.Data.Services.ServiceCatalogRecord?>? validateSession = null, bool requireCoach = false)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeout.CancelAfter(TimeSpan.FromSeconds(15));
@@ -64,6 +64,7 @@ public sealed partial class ReservationPersistence
             var booking = await Reservations.Find(s, x => x.Id == id).FirstOrDefaultAsync(token)
                 ?? throw new AllocationConflictException("This booking is no longer available.");
             var prior = booking.History.FirstOrDefault(entry => entry.CommandId == proposalId);
+            if (booking.ClassSessionId != null) { throw new AllocationConflictException("A family enrollment follows its published class time."); }
             if (directMove is not null && prior is not null)
             {
                 if (prior.CommandHash != directMove.PayloadHash) { throw new AllocationConflictException("This move was submitted with different details. Reload the schedule."); }
@@ -103,14 +104,15 @@ public sealed partial class ReservationPersistence
             if (approve)
             {
                 if (proposal.BaseRevision != revision || booking.Status != "Confirmed" || booking.CancellationRequested
-                    || booking.Service is not ("Regular" or "VIP") || now >= booking.StartUtc || now >= proposal.StartUtc)
+                    || (booking.Service is not ("Regular" or "VIP") && !(booking.Service == "PhilippineCoach" && (requireCoach || booking.CoachId != null))) || now >= booking.StartUtc || now >= proposal.StartUtc)
                 {
                     throw new AllocationConflictException("The booking is no longer eligible for this change. Decline the request or reload its latest details.");
                 }
                 if (vipUpgrade && (directMove is null || booking.Service != "Regular" || booking.ResourceIds.Length != 1))
                 { throw new AllocationConflictException("Only a confirmed single-bay Regular move can upgrade to VIP."); }
                 var destinationService = vipUpgrade ? "VIP" : booking.Service;
-                var catalog = await Resources.Find(s, x => x.Active && x.Service == destinationService).ToListAsync(token);
+                var bayType = destinationService == "PhilippineCoach" ? "Regular" : destinationService;
+                var catalog = await Resources.Find(s, x => x.Active && x.Service == bayType).ToListAsync(token);
                 if (resources.Length != booking.ResourceIds.Length || resources.Distinct().Count() != resources.Length
                     || resources.Any(resource => !catalog.Any(bay => bay.Id == resource)))
                 {
@@ -134,6 +136,7 @@ public sealed partial class ReservationPersistence
                     var service = await ReadAllocationServiceAsync(s, booking, token);
                     validateSession(booking, service);
                 }
+                if (booking.Service == "PhilippineCoach") { await ClaimCoachAsync(s, booking, booking.CoachId, now, token); }
                 booking.ResourceIds = resources;
                 var selected = catalog.Where(bay => resources.Contains(bay.Id)).ToArray();
                 booking.ResourceNames = selected.ToDictionary(bay => bay.Id, bay => bay.Name);
@@ -171,6 +174,7 @@ public sealed partial class ReservationPersistence
                 });
             if (approve)
             {
+                if (booking.CoachId != null) { update = update.Set(x => x.CoachId, booking.CoachId).Set(x => x.CoachName, booking.CoachName); }
                 update = update.Set(x => x.Service, booking.Service).Set(x => x.ServiceEntryId, booking.ServiceEntryId)
                     .Set(x => x.StartUtc, booking.StartUtc).Set(x => x.EndUtc, booking.EndUtc)
                     .Set(x => x.ResourceIds, booking.ResourceIds).Set(x => x.ResourceNames, booking.ResourceNames);

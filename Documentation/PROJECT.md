@@ -126,3 +126,15 @@ Owner update (2026-11-03): ordinary sessions may be 30 minutes. Each time tile r
 Owner update (2026-11-15): implement staff-managed no-show, attendance corrections and then session extensions. The first extension release covers Regular and VIP only. Implementation rules and verification evidence are recorded in the [attendance and extensions plan](plans/2026-11-15-attendance-and-extensions.md).
 
 The reservation-side settlement checkout pilot is disabled by default. Venue approval and authenticated POS settlement evidence are required before operational rollout. See the [implementation specification](specs/pos-settlement-checkout.md) and [next integration plan](plans/pos-settlement-checkout.md).
+
+### Fixed-date KPGA program registration
+
+Customers register through the normal booking experience until 11:59 PM Manila time on the published registration deadline, or until any included lesson runs out of learner seats. One registration can include multiple learners. Submission holds seats on all included dates immediately. Staff have one hour to confirm; an unconfirmed registration expires and releases all of its seats. Staff can confirm a timely submission after registration closes if its one-hour review window is still open.
+
+Confirmation guarantees every included lesson and emails the schedule to the booking contact. The system schedules one reminder per registration per lesson, 24 hours before the start; confirmation within that window queues the reminder immediately. Approved absences apply per learner per date.
+
+### Philippine Coaching availability
+
+Staff, managers, and administrators maintain Philippine coach profiles, weekly hours and date exceptions in Manila time. Customers choose a session through the usual reservation flow. While coach scheduling is enabled, a Philippine Coaching booking requires an available coach and bay for the full session. Pending bookings hold both. The fixed KPGA coaching and lesson programs follow their published dates.
+
+Before enabling Philippine coach scheduling, run the Migrator, enter the active roster and availability, and assign coaches to existing future pending and confirmed Philippine Coaching sessions. Verify a known available time and a known unavailable time in the customer calendar.

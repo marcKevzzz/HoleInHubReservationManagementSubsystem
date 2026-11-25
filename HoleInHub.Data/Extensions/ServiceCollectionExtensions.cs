@@ -57,6 +57,10 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_021_BusinessIdentifiers>();
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_022_PrefixedBusinessIdentifiers>();
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_023_SettlementCheckout>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_024_OutboxIdentifier>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_025_SharedGroupClasses>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_026_ClassPackages>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_027_CoachDirectory>();
         services.AddSingleton<MongoMigrationRunner>();
 
         return services;

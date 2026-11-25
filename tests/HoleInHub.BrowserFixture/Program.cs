@@ -14,7 +14,8 @@ using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 
 const string uri = "mongodb://localhost:27017/?replicaSet=rs0";
-const string origin = "https://localhost:54893";
+var port = int.Parse(Environment.GetEnvironmentVariable("HIH_BROWSER_PORT") ?? "54893");
+var origin = $"https://localhost:{port}";
 if (!Guid.TryParseExact(Environment.GetEnvironmentVariable("HIH_BROWSER_RUN_ID"), "D", out var runId)) { throw new InvalidOperationException("A browser fixture run ID is required."); }
 var database = "test_browser_" + runId.ToString("N");
 var pin = Environment.GetEnvironmentVariable("HIH_BROWSER_MANAGER_PIN");
@@ -119,7 +120,7 @@ async Task Run(string project, string[] arguments)
 {
     var root = Directory.GetParent(web)!.FullName;
     var start = new ProcessStartInfo("dotnet") { WorkingDirectory = web, UseShellExecute = false };
-    foreach (var argument in new[] { "run", "--no-build", "--no-launch-profile", "--project", Path.Combine(root, project), "--" }.Concat(arguments))
+    foreach (var argument in new[] { "run", "-c", new DirectoryInfo(AppContext.BaseDirectory).Parent!.Name, "--no-build", "--no-launch-profile", "--project", Path.Combine(root, project), "--" }.Concat(arguments))
     {
         start.ArgumentList.Add(argument);
     }
@@ -147,6 +148,8 @@ async Task Run(string project, string[] arguments)
         ["Smtp__Port"] = "1025",
         ["Smtp__UseStartTls"] = "false",
         ["Smtp__From"] = "fixture@browser.example.test",
+        ["ReservationPolicy__SharedClassesEnabled"] = "true",
+        ["ReservationPolicy__PhilippineCoachSchedulesEnabled"] = "true",
         ["ReservationPolicy__Approved"] = "true",
         ["ReservationPolicy__DurationsApproved"] = "true",
         ["ReservationPolicy__ReviewStart"] = "00:00:00",

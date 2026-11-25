@@ -4,6 +4,12 @@
 @{
 	ViewData["Title"] = "Make a reservation"; var resources = (IReadOnlyList<ResourceDto>)ViewData["Resources"]!; var names = new[] { "Experience", "Date & time", "Select bays", "Contact details", "Review" };
 }
+@if (ViewData["SharedClassesEnabled"] is true && (Context.Request.Query.ContainsKey("plain") || (Context.Request.HasFormContentType && Context.Request.Form.ContainsKey("plain"))) && Model.Service.Split(':')[0] == "KpgaGroup")
+{
+    <partial name="_FamilyBooking" model="Model" />
+}
+else
+{
 <div class="reservation-page reservation-studio">
 	<div class="reservation-title"><h1>@T("MAKE A RESERVATION")</h1></div>
 	@if (ViewData["RecoveryMessage"] is string recoveryMessage)
@@ -43,8 +49,31 @@
 					}
 					@foreach (var item in options)
 					{
-						var key = item.Id == item.BookingService ? item.BookingService : $"{item.BookingService}:{item.Id}";
-						var availability = item.AvailabilityRules is null ? null : System.Text.Json.JsonSerializer.Serialize(item.AvailabilityRules, System.Text.Json.JsonSerializerOptions.Web);
+                        var key = item.Id == item.BookingService ? item.BookingService : $"{item.BookingService}:{item.Id}";
+						if (ViewData["SharedClassesEnabled"] is true && item.BookingService == "KpgaGroup")
+                        {
+                            <noscript><a asp-action="Create" asp-route-service="@key" asp-route-plain="1">@T(item.Title) · @T("Choose date & time")</a></noscript>
+                        }
+                        var programs = ViewData["Programs"] as Dictionary<string, FamilyClassOption[]>;
+                        if (programs?.TryGetValue(item.Id, out var openPrograms) == true && openPrograms.Length > 0)
+                        {
+                            foreach (var program in openPrograms)
+                            {
+                                var times = program.Dates.Length > 0 ? program.Dates : new[] { program.StartUtc };
+                                var closed = program.RegistrationEndsUtc <= DateTime.UtcNow || program.RemainingSeats == 0;
+                                var register = Url.Action("Create", new { service = key, classSessionId = program.ClassSessionId });
+                                <label class="service-option" for="service-@program.ClassSessionId">
+                                    <img src="@item.ImagePath" alt="" /><span class="service-description"><strong>@T(item.Title)</strong>
+                                    <span class="service-rate" data-rate="@program.Price.ToString("N2")">@times.Length @(times.Length == 1 ? "lesson" : "lessons") · ₱@program.Price.ToString("N2") per learner</span>
+                                    <span>@if (program.RegistrationEndsUtc is DateTime cutoff) {<text>Register by @DashboardMetrics.Local(cutoff.AddMinutes(-1)).ToString("d MMM yyyy, h:mm tt") Manila · </text>} @(program.RemainingSeats == 0 ? "Fully booked" : closed ? "Registration closed" : $"{program.RemainingSeats} seats left")</span>
+                                    <span>@string.Join(" · ", times.Select(x => DashboardMetrics.Local(x).ToString("d MMM")))</span></span>
+                                    <input type="radio" name="Service" disabled="@closed" id="service-@program.ClassSessionId" value="@key" checked="@(Model.ClassSessionId == program.ClassSessionId || (Model.ClassSessionId == null && Model.Service.Split(':')[0] == "KpgaGroup" && program == openPrograms.FirstOrDefault(x => x.RemainingSeats > 0)))" data-program="@program.ClassSessionId" data-price="@program.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)" data-seats="@program.RemainingSeats" data-dates="@string.Join(",",times.Select(x=>DashboardMetrics.Local(x).ToString("yyyy-MM-ddTHH:mm")))" data-minutes="@((int)(program.EndUtc-program.StartUtc).TotalMinutes)" data-booking-type="KpgaGroup" data-auto-bay="true" />
+                                </label>
+                                @if (!closed) { <noscript><a href="@(register + "&plain=1")">Register for @item.Title</a></noscript> }
+                            }
+                        }
+                        if (programs?.TryGetValue(item.Id, out var availableOptions) == true && availableOptions.Length > 0 ) { continue; }
+                        var availability = item.AvailabilityRules is null ? null : System.Text.Json.JsonSerializer.Serialize(item.AvailabilityRules, System.Text.Json.JsonSerializerOptions.Web);
 						<label class="service-option">
 							<img src="@item.ImagePath" alt="" />
 							<span class="service-description">
@@ -56,8 +85,8 @@
 									<span>@T(ServiceAvailabilityRules.Describe(rules))</span>
 								}
 							</span>
-							<input type="radio" name="Service" id="service-@item.Id" value="@key" checked="@(item.Id == defaultExperience.Id)" required
-								   data-booking-type="@item.BookingService" data-max-pax="@item.MaxPax" data-availability="@availability"
+							<input type="radio" name="Service" id="service-@item.Id" value="@key" checked="@(Model.ClassSessionId == null && item.Id == defaultExperience.Id)" required
+								   disabled="@(ViewData["SharedClassesEnabled"] is true && item.BookingService == "KpgaGroup")" data-booking-type="@item.BookingService" data-max-pax="@item.MaxPax" data-availability="@availability"
 								   data-auto-bay="@(BookingRules.AssignsSingleBay(item.BookingService, item.CustomerSelectsBays) ? "true" : "false")" />
 						</label>
 					}
@@ -69,36 +98,21 @@
 			}
 		</select></div></div><div id="enhanced-time" hidden><div class="time-selection-heading"><h3>@T("Choose your times")</h3></div><p id="selected-time-range" class="selected-time-range" role="status" aria-live="polite"></p><div id="time-period-tabs" class="time-period-tabs" role="tablist" aria-label="@T("Time of day")"></div><div class="calendar-slots" id="time-slots" role="group" aria-label="@T("Session times, Asia/Manila")" aria-describedby="session-availability"></div><p id="session-availability" class="booking-session-status" role="status"></p></div></div></fieldset>
 		<fieldset class="booking-step booking-bays"><legend>@T("SELECT YOUR BAYS")<span class="info-tip"><button type="button" class="info-tip-btn" aria-label="@T("How bay selection works")" aria-describedby="bay-selection-help" aria-expanded="false">i</button><span id="bay-selection-help" class="info-tip-bubble" role="tooltip">@T("Choose one bay or bring your group together across several. Your whole selection is checked as one request. Click a bay or drag across available bays to select several.")</span></span></legend><p id="service-capacity-note" class="small" hidden></p><p id="availability-status" role="status"></p><div class="resource-options">@foreach(var resource in resources){
-			<label class="resource-option" data-resource="@resource.Id"><input data-service="@resource.Service" data-max-guests="@resource.MaxTotalGuests" type="checkbox" name="ResourceIds" value="@resource.Id" checked="@(Model.ResourceIds.Contains(resource.Id))" /><span class="bay-number">@resource.Name.Split(' ').Last()</span><strong>@resource.Name</strong><small class="resource-status">@T("Availability checked on submission")</small></label>
+			<label class="resource-option" data-resource="@resource.Id"><input data-service="@resource.Service" data-max-players="@resource.MaxPlayers" data-max-guests="@resource.MaxTotalGuests" type="checkbox" name="ResourceIds" value="@resource.Id" checked="@(Model.ResourceIds.Contains(resource.Id))" /><span class="bay-number">@resource.Name.Split(' ').Last()</span><strong>@resource.Name</strong><small class="resource-status">@T("Availability checked on submission")</small></label>
 		}
 	</div><noscript><p>@T("If your service assigns a bay automatically, leave the bay selection empty.")</p></noscript></fieldset>
 	<fieldset class="booking-step booking-contact">
 		<legend>@T("YOUR DETAILS")</legend>
 		<div class="fields-grid">
-			@foreach (var field in new[] { ("FirstName", "First name", "given-name"), ("LastName", "Last name", "family-name") })
-			{
-				<div class="field"><div class="auth-input-wrap"><input id="@field.Item1" name="@field.Item1" value="@(field.Item1 == "FirstName" ? Model.FirstName : Model.LastName)" autocomplete="@field.Item3" maxlength="100" pattern="@HoleInHub.Business.Accounts.ContactRules.NamePattern" type="text" aria-describedby="@(field.Item1)-feedback" placeholder=" " required /><label for="@field.Item1">@T(field.Item2) *</label></div><span class="field-error" id="@(field.Item1)-feedback" aria-live="polite"></span></div>
-			}
-            <div class="field">
-                <div class="profile-phone-field">
-                    <partial name="_PhoneCountry" />
-                    <div class="auth-input-wrap">
-                        <input asp-for="Phone" data-profile-contact type="tel" inputmode="tel" autocomplete="tel-national" maxlength="24" placeholder=" " required data-phone-pattern="@HoleInHub.Business.Accounts.ContactRules.PhonePattern" aria-describedby="Phone-feedback" />
-                        <label asp-for="Phone">@T("Mobile number") *</label>
-                    </div>
-                </div>
-                <span asp-validation-for="Phone" class="field-error" id="Phone-feedback" aria-live="polite"></span>
-            </div>
-			@if (User.Identity?.IsAuthenticated == true)
-			{
-				<div class="field"><div class="auth-input-wrap"><input asp-for="Email" type="email" autocomplete="email" readonly placeholder=" " aria-readonly="true" aria-describedby="Email-feedback" /><label asp-for="Email">@T("Email address")</label></div><span asp-validation-for="Email" id="Email-feedback" class="field-error" aria-live="polite"></span></div>
-			}
-			else
-			{
-				<div class="field"><div class="auth-input-wrap"><input asp-for="Email" type="email" autocomplete="email" maxlength="254" placeholder=" " aria-describedby="Email-feedback" required /><label asp-for="Email">@T("Email address *")</label></div><span class="field-error" id="Email-feedback" aria-live="polite"></span></div>
-			}
-			<div class="field"><div class="auth-input-wrap"><input asp-for="Attendees" type="text" inputmode="numeric" autocomplete="off" pattern="[0-9]{1,3}" maxlength="3" min="1" max="640" placeholder=" " aria-describedby="Attendees-feedback" required /><label asp-for="Attendees">@T("Number of guests *")</label></div><span class="field-error" id="Attendees-feedback" aria-live="polite"></span></div>
-			<div class="field booking-notes"><div class="auth-input-wrap"><textarea asp-for="Notes" maxlength="1000" rows="2" placeholder=" " aria-describedby="Notes-feedback"></textarea><label asp-for="Notes">@T("Notes (optional)")</label></div><span asp-validation-for="Notes" class="field-error" id="Notes-feedback" aria-live="polite"></span></div><div class="booking-privacy"><label><input asp-for="PrivacyAccepted" required aria-describedby="PrivacyAccepted-feedback" /><span>@T("I have read the") <a href="#legal-privacy-modal" data-open-policy-dialog="privacy" aria-haspopup="dialog" aria-controls="legal-privacy-dialog" aria-expanded="false">@T("privacy policy")</a> @T("and understand how my reservation details will be used.")</span></label><span asp-validation-for="PrivacyAccepted" class="field-error" id="PrivacyAccepted-feedback" aria-live="polite"></span></div>
+			<partial name="_BookingContactFields" model="Model" />
+            <div class="field"><div class="auth-input-wrap"><input asp-for="ContactAge" type="number" min="0" max="120" placeholder=" " aria-describedby="ContactAge-feedback" /><label asp-for="ContactAge">Your age (optional)</label></div><span class="field-error" asp-validation-for="ContactAge" id="ContactAge-feedback"></span></div>
+<div class="field"><div class="auth-input-wrap"><input asp-for="ContactAddress" maxlength="250" autocomplete="street-address" placeholder=" " aria-describedby="ContactAddress-feedback" /><label asp-for="ContactAddress">Your address (optional)</label></div><span class="field-error" asp-validation-for="ContactAddress" id="ContactAddress-feedback"></span></div>
+<div class="field"><div class="auth-input-wrap"><input asp-for="Attendees" type="text" inputmode="numeric" autocomplete="off" pattern="[0-9]{1,3}" maxlength="3" min="1" max="640" placeholder=" " aria-describedby="Attendees-feedback" required /><label asp-for="Attendees">@T("Number of guests *")</label></div><span class="field-error" id="Attendees-feedback" aria-live="polite"></span></div>
+            <div class="field"><div class="auth-input-wrap"><input asp-for="NonPlayerGuests" type="number" min="0" placeholder=" " aria-describedby="NonPlayerGuests-feedback" /><label asp-for="NonPlayerGuests">Non-playing guests (included in total)</label></div><span class="field-error" id="NonPlayerGuests-feedback"></span></div>
+			<fieldset id="program-learners" hidden disabled class="program-learners"><legend>@T("Learners")</legend>
+            <input type="hidden" name="ClassSessionId" /><input type="hidden" name="ReviewedClassSessionId" /><input type="hidden" name="ReviewedLearnerCount" /><input type="hidden" name="learnerCount" />
+            @{ ViewData["RosterCount"] = 8; }<partial name="_LearnerFields" model="Model" /></fieldset>
+            <div class="field booking-notes"><div class="auth-input-wrap"><textarea asp-for="Notes" maxlength="1000" rows="2" placeholder=" " aria-describedby="Notes-feedback"></textarea><label asp-for="Notes">@T("Notes (optional)")</label></div><span asp-validation-for="Notes" class="field-error" id="Notes-feedback" aria-live="polite"></span></div><div class="booking-privacy"><label><input asp-for="PrivacyAccepted" required aria-describedby="PrivacyAccepted-feedback" /><span>@T("I have read the") <a href="#legal-privacy-modal" data-open-policy-dialog="privacy" aria-haspopup="dialog" aria-controls="legal-privacy-dialog" aria-expanded="false">@T("privacy policy")</a> @T("and understand how my reservation details will be used.")</span></label><span asp-validation-for="PrivacyAccepted" class="field-error" id="PrivacyAccepted-feedback" aria-live="polite"></span></div>
 		</div>
 	</fieldset>
 	<fieldset class="booking-step booking-review-step">
@@ -141,7 +155,9 @@
 	<dialog id="booking-auth-dialog" class="booking-auth-dialog" aria-labelledby="booking-auth-title" aria-describedby="booking-auth-description"><button type="button" class="dialog-close logout-close" aria-label="@T("Continue as guest")"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg></button><h2 id="booking-auth-title" tabindex="-1" autofocus>@T("MAKE IT YOURS.")</h2><p id="booking-auth-description">@T("Continue as a guest or sign in.")</p><div class="dialog-actions"><a id="booking-sign-in" class="button button-tertiary" data-no-icon href="/account/sign-in?returnUrl=%2FReservations%2FCreate">@T("Sign in")</a><button type="button" class="button" id="booking-browse">@T("Continue as guest")</button></div></dialog>
 	<noscript><p>@T("You can complete this form as a guest, or") <a href="/account/sign-in?returnUrl=%2FReservations%2FCreate">@T("sign in")</a> @T("before booking.")</p></noscript>
 }
+}
 @section Scripts {
+    <script src="~/js/family-booking.js" asp-append-version="true"></script>
 	<script src="~/js/profile-contact.js" asp-append-version="true"></script>
     <script src="~/js/reservation.js" asp-append-version="true"></script>
 }

@@ -387,6 +387,7 @@ public sealed class BookingReviewController(ReservationService reservations, Tim
             nextPage++;
             next = (await LoadQueueAsync(filter, day, sort, ct, nextPage)).Items.FirstOrDefault()?.Id;
         }
+        if (context.Booking.ClassSessionId is string classId) { ViewData["AttendanceClass"] = await reservations.StaffClassSessionAsync(classId, ct); }
         return View(new StaffReviewDetail(context, queue, bays.Where(bay => context.Booking.ResourceIds.Contains(bay.Id)).ToArray(), fromQueue, date,
             previous, next)
         { PreviousPage = previousPage, NextPage = nextPage });

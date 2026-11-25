@@ -1,0 +1,43 @@
+@using HoleInHub.Business.Reservations
+@model SubmitReservationRequest
+@{
+    var sessions = ViewData["ClassSessions"] as IReadOnlyList<FamilyClassOption> ?? [];
+    var service = Model.ServiceEntryId == null ? "KpgaGroup" : $"KpgaGroup:{Model.ServiceEntryId}";
+    var programs = sessions.Where(x => x.RegistrationEndsUtc.HasValue).ToArray();
+    var dates = sessions.Where(x => !x.RegistrationEndsUtc.HasValue).GroupBy(x => DateOnly.FromDateTime(DashboardMetrics.Local(x.StartUtc))).ToDictionary(x => x.Key, x => x.ToArray());
+    var months = dates.Keys.Select(x => new DateOnly(x.Year, x.Month, 1)).Distinct().Order().ToArray();
+    var month = months.FirstOrDefault(x => x.ToString("yyyy-MM") == Context.Request.Query["month"].ToString(), months.FirstOrDefault());
+    var index = Array.IndexOf(months, month);
+    DateOnly.TryParse(Context.Request.Query["day"], out var selected);
+}
+<section class="booking-step booking-schedule" aria-labelledby="class-calendar-heading">
+    @foreach(var program in programs){
+        <section class="booking-detail-section"><h2>Lesson program registration</h2>
+        <p>Register by @DashboardMetrics.Local(program.RegistrationEndsUtc!.Value.AddMinutes(-1)).ToString("d MMM yyyy, h:mm tt") Manila · @program.RemainingSeats seats left</p>
+        <p>@string.Join(" · ", program.Dates.Select(x => DashboardMetrics.Local(x).ToString("ddd, d MMM · h:mm tt")))</p>
+        <a class="button" asp-action="Create" asp-route-service="@service" asp-route-classSessionId="@program.ClassSessionId" asp-route-plain="1">Register · @program.Dates.Length lessons</a></section>
+    }
+    <h2 id="class-calendar-heading">@T("Choose date & time")</h2>
+    @if (months.Length == 0) { <p class="notice">@T("There are no published classes with seats available.")</p> }
+    else {
+        <div class="booking-schedule-grid"><div id="booking-calendar">
+        <div class="calendar-heading">
+            @if(index > 0){<a asp-action="Create" asp-route-service="@service" asp-route-month="@months[index-1].ToString("yyyy-MM")" aria-label="@T("Previous month")">‹</a>}
+            <h3>@month.ToString("MMMM yyyy")</h3>
+            @if(index+1 < months.Length){<a asp-action="Create" asp-route-service="@service" asp-route-month="@months[index+1].ToString("yyyy-MM")" aria-label="@T("Next month")">›</a>}
+        </div>
+        <form method="get" asp-action="Create" class="month-grid"><input type="hidden" name="service" value="@service" /><input type="hidden" name="month" value="@month.ToString("yyyy-MM")" />
+        @foreach(var weekday in new[]{"Sun","Mon","Tue","Wed","Thu","Fri","Sat"}){<span class="weekday">@T(weekday)</span>}
+        @for(int i=0;i<(int)month.DayOfWeek;i++){<span></span>}
+        @for(var date=month;date.Month==month.Month;date=date.AddDays(1)){
+            <button name="day" value="@date.ToString("yyyy-MM-dd")" aria-label="@date.ToString("dddd, d MMMM yyyy")" class="@(date == selected ? "selected" : null)" disabled="@(!dates.ContainsKey(date))">@date.Day</button>
+        }
+        </form></div>
+        @if(dates.TryGetValue(selected,out var slots) && selected.Month==month.Month && selected.Year==month.Year){
+            <div><h3>@selected.ToString("dddd, d MMMM")</h3>
+            @foreach(var slot in slots){<p><a class="button button-secondary" asp-action="Create" asp-route-service="@service" asp-route-classSessionId="@slot.ClassSessionId">@DashboardMetrics.Local(slot.StartUtc).ToString("h:mm tt") Manila · @slot.RemainingSeats @T("learner seats left") @(slot.Dates.Length > 0 ? $"· {slot.Dates.Length} lessons · ₱{slot.Price:N2} per learner" : "")</a></p>@if(slot.Dates.Length > 0){<ul>@foreach(var lesson in slot.Dates){<li>@DashboardMetrics.Local(lesson).ToString("ddd, d MMM yyyy · h:mm tt")</li>}</ul>}}
+            </div>
+        }
+        </div>
+    }
+</section>
