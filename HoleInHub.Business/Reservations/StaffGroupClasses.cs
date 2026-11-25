@@ -2,10 +2,10 @@ using HoleInHub.Data.Reservations;
 
 namespace HoleInHub.Business.Reservations;
 
-public sealed record StaffClassSession(string Id, string Offering, DateTime StartUtc, DateTime EndUtc, string[] Bays, int Capacity, int HeldSeats, string State, decimal Price);
+public sealed record StaffClassSession(string Id, string Offering, DateTime StartUtc, DateTime EndUtc, string[] Bays, int Capacity, int HeldSeats, string State, decimal Price, long Revision = 0);
 public sealed record StaffClassOffering(string Id, string Name);
 public sealed record PackageSeatView(string SessionId, DateTime StartUtc, string LearnerId, string State, string Attendance);
-public sealed record PackageSchedule(string Id, string[] Sessions, decimal Price);
+public sealed record PackageSchedule(string Id, string[] Sessions, decimal Price, DateTime? Deadline = null);
 public sealed record PackageEditor(string Offering, string Title, int Count, decimal Price, StaffClassSession[] Sessions, PackageSchedule[] Packages);
 
 public sealed partial class ReservationService
@@ -18,7 +18,7 @@ public sealed partial class ReservationService
         var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime;
         var sessions = (await persistence.ClassesAsync(now, DateTime.MaxValue, ct))
             .Where(x => x.ServiceEntryId == offering && x.State == "Open" && x.StartUtc > now).Select(StaffClass).ToArray();
-        var packages = (await persistence.PackagesAsync(offering, ct)).Select(x => new PackageSchedule(x.PackageId, x.ClassSessionIds, x.PricePerLearner)).ToArray();
+        var packages = (await persistence.PackagesAsync(offering, ct)).Select(x => new PackageSchedule(x.PackageId, x.ClassSessionIds, x.PricePerLearner, x.RegistrationEndsUtc)).ToArray();
         var pricing = item.Pricing ?? PricingRules.Default("KpgaGroup");
         return new(offering, item.Title, pricing.ClassCount, pricing.BaseRate, sessions, packages);
     }
@@ -37,44 +37,59 @@ public sealed partial class ReservationService
             .Select(x => new StaffClassOffering(x.Id, x.Title)).ToArray();
 
     private static StaffClassSession StaffClass(ClassSessionRecord x) =>
-        new(x.ClassSessionId, x.ServiceEntryId, x.StartUtc, x.EndUtc, x.ResourceIds, x.Capacity, x.HeldSeats, x.State, x.PricePerLearner);
+        new(x.ClassSessionId, x.ServiceEntryId, x.StartUtc, x.EndUtc, x.ResourceIds, x.Capacity, x.HeldSeats, x.State, x.PricePerLearner, x.ScheduleRevision);
 
     public async Task<StaffClassSession[]> StaffClassesAsync(DateOnly from, CancellationToken ct) =>
         (await persistence.ClassesAsync(DashboardMetrics.Utc(from), DashboardMetrics.Utc(from.AddDays(31)), ct)).Select(StaffClass).ToArray();
 
-    public async Task<string> PublishGroupClassAsync(DateOnly day, string offering, string[] bays, int capacity, decimal price, string actor, CancellationToken ct)
+    public async Task<string> PublishGroupClassAsync(DateOnly day, string offering, string[] bays, int capacity, string actor, CancellationToken ct, TimeOnly? startTime = null, TimeOnly? endTime = null, string? editing = null, long revision = 0, bool weeklyPackage = false)
     {
         var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime;
-        var start = DashboardMetrics.Utc(day).AddHours(15);
-        if (!SharedClassesEnabled || start <= now || day.DayOfWeek != DayOfWeek.Tuesday ||
+        var from = startTime ?? new TimeOnly(15, 0);
+        var until = endTime ?? new TimeOnly(16, 0);
+        var endMinutes = until == TimeOnly.MinValue ? 1440 : until.ToTimeSpan().TotalMinutes;
+        var duration = endMinutes - from.ToTimeSpan().TotalMinutes;
+        if (duration <= 0 || duration % 30 != 0)
+        { throw new ReservationValidationException("Choose an end time after the start, in 30-minute increments."); }
+        var (start, end) = ReservationRules.Interval(day, from, (int)duration);
+        if (!SharedClassesEnabled || start <= now ||
             !(await GroupOfferingsAsync(ct)).Any(x => x.Id == offering))
         {
-            throw new ReservationValidationException("Choose an active group lesson and a future Tuesday.");
+            throw new ReservationValidationException("Choose an active group lesson and a future class date.");
         }
 
         var resources = (await GetCatalogAsync(ct)).Where(x => bays.Contains(x.Id) && x.Service == "Regular").ToArray();
-        if (resources.Length != bays.Length || capacity is < 1 or > 8 || capacity > resources.Sum(x => Math.Min(x.MaxPlayers, x.MaxTotalGuests)))
+        if (resources.Length != bays.Length || capacity is < 1 or > 10 || capacity > resources.Sum(x => Math.Min(x.MaxPlayers, x.MaxTotalGuests)))
         {
             throw new ReservationValidationException("Choose regular bays with enough player capacity for every learner.");
         }
 
-        if (price <= 0 || decimal.Round(price, 2) != price)
-        {
-            throw new ReservationValidationException("Enter the approved single-class price per learner in pesos.");
-        }
-
         try
         {
-            var saved = await persistence.PublishClassAsync(new ClassSessionRecord
+            var count = 1;
+            if (weeklyPackage)
+            {
+                if (editing != null) { throw new ReservationValidationException("Edit one scheduled class at a time."); }
+                var editor = await PackageEditorAsync(offering, ct) ?? throw new ReservationValidationException("Choose an active lesson program.");
+                count = editor.Count;
+                if (count < 1 || (DateTime.MaxValue - end).TotalDays < 7L * (count - 1))
+                { throw new ReservationValidationException("Choose a valid first date for this series."); }
+            }
+            var occurrences = Enumerable.Range(0, count).Select(week => new ClassSessionRecord
             {
                 ServiceEntryId = offering,
-                StartUtc = start,
-                EndUtc = start.AddHours(1),
+                StartUtc = start.AddDays(7 * week),
+                EndUtc = end.AddDays(7 * week),
                 ResourceIds = bays,
                 Capacity = capacity,
-                PricePerLearner = price,
                 CreatedBy = actor
-            }, now, ct);
+            }).ToArray();
+            if (weeklyPackage)
+            {
+                await persistence.PublishClassSeriesAsync(occurrences, now, ct);
+                return occurrences[0].ClassSessionId;
+            }
+            var saved = await persistence.PublishClassAsync(occurrences[0], now, ct, editing, revision);
             return saved.ClassSessionId;
         }
         catch (AllocationConflictException error) { throw new ReservationValidationException(error.Message); }

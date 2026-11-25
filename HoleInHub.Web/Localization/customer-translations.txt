@@ -932,3 +932,11 @@ Photo 4: Coaching|사진 4: 코칭
 Photo 5: Family play|사진 5: 가족 플레이
 Photo 6: The venue|사진 6: 시설 전경
 Photo 7: Social seating|사진 7: 공용 좌석 공간
+Deposit due|예약금
+Remaining balance|잔금
+Included|포함 사항
+Pay|결제
+Your reservation is confirmed when the deposit is verified.|예약금 확인 후 예약이 확정됩니다.
+Complete the 50% deposit within 60 minutes to confirm your rental.|60분 이내에 예약금 50%를 결제하면 대관 예약이 확정됩니다.
+Your bays are held together for 60 minutes while you complete the 50% deposit.|예약금 50%를 결제하는 동안 선택한 베이가 60분간 확보됩니다.
+All included bays are available together.|포함된 모든 베이를 함께 이용할 수 있습니다.

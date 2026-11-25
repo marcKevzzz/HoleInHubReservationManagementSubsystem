@@ -1,5 +1,4 @@
 @using HoleInHub.Business.Services
-@inject Microsoft.Extensions.Options.IOptions<HoleInHub.Business.Reservations.ReservationPolicy> ClassPolicy
 @model IReadOnlyList<ServiceEdit>
 @{ Layout = "_StaffLayout"; ViewData["Title"] = "Services"; }
 <section class="staff-workspace service-admin">
@@ -23,12 +22,19 @@
                 <a class="service-admin-cover" asp-action="Edit" asp-route-id="@item.Id" aria-label="@($"Edit {item.Title}")"><img src="@item.Images.FirstOrDefault()" alt="" loading="lazy" width="240" height="180" /></a>
                 <div class="service-admin-copy"><div class="service-admin-title"><a class="staff-hover-link" asp-action="Edit" asp-route-id="@item.Id">@item.Title</a><span class="people-pill">@(item.Active ? "Active" : "Inactive")</span></div><small>Service ID @BusinessIds.Service(item.Id)</small><p>@item.Summary</p><span class="service-admin-rate">@item.RateText</span><small>@(item.DepositType == "None" ? "No deposit" : ServiceCatalog.FormatDeposit(item.DepositType, item.DepositValue)) · @item.Images.Length @(item.Images.Length == 1 ? "image" : "images")</small></div>
                 <div class="service-admin-row-actions">
-                    @if (ClassPolicy.Value.SharedClassesEnabled && item.Active && item.BookingService == "KpgaGroup") { <a class="button button-secondary" asp-controller="GroupClasses" asp-action="Publish" asp-route-offering="@item.Id">Publish a class</a> }
                     <a class="service-icon-action" asp-action="Edit" asp-route-id="@item.Id" title="Edit service" aria-label="Edit service"><partial name="_StaffIcon" model='"edit"' /></a>
+                    @if (!item.Active && HoleInHub.Data.Services.SeasonalRental.IsPackage(item.Id) &&
+                        (item.SeasonStart == null || item.SeasonEnd == null || item.SeasonEnd < item.SeasonStart))
+                    {
+                        <a class="service-icon-action" asp-action="Edit" asp-route-id="@item.Id" asp-route-activate="true" asp-fragment="service-pricing" title="Activate" aria-label="Activate"><partial name="_StaffIcon" model='"view"' /></a>
+                    }
+                    else
+                    {
                     <form asp-action="State" asp-route-id="@item.Id" method="post" data-service-state data-service-title="@item.Title" data-service-operation="@(item.Active ? "deactivate" : "activate")">
                         <input type="hidden" name="revision" value="@item.Revision" /><input type="hidden" name="commandId" value="@Guid.NewGuid().ToString("N")" /><input type="hidden" name="operation" value="@(item.Active ? "deactivate" : "activate")" />
                         <button class="service-icon-action" type="submit" title="@(item.Active ? "Deactivate" : "Activate")" aria-label="@(item.Active ? "Deactivate" : "Activate")"><partial name="_StaffIcon" model='@(item.Active ? "view-off" : "view")' /></button>
                     </form>
+                    }
                     <form asp-action="State" asp-route-id="@item.Id" method="post" data-service-state data-service-title="@item.Title" data-service-operation="delete">
                         <input type="hidden" name="revision" value="@item.Revision" /><input type="hidden" name="commandId" value="@Guid.NewGuid().ToString("N")" /><input type="hidden" name="operation" value="delete" />
                         <button class="service-icon-action service-icon-danger" type="submit" title="Delete service" aria-label="Delete service"><partial name="_StaffIcon" model='"trash"' /></button>

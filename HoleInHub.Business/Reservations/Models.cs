@@ -48,6 +48,7 @@ public sealed record ReservationDto(string Id, string Reference, string Service,
     public decimal? PricePerLearner { get; init; }
     public IReadOnlyList<FamilyLearnerDto> Learners { get; init; } = [];
     public IReadOnlyList<FamilyGuardianDto> Guardians { get; init; } = [];
+    public string? RentalTitle { get; init; }
     public string? ServiceEntryId { get; init; }
     public bool IsUpcoming(DateTime nowUtc) => EndUtc > nowUtc && Status is "Pending" or "Confirmed" or "Checked-In";
     public long Revision { get; init; }
@@ -92,6 +93,7 @@ public sealed class ReservationPolicy
     public TimeSpan ReviewEnd { get; set; }
     public int[] ReviewDays { get; set; } = []; public string[] StaffEmails { get; set; } = [];
     public string? StaffEmailOverride { get; set; }
+    public string TestDepositOutcome { get; set; } = "success";
     public bool DemoPaymentsEnabled { get; set; }
     public void ValidateCoverage(DateTimeOffset now, int minutes = 30)
     {

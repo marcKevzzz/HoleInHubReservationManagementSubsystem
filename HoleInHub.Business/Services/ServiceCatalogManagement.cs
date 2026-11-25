@@ -14,6 +14,9 @@ public sealed record ServiceEdit(string Id, long Revision, string CommandId, boo
     string RateText, string Details, string BookingService, string Action, string ActionLabel, int Order, bool Active,
     string DepositType, decimal DepositValue, string[] Images)
 {
+    public bool JuniorOnly { get; set; }
+    public DateOnly? SeasonStart { get; set; }
+    public DateOnly? SeasonEnd { get; set; }
     public int? MaxPax { get; init; }
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
     public bool? CustomerSelectsBays { get; init; }
@@ -40,7 +43,7 @@ public sealed partial class ServiceCatalog
         Guid.NewGuid().ToString("N"), false, record.Title, record.Summary, record.RateText, record.Details,
         record.BookingService, record.Action, record.ActionLabel, record.Order, record.Active,
         record.DepositType, record.DepositValue, ImagePaths(record))
-    { MaxPax = record.MaxPax, CustomerSelectsBays = record.CustomerSelectsBays, Pricing = record.Pricing, BookingTypeName = record.BookingTypeName, AvailabilityRules = record.AvailabilityRules };
+    { JuniorOnly = record.JuniorOnly, SeasonStart = record.SeasonStart, SeasonEnd = record.SeasonEnd, MaxPax = record.MaxPax, CustomerSelectsBays = record.CustomerSelectsBays, Pricing = record.Pricing, BookingTypeName = record.BookingTypeName, AvailabilityRules = record.AvailabilityRules };
     public async Task<IReadOnlyList<ServiceEdit>> GetAllAsync(CancellationToken ct) =>
         (await persistence.GetAllAsync(ct)).Select(Edit).ToArray();
     public async Task<ServiceEdit?> GetAsync(string id, CancellationToken ct) =>
@@ -75,6 +78,9 @@ public sealed partial class ServiceCatalog
             throw new ArgumentException("Complete the service title, summary, rate, description and button label within their limits.");
         }
 
+        if (SeasonalRental.IsPackage(edit.Id) && (edit.BookingService != "WholeShop" ||
+            edit.Active && (edit.SeasonStart is null || edit.SeasonEnd is null || edit.SeasonEnd < edit.SeasonStart)))
+        { throw new ArgumentException("Seasonal rentals require the rental service type and valid season dates before activation."); }
         if (!BookingTypes.Contains(edit.BookingService) || edit.Action is not ("Book" or "Contact"))
         {
             throw new ArgumentException("Choose a supported booking type and customer action.");
@@ -179,6 +185,9 @@ public sealed partial class ServiceCatalog
             Pricing = edit.Pricing,
             BookingService = edit.BookingService,
             CustomerSelectsBays = edit.BookingService == "WholeShop" ? null : edit.CustomerSelectsBays,
+            JuniorOnly = edit.BookingService == "KpgaGroup" && edit.JuniorOnly,
+            SeasonStart = edit.SeasonStart,
+            SeasonEnd = edit.SeasonEnd,
             AvailabilityRules = edit.AvailabilityRules,
             BookingTypeName = edit.BookingTypeName.Trim(),
             Action = edit.Action,
@@ -205,6 +214,7 @@ public sealed partial class ServiceCatalog
                 {
                     if (record.BookingService != booking.Service || record.MaxPax is int max && booking.Attendees > max)
                     { affected.Add(booking.Reference); continue; }
+                    if (booking.ClassSessionId is not null || booking.PackageId is not null) { continue; }
                     Reservations.ReservationService.PreviewServiceInterval(record, DateOnly.FromDateTime(local), TimeOnly.FromDateTime(local), duration, booking.Service);
                 }
                 catch (Reservations.ReservationValidationException) { affected.Add(booking.Reference); }
@@ -216,7 +226,7 @@ public sealed partial class ServiceCatalog
             { throw new ServiceImpactException($"{affected.Count} upcoming booking(s) fall outside the new rules: {string.Join(", ", affected.Take(10))}. Review them, then save again to confirm.", acknowledgement); }
         });
     }
-    public async Task SetStateAsync(string id, long revision, string commandId, string operation, string actor, CancellationToken ct)
+    public async Task SetStateAsync(string id, long revision, string commandId, string operation, string actor, CancellationToken ct, DateOnly? seasonStart = null, DateOnly? seasonEnd = null)
     {
         if (!Guid.TryParseExact(commandId, "N", out _) || operation is not ("activate" or "deactivate" or "delete") || string.IsNullOrWhiteSpace(actor))
         {
@@ -233,10 +243,22 @@ public sealed partial class ServiceCatalog
 
             throw new ArgumentException("This service is no longer available.");
         }
+        if (seasonStart.HasValue || seasonEnd.HasValue)
+        {
+            if (operation != "activate" || !SeasonalRental.IsPackage(id) || seasonStart == null || seasonEnd == null || seasonEnd < seasonStart)
+            { throw new ArgumentException("Choose a first and last rental date. The last date must be on or after the first."); }
+            if (record.SeasonStart != null && record.SeasonEnd >= record.SeasonStart &&
+                (record.SeasonStart != seasonStart || record.SeasonEnd != seasonEnd))
+            { throw new ArgumentException("Use Edit service to change an existing rental season."); }
+            record.SeasonStart = seasonStart;
+            record.SeasonEnd = seasonEnd;
+        }
+        if (operation == "activate" && SeasonalRental.IsPackage(record.Id) && (record.SeasonStart is null || record.SeasonEnd is null || record.SeasonEnd < record.SeasonStart))
+        { throw new ArgumentException("Set the rental season before activation."); }
         record.Active = operation == "activate";
         record.Deleted = operation == "delete";
         record.CommandId = commandId;
-        record.CommandHash = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(new { id, revision, commandId, operation, actor })));
+        record.CommandHash = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(new { id, revision, commandId, operation, actor, seasonStart, seasonEnd })));
         record.UpdatedBy = actor;
         record.UpdatedUtc = DateTime.UtcNow;
         await persistence.SaveAsync(record, revision, false, [], ct);

@@ -88,6 +88,9 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
                 }
                 if (record.Service == "WholeShop")
                 {
+                    catalog = catalog.Where(bay => HoleInHub.Data.Services.SeasonalRental.Includes(record.ServiceEntryId, bay.Service)).ToList();
+                    if (record.ServiceEntryId == HoleInHub.Data.Services.SeasonalRental.Vip && catalog.Count != 2)
+                    { throw new AllocationConflictException("Both VIP bays are required.", sessionUnavailable: true); }
                     if (record.PolicyVersion >= 2 && !record.ResourceIds.Order().SequenceEqual(catalog.Select(x => x.Id).Order()))
                     {
                         throw new AllocationConflictException("The bay catalog changed. Reload and select the whole-shop session again.", sessionUnavailable: true);

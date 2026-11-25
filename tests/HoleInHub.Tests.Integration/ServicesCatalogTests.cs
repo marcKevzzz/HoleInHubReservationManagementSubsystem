@@ -98,6 +98,31 @@ public sealed class ServiceCatalogTests(MongoDbFixture fixture) : IClassFixture<
     }
 
     [Fact]
+    public async Task SeasonalMigrationPreservesLegacyAndSeedsThreeDraftsWithDayRates()
+    {
+        var context = fixture.CreateDbContext();
+        await new Migration_008_ServiceCatalog().UpAsync(context.Database, default);
+        var migration = new Migration_028_SeasonalRentals();
+        await migration.UpAsync(context.Database, default);
+        await migration.UpAsync(context.Database, default);
+        var catalog = new ServiceCatalogPersistence(context);
+        Assert.False((await catalog.GetAsync("WholeShop", default))!.Active);
+        foreach (var (id, weekday, weekend) in new[] {
+            (SeasonalRental.Whole, 30000, 40000), (SeasonalRental.Regular, 20000, 25000), (SeasonalRental.Vip, 12000, 14000) })
+        {
+            var entry = (await catalog.GetAsync(id, default))!;
+            Assert.False(entry.Active);
+            var monday = new DateOnly(2026, 12, 7);
+            foreach (var (date, rate) in new[] { (monday, weekday), (monday.AddDays(4), weekend) })
+            {
+                var quote = HoleInHub.Business.Reservations.ReservationService.PriceBooking(entry, "WholeShop", date, new TimeOnly(12, 0), 480, 1);
+                Assert.Equal(rate, quote.Total);
+                Assert.Equal(rate / 2, quote.DepositAmount);
+            }
+        }
+    }
+
+    [Fact]
     public async Task MigrationSeedsSixAndRerunPreservesEditsWhileQueriesRefreshAndSortActiveItems()
     {
         Assert.True(fixture.IsServerAvailable, "Start the isolated local MongoDB replica set.");

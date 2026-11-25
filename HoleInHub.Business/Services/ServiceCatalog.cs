@@ -5,6 +5,7 @@ namespace HoleInHub.Business.Services;
 public sealed record ServiceCatalogItem(string Id, string Title, string ImagePath, string Summary,
     string RateText, string Details, string ActionLabel, string ActionUrl)
 {
+    public bool JuniorOnly { get; init; }
     public int? MaxPax { get; init; }
     public string[] Images { get; init; } = [];
     public string DepositText { get; init; } = "";
@@ -26,9 +27,10 @@ public sealed partial class ServiceCatalog(ServiceCatalogPersistence persistence
         return records.Select(x => new ServiceCatalogItem(x.Id, x.Title,
             x.ImagePath.StartsWith("/media/", StringComparison.Ordinal) && !x.ImagePath.Contains("..") && !x.ImagePath.Contains('\\')
                 ? x.ImagePath : "/media/facebook/venue-overview.webp",
-            x.Summary, x.Pricing is { } pricing ? Reservations.PricingRules.Summary(x.BookingService, pricing) : x.RateText, x.Details,
+            x.Summary, !SeasonalRental.IsPackage(x.Id) && x.Pricing is { } pricing ? Reservations.PricingRules.Summary(x.BookingService, pricing) : x.RateText, x.Details,
             "Request a booking", "/Reservations/Create?service=" + Uri.EscapeDataString(x.Id == x.BookingService ? x.BookingService : $"{x.BookingService}:{x.Id}"))
         {
+            JuniorOnly = x.JuniorOnly,
             MaxPax = x.MaxPax,
             Images = ImagePaths(x),
             DepositText = FormatDeposit(x.DepositType, x.DepositValue),

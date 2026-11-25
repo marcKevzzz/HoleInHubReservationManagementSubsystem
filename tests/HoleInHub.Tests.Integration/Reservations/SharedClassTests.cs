@@ -70,11 +70,8 @@ public sealed class SharedClassTests(MongoDbFixture fixture) : IClassFixture<Mon
         };
         await store.PublishClassAsync(next, now, default);
         await store.PublishClassAsync(next, now, default);
-        var reminder = await db.Database.GetCollection<OutboxRecord>("outbox")
-            .Find(x => x.Id == winner.Id + ":next-class").SingleAsync();
-        Assert.Contains("too few seats", reminder.Body);
-        Assert.Contains(next.ClassSessionId, reminder.Body);
-        Assert.True((await store.ByIdAsync(winner.Id, default))!.NextClassReminderQueued);
+        Assert.False(await db.Database.GetCollection<OutboxRecord>("outbox")
+            .Find(x => x.Id == winner.Id + ":next-class").AnyAsync());
         Assert.Equal(2, (await store.ClassAsync(session.ClassSessionId, default))!.HeldSeats);
         Assert.True(await store.CancelLearnerAsync(winner.Id, "one", "Customer", now, default));
         Assert.True(await store.CancelLearnerAsync(winner.Id, "one", "Customer", now, default));

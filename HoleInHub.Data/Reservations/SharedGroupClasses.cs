@@ -23,7 +23,7 @@ public sealed partial class ReservationPersistence
             publicBase == null ? Builders<ReservationRecord>.Update.Unset(x => x.NextClassReminderBase)
                 : Builders<ReservationRecord>.Update.Set(x => x.NextClassReminderBase, publicBase), cancellationToken: ct)).MatchedCount == 1;
 
-    private async Task QueueClassRemindersAsync(IClientSessionHandle session, ClassSessionRecord occurrence, DateTime now, CancellationToken ct)
+    private async Task QueueClassRemindersAsync(IClientSessionHandle session, ClassPackageRecord package, ClassSessionRecord occurrence, int remaining, DateTime now, CancellationToken ct)
     {
         var families = await Reservations.Find(session, x => x.NextClassReminderBase != null && x.ClassSessionId != null && x.PackageId == null
             && (x.ServiceEntryId ?? x.Service) == occurrence.ServiceEntryId && x.StartUtc < occurrence.StartUtc
@@ -33,18 +33,18 @@ public sealed partial class ReservationPersistence
             var seats = family.Learners?.Count(x => x.State == "Enrolled") ?? 0;
             if (seats == 0 || string.IsNullOrWhiteSpace(family.Email)) { continue; }
             var service = Uri.EscapeDataString("KpgaGroup:" + occurrence.ServiceEntryId);
-            var url = $"{family.NextClassReminderBase}/Reservations/Create?service={service}&classSessionId={occurrence.ClassSessionId}";
-            var fit = seats <= occurrence.Capacity ? "Your group fits at publication." : "There are too few seats for your whole group.";
+            var url = $"{family.NextClassReminderBase}/Reservations/Create?service={service}&classSessionId={package.PackageId}";
+            var fit = seats <= remaining ? "Your group fits at publication." : "There are too few seats for your whole group.";
             await context.Database.GetCollection<OutboxRecord>("outbox").InsertOneAsync(session, new OutboxRecord
             {
                 Id = $"{family.Id}:next-class",
                 Recipient = family.Email,
                 ReservationId = family.Id,
                 DueUtc = now,
-                ExpiresUtc = occurrence.StartUtc,
-                Subject = "A new KPGA group class is open",
-                Body = $"KPGA group class: {occurrence.StartUtc.AddHours(8):ddd, dd MMM yyyy, h:mm tt} Manila time. " +
-                    $"₱{occurrence.PricePerLearner:N2} per learner. {occurrence.Capacity} seats at publication. Your group: {seats}. {fit} " +
+                ExpiresUtc = package.RegistrationEndsUtc,
+                Subject = "A new KPGA lesson package is open",
+                Body = $"KPGA package starts: {occurrence.StartUtc.AddHours(8):ddd, dd MMM yyyy, h:mm tt} Manila time. " +
+                    $"₱{package.PricePerLearner:N2} per learner for all {package.ClassSessionIds.Length} lessons. {remaining} seats at publication. Your group: {seats}. {fit} " +
                     $"Check current availability and book: {url}"
             }, cancellationToken: ct);
             await Reservations.UpdateOneAsync(session, x => x.Id == family.Id, Builders<ReservationRecord>.Update
@@ -52,36 +52,83 @@ public sealed partial class ReservationPersistence
         }
     }
 
-    public async Task<ClassSessionRecord> PublishClassAsync(ClassSessionRecord occurrence, DateTime now, CancellationToken ct)
+    public async Task<ClassSessionRecord> PublishClassAsync(ClassSessionRecord occurrence, DateTime now, CancellationToken ct, string? editing = null, long revision = 0)
     {
         using var session = await context.Client.StartSessionAsync(cancellationToken: ct);
-        return await session.WithTransactionAsync(async (s, token) =>
+        return await session.WithTransactionAsync((s, token) => SaveClassAsync(s, occurrence, now, editing, revision, token), cancellationToken: ct);
+    }
+
+    public async Task PublishClassSeriesAsync(ClassSessionRecord[] occurrences, DateTime now, CancellationToken ct)
+    {
+        using var session = await context.Client.StartSessionAsync(cancellationToken: ct);
+        await session.WithTransactionAsync(async (s, token) =>
         {
-            var allocation = new ReservationRecord { StartUtc = occurrence.StartUtc, EndUtc = occurrence.EndUtc, ResourceIds = occurrence.ResourceIds };
-            await GuardAsync(s, allocation, token);
-            var prior = await Classes.Find(s, x => x.Id == occurrence.Id).FirstOrDefaultAsync(token);
-            if (prior is not null)
+            foreach (var occurrence in occurrences)
             {
-                if (prior.ServiceEntryId != occurrence.ServiceEntryId || prior.StartUtc != occurrence.StartUtc || prior.EndUtc != occurrence.EndUtc ||
-                    prior.Capacity != occurrence.Capacity || prior.PricePerLearner != occurrence.PricePerLearner || prior.CreatedBy != occurrence.CreatedBy ||
-                    !prior.ResourceIds.Order().SequenceEqual(occurrence.ResourceIds.Order()))
-                { throw new AllocationConflictException("This class submission has different details. Reload the schedule."); }
-                return prior;
+                try { await SaveClassAsync(s, occurrence, now, null, 0, token); }
+                catch (AllocationConflictException error)
+                {
+                    throw new AllocationConflictException($"{occurrence.StartUtc.AddHours(8):ddd, d MMM}: {error.Message} No dates were added.");
+                }
             }
-            var offering = await context.Database.GetCollection<HoleInHub.Data.Services.ServiceCatalogRecord>("service_catalog")
-                .Find(s, x => x.Id == occurrence.ServiceEntryId && x.BookingService == "KpgaGroup" && x.Active && !x.Deleted).FirstOrDefaultAsync(token);
-            var bays = await Resources.Find(s, Builders<ResourceRecord>.Filter.In(x => x.Id, occurrence.ResourceIds) & Builders<ResourceRecord>.Filter.Where(x => x.Active && x.Service == "Regular")).ToListAsync(token);
-            if (offering is null || occurrence.StartUtc <= now || occurrence.EndUtc <= occurrence.StartUtc || occurrence.State != "Open" ||
-                occurrence.HeldSeats != 0 || occurrence.PricePerLearner <= 0 || occurrence.Capacity is < 1 or > 8 ||
-                occurrence.Capacity > (offering.MaxPax ?? 8) || bays.Count != occurrence.ResourceIds.Length ||
-                occurrence.Capacity > bays.Sum(x => Math.Min(x.MaxPlayers ?? 6, x.MaxTotalGuests ?? 8)))
-            { throw new AllocationConflictException("Check the class offering, time, price, active bays and learner capacity."); }
-            if (await HasAllocationConflictAsync(allocation, s, token, now))
-            { throw new AllocationConflictException("A booking, block or class already holds these bays."); }
-            await Classes.InsertOneAsync(s, occurrence, cancellationToken: token);
-            await QueueClassRemindersAsync(s, occurrence, now, token);
-            return occurrence;
+            return true;
         }, cancellationToken: ct);
+    }
+
+    private async Task<ClassSessionRecord> SaveClassAsync(IClientSessionHandle s, ClassSessionRecord occurrence, DateTime now, string? editing, long revision, CancellationToken token)
+    {
+        var allocation = new ReservationRecord { StartUtc = occurrence.StartUtc, EndUtc = occurrence.EndUtc, ResourceIds = occurrence.ResourceIds };
+        await GuardAsync(s, allocation, token);
+        if (editing != null)
+        {
+            var existing = await Classes.Find(s, x => x.ClassSessionId == editing && x.ServiceEntryId == occurrence.ServiceEntryId).FirstOrDefaultAsync(token);
+            if (existing == null || existing.State != "Open" || existing.StartUtc <= now || existing.ScheduleRevision != revision)
+            { throw new AllocationConflictException("This class has changed. Reload its details before saving."); }
+            if (occurrence.Capacity < existing.HeldSeats)
+            { throw new AllocationConflictException("Capacity must cover all reserved seats."); }
+            var moving = existing.StartUtc != occurrence.StartUtc || existing.EndUtc != occurrence.EndUtc ||
+                !existing.ResourceIds.Order().SequenceEqual(occurrence.ResourceIds.Order());
+            if (moving && existing.HeldSeats > 0)
+            { throw new AllocationConflictException("This class has reserved seats. Only capacity can be changed."); }
+            if (moving)
+            {
+                var packages = await Packages.Find(s, Builders<ClassPackageRecord>.Filter.Eq(x => x.Open, true) & Builders<ClassPackageRecord>.Filter.AnyEq(x => x.ClassSessionIds, editing)).ToListAsync(token);
+                foreach (var package in packages)
+                {
+                    var siblings = await Classes.Find(s, Builders<ClassSessionRecord>.Filter.In(x => x.ClassSessionId, package.ClassSessionIds)).ToListAsync(token);
+                    var dates = package.ClassSessionIds.Select(id => id == editing ? occurrence : siblings.Single(x => x.ClassSessionId == id)).ToArray();
+                    if (dates[0].StartUtc < package.RegistrationEndsUtc || dates.Zip(dates.Skip(1)).Any(pair => pair.First.EndUtc > pair.Second.StartUtc))
+                    { throw new AllocationConflictException("Keep lessons in package order, after the registration deadline and without overlapping dates."); }
+                }
+            }
+            occurrence.Id = existing.Id;
+            occurrence.HeldSeats = existing.HeldSeats;
+            occurrence.CreatedBy = existing.CreatedBy;
+            occurrence.ScheduleRevision = existing.ScheduleRevision + 1;
+            // Exclude this allocation from the conflict check. Transaction rollback restores it on failure.
+            await Classes.DeleteOneAsync(s, x => x.Id == existing.Id, cancellationToken: token);
+        }
+        var prior = await Classes.Find(s, x => x.Id == occurrence.Id).FirstOrDefaultAsync(token);
+        if (prior is not null)
+        {
+            if (prior.ServiceEntryId != occurrence.ServiceEntryId || prior.StartUtc != occurrence.StartUtc || prior.EndUtc != occurrence.EndUtc ||
+                prior.Capacity != occurrence.Capacity || prior.PricePerLearner != occurrence.PricePerLearner || prior.CreatedBy != occurrence.CreatedBy ||
+                !prior.ResourceIds.Order().SequenceEqual(occurrence.ResourceIds.Order()))
+            { throw new AllocationConflictException("This class submission has different details. Reload the schedule."); }
+            return prior;
+        }
+        var offering = await context.Database.GetCollection<HoleInHub.Data.Services.ServiceCatalogRecord>("service_catalog")
+            .Find(s, x => x.Id == occurrence.ServiceEntryId && x.BookingService == "KpgaGroup" && x.Active && !x.Deleted).FirstOrDefaultAsync(token);
+        var bays = await Resources.Find(s, Builders<ResourceRecord>.Filter.In(x => x.Id, occurrence.ResourceIds) & Builders<ResourceRecord>.Filter.Where(x => x.Active && x.Service == "Regular")).ToListAsync(token);
+        if (offering is null || occurrence.StartUtc <= now || occurrence.EndUtc <= occurrence.StartUtc || occurrence.State != "Open" ||
+            (editing == null && occurrence.HeldSeats != 0) || occurrence.PricePerLearner < 0 || occurrence.Capacity is < 1 or > 10 ||
+            bays.Count != occurrence.ResourceIds.Length ||
+            occurrence.Capacity > bays.Sum(x => Math.Min(x.MaxPlayers ?? 6, x.MaxTotalGuests ?? 8)))
+        { throw new AllocationConflictException("Check the class offering, time, price, active bays and learner capacity."); }
+        if (await HasAllocationConflictAsync(allocation, s, token, now))
+        { throw new AllocationConflictException("A booking, block or class already holds these bays."); }
+        await Classes.InsertOneAsync(s, occurrence, cancellationToken: token);
+        return occurrence;
     }
 
     public async Task<bool> CloseClassAsync(string classSessionId, CancellationToken ct) =>

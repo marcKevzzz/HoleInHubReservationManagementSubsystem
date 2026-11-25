@@ -10,7 +10,6 @@
 }
 <header class="staff-workspace-heading"><div><h1>Registered learners</h1><p>Class ID @session.Id</p></div>
 <div class="lesson-actions">
-@if(session.State=="Open" && session.Capacity > session.HeldSeats){<a class="button" asp-action="Enroll" asp-route-id="@session.Id">Register learners</a>}
 @if(User.IsInRole("Manager") || User.IsInRole("Admin")){
 @if(session.State=="Open"){<form asp-action="Close" asp-route-id="@session.Id" method="post"><button class="button button-secondary">Close enrollment</button></form>}
 @if(session.State=="Closed"){<form asp-action="Release" asp-route-id="@session.Id" method="post"><button class="button button-secondary">Release class bays</button></form>}}

@@ -48,6 +48,15 @@ public sealed partial class ServiceCatalogPersistence
                 throw new InvalidOperationException("This service changed. Reload its latest details before saving.");
             }
 
+            if (record.Active && SeasonalRental.IsPackage(record.Id))
+            {
+                var resources = await context.Database.GetCollection<HoleInHub.Data.Reservations.ResourceRecord>("resources")
+                    .Find(s, bay => bay.Active).Project(bay => bay.Service).ToListAsync(token);
+                var count = resources.Count(service => SeasonalRental.Includes(record.Id, service));
+                if (count == 0 || record.Id == SeasonalRental.Vip && count != 2)
+                { throw new InvalidOperationException("Activate the included bays before publishing this rental."); }
+            }
+
             if (prior is not null && checkImpacts is not null)
             {
                 var now = record.UpdatedUtc ?? DateTime.UtcNow;

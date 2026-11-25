@@ -66,8 +66,11 @@ else
                                     <img src="@item.ImagePath" alt="" /><span class="service-description"><strong>@T(item.Title)</strong>
                                     <span class="service-rate" data-rate="@program.Price.ToString("N2")">@times.Length @(times.Length == 1 ? "lesson" : "lessons") · ₱@program.Price.ToString("N2") per learner</span>
                                     <span>@if (program.RegistrationEndsUtc is DateTime cutoff) {<text>Register by @DashboardMetrics.Local(cutoff.AddMinutes(-1)).ToString("d MMM yyyy, h:mm tt") Manila · </text>} @(program.RemainingSeats == 0 ? "Fully booked" : closed ? "Registration closed" : $"{program.RemainingSeats} seats left")</span>
-                                    <span>@string.Join(" · ", times.Select(x => DashboardMetrics.Local(x).ToString("d MMM")))</span></span>
-                                    <input type="radio" name="Service" disabled="@closed" id="service-@program.ClassSessionId" value="@key" checked="@(Model.ClassSessionId == program.ClassSessionId || (Model.ClassSessionId == null && Model.Service.Split(':')[0] == "KpgaGroup" && program == openPrograms.FirstOrDefault(x => x.RemainingSeats > 0)))" data-program="@program.ClassSessionId" data-price="@program.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)" data-seats="@program.RemainingSeats" data-dates="@string.Join(",",times.Select(x=>DashboardMetrics.Local(x).ToString("yyyy-MM-ddTHH:mm")))" data-minutes="@((int)(program.EndUtc-program.StartUtc).TotalMinutes)" data-booking-type="KpgaGroup" data-auto-bay="true" />
+                                    <span>@string.Join(" · ", times.Select(x => DashboardMetrics.Local(x).ToString("d MMM, h:mm tt")))</span>
+                                    @if (program.JuniorOnly) { <span>Ages 17 and under · Parent or guardian registration</span> }
+                                    @if (times.Length > 1) { <span>One registration reserves a seat for each learner on all @times.Length listed dates.</span> }
+                                    </span>
+                                    <input type="radio" name="Service" disabled="@closed" id="service-@program.ClassSessionId" value="@key" checked="@(Model.ClassSessionId == program.ClassSessionId || (Model.ClassSessionId == null && Model.Service.Split(':')[0] == "KpgaGroup" && program == openPrograms.FirstOrDefault(x => x.RemainingSeats > 0)))" data-program="@program.ClassSessionId" data-junior="@(program.JuniorOnly ? "true" : "false")" data-price="@program.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)" data-seats="@program.RemainingSeats" data-dates="@string.Join(",",times.Select(x=>DashboardMetrics.Local(x).ToString("yyyy-MM-ddTHH:mm")))" data-minutes="@((int)(program.EndUtc-program.StartUtc).TotalMinutes)" data-booking-type="KpgaGroup" data-auto-bay="true" />
                                 </label>
                                 @if (!closed) { <noscript><a href="@(register + "&plain=1")">Register for @item.Title</a></noscript> }
                             }
@@ -86,8 +89,8 @@ else
 								}
 							</span>
 							<input type="radio" name="Service" id="service-@item.Id" value="@key" checked="@(Model.ClassSessionId == null && item.Id == defaultExperience.Id)" required
-								   disabled="@(ViewData["SharedClassesEnabled"] is true && item.BookingService == "KpgaGroup")" data-booking-type="@item.BookingService" data-max-pax="@item.MaxPax" data-availability="@availability"
-								   data-auto-bay="@(BookingRules.AssignsSingleBay(item.BookingService, item.CustomerSelectsBays) ? "true" : "false")" />
+								   disabled="@(item.BookingService == "KpgaGroup")" data-booking-type="@item.BookingService" data-max-pax="@item.MaxPax" data-availability="@availability"
+								   data-inclusions="@(HoleInHub.Data.Services.SeasonalRental.IsPackage(item.Id) ? item.Summary : null)" data-auto-bay="@(BookingRules.AssignsSingleBay(item.BookingService, item.CustomerSelectsBays) ? "true" : "false")" />
 						</label>
 					}
 
@@ -131,7 +134,7 @@ else
 		<div id="review-policy-tip" class="review-policy-tip"><span class="info-tip review-info-tip"><button type="button" class="info-tip-btn" aria-label="@T("Review timing and bay hold details")" aria-describedby="review-policy-guidance" aria-expanded="false">i</button><span id="review-policy-guidance" class="info-tip-bubble" role="tooltip">@T("Submit anytime. Regular requests receive 30 minutes of staff review; VIP and coaching receive 60 minutes. The review clock pauses outside operating hours, and your selected bays are held until the review deadline. If review is overdue, confirmation depends on availability.")</span></span><span>@T("Review timing and bay hold details")</span></div>
 		@if (ViewData["DemoPayments"] is true)
 		{
-			<p class="notice" id="whole-shop-policy">@T("Whole-shop: a simulated 50% deposit within 60 minutes confirms automatically. No real money is collected.")</p>
+			<p class="notice" id="whole-shop-policy">@T("Complete the 50% deposit within 60 minutes to confirm your rental.")</p>
 		}
 		else
 		{

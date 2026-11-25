@@ -24,6 +24,36 @@ public sealed class FamilyRosterTests
         Assert.Empty(roster.Guardians);
     }
 
+    [Theory]
+    [InlineData(18, false)]
+    [InlineData(17, true)]
+    public void JuniorProgramRejectsAdultOrParticipatingContact(int age, bool participating)
+    {
+        var request = new SubmitReservationRequest
+        {
+            FirstName = "Rosa",
+            LastName = "Cruz",
+            Learners = [new() { FirstName = "Sam", LastName = "Cruz", Age = age, IsBookingContact = participating }]
+        };
+        Assert.Throws<ReservationValidationException>(() => ReservationService.BuildFamilyRoster(request, true));
+    }
+
+    [Fact]
+    public void JuniorSiblingsShareTheBookingContactWithoutReservingAnAdultSeat()
+    {
+        var request = new SubmitReservationRequest
+        {
+            FirstName = "Rosa",
+            LastName = "Cruz",
+            Learners = [new() { FirstName = "Sam", LastName = "Cruz", Age = 17 }, new() { FirstName = "Ana", LastName = "Cruz", Age = 9 }]
+        };
+        var roster = ReservationService.BuildFamilyRoster(request, true);
+        var guardian = Assert.Single(roster.Guardians);
+        Assert.Equal("Rosa Cruz", guardian.Name);
+        Assert.Equal(2, roster.Learners.Length);
+        Assert.All(roster.Learners, child => Assert.Equal(guardian.Id, child.GuardianId));
+    }
+
     [Fact]
     public void EachChildCanHaveTheirOwnGuardian()
     {

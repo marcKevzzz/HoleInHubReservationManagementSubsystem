@@ -23,10 +23,17 @@ public sealed class ServiceManagementController(ServiceCatalog catalog) : Contro
         return View("Edit", new ServiceEditorForm().LoadPricing(PricingRules.Default("Regular")));
     }
     [HttpGet("{id}/edit")]
-    public async Task<IActionResult> Edit(string id, CancellationToken ct)
+    public async Task<IActionResult> Edit(string id, CancellationToken ct, bool activate = false)
     {
         await LoadBookingTypesAsync(ct);
-        return await catalog.GetAsync(id, ct) is { } item ? View(ServiceEditorForm.From(item)) : NotFound();
+        if (await catalog.GetAsync(id, ct) is not { } item) { return NotFound(); }
+        var form = ServiceEditorForm.From(item);
+        if (activate && HoleInHub.Data.Services.SeasonalRental.IsPackage(id))
+        {
+            form.Active = true;
+            ViewData["ConfigureRentalDates"] = true;
+        }
+        return View(form);
     }
     private async Task LoadBookingTypesAsync(CancellationToken ct) =>
         ViewData["BookingTypeNames"] = (await catalog.GetAllAsync(ct)).Select(item => item.BookingTypeName)
@@ -47,7 +54,7 @@ public sealed class ServiceManagementController(ServiceCatalog catalog) : Contro
         }
     }
     [HttpPost("save"), RequestSizeLimit(25165824), RequestFormLimits(MultipartBodyLengthLimit = 25165824)]
-    public async Task<IActionResult> Save(ServiceEditorForm form, CancellationToken ct)
+    public async Task<IActionResult> Save(ServiceEditorForm form, CancellationToken ct, bool scheduleLessons = false)
     {
         if (ModelState.IsValid)
         {
@@ -66,15 +73,18 @@ public sealed class ServiceManagementController(ServiceCatalog catalog) : Contro
                     await file.CopyToAsync(stream, ct);
                     uploads.Add(stream.ToArray());
                 }
+                if (scheduleLessons)
+                {
+                    if (form.BookingService != "KpgaGroup" || !HttpContext.RequestServices.GetRequiredService<Microsoft.Extensions.Options.IOptions<ReservationPolicy>>().Value.SharedClassesEnabled)
+                    { throw new ArgumentException("Select a Korean lesson program with shared enrollment enabled."); }
+                    form.Active = true;
+                }
                 await catalog.SaveAsync(form.Command(), uploads, User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "", ct);
                 new ToastNotice("success", form.Create ? "Service added" : "Service updated",
                     form.Active ? "Published on the customer services page." : "Saved as inactive.").Store(TempData);
-                if (Request.Headers.Accept == "application/json")
-                {
-                    return Json(new { redirect = Url.Action(nameof(Index)) });
-                }
-
-                return RedirectToAction(nameof(Index));
+                var destination = scheduleLessons ? Url.Action("Packages", "GroupClasses", new { offering = form.Id }) : Url.Action(nameof(Index));
+                if (Request.Headers.Accept == "application/json") { return Json(new { redirect = destination }); }
+                return LocalRedirect(destination!);
             }
             catch (ServiceImpactException error)
             {
@@ -106,7 +116,7 @@ public sealed class ServiceManagementController(ServiceCatalog catalog) : Contro
         return View("Edit", form);
     }
     [HttpPost("{id}/state")]
-    public async Task<IActionResult> State(string id, long revision, string commandId, string operation, CancellationToken ct)
+    public async Task<IActionResult> State(string id, long revision, string commandId, string operation, CancellationToken ct, DateOnly? seasonStart = null, DateOnly? seasonEnd = null)
     {
         if (!ModelState.IsValid)
         {
@@ -115,7 +125,7 @@ public sealed class ServiceManagementController(ServiceCatalog catalog) : Contro
 
         try
         {
-            await catalog.SetStateAsync(id, revision, commandId, operation, User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "", ct);
+            await catalog.SetStateAsync(id, revision, commandId, operation, User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "", ct, seasonStart, seasonEnd);
             new ToastNotice("success", operation switch { "activate" => "Service activated", "delete" => "Service deleted", _ => "Service deactivated" }).Store(TempData);
         }
         catch (Exception error) when (error is ArgumentException or InvalidOperationException)

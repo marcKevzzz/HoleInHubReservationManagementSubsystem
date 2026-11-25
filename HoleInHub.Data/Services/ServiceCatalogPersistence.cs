@@ -8,6 +8,9 @@ public sealed class ServiceCatalogRecord
 {
     [BsonId] public string Id { get; set; } = "";
     [BsonElement("service_id")] public string ServiceId => BusinessIdentifier.Format("SVC", Id);
+    public bool JuniorOnly { get; set; }
+    public DateOnly? SeasonStart { get; set; }
+    public DateOnly? SeasonEnd { get; set; }
     public string Title { get; set; } = "";
     public string[] Images { get; set; } = [];
     public int? MaxPax { get; set; }

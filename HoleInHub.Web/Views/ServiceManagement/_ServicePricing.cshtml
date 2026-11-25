@@ -1,8 +1,26 @@
 @model ServiceEditorForm
-<details id="service-pricing" class="service-configuration-section service-disclosure" data-service-pricing>
-    <summary>Pricing</summary>
+<details open="@(ViewData["ConfigureRentalDates"] is true)" id="service-pricing" class="service-configuration-section service-disclosure" data-service-pricing>
+    <summary>@(HoleInHub.Data.Services.SeasonalRental.IsPackage(Model.Id) ? "Pricing and rental dates" : "Pricing")</summary>
     <div class="service-configuration-content">
         <input type="hidden" name="EditPricing" value="true" />
+        @if (HoleInHub.Data.Services.SeasonalRental.IsPackage(Model.Id))
+        {
+            <h3>Eight-hour rental rates</h3>
+            <div class="service-rule-grid rental-field-pair">
+                <div class="auth-input-wrap"><input asp-for="RateAmount" type="number" min="0.01" max="1000000" step="0.01" required placeholder=" " /><label asp-for="RateAmount" data-base-price-label>Monday–Thursday rate (₱)</label><span asp-validation-for="RateAmount" data-error-for="RateAmount"></span></div>
+                <div class="auth-input-wrap"><input asp-for="PremiumRentalRate" type="number" min="0.01" max="1000000" step="0.01" required placeholder=" " /><label asp-for="PremiumRentalRate">Friday–Sunday &amp; holidays (₱)</label></div>
+            </div>
+            <h3>Rental dates</h3>
+            <div class="service-rule-grid rental-field-pair">
+                <div class="auth-input-wrap"><input asp-for="SeasonStart" type="date" /><label asp-for="SeasonStart">First rental date</label></div>
+                <div class="auth-input-wrap"><input asp-for="SeasonEnd" type="date" /><label asp-for="SeasonEnd">Last rental date</label></div>
+            </div>
+            <p class="service-editor-note">Customers can rent from the first date through the last date, inclusive.</p>
+            <div class="auth-input-wrap"><input asp-for="RentalHolidays" placeholder=" " aria-describedby="holiday-format" /><label asp-for="RentalHolidays">Holiday dates (optional)</label></div>
+            <p id="holiday-format" class="service-editor-note">These dates use the Friday–Sunday rate. Separate dates with commas, for example 2026-12-24, 2026-12-31.</p>
+        }
+        else
+        {
         <div class="service-rule-grid">
             <div class="auth-input-wrap">
                 <input asp-for="RateAmount" type="number" min="0.01" max="1000000" step="0.01" required placeholder=" " />
@@ -43,5 +61,6 @@
             <template data-price-template="RentalOverrides"><partial name="_PricingRule" model='("__index__", (PricingBandForm?)null, new RentalPriceForm())' /></template>
             <button type="button" class="button button-secondary" data-add-price="RentalOverrides" data-action-icon="plus">Add rental override<partial name="_ButtonActionIcon" model='"plus"' /></button>
         </div>
+        }
     </div>
 </details>

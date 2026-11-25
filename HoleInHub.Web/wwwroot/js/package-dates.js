@@ -2,7 +2,7 @@
     const dates = document.querySelector('[data-package-count]');
     if (!dates) return;
     const preview = dates.form.querySelector('[data-package-preview]');
-    const publish = dates.form.querySelector('button');
+    const publish = document.getElementById('publish-package');
     const required = Number(dates.dataset.packageCount);
     function update() {
         const selected = [...dates.querySelectorAll(':checked')];

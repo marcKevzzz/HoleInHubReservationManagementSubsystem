@@ -1,0 +1,34 @@
+const { test, expect } = require('@playwright/test');
+const { randomUUID } = require('node:crypto');
+const { verificationCode } = require('./fixture.cjs');
+
+test('VIP rental skips bay selection and confirms after the deposit', async ({ page, request }) => {
+    test.skip(process.env.HIH_BROWSER_RENTAL !== '1', 'Uses the isolated rental checkout fixture');
+    const email = randomUUID() + '@browser.example.test';
+    await page.goto('/Reservations/Create?service=WholeShop%3AChristmasVipBays');
+    await page.locator('#booking-browse').click();
+    await page.locator('#step-next').click();
+    await page.getByRole('button', { name: 'Next month' }).click();
+    await page.locator('#calendar-days button:enabled').nth(2).click();
+    await page.locator('#time-slots button:enabled').first().click();
+    await expect(page.locator('[name=QuoteKey]')).toHaveValue(/.+/);
+    await page.locator('#step-next').click();
+    await page.locator('#FirstName').fill('Rental');
+    await page.locator('#LastName').fill('Guest');
+    await page.locator('#Phone').fill('09123456789');
+    await page.locator('#Email').fill(email);
+    await page.locator('#ContactAge').fill('32');
+    await page.locator('#ContactAddress').fill('Quezon City');
+    await page.locator('#Attendees').fill('2');
+    await page.getByRole('checkbox', { name: /privacy policy/i }).focus();
+    await page.keyboard.press('Space');
+    await page.locator('#step-next').click();
+    await expect(page.locator('#review-selection')).toContainText('Remaining balance');
+    await expect(page.locator('#review-selection')).toContainText('VIP');
+    await page.getByRole('button', { name: 'Submit reservation' }).click();
+    await page.getByLabel('Verification code').fill(await verificationCode(request, email));
+    await page.locator('.verification-actions button[type=submit]').first().click();
+    await page.getByRole('link', { name: 'Review deposit' }).click();
+    await page.getByRole('button', { name: /^Pay / }).click();
+    await expect(page.getByRole('heading', { name: 'RESERVATION CONFIRMED' })).toBeVisible();
+});

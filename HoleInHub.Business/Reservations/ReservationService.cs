@@ -15,6 +15,11 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         if (settings is not null) { runtimePolicy = await settings.PolicyAsync(ct); }
     }
     public async Task<IReadOnlyList<ResourceDto>> GetCatalogAsync(CancellationToken ct) => (await persistence.CatalogAsync(ct)).Select(MapResource).ToArray();
+    public async Task<ResourceDto[]> GetRentalBaysAsync(string? entryId, CancellationToken ct)
+    {
+        var bays = (await GetCatalogAsync(ct)).Where(bay => SeasonalRental.Includes(entryId, bay.Service)).ToArray();
+        return entryId == SeasonalRental.Vip && bays.Length != 2 ? [] : bays;
+    }
     public async Task<IReadOnlyList<AvailabilityDto>> GetAvailabilityAsync(DateOnly date, TimeOnly startTime, int durationMinutes,
         string service, CancellationToken ct, string? serviceEntryId = null)
     {
@@ -24,7 +29,9 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         await ProcessPendingAsync(ct);
         var occupied = await persistence.OccupiedAsync(start, end, ct, now.UtcDateTime);
         var coachAvailable = !RequiresCoach(service) || (await persistence.AvailableCoachesAsync(start, end, now.UtcDateTime, ct)).Count > 0;
-        return (await GetCatalogAsync(ct)).Where(bay => service == "WholeShop" || bay.Service == BookingRules.ResourceService(service))
+        var bays = service == "WholeShop" ? await GetRentalBaysAsync(serviceEntryId, ct)
+            : (await GetCatalogAsync(ct)).Where(bay => bay.Service == BookingRules.ResourceService(service));
+        return bays
             .Select(bay => new AvailabilityDto(bay, coachAvailable && !occupied.Contains(bay.Id))).ToArray();
     }
     public Task<ReservationDto> SubmitAsync(SubmitReservationRequest request, string accountId, string verifiedEmail, CancellationToken ct, string? guestSessionHash = null, string? accessTokenHash = null, bool demoAllowed = false, string? encryptedReceipt = null) =>
@@ -45,6 +52,9 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         if (staffSource is not null) { hash = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(new { hash, staffSource, customerProfileId }))); }
         var prior = await persistence.ByKeyAsync(accountId, request.IdempotencyKey, ct); if (prior != null) { if (prior.SubmissionHash != hash) { throw new ReservationValidationException("This submission key was already used for another request. Reload the form."); } return Map(prior); }
         var entry = await ResolveBookingServiceAsync(request.Service, request.ServiceEntryId, ct);
+        if (request.Service == "KpgaGroup" &&
+            request.ClassSessionId?.StartsWith("PKG-", StringComparison.Ordinal) != true)
+        { throw new ReservationValidationException("Choose a published lesson package to register.", nameof(request.ClassSessionId)); }
         var package = request.ClassSessionId?.StartsWith("PKG-", StringComparison.Ordinal) == true
             ? (await persistence.PackagesAsync(request.ServiceEntryId ?? request.Service, ct)).SingleOrDefault(x => x.PackageId == request.ClassSessionId)
                 ?? throw new ReservationValidationException("This package has closed. Choose another schedule.")
@@ -91,6 +101,7 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
             Email = verifiedEmail,
             ReservationId = $"HIH-{Guid.NewGuid().ToString("N")[..10].ToUpperInvariant()}",
             Service = request.Service,
+            RentalTitle = SeasonalRental.IsPackage(entry?.Id) ? entry!.Title : null,
             ServiceEntryId = entry?.Id ?? request.ServiceEntryId,
             ServiceRevision = entry?.Revision,
             StartUtc = start,
@@ -113,7 +124,7 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
             SubmissionHash = hash,
             History = [new HistoryRecord { EventType = "SubmissionCreated", ReservationStatus = "Pending", Status = "Pending", AtUtc = now, Actor = actor }]
         };
-        if (session is not null) { (record.Learners, record.Guardians) = BuildFamilyRoster(request); }
+        if (session is not null) { (record.Learners, record.Guardians) = BuildFamilyRoster(request, entry?.JuniorOnly == true); }
         try
         {
             var saved = await persistence.InsertAsync(record, ct, encryptedReceipt, customerProfileId, validateCapacity: ValidateStoredCapacity,
@@ -209,15 +220,15 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         var entry = await ResolveBookingServiceAsync(request.Service, request.ServiceEntryId, ct);
         if (request.ClassSessionId is not null)
         {
-            BuildFamilyRoster(request);
+            BuildFamilyRoster(request, entry?.JuniorOnly == true);
             var session = await AvailableFamilyClassAsync(request, ct);
             ValidateServiceCapacity(entry, request.Attendees);
             BookingRules.ValidateWindow(request.Service, session.StartUtc, now);
             if (!request.ClassSessionId.StartsWith("PKG-", StringComparison.Ordinal)) { GetReviewDeadline(request.Service, session.StartUtc, now); }
             return;
         }
-        if (request.Service == "KpgaGroup" && SharedClassesEnabled)
-        { throw new ReservationValidationException("Choose a published KPGA Group class."); }
+        if (request.Service == "KpgaGroup")
+        { throw new ReservationValidationException("Choose a published lesson package to register."); }
         var automaticBay = BookingRules.AssignsSingleBay(request.Service, entry?.CustomerSelectsBays);
         ValidateBaySelection(request, automaticBay);
         ValidateServiceCapacity(entry, request.Attendees);
@@ -385,6 +396,7 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         PackageDates = x.PackageDates?.Select(d => d.StartUtc).ToArray() ?? [],
         NextClassReminderEnabled = x.NextClassReminderBase != null,
         NextClassReminderQueued = x.NextClassReminderQueued,
+        RentalTitle = x.RentalTitle,
         ServiceEntryId = x.ServiceEntryId,
         Revision = x.Revision,
         CheckedInUtc = x.CheckedInUtc,

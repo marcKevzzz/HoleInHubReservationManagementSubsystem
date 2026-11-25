@@ -21,7 +21,7 @@
 		<div class="booking-visit">
 			<div class="account-date"><time datetime="@Model.StartUtc.ToString("O")"><span>@start.ToString("dd")</span>@start.ToString("MMM yyyy")</time></div>
 			<div>
-				<h2 id="receipt-selection">@ReservationLabels.Service(Model.Service)</h2>
+				<h2 id="receipt-selection">@(Model.RentalTitle ?? ReservationLabels.Service(Model.Service))</h2>
 				<p>@start.ToString("h:mm tt")–@end.ToString("h:mm tt") · Manila time</p>
 			</div>
 		</div>
@@ -38,6 +38,8 @@
 			@if (Model.DepositAmount is decimal deposit)
 			{
 				<div><dt>50% deposit</dt><dd>₱@deposit.ToString("N2")</dd></div>
+                @if (Model.RentalTotal is decimal rentalTotal)
+                { <div><dt>@T("Remaining balance")</dt><dd>₱@((rentalTotal - deposit).ToString("N2"))</dd></div> }
 			}
 			@if (Model.ClassSessionId is null && !wholeShop && ReservationLabels.IndicativeRate(Model.Service) is string rate)
 			{
@@ -69,11 +71,8 @@
                 <p class="booking-current-status">@Model.Status</p>
 				@if (canDeposit)
 				{
-					<p>Submit the simulated deposit to confirm your reservation. No real money is collected.</p>
-					<form asp-action="Checkout" asp-route-id="@Model.Id" method="post" class="checkout-payment-form">
-						<input type="hidden" name="token" value="@token" />
-						<button class="button" name="outcome" value="success">Simulate deposit · ₱@Model.DepositAmount?.ToString("N2")</button>
-					</form>
+					<p>Complete your deposit to confirm your reservation.</p>
+					<a class="button" asp-action="Checkout" asp-route-id="@Model.Id" asp-route-token="@token">@T("Review deposit")</a>
 				}
 				else if (pending)
 				{
@@ -105,7 +104,7 @@
 				}
 				else if (wholeShop && Model.Status == "Confirmed" && Model.PaymentStatus == "DepositReceived")
 				{
-					<p>Simulated deposit recorded. No real money was collected.</p>
+					<p>Deposit verified.</p>
 				}
 			</div>
 			<a class="button receipt-status-link @(canDeposit ? "button-tertiary" : null)" asp-action="Status" asp-route-id="@Model.Id" asp-route-token="@token" asp-route-guest="@(ViewData["GuestAccess"] is true ? "true" : null)">

@@ -33,7 +33,7 @@
                 <div class="booking-visit">
                     <div class="account-date"><time datetime="@Model.StartUtc.ToString("O")"><span>@start.ToString("dd")</span>@start.ToString("MMM yyyy")</time></div>
                     <div>
-                        <h2 id="booking-experience">@T(ReservationLabels.Service(Model.Service))</h2>
+                        <h2 id="booking-experience">@T((Model.RentalTitle ?? ReservationLabels.Service(Model.Service)))</h2>
                         <p>@start.ToString("h:mm tt")–@end.ToString("h:mm tt")</p>
                         <p class="booking-muted">@T("All times are Asia/Manila.")</p>
                     </div>
@@ -110,7 +110,7 @@
             <p class="booking-current-status">@(overdue ? T("Pending · Overdue") : needsRebooking ? T("Choose another time") : T(Model.Status))</p>
             @if (Model.Status == "Pending")
             {
-                <p>@(Model.Service == "WholeShop" ? "Awaiting the simulated 50% deposit." : "Awaiting staff review.") @T("This request does not confirm your reservation.")</p>
+                <p>@(Model.Service == "WholeShop" ? "Awaiting the 50% deposit." : "Awaiting staff review.") @T("This request does not confirm your reservation.")</p>
                 <dl class="booking-deadline"><dt>@(Model.Service == "WholeShop" ? T("Payment deadline") : T("Review deadline")) · Asia/Manila</dt><dd>@TimeZoneInfo.ConvertTimeFromUtc(Model.ReviewDeadlineUtc, ReservationRules.Manila).ToString("dd MMM yyyy h:mm tt")</dd></dl>
                 <div class="booking-pending-help" data-booking-tooltip>
                     <button type="button" aria-expanded="false" aria-describedby="details-pending-guidance">

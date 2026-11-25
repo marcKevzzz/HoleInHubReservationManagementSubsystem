@@ -48,6 +48,8 @@ public sealed class RentalPriceForm
 
 public sealed partial class ServiceEditorForm
 {
+    public decimal PremiumRentalRate { get; set; }
+    public string? RentalHolidays { get; set; }
     public bool EditPricing { get; set; }
     public int ClassCount { get; set; }
     public decimal WholeDayRate { get; set; }
@@ -64,12 +66,27 @@ public sealed partial class ServiceEditorForm
             Bands = BookingService != "WholeShop" && !PricingRules.IsPackage(BookingService) ? Bands.Select(row => row.ToBand()).ToArray() : [],
             RentalOverrides = BookingService == "WholeShop" ? RentalOverrides.Select(row => row.ToOverride()).ToArray() : []
         };
+        if (SeasonalRental.IsPackage(Id))
+        {
+            var overrides = new List<RentalRateOverride>();
+            foreach (var day in new[] { DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday })
+            { overrides.Add(new(day, null, PremiumRentalRate, PremiumRentalRate)); }
+            foreach (var value in (RentalHolidays ?? "").Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (!DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+                { throw new ArgumentException("Enter holiday dates as YYYY-MM-DD, separated by commas."); }
+                overrides.Add(new(null, date, PremiumRentalRate, PremiumRentalRate));
+            }
+            pricing = new() { BaseRate = RateAmount ?? 0, WholeDayRate = RateAmount ?? 0, RentalOverrides = overrides.ToArray() };
+        }
         PricingRules.Validate(BookingService, pricing);
         return pricing;
     }
 
     public ServiceEditorForm LoadPricing(ServicePricing pricing)
     {
+        PremiumRentalRate = pricing.RentalOverrides.FirstOrDefault(row => row.Day == DayOfWeek.Friday)?.HalfDayRate ?? 0;
+        RentalHolidays = string.Join(", ", pricing.RentalOverrides.Where(row => row.Date.HasValue).Select(row => row.Date!.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
         RateAmount = pricing.BaseRate;
         ClassCount = pricing.ClassCount;
         WholeDayRate = pricing.WholeDayRate;

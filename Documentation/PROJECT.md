@@ -138,3 +138,16 @@ Confirmation guarantees every included lesson and emails the schedule to the boo
 Staff, managers, and administrators maintain Philippine coach profiles, weekly hours and date exceptions in Manila time. Customers choose a session through the usual reservation flow. While coach scheduling is enabled, a Philippine Coaching booking requires an available coach and bay for the full session. Pending bookings hold both. The fixed KPGA coaching and lesson programs follow their published dates.
 
 Before enabling Philippine coach scheduling, run the Migrator, enter the active roster and availability, and assign coaches to existing future pending and confirmed Philippine Coaching sessions. Verify a known available time and a known unavailable time in the customer calendar.
+
+
+### Seasonal eight-hour rentals
+
+The Christmas Whole Shop, Whole Regular Bay and VIP (2 Bays) rentals are separate Services entries. The legacy Whole Shop offering stays in Services as inactive. Admins and managers set inclusive Manila season dates and designated holidays before publishing each package. Each rental includes karaoke, PlayStation gaming and party games.
+
+| Rental | Mon–Thu | Fri–Sun and designated holidays |
+| --- | ---: | ---: |
+| Whole Shop | ₱30,000 | ₱40,000 |
+| Whole Regular Bay | ₱20,000 | ₱25,000 |
+| VIP (2 Bays) | ₱12,000 | ₱14,000 |
+
+Eight-hour windows start on the half hour within operating hours. Submission holds all included bays together. The local preview uses the provisional 50% deposit and 60-minute verification deadline. The server controls the test payment result. Live collection and settlement depend on the POS integration contract.

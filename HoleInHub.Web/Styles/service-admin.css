@@ -277,3 +277,23 @@ fieldset.service-rule-grid {border:0;border-bottom:1px solid var(--color-line);m
 .coach-remove svg { width:1.125rem; height:1.125rem; }
 .coach-editor .coach-remove:is(:hover,:focus-visible) { color:var(--color-danger,#b42318); }
 .coach-editor .coach-remove { display:inline-grid; place-items:center; width:44px; height:44px; padding:0; color:var(--color-muted); }
+
+.lesson-setup { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.lesson-setup[hidden] { display: none; }
+.lesson-setup > div { flex: 1 1 22rem; }
+
+.lesson-columns {margin-block:1.5rem;align-items:start}
+.lesson-columns .staff-create-bays {grid-template-columns:repeat(auto-fit,minmax(3.25rem,1fr))}
+.lesson-columns .lesson-date-option {display:flex;align-items:center;gap:.75rem;min-height:44px;border-bottom:1px solid var(--line);cursor:pointer}
+.lesson-columns .lesson-date-option input {width:1rem;height:1rem;flex:none;accent-color:var(--color-green)}
+
+.lesson-package-heading,.lesson-schedule-list li,.lesson-form-actions {display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.lesson-package-heading form {margin:0}
+.lesson-schedule-list {list-style:none;padding:0}
+.lesson-schedule-list li {padding:.65rem 0;border-bottom:1px solid var(--line)}
+.lesson-form-actions {justify-content:flex-start}
+.lesson-schedule-list a,.lesson-form-actions a {text-decoration:underline}
+
+@media (max-width: 40rem) {
+    .service-rule-grid.rental-field-pair { grid-template-columns: 1fr; }
+}

@@ -132,7 +132,7 @@
                 <summary>Booking details &amp; notes</summary>
                 <dl class="review-facts">
                     <dt>When</dt><dd><strong>@start.ToString("ddd, d MMM yyyy")</strong><br />@start.ToString("h:mm tt")–@(start.Date == end.Date ? end.ToString("h:mm tt") : end.ToString("d MMM, h:mm tt")) · @durationLabel </dd>
-                    <dt>Where</dt><dd>@StaffReviewQueue.Bays(booking) · @ReservationLabels.Service(booking.Service)</dd>
+                    <dt>Where</dt><dd>@StaffReviewQueue.Bays(booking) · @(booking.RentalTitle ?? ReservationLabels.Service(booking.Service))</dd>
                     <dt>Arrived</dt><dd>@(booking.CheckedInUtc is DateTime arrived ? StaffReviewQueue.Local(arrived).ToString("d MMM yyyy, h:mm tt") : "Not recorded")</dd>
                     <dt>Departed</dt><dd>@(booking.CheckedOutUtc is DateTime departed ? StaffReviewQueue.Local(departed).ToString("d MMM yyyy, h:mm tt") : "Not recorded")</dd>
                     <dt>Guests</dt><dd>@booking.Attendees <small>Includes non-players</small></dd>

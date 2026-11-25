@@ -10,6 +10,7 @@ public sealed class ClassSessionRecord
     public DateTime StartUtc { get; set; }
     public DateTime EndUtc { get; set; }
     public string[] ResourceIds { get; set; } = [];
+    [BsonIgnoreIfDefault] public long ScheduleRevision { get; set; }
     public int Capacity { get; set; }
     public int HeldSeats { get; set; }
     public string State { get; set; } = "Open";

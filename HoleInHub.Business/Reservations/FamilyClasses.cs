@@ -26,6 +26,7 @@ public sealed record FamilyClassOption(string ClassSessionId, string ServiceEntr
 {
     public DateTime? RegistrationEndsUtc { get; init; }
     public DateTime[] Dates { get; init; } = [];
+    public bool JuniorOnly { get; init; }
     public string PriceBasis => "Per learner";
 }
 
@@ -40,7 +41,6 @@ public sealed partial class ReservationService
     {
         if (!SharedClassesEnabled || seats is < 1 or > 8) { return []; }
         var now = (clock ?? TimeProvider.System).GetUtcNow();
-        var reviewReady = ReviewClock.AddMinutes(now, BookingRules.ReviewMinutes("KpgaGroup"));
         var earliest = now.UtcDateTime.AddHours(1);
         var classes = await persistence.ClassesAsync(earliest, DateTime.MaxValue, ct);
         var singles = classes.Where(x => x.ServiceEntryId == (serviceEntryId ?? "KpgaGroup") && x.State == "Open"
@@ -48,10 +48,10 @@ public sealed partial class ReservationService
             .OrderBy(x => x.StartUtc).ThenBy(x => x.ClassSessionId, StringComparer.Ordinal)
             .Select(x => new FamilyClassOption(x.ClassSessionId, x.ServiceEntryId, x.StartUtc, x.EndUtc,
                 x.Capacity - x.HeldSeats, x.PricePerLearner)).ToArray();
-        var options = singles.Where(x => x.StartUtc >= reviewReady && x.RemainingSeats >= seats).ToList();
+        var juniorOnly = serviceCatalog != null && (await serviceCatalog.GetBookingServiceAsync(serviceEntryId ?? "KpgaGroup", ct))?.JuniorOnly == true;
+        var options = new List<FamilyClassOption>();
         foreach (var package in await persistence.PackagesAsync(serviceEntryId ?? "KpgaGroup", ct))
         {
-            options.RemoveAll(x => package.ClassSessionIds.Contains(x.ClassSessionId));
             var included = package.ClassSessionIds.Select(id => singles.FirstOrDefault(x => x.ClassSessionId == id)).ToArray();
             if (included.Any(x => x == null)) { continue; }
             var first = included[0]!;
@@ -59,6 +59,7 @@ public sealed partial class ReservationService
             if (!showClosedPrograms && (now.UtcDateTime >= cutoff || included.Min(x => x!.RemainingSeats) < seats)) { continue; }
             options.Add(first with
             {
+                JuniorOnly = juniorOnly,
                 RegistrationEndsUtc = cutoff,
                 ClassSessionId = package.PackageId,
                 Price = package.PricePerLearner,
@@ -93,22 +94,26 @@ public sealed partial class ReservationService
             }
             return new ClassSessionRecord { StartUtc = option.StartUtc, EndUtc = option.EndUtc };
         }
-        var session = await persistence.ClassAsync(request.ClassSessionId!, ct);
-        if (session is null || session.ServiceEntryId != (request.ServiceEntryId ?? "KpgaGroup") || session.State != "Open"
-            || session.Capacity - session.HeldSeats < request.Attendees)
-        { throw new ReservationValidationException("This class cannot accommodate your group. Choose another published class.", nameof(request.ClassSessionId)); }
-        return session;
+        throw new ReservationValidationException("Choose a published lesson package to register.", nameof(request.ClassSessionId));
     }
 
-    public static (ClassLearnerRecord[] Learners, ClassGuardianRecord[] Guardians) BuildFamilyRoster(SubmitReservationRequest request)
+    public static (ClassLearnerRecord[] Learners, ClassGuardianRecord[] Guardians) BuildFamilyRoster(SubmitReservationRequest request, bool juniorOnly = false)
     {
         if (request.Learners is not { Length: >= 1 and <= 8 } learners || request.Guardians?.Length > 8)
         { throw new ReservationValidationException("Enter one to eight learners for this class."); }
         var contact = $"{request.FirstName?.Trim()} {request.LastName?.Trim()}".Trim();
         var guardians = new Dictionary<int, ClassGuardianRecord>();
+        if (juniorOnly)
+        {
+            if (!ContactRules.IsName(contact))
+            { throw new ReservationValidationException("Enter the parent or guardian’s contact name."); }
+            guardians[0] = new() { Id = Guid.NewGuid().ToString("N"), Name = contact, Relationship = "Parent or guardian" };
+        }
         var roster = new List<ClassLearnerRecord>();
         foreach (var learner in learners)
         {
+            if (juniorOnly && (learner?.IsBookingContact == true || learner?.Age is null or < 0 or > 17))
+            { throw new ReservationValidationException("Enter each child separately. Junior learners must be 17 or younger."); }
             var first = (learner?.IsBookingContact == true ? request.FirstName : learner?.FirstName)?.Trim();
             var last = (learner?.IsBookingContact == true ? request.LastName : learner?.LastName)?.Trim();
             if (!ContactRules.IsName(first) || !ContactRules.IsName(last))
@@ -116,7 +121,8 @@ public sealed partial class ReservationService
             if (learner?.Age is not int age || age is < 0 or > 120)
             { throw new ReservationValidationException("Enter each learner’s age in years, from 0 to 120."); }
             string? guardianId = null;
-            if (age < 18)
+            if (juniorOnly) { guardianId = guardians[0].Id; }
+            else if (age < 18)
             {
                 if (learner.GuardianIndex is not int index || index < 0 || request.Guardians is null || index >= request.Guardians.Length)
                 { throw new ReservationValidationException("Choose a parent or guardian for each learner under 18."); }

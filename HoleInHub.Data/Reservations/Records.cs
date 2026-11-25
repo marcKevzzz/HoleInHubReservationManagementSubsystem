@@ -32,6 +32,7 @@ public sealed class ReservationRecord
     public long Revision { get; set; }
     [BsonIgnoreIfNull] public PosSettlement? FinalSettlement { get; set; }
     [BsonIgnoreIfNull] public DateTime? CheckoutCompletedUtc { get; set; }
+    [BsonIgnoreIfNull] public string? RentalTitle { get; set; }
     [BsonIgnoreIfNull] public string? ServiceEntryId { get; set; }
     [BsonIgnoreIfNull] public long? ServiceRevision { get; set; }
     [BsonIgnoreIfNull] public DateTime? CheckedInUtc { get; set; }
