@@ -10,6 +10,7 @@ module.exports = defineConfig({
     globalTeardown: require.resolve('./browser-tests/teardown.cjs'),
     testDir: './browser-tests',
     outputDir: '../.local/browser-test-results',
+    reporter: process.env.CI ? [['github'], ['list']] : 'list',
     workers: 1,
     timeout: 90_000,
     use: { baseURL, ignoreHTTPSErrors: true },
