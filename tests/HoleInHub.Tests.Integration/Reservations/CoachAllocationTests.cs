@@ -1,9 +1,9 @@
 using HoleInHub.Data.Migrations;
 using HoleInHub.Data.Reservations;
-using HoleInHub.Tests.Integration.Fixtures;
-using Xunit;
-using MongoDB.Driver;
 using HoleInHub.Data.Services;
+using HoleInHub.Tests.Integration.Fixtures;
+using MongoDB.Driver;
+using Xunit;
 
 namespace HoleInHub.Tests.Integration.Reservations;
 
@@ -18,13 +18,25 @@ public sealed class CoachAllocationTests(MongoDbFixture fixture) : IClassFixture
         var store = new ReservationPersistence(db);
         var now = DateTime.UtcNow;
         var start = now.Date.AddDays(15).AddHours(4);
-        var coach = new CoachRecord { Id = "class-coach", Name = "Class coach", Active = true,
-            WeeklyHours = [new(start.DayOfWeek, 720, 840)] };
+        var coach = new CoachRecord
+        {
+            Id = "class-coach",
+            Name = "Class coach",
+            Active = true,
+            WeeklyHours = [new(start.DayOfWeek, 720, 840)]
+        };
         Assert.True(await store.SaveCoachAsync(coach, null, now, default));
         await db.Database.GetCollection<ServiceCatalogRecord>("service_catalog").UpdateOneAsync(x => x.Id == "KpgaGroup",
             Builders<ServiceCatalogRecord>.Update.Set(x => x.CoachIds, new[] { coach.Id }));
-        var lesson = await store.PublishClassAsync(new ClassSessionRecord { StartUtc = start, EndUtc = start.AddHours(1),
-            ResourceIds = ["bay-2"], Capacity = 3, PricePerLearner = 500, CreatedBy = "staff" }, now, default);
+        var lesson = await store.PublishClassAsync(new ClassSessionRecord
+        {
+            StartUtc = start,
+            EndUtc = start.AddHours(1),
+            ResourceIds = ["bay-2"],
+            Capacity = 3,
+            PricePerLearner = 500,
+            CreatedBy = "staff"
+        }, now, default);
         Assert.Equal(coach.Id, lesson.CoachId);
         var serviceStore = new ServiceCatalogPersistence(db);
         var offering = (await serviceStore.GetAsync("KpgaGroup", default))!;

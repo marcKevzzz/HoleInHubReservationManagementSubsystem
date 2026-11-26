@@ -22,9 +22,16 @@ public sealed partial class LeadershipController
         if (bay is null) { return NotFound(); }
         return BayEditor(new()
         {
-            Id = bay.Id, Name = bay.Name, Service = bay.Service, Active = bay.Active, ExpectedRevision = bay.Revision,
-            MaxPlayers = bay.MaxPlayers, MaxTotalGuests = bay.MaxTotalGuests, MaxNonPlayers = bay.MaxNonPlayers,
-            Location = bay.Location, Description = bay.Description,
+            Id = bay.Id,
+            Name = bay.Name,
+            Service = bay.Service,
+            Active = bay.Active,
+            ExpectedRevision = bay.Revision,
+            MaxPlayers = bay.MaxPlayers,
+            MaxTotalGuests = bay.MaxTotalGuests,
+            MaxNonPlayers = bay.MaxNonPlayers,
+            Location = bay.Location,
+            Description = bay.Description,
             Images = bay.HasSavedPresentation ? bay.Images : ConfiguredBayPhotos(id)
         }, false);
     }

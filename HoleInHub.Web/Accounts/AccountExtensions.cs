@@ -129,7 +129,9 @@ public static class AccountExtensions
                 var key = signIn ? $"sign-in:{ip}" : ip;
                 return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
                 {
-                    PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0
+                    PermitLimit = 10,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0
                 });
             });
             options.AddPolicy("guest-recovery-send", context => RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(10), QueueLimit = 0 }));

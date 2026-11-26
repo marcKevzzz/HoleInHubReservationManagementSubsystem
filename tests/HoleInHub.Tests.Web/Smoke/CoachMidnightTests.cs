@@ -20,17 +20,23 @@ public sealed class CoachMidnightTests
     [Fact]
     public void MidnightWindowStillDetectsOverlappingShift()
     {
-        var form = new CoachEditorForm { Weekly = [
+        var form = new CoachEditorForm
+        {
+            Weekly = [
             new() { Day = DayOfWeek.Monday, Start = new(18, 0), End = new(0, 0) },
-            new() { Day = DayOfWeek.Monday, Start = new(22, 0), End = new(23, 0) }] };
+            new() { Day = DayOfWeek.Monday, Start = new(22, 0), End = new(23, 0) }]
+        };
         Assert.Contains(form.ValidateSchedule(), error => error.ErrorMessage!.Contains("overlaps"));
     }
 
     [Fact]
     public void EarlierNonMidnightEndRemainsInvalid()
     {
-        var form = new CoachEditorForm { Weekly = [
-            new() { Day = DayOfWeek.Monday, Start = new(18, 0), End = new(17, 0) }] };
+        var form = new CoachEditorForm
+        {
+            Weekly = [
+            new() { Day = DayOfWeek.Monday, Start = new(18, 0), End = new(17, 0) }]
+        };
         Assert.NotEmpty(form.ValidateSchedule());
     }
 }

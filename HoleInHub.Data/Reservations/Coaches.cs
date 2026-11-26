@@ -158,8 +158,14 @@ public sealed partial class ReservationPersistence
             if (lesson is null || lesson.State == "Released" || lesson.StartUtc <= now || lesson.ScheduleRevision != revision) { return false; }
             // Remove only inside this transaction so the class does not conflict with itself.
             await Classes.DeleteOneAsync(s, x => x.Id == lesson.Id, cancellationToken: token);
-            var allocation = new ReservationRecord { Service = "KpgaGroup", ServiceEntryId = lesson.ServiceEntryId,
-                StartUtc = lesson.StartUtc, EndUtc = lesson.EndUtc, ResourceIds = lesson.ResourceIds };
+            var allocation = new ReservationRecord
+            {
+                Service = "KpgaGroup",
+                ServiceEntryId = lesson.ServiceEntryId,
+                StartUtc = lesson.StartUtc,
+                EndUtc = lesson.EndUtc,
+                ResourceIds = lesson.ResourceIds
+            };
             await ClaimCoachAsync(s, allocation, coachId, now, token, assigningExisting: true);
             lesson.CoachId = allocation.CoachId;
             lesson.CoachName = allocation.CoachName;
