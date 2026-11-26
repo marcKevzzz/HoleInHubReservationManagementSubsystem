@@ -71,6 +71,8 @@ public sealed class AccountIdentityTests
                 ["FirstName"] = "Test",
                 ["LastName"] = "Player",
                 ["Phone"] = "09000000000",
+                ["ContactAge"] = "30",
+                ["ContactAddress"] = "Quezon City",
                 ["Attendees"] = "1",
                 ["IdempotencyKey"] = Guid.NewGuid().ToString("N")
             }));
