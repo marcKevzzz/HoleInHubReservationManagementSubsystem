@@ -1,0 +1,23 @@
+@using HoleInHub.Business.Services
+@model string[]
+            <section class="service-editor-section service-image-section">
+                <h2>@(ViewData["GalleryVideos"] is string[] { Length: > 0 } ? "Photos and videos" : "Images")</h2>
+                @if (ViewData["GalleryVideos"] is string[] videos && videos.Length > 0)
+                {
+                    <div class="bay-video-gallery">
+                        @for (var i = 0; i < videos.Length; i++)
+                        {
+                            <figure><video controls playsinline preload="none" poster="@System.IO.Path.ChangeExtension(videos[i], ".webp")" aria-label="Bay video @(i + 1)"><source src="@videos[i]" />Your browser does not support video. <a href="@videos[i]">Open video @(i + 1)</a></video><figcaption>Video @(i + 1)</figcaption></figure>
+                        }
+                    </div>
+                }
+                <div class="service-editor-gallery" data-service-gallery data-fallback="@ViewData["GalleryFallback"]">
+                    @if (Model.Length == 0 && ViewData["GalleryFallback"] is string cover) { <img class="bay-default-cover" src="@cover" alt="Venue overview" /> }
+                    @foreach (var image in Model)
+                    {
+                        <figure data-service-image data-path="@image"><img src="@image" alt="Gallery photo" />@if (BusinessIds.ServiceImage(image) is string imageId) { <figcaption>Image ID @imageId</figcaption> }<input type="hidden" name="Images" value="@image" /></figure>
+                    }
+                <label class="service-upload" data-image-add title="Add up to 8 images · JPEG, PNG or WebP · 4 MB each"><input id="Uploads" name="Uploads" type="file" multiple accept="image/jpeg,image/png,image/webp" data-service-uploads /><span><partial name="_StaffIcon" model='"plus"' /><span class="sr-only">Add images</span></span></label>
+                </div>
+                <p class="service-field-error" data-images-error role="alert"></p>
+            </section>

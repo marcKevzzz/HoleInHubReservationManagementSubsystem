@@ -21,6 +21,15 @@ public sealed partial class ServiceCatalogPersistence
     public Task<ServiceImageRecord?> ImageAsync(string id, CancellationToken ct) =>
         context.Database.GetCollection<ServiceImageRecord>("service_images").Find(x => x.Id == id).FirstOrDefaultAsync(ct)!;
 
+    internal static async Task StoreImagesAsync(IMongoDbContext context, IClientSessionHandle session, IReadOnlyList<ServiceImageRecord> images, CancellationToken ct)
+    {
+        foreach (var image in images)
+        {
+            await context.Database.GetCollection<ServiceImageRecord>("service_images")
+                .ReplaceOneAsync(session, x => x.Id == image.Id, image, new ReplaceOptions { IsUpsert = true }, ct);
+        }
+    }
+
     public async Task SaveAsync(ServiceCatalogRecord record, long revision, bool create,
         IReadOnlyList<ServiceImageRecord> images, CancellationToken ct,
         Action<IReadOnlyList<HoleInHub.Data.Reservations.ReservationRecord>>? checkImpacts = null)
@@ -48,6 +57,36 @@ public sealed partial class ServiceCatalogPersistence
                 throw new InvalidOperationException("This service changed. Reload its latest details before saving.");
             }
 
+            if (record.CoachIds is { Length: > 0 } coachIds)
+            {
+                var known = await context.Database.GetCollection<HoleInHub.Data.Reservations.CoachRecord>("coaches")
+                    .Find(s, coach => Enumerable.Contains(coachIds, coach.Id)).CountDocumentsAsync(token);
+                if (known != coachIds.Length) { throw new InvalidOperationException("A selected coach no longer exists. Reload the service and choose again."); }
+            }
+
+            if (prior is not null && record.CoachIds is { } eligible)
+            {
+                var now = record.UpdatedUtc ?? DateTime.UtcNow;
+                var bookings = await context.Database.GetCollection<HoleInHub.Data.Reservations.ReservationRecord>("reservations")
+                    .Find(s, x => (x.ServiceEntryId == record.Id || x.ServiceEntryId == null && x.Service == record.Id)
+                        && x.EndUtc > now && x.CoachId != null && !Enumerable.Contains(eligible, x.CoachId)
+                        && (x.Status == "Confirmed" || x.Status == "Checked-In" || x.Status == "Pending" && x.ReviewDeadlineUtc > now)).AnyAsync(token);
+                var classes = await context.Database.GetCollection<HoleInHub.Data.Reservations.ClassSessionRecord>("class_sessions")
+                    .Find(s, x => x.ServiceEntryId == record.Id && x.EndUtc > now && x.State != "Released"
+                        && x.CoachId != null && !Enumerable.Contains(eligible, x.CoachId)).AnyAsync(token);
+                if (bookings || classes)
+                { throw new InvalidOperationException("Reassign upcoming lessons before removing their coach from this service."); }
+            }
+
+            if (record.Active && SeasonalRental.IsPackage(record.Id))
+            {
+                var resources = await context.Database.GetCollection<HoleInHub.Data.Reservations.ResourceRecord>("resources")
+                    .Find(s, bay => bay.Active).Project(bay => bay.Service).ToListAsync(token);
+                var count = resources.Count(service => SeasonalRental.Includes(record.Id, service));
+                if (count == 0 || record.Id == SeasonalRental.Vip && count != 2)
+                { throw new InvalidOperationException("Activate the included bays before publishing this rental."); }
+            }
+
             if (prior is not null && checkImpacts is not null)
             {
                 var now = record.UpdatedUtc ?? DateTime.UtcNow;
@@ -59,11 +98,7 @@ public sealed partial class ServiceCatalogPersistence
                 checkImpacts(bookings);
             }
 
-            foreach (var image in images)
-            {
-                await context.Database.GetCollection<ServiceImageRecord>("service_images")
-                    .ReplaceOneAsync(s, x => x.Id == image.Id, image, new ReplaceOptions { IsUpsert = true }, token);
-            }
+            await StoreImagesAsync(context, s, images, token);
             record.Revision = (prior?.Revision ?? -1) + 1;
             if (create)
             {

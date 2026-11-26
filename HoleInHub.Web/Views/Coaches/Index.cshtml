@@ -4,34 +4,28 @@
 <section class="staff-workspace service-admin">
     <header class="staff-workspace-heading service-admin-heading">
         <h1>Coaches</h1>
-        <a class="button" data-nav-layout="coach-editor" asp-action="Create">Add coach</a>
+        <a class="button" data-nav-layout="coach-editor" asp-action="Create">Add coach <partial name="_StaffIcon" model='"plus"' /></a>
     </header>
     @if (Model.Count == 0)
     {
-        <partial name="_StaffEmptyState" model='("customers", "No coaches yet", "Add a coach to start scheduling Philippine Coaching sessions.", (string?)null, (string?)null)' />
+        <partial name="_StaffEmptyState" model='("coach", "No coaches yet", "Add a coach to start scheduling Philippine Coaching sessions.", (string?)null, (string?)null)' />
     }
-    <div class="service-admin-list">
+    @if (Model.Count > 0)
+    {
+    <div class="coach-card-grid">
         @foreach (var entry in Model)
         {
             var coach = entry.Coach;
-            <article class="service-editor-section">
+            <article class="coach-directory-card">
+                <a class="coach-card-photo" asp-action="Edit" asp-route-id="@coach.Id" data-nav-layout="coach-editor" aria-label="Open @coach.Name">@if (coach.PhotoPath is { } photo) { <img src="@photo" alt="" loading="lazy" /> } else { <partial name="_StaffIcon" model='"coach"' /> }<span class="people-pill">@(coach.Active ? "Active" : "Inactive")</span></a>
                 <div class="service-admin-title">
                     <h2>@coach.Name</h2>
-                    <span class="people-pill">@(coach.Active ? "Active" : "Inactive")</span>
+
                 </div>
-                @if (entry.NextFreePeriod is { } free)
-                {
-                    var start = DashboardMetrics.Local(free.StartUtc);
-                    var end = DashboardMetrics.Local(free.EndUtc);
-                    var endLabel = end.ToString(end.Date == start.Date ? "h:mm tt" : "ddd, MMM d, h:mm tt");
-                    <p>@(free.FreeNow ? "Free now until" : $"Next free {start:ddd, MMM d, h:mm tt} to") @endLabel (Manila)</p>
-                }
-                else if (coach.Active)
-                {
-                    <p>No free period in the next @ReservationService.CoachDirectoryDays days.</p>
-                }
-                <a class="staff-hover-link" data-nav-layout="coach-editor" asp-action="Edit" asp-route-id="@coach.Id" aria-label="Edit @coach.Name">Edit</a>
+                @if (!string.IsNullOrWhiteSpace(coach.Title)) { <p>@coach.Title</p> }
+                <a class="button coach-card-edit" data-nav-layout="coach-editor" asp-action="Edit" asp-route-id="@coach.Id" aria-label="Edit @coach.Name">Edit <partial name="_StaffIcon" model='"edit"' /></a>
             </article>
         }
     </div>
+    }
 </section>

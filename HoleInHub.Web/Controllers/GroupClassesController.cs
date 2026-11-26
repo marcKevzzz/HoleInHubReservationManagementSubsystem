@@ -12,10 +12,26 @@ namespace HoleInHubReservationManagementSubsystem.Controllers;
 public sealed class GroupClassesController(ReservationService bookings, TimeProvider clock) : Controller
 {
     [Authorize(Roles = StaffRoles.VenueManagement), HttpGet("/admin/services/{offering}/packages")]
-    public async Task<IActionResult> Packages(string offering, CancellationToken ct)
+    public async Task<IActionResult> Packages(string offering, CancellationToken ct, string? editing = null)
     {
         var editor = await bookings.PackageEditorAsync(offering, ct);
-        return editor == null ? NotFound() : View(editor);
+        if (editor == null) { return NotFound(); }
+        var selected = editor.Sessions.FirstOrDefault(x => x.Id == editing);
+        if (editing != null && selected == null) { return NotFound(); }
+        ViewData["ClassDate"] = new PublishGroupClassForm
+        {
+            Offering = offering,
+            Editing = editing,
+            Revision = selected?.Revision ?? 0,
+            Date = selected == null ? null : DateOnly.FromDateTime(DashboardMetrics.Local(selected.StartUtc)),
+            StartTime = selected == null ? new TimeOnly(15, 0) : TimeOnly.FromDateTime(DashboardMetrics.Local(selected.StartUtc)),
+            EndTime = selected == null ? new TimeOnly(16, 0) : TimeOnly.FromDateTime(DashboardMetrics.Local(selected.EndUtc)),
+            Capacity = selected?.Capacity,
+            BayIds = selected?.Bays ?? [],
+
+            Bays = (await bookings.GetCatalogAsync(ct)).Where(bay => bay.Service == "Regular").ToArray()
+        };
+        return View(editor);
     }
 
     [Authorize(Roles = StaffRoles.VenueManagement), HttpPost("/admin/services/{offering}/packages"), ValidateAntiForgeryToken]
@@ -76,7 +92,7 @@ public sealed class GroupClassesController(ReservationService bookings, TimeProv
     }
 
     [Authorize(Roles = StaffRoles.VenueManagement), HttpPost("publish"), ValidateAntiForgeryToken]
-    public async Task<IActionResult> Publish(PublishGroupClassForm model, CancellationToken ct)
+    public async Task<IActionResult> Publish(PublishGroupClassForm model, CancellationToken ct, bool schedule = false)
     {
         if (!bookings.SharedClassesEnabled)
         {
@@ -88,10 +104,18 @@ public sealed class GroupClassesController(ReservationService bookings, TimeProv
             try
             {
                 var id = await bookings.PublishGroupClassAsync(model.Date!.Value, model.Offering, model.BayIds, model.Capacity!.Value,
-                    model.Price!.Value, User.FindFirstValue(ClaimTypes.NameIdentifier)!, ct);
+                    User.FindFirstValue(ClaimTypes.NameIdentifier)!, ct, model.StartTime, model.EndTime, model.Editing, model.Revision, model.WeeklyPackage);
+                if (schedule) { return RedirectToAction(nameof(Packages), new { offering = model.Offering }); }
                 return RedirectToAction(nameof(Roster), new { id });
             }
             catch (ReservationValidationException error) { ModelState.AddModelError("", error.Message); }
+        }
+        if (schedule && await bookings.PackageEditorAsync(model.Offering, ct) is { } editor)
+        {
+            model.Bays = (await bookings.GetCatalogAsync(ct)).Where(bay => bay.Service == "Regular").ToArray();
+            ViewData["ClassDate"] = model;
+            ViewData["ClassDateError"] = true;
+            return View("Packages", editor);
         }
         return await Form(model, ct);
     }
@@ -100,12 +124,13 @@ public sealed class GroupClassesController(ReservationService bookings, TimeProv
     public async Task<IActionResult> Enroll(string id, CancellationToken ct)
     {
         if (!bookings.SharedClassesEnabled) { return NotFound(); }
-        var selected = await bookings.StaffClassRosterAsync(id, ct);
-        if (selected is null) { return NotFound(); }
+        var offering = Request.Query["offering"].ToString();
+        if (string.IsNullOrWhiteSpace(offering) || !(await bookings.FamilyClassesAsync(offering, 1, ct)).Any(package => package.ClassSessionId == id))
+        { return NotFound(); }
         var request = new SubmitReservationRequest
         {
             Service = "KpgaGroup",
-            ServiceEntryId = selected.Value.Session.Offering,
+            ServiceEntryId = offering,
             ClassSessionId = id,
             IdempotencyKey = Guid.NewGuid().ToString("N")
         };

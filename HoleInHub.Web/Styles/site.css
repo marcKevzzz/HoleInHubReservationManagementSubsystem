@@ -1663,3 +1663,6 @@ button.flow-back{border:0;background:transparent;cursor:pointer}
     min-height: 0;
   }
 }
+.site-header .profile-link {border-radius:9999px}
+.site-header .profile-link:is(:hover,:focus-visible) {background:var(--color-line);color:var(--color-ink)!important}
+.site-header .profile-link:focus-visible {outline:2px solid var(--color-green);outline-offset:2px}

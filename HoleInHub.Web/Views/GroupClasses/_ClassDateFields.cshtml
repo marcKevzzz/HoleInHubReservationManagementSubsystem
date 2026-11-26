@@ -1,0 +1,10 @@
+@model PublishGroupClassForm
+@{ var locked = ViewData["ScheduleLocked"] is true; }
+<label asp-for="Date">Class date</label><input asp-for="Date" readonly="@locked" type="date" required /><div class="service-rule-grid">
+    <div class="auth-input-wrap"><input asp-for="StartTime" asp-format="{0:HH:mm}" type="time" readonly="@locked" step="1800" required /><label asp-for="StartTime">Start time (Manila)</label></div>
+    <div class="auth-input-wrap"><input asp-for="EndTime" asp-format="{0:HH:mm}" type="time" readonly="@locked" step="1800" required /><label asp-for="EndTime">End time (Manila)</label></div>
+</div>
+@if (locked) { foreach (var id in Model.BayIds) { <input type="hidden" name="BayIds" value="@id" /> } }
+<fieldset disabled="@locked"><legend>Regular bays</legend><div class="staff-create-bays">@foreach(var bay in Model.Bays){<label ><input class="sr-only" type="checkbox" name="BayIds" value="@bay.Id" checked="@Model.BayIds.Contains(bay.Id)" /> @bay.Name</label>}</div></fieldset>
+<div class="auth-input-wrap"><input asp-for="Capacity" type="number" min="1" max="10" required placeholder=" " /><label asp-for="Capacity">Maximum learners for this class (1–10)</label><span asp-validation-for="Capacity"></span></div>
+<p class="attendance-note">Publishing reserves the selected bays for this class.</p>

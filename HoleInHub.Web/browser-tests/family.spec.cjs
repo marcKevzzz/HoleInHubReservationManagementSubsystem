@@ -2,34 +2,56 @@ const {test, expect} = require('@playwright/test');
 const {signInManager,verificationCode} = require('./fixture.cjs');
 
 for (const packageBooking of [false, true]) {
-test(packageBooking ? 'book two children into a four-date lesson package' : 'publish a shared class and prepare a two-child roster', async ({page, browser, request}, info) => {
+test(packageBooking ? 'book two children into a four-date lesson package' : 'a scheduled class alone cannot be booked', async ({page, browser, request}, info) => {
     await signInManager(page);
     await page.goto('/admin/services');
-    await page.locator('[data-service-id="KpgaGroup"]').getByRole('link',{name:'Publish a class'}).click();
+    await page.locator('[data-service-id="KpgaGroup"]').getByRole('link',{name:'Edit service'}).click();
+    if (packageBooking) {
+        await page.getByLabel(/Junior program/).check();
+        await page.getByRole('button', {name:'Save service'}).click();
+        await expect(page).toHaveURL(/admin\/services$/);
+        await page.locator('[data-service-id="KpgaGroup"]').getByRole('link',{name:'Edit service'}).click();
+    }
+    await page.getByRole("link", {name:"Manage lesson schedule"}).click();
+    await expect(page.getByRole("heading",{name:"Publish lesson package"})).toBeVisible();
     const day = new Date();
     day.setUTCDate(day.getUTCDate() + (packageBooking ? 7 : 0) + 14 + (info.project.name === 'mobile' ? 42 : 0));
-    const weekday = 2;
+    const weekday = 3;
     while (day.getUTCDay() !== weekday) day.setUTCDate(day.getUTCDate() + 1);
     const sessions = [];
+    const priorCount = await page.locator('[name=sessions]').count();
     for (let i = 0; i < (packageBooking ? 4 : 1); i++) {
-    if (i) await page.goto('/staff/group-classes/publish?offering=KpgaGroup');
     const date = new Date(day);
     date.setUTCDate(date.getUTCDate() + 7*i);
     await page.locator('#Date').fill(date.toISOString().slice(0,10));
-    await page.locator('[name=BayIds]').first().check();
+    await page.locator('.staff-create-bays label').first().click();
+    await page.locator('#StartTime').fill('13:30');
+    await page.locator('#EndTime').fill('15:00');
     await page.locator('#Capacity').fill('3');
-    await page.locator('#Price').fill('500');
-    await page.getByRole('button',{name:'Publish class'}).click();
-    await expect(page.getByRole('heading',{name:'Registered learners'})).toBeVisible();
-    sessions.push(page.url().split('/').at(-2));
+    await page.getByRole('button',{name:'Add class date'}).click();
+    const session = page.locator('[name=sessions]').nth(priorCount+i);
+    await expect(session).toBeAttached();
+    sessions.push(await session.inputValue());
     }
+    await page.getByRole('link', {name:'Edit class'}).last().click();
+    await expect(page.locator('#Capacity')).toHaveValue('3');
+    await expect(page.locator('#StartTime')).toHaveValue('13:30');
+    await page.getByRole('button', {name:'Save class changes'}).click();
+    await expect(page.getByRole('button', {name:'Add class date'})).toBeVisible();
     if (packageBooking) {
         await page.goto('/admin/services/KpgaGroup/packages');
         for (const session of sessions) await page.locator('[name=sessions][value="'+session+'"]').check();
         await page.locator('#registration-deadline').fill(new Date(day.getTime()-86400000).toISOString().slice(0,10));
         await page.getByRole('button',{name:'Publish package'}).click();
-        await expect(page.getByRole('heading',{name:/PKG-/}).last()).toBeVisible();
+        await expect(page.getByRole('heading',{name:'Published package'}).last()).toBeVisible();
         await page.goto('/staff/group-classes/'+sessions[0]+'/roster');
+    }
+    if (!packageBooking) {
+        await page.goto('/Reservations/Create');
+        await expect(page.locator('input[data-program="'+sessions[0]+'"]')).toHaveCount(0);
+        const response = await page.request.get('/staff/group-classes/'+sessions[0]+'/enroll');
+        expect(response.status()).toBe(404);
+        return;
     }
     const guest = await browser.newPage({...info.project.use, baseURL: info.project.use.baseURL, reducedMotion: 'reduce', ignoreHTTPSErrors:true});
     try {
@@ -53,6 +75,9 @@ test(packageBooking ? 'book two children into a four-date lesson package' : 'pub
         await expect(guest.locator('#learner-first-1')).toBeVisible();
         const email = 'family-' + require('node:crypto').randomUUID() + '@example.test';
         await guest.locator('#FirstName').fill('Parent');
+        await guest.locator('#ContactAge').fill('30');
+        await guest.locator('#ContactAddress').fill('Quezon City');
+        if (await guest.locator('#JuniorRelationship').isVisible()) await guest.locator('#JuniorRelationship').fill('Parent');
         await guest.locator('#LastName').fill('Guest');
         await guest.locator('#Phone').fill('09123456789');
         await guest.locator('#Email').fill(email);
@@ -61,9 +86,9 @@ test(packageBooking ? 'book two children into a four-date lesson package' : 'pub
             await guest.locator('#learner-last-'+i).fill('Cruz');
             await guest.locator('#age-'+i).fill('12');
         }
-        await guest.locator('[data-contact-guardian]').first().check();
-        await guest.locator('#relationship-0').fill('Parent');
-        await guest.locator('#guardian-index-1').selectOption('0');
+        await expect(guest.locator('#age-0')).toHaveAttribute('max','17');
+        await expect(guest.getByLabel("I'm participating").first()).toBeHidden();
+        await expect(guest.locator('.booking-contact > legend')).toHaveText('Parent or guardian details');
 
         await guest.locator('#PrivacyAccepted').focus();
         await guest.keyboard.press('Space');
@@ -107,3 +132,21 @@ test(packageBooking ? 'book two children into a four-date lesson package' : 'pub
     } finally { await guest.close(); }
 });
 }
+
+test('new Korean lesson program continues directly to scheduling', async ({ page }) => {
+    await signInManager(page);
+    await page.goto('/admin/services/new');
+    await expect(page.getByRole('heading', {name:'Lesson dates and enrollment'})).toBeHidden();
+    await page.locator('#BookingService').selectOption('KpgaGroup');
+    await expect(page.getByRole('heading', {name:'Lesson dates and enrollment'})).toBeVisible();
+    await page.locator('#Title').fill('Junior lesson program');
+    await page.locator('#Summary').fill('Four Tuesday lessons.');
+    await page.locator('#Uploads').setInputFiles(require.resolve('../wwwroot/media/facebook/kpga-lessons.webp'));
+    await page.locator('#service-pricing > summary').click();
+    await page.locator('#RateAmount').fill('2500');
+    await page.locator('#ClassCount').fill('4');
+    await page.getByRole('button', {name:/and schedule dates/}).click();
+    await expect(page.getByRole('heading', {name:'Junior lesson program'})).toBeVisible();
+    await expect(page.locator('#Date')).toBeVisible();
+    await expect(page.getByRole('button', {name:'Publish package'})).toBeDisabled();
+});

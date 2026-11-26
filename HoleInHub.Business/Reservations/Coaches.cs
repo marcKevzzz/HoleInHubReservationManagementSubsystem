@@ -3,7 +3,7 @@ using HoleInHub.Data.Reservations;
 
 namespace HoleInHub.Business.Reservations;
 
-public sealed record CoachDto(string Id, string Name, bool Active, long Revision, CoachWeeklyHoursDto[] WeeklyHours, CoachDateHoursDto[] Overrides, string? Phone = null, string? Email = null, string? Title = null);
+public sealed record CoachDto(string Id, string Name, bool Active, long Revision, CoachWeeklyHoursDto[] WeeklyHours, CoachDateHoursDto[] Overrides, string? Phone = null, string? Email = null, string? Title = null, string? PhotoPath = null);
 public sealed record CoachWeeklyHoursDto(DayOfWeek Day, int StartMinute, int EndMinute);
 public sealed record CoachDateHoursDto(string Date, int? StartMinute, int? EndMinute);
 
@@ -19,7 +19,7 @@ public sealed partial class ReservationService
 {
     public const string CoachUnavailable = "No coach and bay are available for the full session. Choose another time.";
     public bool PhilippineCoachSchedulesEnabled => policy.Value.PhilippineCoachSchedulesEnabled;
-    private bool RequiresCoach(string service) => PhilippineCoachSchedulesEnabled && service == "PhilippineCoach";
+    private bool RequiresCoach(string service) => PhilippineCoachSchedulesEnabled && service is "PhilippineCoach" or "KpgaPro";
 
     public async Task<IReadOnlyList<CoachDto>> CoachesAsync(CancellationToken ct) =>
         (await persistence.ReadCoachesAsync(ct)).Select(MapCoach).ToArray();
@@ -28,9 +28,9 @@ public sealed partial class ReservationService
     {
         var booking = await persistence.ByIdAsync(reservationId, ct);
         var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime;
-        if (booking is null || booking.Service != "PhilippineCoach" || booking.Status is not ("Pending" or "Confirmed")
+        if (booking is null || booking.Service is not ("PhilippineCoach" or "KpgaPro") || booking.Status is not ("Pending" or "Confirmed")
             || booking.StartUtc <= now) { return []; }
-        return (await persistence.AvailableCoachesAsync(booking.StartUtc, booking.EndUtc, now, ct, reservationId)).Select(MapCoach).ToArray();
+        return (await persistence.AvailableCoachesAsync(booking.StartUtc, booking.EndUtc, now, ct, reservationId, booking.ServiceEntryId ?? booking.Service)).Select(MapCoach).ToArray();
     }
 
     public async Task<bool> AssignCoachAsync(string reservationId, long revision, string coachId, string actor, CancellationToken ct)
@@ -41,15 +41,18 @@ public sealed partial class ReservationService
         catch (AllocationConflictException ex) { throw new ReservationValidationException(ex.Message); }
     }
 
-    public async Task<bool> SaveCoachAsync(CoachDto coach, long? expectedRevision, CancellationToken ct)
+    public async Task<bool> SaveCoachAsync(CoachDto coach, long? expectedRevision, CancellationToken ct, byte[]? photo = null, bool removePhoto = false)
     {
         ValidateCoach(coach);
         if (expectedRevision is < 0 || (expectedRevision.HasValue && string.IsNullOrWhiteSpace(coach.Id)))
         { throw new ReservationValidationException("Reload the coach profile before saving."); }
+        var current = expectedRevision.HasValue ? (await persistence.ReadCoachesAsync(ct)).FirstOrDefault(x => x.Id == coach.Id) : null;
+        var gallery = HoleInHub.Business.Services.ServiceCatalog.PrepareGallery("coach-" + coach.Id, [], [], photo is null ? [] : [photo]);
         var record = new CoachRecord
         {
             Id = expectedRevision.HasValue ? coach.Id : Guid.NewGuid().ToString("N"),
             Name = coach.Name.Trim(),
+            PhotoPath = photo is not null ? gallery.Paths.Single() : removePhoto ? null : current?.PhotoPath,
             Title = coach.Title?.Trim(),
             Phone = coach.Phone?.Trim(),
             Email = coach.Email?.Trim(),
@@ -57,12 +60,28 @@ public sealed partial class ReservationService
             WeeklyHours = coach.WeeklyHours.Select(w => new CoachWeeklyHours(w.Day, w.StartMinute, w.EndMinute)).ToArray(),
             Overrides = coach.Overrides.Select(w => new CoachDateHours(w.Date, w.StartMinute, w.EndMinute)).ToArray()
         };
-        try { return await persistence.SaveCoachAsync(record, expectedRevision, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime, ct); }
+        try { return await persistence.SaveCoachAsync(record, expectedRevision, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime, ct, gallery.Images); }
         catch (CoachScheduleConflictException ex)
         {
             throw new CoachCommitmentException(ex.Bookings.Select(x =>
                 new CoachBookingConflictDto(x.Id, x.Reference, x.StartUtc, x.EndUtc, x.Status)).ToArray());
         }
+    }
+
+    public async Task<IReadOnlyList<CoachDto>> AvailableClassCoachesAsync(string id, CancellationToken ct)
+    {
+        var lesson = await persistence.ClassAsync(id, ct);
+        var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime;
+        if (lesson is null || lesson.State == "Released" || lesson.StartUtc <= now) { return []; }
+        return (await persistence.AvailableCoachesAsync(lesson.StartUtc, lesson.EndUtc, now, ct,
+            serviceEntryId: lesson.ServiceEntryId, exceptClassId: id)).Select(MapCoach).ToArray();
+    }
+
+    public async Task<bool> AssignClassCoachAsync(string id, long revision, string coachId, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(coachId) || revision < 0) { throw new ReservationValidationException("Choose a coach and reload the class if it changed."); }
+        try { return await persistence.AssignClassCoachAsync(id, revision, coachId, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime, ct); }
+        catch (AllocationConflictException error) { throw new ReservationValidationException(error.Message); }
     }
 
     public static void ValidateCoach(CoachDto coach)
@@ -103,5 +122,5 @@ public sealed partial class ReservationService
 
     private static CoachDto MapCoach(CoachRecord coach) => new(coach.Id, coach.Name, coach.Active, coach.Revision,
         coach.WeeklyHours.Select(w => new CoachWeeklyHoursDto(w.Day, w.StartMinute, w.EndMinute)).ToArray(),
-        coach.Overrides.Select(w => new CoachDateHoursDto(w.Date, w.StartMinute, w.EndMinute)).ToArray(), coach.Phone, coach.Email, coach.Title);
+        coach.Overrides.Select(w => new CoachDateHoursDto(w.Date, w.StartMinute, w.EndMinute)).ToArray(), coach.Phone, coach.Email, coach.Title, coach.PhotoPath);
 }

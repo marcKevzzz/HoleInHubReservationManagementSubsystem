@@ -212,7 +212,7 @@ public sealed partial class ReservationPersistence
                     {
                         throw new AllocationConflictException("The bay is no longer available for this session. Check the schedule before approving.");
                     }
-                    if (record.Service == "PhilippineCoach" && (requireCoach || record.CoachId != null))
+                    if ((record.Service is "PhilippineCoach" or "KpgaPro") && (requireCoach || record.CoachId != null))
                     {
                         if (record.CoachId == null) { throw new AllocationConflictException("Assign a coach before approving this lesson."); }
                         await ClaimCoachAsync(s, record, record.CoachId, now, token);
@@ -237,7 +237,7 @@ public sealed partial class ReservationPersistence
                 case "reject" when pending:
                     record.Status = "Rejected"; history = "Rejected"; change = update.Set(x => x.Status, record.Status).Set(x => x.CancellationRequested, false); break;
                 case "coach" when pending && record.Service is "PhilippineCoach" or "KpgaPro" or "KpgaGroup":
-                    if (requireCoach && record.Service == "PhilippineCoach" && record.CoachId == null) { return false; }
+                    if (requireCoach && (record.Service is "PhilippineCoach" or "KpgaPro") && record.CoachId == null) { return false; }
                     if (record.CoachConfirmed)
                     {
                         return true;

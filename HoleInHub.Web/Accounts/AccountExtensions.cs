@@ -66,7 +66,11 @@ public static class AccountExtensions
         services.ConfigureApplicationCookie(options =>
         {
             options.LoginPath = "/account/sign-in";
-            options.AccessDeniedPath = "/account/sign-in";
+            options.Events.OnRedirectToAccessDenied = context =>
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                return Task.CompletedTask;
+            };
             options.Cookie.HttpOnly = true;
             options.Cookie.SameSite = SameSiteMode.Lax;
             options.Cookie.SecurePolicy = environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
@@ -100,14 +104,36 @@ public static class AccountExtensions
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             options.OnRejected = async (context, ct) =>
             {
-                if (context.HttpContext.Request.Path.StartsWithSegments("/guest/reservations"))
+                if (context.HttpContext.Request.Path.StartsWithSegments("/account/sign-in"))
+                {
+                    context.HttpContext.Response.Headers.RetryAfter = "60";
+                    await context.HttpContext.Response.WriteAsync("Too many sign-in attempts. Please try again in one minute.", ct);
+                }
+                else if (context.HttpContext.Request.Path.StartsWithSegments("/guest/reservations"))
                 {
                     context.HttpContext.Response.ContentType = "text/plain; charset=utf-8";
                     context.HttpContext.Response.Headers.CacheControl = "no-store";
                     await context.HttpContext.Response.WriteAsync("Too many requests. Please wait a few minutes before requesting or verifying another code.", ct);
                 }
             };
-            options.AddPolicy("accounts", context => RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+            options.AddPolicy("accounts", context =>
+            {
+                var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                var endpoint = context.GetEndpoint()?.Metadata.GetMetadata<Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor>();
+                var signIn = endpoint?.ControllerName == "Account" && endpoint.ActionName == "SignIn";
+                if (signIn && HttpMethods.IsGet(context.Request.Method) && context.User.Identity?.IsAuthenticated != true)
+                {
+                    return RateLimitPartition.GetNoLimiter("sign-in-form");
+                }
+
+                var key = signIn ? $"sign-in:{ip}" : ip;
+                return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 10,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0
+                });
+            });
             options.AddPolicy("guest-recovery-send", context => RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(10), QueueLimit = 0 }));
             options.AddPolicy("guest-recovery-verify", context => RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(10), QueueLimit = 0 }));
         });

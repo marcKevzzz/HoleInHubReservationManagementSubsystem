@@ -21,7 +21,7 @@
             const name = learner.querySelector('[data-learner-name]');
             name.hidden = learner.querySelector('[data-participating]').checked;
             for (const input of name.querySelectorAll('input')) input.required = !name.hidden;
-            const minor = isMinor(learner);
+            const minor = !learner.querySelector('[data-guardian]').disabled && isMinor(learner);
             learner.querySelector('[data-guardian]').hidden = !minor;
             const source = learner.querySelector('[data-guardian-index]');
             for (const option of source.options) {

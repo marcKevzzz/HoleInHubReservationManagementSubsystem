@@ -60,7 +60,11 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_024_OutboxIdentifier>();
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_025_SharedGroupClasses>();
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_026_ClassPackages>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_028_SeasonalRentals>();
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_027_CoachDirectory>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_029_ClassCapacity>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_030_JuniorGolfProgram>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_031_CoachServiceAssignments>();
         services.AddSingleton<MongoMigrationRunner>();
 
         return services;

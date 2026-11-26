@@ -8,6 +8,7 @@
     var staffEntry = ViewData["StaffFamilyEntry"] is true;
     var offering = (ViewData["BookingServices"] as IReadOnlyList<HoleInHub.Business.Services.ServiceCatalogItem>)
         ?.FirstOrDefault(item => item.Id == (Model.ServiceEntryId ?? "KpgaGroup"));
+    ViewData["JuniorOnly"] = selected?.JuniorOnly == true || offering?.JuniorOnly == true;
     var signedIn = !staffEntry && User.Identity?.IsAuthenticated == true;
     var hasRoster = selected is not null || Model.Learners?.Length > 0;
 }
@@ -49,9 +50,9 @@
                     </p>
                 }
                 <details open="@(staffEntry || selected == null)"><summary>@T("Change class or package")</summary>
-                <div class="field"><label asp-for="ClassSessionId">@T("Class time · Asia/Manila")</label>
+                <div class="field"><label asp-for="ClassSessionId">@T("Lesson package · Asia/Manila")</label>
                     <select asp-for="ClassSessionId" data-native-select required>
-                        <option value="">@T("Choose a class")</option>
+                        <option value="">@T("Choose a lesson package")</option>
                         @if (selected is null && Model.ClassSessionId is not null) {
                             <option value="@Model.ClassSessionId" selected disabled>@T("Previously selected class is unavailable")</option>
                         }
@@ -63,7 +64,7 @@
                         }
                     </select>
                 </div>
-                </details><div class="field"><label for="learner-count">@T("Number of learners")</label>
+                </details><div class="field"><label for="learner-count">@T(ViewData["JuniorOnly"] is true ? "Number of children attending" : "Number of learners")</label>
                     <select name="learnerCount" id="learner-count" data-native-select>
                         @for (var n = 1; n <= Math.Max(count, selected?.RemainingSeats ?? sessions.Select(x => x.RemainingSeats).DefaultIfEmpty(0).Max()) && n <= 8; n++)
                         { <option value="@n" selected="@(n == count)">@n</option> }
@@ -74,10 +75,13 @@
         }
         @if (hasRoster)
         {
-            <fieldset class="family-section"><legend>@T("Booked by")</legend>
+            <fieldset class="family-section"><legend>@T(ViewData["JuniorOnly"] is true ? "Parent or guardian details" : "Booked by")</legend>
                 @if(staffEntry){<label for="family-source">Booking source</label><select name="source" id="family-source" required><option value="">Choose source</option>@foreach(var src in new[]{"Walk-in","Phone","Messaging"}){<option selected="@((ViewData["Source"] as string)==src)">@src</option>}</select>}
                 <div class="fields-grid">
                     <partial name="~/Views/Reservations/_BookingContactFields.cshtml" model="Model" />
+                    <label>Your age * <input asp-for="ContactAge" type="number" min="18" max="120" required /></label>
+                    <label>Your address * <input asp-for="ContactAddress" maxlength="250" required /></label>
+                    @{ ViewData["BookingRelationship"] = true; }
                     <div class="field booking-notes"><div class="auth-input-wrap"><textarea asp-for="Notes" maxlength="1000" rows="2" placeholder=" "></textarea><label asp-for="Notes">@T("Notes (optional)")</label></div></div>
                 </div>
             </fieldset>

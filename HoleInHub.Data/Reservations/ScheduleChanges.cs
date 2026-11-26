@@ -104,14 +104,14 @@ public sealed partial class ReservationPersistence
             if (approve)
             {
                 if (proposal.BaseRevision != revision || booking.Status != "Confirmed" || booking.CancellationRequested
-                    || (booking.Service is not ("Regular" or "VIP") && !(booking.Service == "PhilippineCoach" && (requireCoach || booking.CoachId != null))) || now >= booking.StartUtc || now >= proposal.StartUtc)
+                    || (booking.Service is not ("Regular" or "VIP") && !((booking.Service is "PhilippineCoach" or "KpgaPro") && (requireCoach || booking.CoachId != null))) || now >= booking.StartUtc || now >= proposal.StartUtc)
                 {
                     throw new AllocationConflictException("The booking is no longer eligible for this change. Decline the request or reload its latest details.");
                 }
                 if (vipUpgrade && (directMove is null || booking.Service != "Regular" || booking.ResourceIds.Length != 1))
                 { throw new AllocationConflictException("Only a confirmed single-bay Regular move can upgrade to VIP."); }
                 var destinationService = vipUpgrade ? "VIP" : booking.Service;
-                var bayType = destinationService == "PhilippineCoach" ? "Regular" : destinationService;
+                var bayType = destinationService is "PhilippineCoach" or "KpgaPro" ? "Regular" : destinationService;
                 var catalog = await Resources.Find(s, x => x.Active && x.Service == bayType).ToListAsync(token);
                 if (resources.Length != booking.ResourceIds.Length || resources.Distinct().Count() != resources.Length
                     || resources.Any(resource => !catalog.Any(bay => bay.Id == resource)))
@@ -136,7 +136,7 @@ public sealed partial class ReservationPersistence
                     var service = await ReadAllocationServiceAsync(s, booking, token);
                     validateSession(booking, service);
                 }
-                if (booking.Service == "PhilippineCoach") { await ClaimCoachAsync(s, booking, booking.CoachId, now, token); }
+                if (booking.Service is "PhilippineCoach" or "KpgaPro") { await ClaimCoachAsync(s, booking, booking.CoachId, now, token); }
                 booking.ResourceIds = resources;
                 var selected = catalog.Where(bay => resources.Contains(bay.Id)).ToArray();
                 booking.ResourceNames = selected.ToDictionary(bay => bay.Id, bay => bay.Name);

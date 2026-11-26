@@ -1,0 +1,41 @@
+const { test, expect } = require('@playwright/test');
+const { signInManager } = require('./fixture.cjs');
+
+test('coach photo and service assignments persist', async ({ page }, info) => {
+    await signInManager(page);
+    await page.goto('/staff/coaches/new');
+    const name = 'Photo coach ' + info.project.name;
+    await page.getByLabel('Coach name').fill(name);
+    await page.getByLabel('Profile photo', { exact: true }).setInputFiles({ name: 'profile.png', mimeType: 'image/png',
+        buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aSdQAAAAASUVORK5CYII=', 'base64') });
+    await page.getByRole('button', { name: 'Save coach' }).click();
+    await expect(page).toHaveURL(/\/staff\/coaches$/);
+    await page.getByRole('link', { name: 'Edit ' + name, exact: true }).click();
+    const image = page.getByRole('img', { name, exact: true });
+    await expect(image).toBeVisible();
+    await expect.poll(() => image.evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
+    await page.screenshot({ path: '../.local/coach-photo-' + info.project.name + '.png', fullPage: true });
+    await page.getByRole('button', { name: 'Enlarge profile photo' }).click();
+    const viewer = page.getByRole('dialog', { name: 'Photo gallery' });
+    await expect(viewer).toBeVisible();
+    expect((await viewer.getByRole('img').boundingBox()).width).toBeGreaterThan(250);
+    await page.keyboard.press('Escape');
+    await expect(viewer).toBeHidden();
+    const coachUrl = page.url();
+    await page.goto('/admin/services/PhilippineCoach/edit');
+    await page.getByRole('button', { name: 'Assigned coaches', exact: true }).click();
+    await page.getByRole('option', { name, exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Assigned coaches', exact: true })).toHaveAttribute('aria-expanded', 'false');
+    await page.getByRole('button', { name: 'Save service', exact: true }).click();
+    await expect(page).toHaveURL(/\/admin\/services$/);
+    await page.goto('/admin/services/PhilippineCoach/edit');
+    await expect(page.getByRole('button', { name: 'Assigned coaches', exact: true })).toContainText(name);
+    await page.screenshot({ path: '../.local/coach-service-' + info.project.name + '.png', fullPage: true });
+    await page.goto(coachUrl);
+    await page.getByRole('button', { name: 'Enlarge profile photo' }).hover();
+    await page.getByRole('button', { name: 'Delete profile photo' }).click();
+    await page.getByRole('button', { name: 'Save coach' }).click();
+    await expect(page).toHaveURL(/\/staff\/coaches$/);
+    await page.goto(coachUrl);
+    await expect(page.getByRole('img', { name, exact: true })).toHaveCount(0);
+});

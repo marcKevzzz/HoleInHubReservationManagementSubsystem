@@ -32,6 +32,7 @@ public sealed partial class ReservationPersistence
         using var session = await context.Client.StartSessionAsync(cancellationToken: ct);
         return await session.WithTransactionAsync(async (s, token) =>
         {
+            await GuardCatalogAsync(s, token);
             var catalog = context.Database.GetCollection<HoleInHub.Data.Services.ServiceCatalogRecord>("service_catalog");
             var service = await catalog.Find(s, x => x.Id == offering && x.Active && !x.Deleted && x.BookingService == "KpgaGroup").FirstOrDefaultAsync(token);
             var pricing = service?.Pricing ?? defaultPricing;
@@ -48,6 +49,7 @@ public sealed partial class ReservationPersistence
             { throw new AllocationConflictException("Choose a registration deadline before the first class and on or after today."); }
             var package = new ClassPackageRecord { RegistrationEndsUtc = cutoff, ServiceEntryId = offering, ClassSessionIds = available.Select(x => x.ClassSessionId).ToArray(), PricePerLearner = pricing.BaseRate };
             await Packages.InsertOneAsync(s, package, cancellationToken: token);
+            await QueueClassRemindersAsync(s, package, available[0], available.Min(x => x.Capacity - x.HeldSeats), now, token);
             return package;
         }, cancellationToken: ct);
     }

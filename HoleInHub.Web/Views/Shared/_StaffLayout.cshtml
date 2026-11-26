@@ -55,7 +55,7 @@
         ("People", "Coaches", "Index", "coach", "Coaches", true),
         ("People", "Customers", "Index", "customers", "Customers", true),
         ("People", "Leadership", "People", "roles", "Team & access", managesVenue),
-        ("Administration", "Leadership", "Resources", "resources", "Resources", isAdmin),
+        ("Administration", "Leadership", "Resources", "resources", "Resources", managesVenue),
         ("Administration", "ServiceManagement", "Index", "queue", "Services", isAdmin || User.IsInRole("Manager")),
         ("Administration", "Activity", "Index", "history", "Activity", true),
         ("Administration", notificationController, "Index", "notifications", "Notifications", true),

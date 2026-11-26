@@ -325,3 +325,20 @@ In the Customers directory, drag a row onto another customer to review a merge. 
 For a repeat walk-in, open the existing customer and choose **New booking**. The schedule opens with that customer selected: drag an open time on a bay to review the prefilled side panel, then confirm. The customer stays selected across date changes. The schedule’s New booking button provides a keyboard/touch alternative; its ordinary full-form link remains available without JavaScript. A schedule-first walk-in or a new guest starts separately; staff can review it later. Historical guest groups remain as previously displayed after backfill; use selected reservations if a shared-contact group contains several people.
 
 The isolated development verification preview is `http://127.0.0.1:5280`; it uses a separate local test database. The configured development preview at port 5275 now has migration 018 and the merge actions enabled (owner-authorized rollout on 11 November 2026). Preserve its current launch configuration; never use Atlas for integration tests. Follow the migration backup and stopped-writer rollout instructions in `MIGRATIONS.md`.
+
+### Booking photos and videos
+
+Managers and Admins maintain bay photos, location, and description under **Resources**. The first photo is the booking card cover. A bay with no photo uses the venue overview and can still be booked. Existing configured photos remain visible until the gallery is saved from Resources. Removing the last saved photo restores the overview.
+
+Keep bay videos in `BookingMedia:Bays:<resource-id>` as an array of local paths, for example `["/media/bays/regular-1.mp4"]`. Place the files under `HoleInHub.Web/wwwroot/media/` and use the actual resource ID from inventory. MP4 and WebM videos appear after the bay photos in the booking lightbox. Editing a bay's photos does not modify the configured videos.
+
+Service catalog images and details continue to come from service management. Optional extra service media can be configured in `BookingMedia:Services:<service-catalog-id>` using local `/media/` paths.
+
+
+### Bay walkthrough videos
+
+The Resources editor shows the configured bay videos with native playback controls; it no longer inserts a venue-overview photo. Bay 1–3 share the two `bays-1-2-3` clips, Bay 4–5 share `bays-4-5`, and VIP 1–2 share `vip`. These map to the current active resource IDs (`bay-2`–`bay-6`, `vip-7`–`vip-8`); the retired `bay-1` has no assigned video.
+
+`BookingMedia:Bays` holds the local MP4 paths. Each walkthrough has a same-basename `.webp` preview frame for the editor, and `BookingMedia:BayCovers` selects the table/booking-card preview. Saved photos still take priority for covers; when none exist the booking gallery opens directly on the videos, without inserting the overview. Playback starts only on request. Photo uploads remain JPEG/PNG/WebP; video files are configured locally.
+
+The six supplied clips are stored once under `wwwroot/media/bays/`. The 4K HDR MOV sources were converted to portrait 1080p H.264 MP4 with SDR tone mapping, original frame rates, AAC audio and fast-start playback. The compact 720p VIP clip was remuxed without re-encoding. Original source files are not modified.

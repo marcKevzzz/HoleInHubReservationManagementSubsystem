@@ -99,6 +99,8 @@ public sealed class GuestBookingFlowTests
         ["StartTime"] = service == "WholeShop" ? "15:00" : "14:00",
         ["DurationMinutes"] = service == "WholeShop" ? "360" : "60",
         ["ResourceIds"] = "bay-2",
+        ["ContactAge"] = "30",
+        ["ContactAddress"] = "Quezon City",
         ["FirstName"] = "Guest",
         ["LastName"] = "Player",
         ["Phone"] = "09123456789",
@@ -220,12 +222,14 @@ public sealed class GuestBookingFlowTests
             var confirmation = await client.GetStringAsync(submitted.Headers.Location);
             Assert.Contains("id=\"receipt-status\">Reservation status</h2>", confirmation);
             Assert.Contains("class=\"booking-current-status\">Pending</p>", confirmation);
-            var location = WebUtility.HtmlDecode(Regex.Match(confirmation, "action=\"([^\"]*Checkout[^\"]*)\"").Groups[1].Value);
-            Assert.Contains("No real money", confirmation);
-            Assert.DoesNotContain("site-header", confirmation);
-            Assert.DoesNotContain("site-footer", confirmation);
-            var token = WebUtility.HtmlDecode(Regex.Match(confirmation, "name=\"token\" value=\"([^\"]*)\"").Groups[1].Value);
-            var paid = await client.PostAsync(location, new FormUrlEncodedContent(new Dictionary<string, string> { ["__RequestVerificationToken"] = Csrf(confirmation), ["token"] = token, ["outcome"] = "success" })); Assert.Equal(HttpStatusCode.Redirect, paid.StatusCode);
+            var location = WebUtility.HtmlDecode(Regex.Match(confirmation, "href=\"([^\"]*Checkout[^\"]*)\"").Groups[1].Value);
+            Assert.DoesNotContain("No real money", confirmation);
+            Assert.Contains("Review deposit", confirmation);
+            var checkout = await client.GetStringAsync(location);
+            Assert.Contains("Remaining balance", checkout);
+            Assert.DoesNotContain("Simulate", checkout);
+            var token = WebUtility.HtmlDecode(Regex.Match(checkout, "name=\"token\" value=\"([^\"]*)\"").Groups[1].Value);
+            var paid = await client.PostAsync(location, new FormUrlEncodedContent(new Dictionary<string, string> { ["__RequestVerificationToken"] = Csrf(checkout), ["token"] = token, ["outcome"] = "failure" })); Assert.Equal(HttpStatusCode.Redirect, paid.StatusCode);
             var receipt = await client.GetStringAsync(paid.Headers.Location);
             Assert.Contains("RESERVATION CONFIRMED", receipt);
             Assert.DoesNotContain("site-footer", receipt);
@@ -291,7 +295,14 @@ public sealed class GuestBookingFlowTests
             }
             if (BookingRules.IsCoaching(bookingService))
             {
-                if (bookingService == "KpgaGroup") { form.Remove("ResourceIds"); }
+                if (bookingService == "KpgaGroup")
+                {
+                    form.Remove("ResourceIds");
+                    var denied = await guest.PostAsync("/Reservations/Create", new FormUrlEncodedContent(form));
+                    Assert.Contains("Choose a published lesson package", await denied.Content.ReadAsStringAsync());
+                    Assert.Equal(0, await context.Database.GetCollection<ReservationRecord>("reservations").CountDocumentsAsync(FilterDefinition<ReservationRecord>.Empty));
+                    return;
+                }
                 var date = TestNow.AddDays(1);
                 while (date.DayOfWeek != DayOfWeek.Tuesday) { date = date.AddDays(1); }
                 form["Date"] = date.ToString("yyyy-MM-dd");

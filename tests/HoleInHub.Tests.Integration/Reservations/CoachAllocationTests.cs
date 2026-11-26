@@ -1,6 +1,8 @@
 using HoleInHub.Data.Migrations;
 using HoleInHub.Data.Reservations;
+using HoleInHub.Data.Services;
 using HoleInHub.Tests.Integration.Fixtures;
+using MongoDB.Driver;
 using Xunit;
 
 namespace HoleInHub.Tests.Integration.Reservations;
@@ -9,7 +11,54 @@ namespace HoleInHub.Tests.Integration.Reservations;
 public sealed class CoachAllocationTests(MongoDbFixture fixture) : IClassFixture<MongoDbFixture>
 {
     [Fact]
-    public async Task DifferentBaysCannotHoldTheSameCoachAtTheSameTime()
+    public async Task PublishedClassHoldsCoachUntilReleaseAndProtectsSchedule()
+    {
+        var db = fixture.CreateDbContext();
+        await new MongoMigrationRunner(db, new MongoMigrationLeaseManager(db), MongoDbFixture.Migrations).RunAsync();
+        var store = new ReservationPersistence(db);
+        var now = DateTime.UtcNow;
+        var start = now.Date.AddDays(15).AddHours(4);
+        var coach = new CoachRecord
+        {
+            Id = "class-coach",
+            Name = "Class coach",
+            Active = true,
+            WeeklyHours = [new(start.DayOfWeek, 720, 840)]
+        };
+        Assert.True(await store.SaveCoachAsync(coach, null, now, default));
+        await db.Database.GetCollection<ServiceCatalogRecord>("service_catalog").UpdateOneAsync(x => x.Id == "KpgaGroup",
+            Builders<ServiceCatalogRecord>.Update.Set(x => x.CoachIds, new[] { coach.Id }));
+        var lesson = await store.PublishClassAsync(new ClassSessionRecord
+        {
+            StartUtc = start,
+            EndUtc = start.AddHours(1),
+            ResourceIds = ["bay-2"],
+            Capacity = 3,
+            PricePerLearner = 500,
+            CreatedBy = "staff"
+        }, now, default);
+        Assert.Equal(coach.Id, lesson.CoachId);
+        var serviceStore = new ServiceCatalogPersistence(db);
+        var offering = (await serviceStore.GetAsync("KpgaGroup", default))!;
+        offering.CoachIds = [];
+        offering.CommandId = Guid.NewGuid().ToString("N");
+        await Assert.ThrowsAsync<InvalidOperationException>(() => serviceStore.SaveAsync(offering, offering.Revision, false, [], default));
+        Assert.Empty(await store.AvailableCoachesAsync(start, start.AddHours(1), now, default));
+        Assert.Single(await store.ReadCoachAssignmentsAsync(now, start.AddDays(1), default));
+        Assert.Single(await store.AvailableCoachesAsync(start.AddHours(1), start.AddHours(2), now, default));
+        coach.Active = false;
+        await Assert.ThrowsAsync<CoachScheduleConflictException>(() => store.SaveCoachAsync(coach, coach.Revision, now, default));
+        Assert.True(await store.CloseClassAsync(lesson.ClassSessionId, default));
+        Assert.Empty(await store.AvailableCoachesAsync(start, start.AddHours(1), now, default));
+        Assert.True(await store.ReleaseClassAsync(lesson.ClassSessionId, default));
+        Assert.Single(await store.AvailableCoachesAsync(start, start.AddHours(1), now, default));
+        Assert.True(await store.SaveCoachAsync(coach, coach.Revision, now, default));
+    }
+
+    [Theory]
+    [InlineData("PhilippineCoach")]
+    [InlineData("KpgaPro")]
+    public async Task DifferentBaysCannotHoldTheSameCoachAtTheSameTime(string competingService)
     {
         var db = fixture.CreateDbContext();
         await new MongoMigrationRunner(db, new MongoMigrationLeaseManager(db), MongoDbFixture.Migrations).RunAsync();
@@ -37,7 +86,7 @@ public sealed class CoachAllocationTests(MongoDbFixture fixture) : IClassFixture
                     LastName = "Cruz",
                     Email = bay + "@example.test",
                     Phone = "09123456789",
-                    Service = "PhilippineCoach",
+                    Service = bay == "bay-1" ? "PhilippineCoach" : competingService,
                     ResourceIds = [bay],
                     Attendees = 1,
                     StartUtc = start,

@@ -30,6 +30,14 @@ public sealed class ReservationsController(ReservationService reservations, Gues
         catch (ReservationValidationException error) { return BadRequest(new { message = CustomerText.Error(error.Message) }); }
     }
 
+    [AllowAnonymous, HttpGet, ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> BayDay(DateOnly date, string service, CancellationToken ct)
+    {
+        if (!ModelState.IsValid || date == DateOnly.MinValue || date == DateOnly.MaxValue || service is not ("VIP" or "Regular"))
+        { return BadRequest(); }
+        return Json(await reservations.GetBayDayAsync(date, service, ct));
+    }
+
     private static (string Type, string? EntryId) BookingChoice(string? value)
     {
         var parts = (value ?? "").Split(':', 2);
@@ -206,11 +214,15 @@ public sealed class ReservationsController(ReservationService reservations, Gues
             }
         }
 
+        if (request.ContactAge is null) { ModelState.AddModelError(nameof(request.ContactAge), "Enter your age."); }
+        else if (request.ContactAge < 18) { ModelState.AddModelError(nameof(request.ContactAge), "You must be of legal age (18 or older) to make a reservation."); }
+        else if (request.ContactAge > 120) { ModelState.AddModelError(nameof(request.ContactAge), "Enter a valid age between 18 and 120."); }
+        if (string.IsNullOrWhiteSpace(request.ContactAddress)) { ModelState.AddModelError(nameof(request.ContactAddress), "Enter your address."); }
         if (!ContactRules.IsName(request.FirstName)) { ModelState.AddModelError(nameof(request.FirstName), ContactRules.NameError); }
         if (!ContactRules.IsName(request.LastName)) { ModelState.AddModelError(nameof(request.LastName), ContactRules.NameError); }
         if (!ContactRules.IsPhone(request.Phone)) { ModelState.AddModelError(nameof(request.Phone), ContactRules.PhoneError); }
         if (User.Identity?.IsAuthenticated == true) { request.Email = User.FindFirstValue(ClaimTypes.Email); ModelState.Remove(nameof(request.Email)); }
-        if (request.Service == "WholeShop") { request.ResourceIds = (await reservations.GetCatalogAsync(ct)).Select(x => x.Id).ToArray(); }
+        if (request.Service == "WholeShop") { request.ResourceIds = (await reservations.GetRentalBaysAsync(entryId, ct)).Select(x => x.Id).ToArray(); }
         // The public form collects one total; never fabricate a player/non-player split.
         request.Participants = [];
         var session = GuestSession();
@@ -327,7 +339,7 @@ public sealed class ReservationsController(ReservationService reservations, Gues
         }
         var receipt = "protected:" + protection.CreateProtector("BookingEmail").Protect(
             $"Hi {request.FirstName.Trim()},\n\nYour reservation request has been received.\nReservation status: Pending\nExperience: {ReservationLabels.Service(request.Service)}\n{sessionDetails}\nNumber of guests: {request.Attendees}\n\n" +
-            (request.Service == "WholeShop" ? "Complete the 50% deposit before the deadline shown in your booking. No real money is collected.\n\n" : "Your request is awaiting staff approval. Review runs during operating hours and resumes at the next opening. Your selected bays are held while Pending. Check your booking for the review deadline. This email does not confirm your reservation.\n\n") +
+            (request.Service == "WholeShop" ? "Complete the 50% deposit before the deadline shown in your booking.\n\n" : "Your request is awaiting staff approval. Review runs during operating hours and resumes at the next opening. Your selected bays are held while Pending. Check your booking for the review deadline. This email does not confirm your reservation.\n\n") +
             $"View your reservation ID, details and updates: {publicBase.TrimEnd('/')}{statusPath}");
         var result = await reservations.SubmitAsync(request, owner, verifiedEmail, ct,
             account ? null : GuestBookingService.Hash(session), account ? null : GuestBookingService.Hash(access), DemoAllowed, receipt);
@@ -406,7 +418,8 @@ public sealed class ReservationsController(ReservationService reservations, Gues
         return booking is null ? MissingAccess(id, token) : booking.Service != "WholeShop" ? NotFound() : View(booking);
     }
     [AllowAnonymous, HttpPost, ValidateAntiForgeryToken, EnableRateLimiting("accounts")]
-    public async Task<IActionResult> Checkout(string id, string? token, string outcome, CancellationToken ct)
+    [ActionName("Checkout")]
+    public async Task<IActionResult> SubmitDeposit(string id, string? token, CancellationToken ct)
     {
         if (!DemoAllowed)
         {
@@ -421,13 +434,14 @@ public sealed class ReservationsController(ReservationService reservations, Gues
 
         try
         {
+            var outcome = policy.Value.TestDepositOutcome;
             var accepted = await reservations.DemoPaymentAsync(id, outcome, DemoAllowed, ct);
             if (accepted && outcome == "success")
             {
                 return RedirectToAction(nameof(Confirmation), new { id, token });
             }
 
-            TempData["BookingMessage"] = accepted ? "Demo payment outcome recorded. No money was collected." : "This hold has ended. The late demo result requires reconciliation; it does not confirm a booking.";
+            TempData["BookingMessage"] = accepted ? "The deposit was not completed. You can retry before the deadline." : "This hold has ended. Contact the venue for assistance.";
         }
         catch (ReservationValidationException error) { TempData["BookingMessage"] = error.Message; }
         return ViewData["GuestAccess"] is true ? RedirectToAction("Details", "GuestReservations", new { id }) : RedirectToAction(nameof(Status), new { id, token });

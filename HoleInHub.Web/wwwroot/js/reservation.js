@@ -116,13 +116,30 @@ if (typeof document !== 'undefined') (() => {
     roster.hidden = roster.disabled = !data;
     const count = Number(field('Attendees').value);
     form.querySelector('label[for=Attendees]').textContent = t(data ? 'Number of learners *' : 'Number of guests *');
+    const junior = data?.junior === 'true';
+    form.querySelector('.booking-contact > legend').textContent = t(junior ? 'Parent or guardian details' : 'YOUR DETAILS');
+    roster.querySelector('legend').hidden = junior;
+    const relationship = field('JuniorRelationship');
+    relationship.closest('.field').hidden = relationship.disabled = !junior;
+    relationship.required = junior;
+    if (junior) form.querySelector('label[for=Attendees]').textContent = t('Number of children attending *');
     if (!data) return;
     field('ClassSessionId').value = field('ReviewedClassSessionId').value = data.program;
     field('learnerCount').value = field('ReviewedLearnerCount').value = count;
     for (const [i, row] of [...roster.querySelectorAll('[data-family-learner]')].entries()) {
       row.hidden = row.disabled = i >= count;
-      const minor = isMinor(row);
+      const participating = row.querySelector('[data-participating]');
+      participating.closest('label').hidden = participating.disabled = junior;
+      if (junior) participating.checked = false;
+      row.querySelector('[data-age]').max = junior ? '17' : '120';
+      row.querySelector('legend').hidden = junior && i > 0;
+      row.querySelector('legend').textContent = junior ? t('Learner') : t('Learner') + ' ' + (i + 1);
+      for (const [id, standard, learnerLabel] of [['learner-first','First name *','Learner first name *'],['learner-last','Last name *','Learner last name *'],['age','Age in years *','Learner age in years *']]) {
+        row.querySelector('label[for="' + id + '-' + i + '"]').textContent = t(junior ? learnerLabel : standard);
+      }
+      const minor = !junior && isMinor(row);
       const guardian = row.querySelector('[data-guardian]');
+      guardian.disabled = junior;
       guardian.hidden = !minor;
       const guardianIndex = row.querySelector('[data-guardian-index]');
       for (const option of guardianIndex.options) {
@@ -140,6 +157,7 @@ if (typeof document !== 'undefined') (() => {
       row.querySelector('[name$=".Relationship"]').required = minor && own;
     }
   }
+  const skipBays = () => autoBay() || bookingType() === 'WholeShop';
   const autoBay = () => experience()?.dataset.autoBay === 'true';
   const venueOpening = date => new Date(date + 'T00:00:00Z').getUTCDay() === 1 ? 660 : 600;
   function serviceWindows(date) {
@@ -159,7 +177,7 @@ if (typeof document !== 'undefined') (() => {
   }
   function fixedSessions(type, date) {
     const windows = serviceWindows(date);
-    if (type === 'WholeShop') return ReservationCalendar.fixedSessions(type, date).filter(slot => allowsInterval(date, slot.start, slot.duration));
+    if (type === 'WholeShop') return (wholeShopDay(date)?.sessions || []).filter(slot => slot.available).map(slot => ({start: slot.startMinute, duration: slot.duration, label: timeLabel(slot.startMinute) + '–' + timeLabel(slot.startMinute + slot.duration)}));
     if (!experience()?.dataset.availability) return ReservationCalendar.fixedSessions(type, date);
     return (windows ?? []).filter(rule => rule.fixedSession && rule.startMinute >= venueOpening(date))
       .map(rule => ({ start: rule.startMinute, duration: rule.endMinute - rule.startMinute, label: `${timeLabel(rule.startMinute)}–${timeLabel(rule.endMinute)}` }));
@@ -175,14 +193,14 @@ if (typeof document !== 'undefined') (() => {
   let sessionProblem = '', availableCapacity = 0, autoBays = [], quoteError = '';
   const sessionStatus = document.querySelector('#session-availability');
   function showSessionStatus(message, invalid = false) {
-    sessionStatus.textContent = message;
+    sessionStatus.textContent = invalid ? message : '';
     sessionStatus.classList.toggle('booking-session-invalid', invalid);
     document.querySelector('#time-slots').setAttribute('aria-invalid', String(invalid));
   }
   const monthAvailability = new Map();
   let calendarRequest, calendarRequestKey, chooseWholeShopDate = false;
   const calendarHelp = document.createElement('p');
-  calendarHelp.className = 'booking-session-status'; calendarHelp.setAttribute('role', 'status');
+  calendarHelp.className = 'booking-session-status calendar-feedback'; calendarHelp.setAttribute('role', 'status');
   document.querySelector('#booking-calendar').append(calendarHelp);
   const calendarRetry = document.createElement('button');
   calendarRetry.type = 'button'; calendarRetry.className = 'account-text-link'; calendarRetry.textContent = t('Retry availability'); calendarRetry.hidden = true;
@@ -281,11 +299,29 @@ if (typeof document !== 'undefined') (() => {
     event.formData.set('Phone', ProfilePhone.full(country.value, phone.value));
   });
 
+  const contactAge = field('ContactAge');
+  contactAge.addEventListener('beforeinput', event => {
+    if (event.data && /[^0-9]/.test(event.data)) event.preventDefault();
+  });
+  contactAge.addEventListener('input', () => { contactAge.value = contactAge.value.replace(/[^0-9]/g, ''); });
+  const reviewCard = form.querySelector('.review-card');
+  new ResizeObserver(() => {
+    if (reviewCard.offsetHeight) form.style.setProperty('--review-photo-height', reviewCard.offsetHeight + 'px');
+  }).observe(reviewCard);
   function contactError(input) {
     const value = input.value.trim();
-    if (input.name === 'ContactAge' && value && (!Number.isInteger(input.valueAsNumber) || input.valueAsNumber < 0 || input.valueAsNumber > 120)) return t('Enter an age in whole years from 0 to 120.');
-    if (input.name === 'NonPlayerGuests' && !input.disabled && (!value || !Number.isInteger(input.valueAsNumber) || input.valueAsNumber < Number(input.min) || input.valueAsNumber > Number(input.max))) return t('Enter the number of non-playing guests') + ' (' + input.min + '�' + input.max + ').';
-    if (input.matches('[data-age]') && (!value || !input.validity.valid)) return t('Enter a whole number from 0 to 120.');
+    if (input.required && !value) {
+      const prompts = { FirstName: 'Enter your first name.', LastName: 'Enter your last name.', ContactAge: 'Enter your age.', ContactAddress: 'Enter your address.', JuniorRelationship: 'Enter your relationship to the learner.', Age: 'Enter the learner’s age.', Email: 'Enter your email address.', Phone: 'Enter your mobile number.', Attendees: 'Enter the number attending.', Relationship: 'Enter your relationship to the learner.', Name: 'Enter the guardian’s name.' };
+      const key = input.name.split('.').pop();
+      if (input.closest('[data-family-learner]') && ['FirstName','LastName'].includes(key)) return t(key === 'FirstName' ? 'Enter the learner’s first name.' : 'Enter the learner’s last name.');
+      if (prompts[key]) return t(prompts[key]);
+    }
+    if (input.name === 'ContactAge' && value) {
+      if (!/^\d{1,3}$/.test(value) || Number(value) > 120) return t('Enter a valid age between 18 and 120.');
+      if (Number(value) < 18) return t('You must be of legal age (18 or older) to make a reservation.');
+    }
+    if (input.name === 'NonPlayerGuests' && !input.disabled && (!value || !Number.isInteger(Number(input.value)) || Number(input.value) < Number(input.min) || Number(input.value) > Number(input.max))) return t('Enter the number of non-playing guests') + ' (' + input.min + '�' + input.max + ').';
+    if (input.matches('[data-age]') && (!value || !input.validity.valid)) return t(input.max === '17' ? 'Junior learners must be 17 or younger.' : 'Enter a whole number from 0 to 120.');
     if (input.closest('#program-learners') && input.required && /\.(FirstName|LastName|Name|Relationship)$/.test(input.name) && !/^[\p{L}\p{M}][\p{L}\p{M} .,’'\-]*$/u.test(value)) return t('Enter a name or relationship using letters.');
     if (['FirstName', 'LastName'].includes(input.name)) {
       if (!value) return t(input.name === 'FirstName' ? 'Enter your first name.' : 'Enter your last name.');
@@ -373,6 +409,12 @@ if (typeof document !== 'undefined') (() => {
     field('Attendees').max = String(program() ? Number(program().seats) : Math.min(bayCapacity || Number.MAX_SAFE_INTEGER, serviceCap, 640));
     const choice = form.querySelector('[name=Service]:checked'), card = choice.closest('label'), service = card.querySelector('strong').textContent, imageSrc = card.querySelector('img').getAttribute('src');
     document.querySelector('#selection-service').textContent = service;
+    document.querySelector('#selection-rate').textContent = card.querySelector('.service-rate').textContent;
+    document.querySelector('#selection-description').textContent = card.querySelector('.service-description > span:not(.service-rate)')?.textContent || '';
+    document.querySelector('#selection-details').textContent = card.dataset.details || '';
+    const summaryMedia = document.querySelector('.reservation-summary');
+    summaryMedia.dataset.media = card.dataset.media || JSON.stringify([imageSrc]);
+    summaryMedia.querySelector('a[data-booking-media]').href = imageSrc;
     const image = document.querySelector('#selection-image'); image.src = imageSrc; image.alt = service;
     const startValue = field('StartTime').value, duration = Number(field('DurationMinutes').value);
     const dateText = field('Date').value ? new Intl.DateTimeFormat(locale, { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'Asia/Manila' }).format(new Date(field('Date').value + 'T12:00:00+08:00')) : t('Choose a date');
@@ -396,7 +438,8 @@ if (typeof document !== 'undefined') (() => {
       rows.find(row => row[0] === 'Guests').splice(1,2,t('Learners'),names.join(', ') || guests);
       rows.splice(2, 0, ['Lessons',t('Included lessons'), dates().map(formatLesson).join(' · ')]);
     }
-    if (quote && quote.depositAmount > 0) rows.push(['Deposit', t('Deposit'), money.format(quote.depositAmount)]);
+    if (quote && quote.depositAmount > 0) rows.push(['Deposit', t('Deposit due'), money.format(quote.depositAmount)], ['Balance', t('Remaining balance'), money.format(quote.rentalTotal - quote.depositAmount)]);
+    if (experience()?.dataset.inclusions) rows.push(['Inclusions', t('Included'), experience().dataset.inclusions]);
     const render = (target, keys, merge) => {
       if (!target) return;
       target.replaceChildren();
@@ -409,12 +452,18 @@ if (typeof document !== 'undefined') (() => {
         dt.textContent = label; dd.textContent = merge && key === 'Time' && startValue ? `${value} · ${durationLabel(duration)}` : value; row.append(dt, dd); target.append(row);
       }
     };
-    render(document.querySelector('#live-selection'), ['Date', 'Time', 'Duration', 'Bays', 'Guests', 'Total', 'Deposit']);
+    render(document.querySelector('#live-selection'), ['Date', 'Time', 'Guests']);
     const review = document.querySelector('#review-selection');
     if (review) {
       document.querySelector('#review-service').textContent = service;
       document.querySelector('#review-image').src = imageSrc;
-      render(review, ['Date', 'Time', 'Lessons', 'Bays', 'Guests', 'Name', 'Total', 'Deposit'], true);
+      if (bookingType() === 'WholeShop') {
+        const compact = [['Total', quote ? t('Booking total') : t('Indicative rate'), total], ['Time',t('Session'),dateText + ' · ' + timeText], ['Guests',t('Booked for'),[name, guests + ' ' + t('Guests')].filter(Boolean).join(' · ')]];
+        if (quote?.depositAmount > 0) compact.push(['Deposit',t('Payment'),money.format(quote.depositAmount) + ' ' + t('Deposit due') + ' · ' + money.format(quote.rentalTotal - quote.depositAmount) + ' ' + t('Remaining balance')]);
+        if (experience().dataset.inclusions) compact.push(['Inclusions',t('Included'),experience().dataset.inclusions]);
+        rows.splice(0, rows.length, ...compact);
+      }
+      render(review, ['Date', 'Time', 'Lessons', 'Bays', 'Guests', 'Name', 'Inclusions', 'Total', 'Deposit', 'Balance'], bookingType() !== 'WholeShop');
     }
     submitState();
   }
@@ -432,7 +481,78 @@ if (typeof document !== 'undefined') (() => {
   function formatLesson(value) {
     return new Intl.DateTimeFormat(locale, {month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'}).format(new Date(value+':00+08:00'));
   }
-  function calendar() { checkCalendar(); const title = document.querySelector('#calendar-month'), days = document.querySelector('#calendar-days'); title.textContent = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(month + '-01T00:00:00Z')); days.replaceChildren(); for (const name of [t('Sun'), t('Mon'), t('Tue'), t('Wed'), t('Thu'), t('Fri'), t('Sat')]) { const el = document.createElement('span'); el.className = 'weekday'; el.textContent = name; days.append(el); } for (const date of ReservationCalendar.monthDays(month)) { if (!date) { days.append(document.createElement('span')); continue; } const b = document.createElement('button'); b.type = 'button'; b.textContent = Number(date.slice(-2)); b.disabled = program() ? !dates().some(value => value.startsWith(date)) : date < today || !serviceDayAllowed(bookingType(), date) || (bookingType() === 'WholeShop' && !ReservationCalendar.wholeShopDayAvailable(wholeShopDay(date))); b.classList.toggle('program-date', Boolean(program()) && !b.disabled); b.classList.toggle('selected', !b.disabled && date === field('Date').value); b.setAttribute('aria-pressed', String(!b.disabled && date === field('Date').value)); b.setAttribute('aria-label', new Intl.DateTimeFormat(locale, { dateStyle: 'full', timeZone: 'UTC' }).format(new Date(date + 'T12:00:00Z'))); if (date === today) b.setAttribute('aria-current', 'date'); b.onclick = () => { if (program()) { document.querySelectorAll('#time-slots span')[dates().findIndex(value => value.startsWith(date))]?.focus(); return; } field('Date').value = date; timePeriod = null; const fixed = fixedSessions(bookingType(), date); if (fixed.length) { const choice = fixed.find(x => ReservationCalendar.canStart(bookingType(), date, x.start, now())); field('StartTime').value = choice ? timeValue(choice.start) : ''; field('DurationMinutes').value = (choice || fixed[0]).duration; } inputs.forEach(x => x.checked = false); calendar(); slots(); summary(); refresh(); }; days.append(b); } document.querySelector('#previous-month').disabled = month <= today.slice(0, 7); }
+  function displayRange(start, minutes) {
+    const range = document.createElement('strong');
+    range.textContent = durationLabel(minutes);
+    document.querySelector('#selected-time-range').replaceChildren(range, timeLabel(start) + '–' + timeLabel(start + minutes));
+  }
+  const dayChecks = new Map();
+  const dayKey = date => experience().value + '/' + date;
+  function candidates(date) {
+    const fixed = fixedSessions(bookingType(), date);
+    const open = venueOpening(date);
+    const choices = fixed.length ? fixed : Array.from({ length: (1440 - open) / 30 }, (_, i) => ({ start: open + i * 30, duration: 30 }));
+    return choices.filter(x => ReservationCalendar.startFits(bookingType(), date, x.start, x.duration, now()) && allowsInterval(date, x.start, x.duration));
+  }
+  function noStarts(date) {
+    if (program() || bookingType() === 'WholeShop' || date < today) return false;
+    const checks = dayChecks.get(dayKey(date));
+    if (date !== today && !checks) return false;
+    return candidates(date).every(x => checks?.slots.get(x.start)?.length === 0);
+  }
+  async function loadDay(date) {
+    if (!date || program() || bookingType() === 'WholeShop') return;
+    const key = dayKey(date), service = experience().value;
+    const prior = dayChecks.get(key);
+    if (prior && Date.now() - prior.started < 60000) return;
+    const checks = { started: Date.now(), slots: new Map(), failed: false, loading: true };
+    dayChecks.set(key, checks);
+    const queue = candidates(date);
+    async function worker() {
+      while (queue.length && key === dayKey(field('Date').value)) {
+        const option = queue.shift();
+        try {
+          const query = new URLSearchParams({date, service, startTime: timeValue(option.start), durationMinutes: option.duration});
+          const response = await fetch('/Reservations/CheckAvailability?' + query);
+          if (!response.ok && response.status !== 400) throw Error();
+          const bays = response.ok ? await response.json() : [];
+          checks.slots.set(option.start, bays.filter(b => b.available).map(b => b.resource.id));
+        } catch { checks.failed = true; }
+      }
+    }
+    if (['Regular','VIP'].includes(bookingType()) && !fixedSessions(bookingType(), date).length) {
+      const query = new URLSearchParams({date, service:bookingType()});
+      try {
+        const response = await fetch('/Reservations/BayDay?' + query);
+        if (!response.ok) throw Error();
+        const available = await response.json();
+        for (const option of queue) checks.slots.set(option.start, available[option.start] || []);
+      } catch { checks.failed = true; }
+      queue.length = 0;
+    } else await Promise.all([worker(),worker(),worker()]);
+    if (queue.length) dayChecks.delete(key);
+    checks.loading = false;
+    if (key === dayKey(field('Date').value)) {
+      const start = minuteValue(field('StartTime').value);
+      if (field('StartTime').value && (!candidates(date).some(option => option.start === start) || !rangeAvailable(date, start, Number(field('DurationMinutes').value)))) {
+        field('StartTime').value = ''; inputs.forEach(input => input.checked = false); refresh();
+      }
+      calendar(); slots(); summary();
+    }
+  }
+  function rangeAvailable(date, start, duration) {
+    const checks = dayChecks.get(dayKey(date));
+    if (!checks) return true;
+    let common;
+    const step = fixedSessions(bookingType(),date).length ? duration : 30;
+    for (let minute = start; minute < start + duration; minute += step) {
+      const bays = checks.slots.get(minute);
+      if (!bays) return false;
+      common = common ? common.filter(id => bays.includes(id)) : bays;
+    }
+    return !common || common.length > 0;
+  }
+  function calendar() { checkCalendar(); const title = document.querySelector('#calendar-month'), days = document.querySelector('#calendar-days'); title.textContent = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(month + '-01T00:00:00Z')); days.replaceChildren(); for (const name of [t('Sun'), t('Mon'), t('Tue'), t('Wed'), t('Thu'), t('Fri'), t('Sat')]) { const el = document.createElement('span'); el.className = 'weekday'; el.textContent = name; days.append(el); } for (const date of ReservationCalendar.monthDays(month)) { if (!date) { days.append(document.createElement('span')); continue; } const b = document.createElement('button'); b.type = 'button'; b.textContent = Number(date.slice(-2)); b.disabled = program() ? !dates().some(value => value.startsWith(date)) : date < today || noStarts(date) || !serviceDayAllowed(bookingType(), date) || (bookingType() === 'WholeShop' && !ReservationCalendar.wholeShopDayAvailable(wholeShopDay(date))); b.classList.toggle('program-date', Boolean(program()) && !b.disabled); b.classList.toggle('selected', !b.disabled && date === field('Date').value); b.setAttribute('aria-pressed', String(!b.disabled && date === field('Date').value)); b.setAttribute('aria-label', new Intl.DateTimeFormat(locale, { dateStyle: 'full', timeZone: 'UTC' }).format(new Date(date + 'T12:00:00Z'))); if (date === today) b.setAttribute('aria-current', 'date'); b.onclick = () => { if (program()) { document.querySelectorAll('#time-slots span')[dates().findIndex(value => value.startsWith(date))]?.focus(); return; } field('Date').value = date; timePeriod = null; const fixed = fixedSessions(bookingType(), date); if (fixed.length) { const choice = fixed.find(x => ReservationCalendar.canStart(bookingType(), date, x.start, now())); field('StartTime').value = choice ? timeValue(choice.start) : ''; field('DurationMinutes').value = (choice || fixed[0]).duration; } inputs.forEach(x => x.checked = false); calendar(); slots(); summary(); refresh(); }; days.append(b); } document.querySelector('#previous-month').disabled = month <= today.slice(0, 7); }
   function slots() {
     if (program()) {
       document.querySelector('.time-selection-heading h3').textContent = t('Included lessons');
@@ -447,11 +567,13 @@ if (typeof document !== 'undefined') (() => {
     const target = document.querySelector('#time-slots'), tabs = document.querySelector('#time-period-tabs'); target.replaceChildren(); tabs.replaceChildren();
     const date = field('Date').value, service = bookingType(), opening = new Date(date + 'T00:00:00Z').getUTCDay() === 1 ? 660 : 600, duration = Number(field('DurationMinutes').value) || 60;
     const fixed = fixedSessions(service, date);
+    if (index === 1) void loadDay(date);
     document.querySelector('.time-selection-heading h3').textContent = fixed.length ? t('Choose your session') : t('Choose your times');
-    tabs.hidden = !!fixed.length; target.classList.toggle('fixed-sessions', !!fixed.length);
+    const periodTabs = !fixed.length || service === 'WholeShop';
+    tabs.hidden = !periodTabs; target.classList.toggle('rental-slots', service === 'WholeShop'); target.classList.toggle('fixed-sessions', !!fixed.length);
     if (!serviceDayAllowed(service, date)) { target.textContent = t('Choose an available program date in the calendar.'); return; }
     if (timePeriod === null) { const chosen = field('StartTime').value ? minuteValue(field('StartTime').value) : Array.from({ length: (1440 - opening) / 30 }, (_, i) => opening + i * 30).find(minute => ReservationCalendar.startFits(service, date, minute, duration, now())); timePeriod = ReservationCalendar.period(chosen ?? opening); }
-    if (!fixed.length) {
+    if (periodTabs) {
       [t('Morning'), t('Afternoon'), t('Evening')].forEach((label, i) => {
         const button = document.createElement('button'); button.type = 'button'; button.id = 'time-tab-' + i; button.textContent = t(label); button.setAttribute('role', 'tab'); button.setAttribute('aria-selected', String(timePeriod === i)); button.setAttribute('aria-controls', 'time-slots'); button.tabIndex = timePeriod === i ? 0 : -1;
         button.onclick = () => { timePeriod = i; slots(); document.querySelector('#time-tab-' + i).focus(); };
@@ -459,16 +581,17 @@ if (typeof document !== 'undefined') (() => {
         tabs.append(button);
       });
     }
-    target.setAttribute('role', fixed.length ? 'group' : 'tabpanel');
-    if (fixed.length) target.removeAttribute('aria-labelledby'); else target.setAttribute('aria-labelledby', 'time-tab-' + timePeriod);
-    const options = fixed.length ? fixed : Array.from({ length: (1440 - opening) / 30 }, (_, i) => ({ start: opening + i * 30, duration: 30, label: timeLabel(opening + i * 30) })).filter(option => ReservationCalendar.period(option.start) === timePeriod);
+    target.setAttribute('role', periodTabs ? 'tabpanel' : 'group');
+    if (!periodTabs) target.removeAttribute('aria-labelledby'); else target.setAttribute('aria-labelledby', 'time-tab-' + timePeriod);
+    const options = fixed.length ? fixed.filter(option => !periodTabs || ReservationCalendar.period(option.start) === timePeriod) : Array.from({ length: (1440 - opening) / 30 }, (_, i) => ({ start: opening + i * 30, duration: 30, label: timeLabel(opening + i * 30) })).filter(option => ReservationCalendar.period(option.start) === timePeriod);
     for (const option of options) {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'time-slot'; button.textContent = t(option.label);
       button.disabled = !ReservationCalendar.startFits(service, date, option.start, option.duration, now()) || !allowsInterval(date, option.start, option.duration) || service === 'WholeShop' && !wholeShopDay(date)?.sessions.some(session => session.available && session.startMinute === option.start && session.duration === option.duration);
+      if (button.disabled || !rangeAvailable(date, option.start, option.duration) || dayChecks.get(dayKey(date))?.loading) continue;
       const currentStart = minuteValue(field('StartTime').value), active = fixed.length ? currentStart === option.start : option.start >= currentStart && option.start < currentStart + duration;
       button.classList.toggle('selected', active && !button.disabled); button.setAttribute('aria-pressed', String(active && !button.disabled));
       button.dataset.minute = option.start;
-      button.onclick = event => { if (suppressTimeClick && event.detail) return; if (fixed.length) { field('StartTime').value = timeValue(option.start); field('DurationMinutes').value = option.duration; inputs.forEach(input => input.checked = false); slots(); summary(); refresh(); } else selectTimeRange({ start: option.start, duration: 30 }, true); };
+      button.onclick = event => { if (suppressTimeClick && event.detail) return; if (fixed.length) { field('StartTime').value = timeValue(option.start); field('DurationMinutes').value = option.duration; inputs.forEach(input => input.checked = false); slots(); summary(); refresh(); } else toggleTime(option.start); };
       if (!fixed.length) {
         button.onpointerdown = event => { if (event.pointerType === 'mouse' && event.button === 0 && !button.disabled) timeDrag = { anchor: option.start, moved: false }; };
         button.onpointerenter = event => { if (timeDrag && (event.buttons & 1) && !button.disabled) { timeDrag.moved = true; selectTimeRange(ReservationCalendar.sessionRange(timeDrag.anchor, option.start), false); } };
@@ -476,16 +599,49 @@ if (typeof document !== 'undefined') (() => {
       }
       target.append(button);
     }
+    const loading = Boolean(dayChecks.get(dayKey(date))?.loading);
+    target.setAttribute('aria-busy', String(loading));
+    if (index === 1) document.querySelector('#step-next').disabled = loading;
+    if (loading) {
+      for (let i = 0; i < Math.min(9, Math.max(3, options.length)); i++) {
+        const placeholder = document.createElement('span');
+        placeholder.className = 'slot-skeleton'; placeholder.setAttribute('aria-hidden','true'); target.append(placeholder);
+      }
+    } else if (!target.children.length) {
+      const checks = dayChecks.get(dayKey(date));
+      const message = document.createElement('p'); message.className = 'slot-empty'; message.textContent = t(checks?.failed ? 'Availability could not be loaded. Please refresh and try again.' : 'No available times in this period.'); target.append(message);
+    }
     const start = minuteValue(field('StartTime').value);
-    document.querySelector('#selected-time-range').textContent = field('StartTime').value ? `${timeLabel(start)}–${timeLabel(start + duration)} · ${durationLabel(duration)}` : t('Choose your start time');
+    if (field('StartTime').value) displayRange(start, duration); else document.querySelector('#selected-time-range').textContent = t('Choose your start time');
+  }
+  function toggleTime(minute) {
+    const start = minuteValue(field('StartTime').value);
+    const end = start + Number(field('DurationMinutes').value);
+    if (field('StartTime').value) {
+      if (minute === start - 30 || minute === end) {
+        selectTimeRange(ReservationCalendar.sessionRange(Math.min(start, minute), Math.max(end - 30, minute)), true);
+        return;
+      }
+      if (minute >= start && minute < end) {
+        if (minute > start) selectTimeRange({ start, duration: minute - start }, true);
+        else if (end - start > 30) selectTimeRange({ start: start + 30, duration: end - start - 30 }, true);
+        else {
+          field('StartTime').value = '';
+          inputs.forEach(input => input.checked = false);
+          slots(); summary(); refresh();
+        }
+        return;
+      }
+    }
+    selectTimeRange({ start: minute, duration: 30 }, true);
   }
   function selectTimeRange(range, commit) {
     const opening = new Date(field('Date').value + 'T00:00:00Z').getUTCDay() === 1 ? 660 : 600;
-    if (!allowsInterval(field('Date').value, range.start, range.duration) || range.start < opening || range.duration > 840 || !ReservationCalendar.startFits(bookingType(), field('Date').value, range.start, range.duration, now())) return;
+    if (!rangeAvailable(field('Date').value, range.start, range.duration) || !allowsInterval(field('Date').value, range.start, range.duration) || range.start < opening || range.duration > 840 || !ReservationCalendar.startFits(bookingType(), field('Date').value, range.start, range.duration, now())) return;
     field('StartTime').value = timeValue(range.start); field('DurationMinutes').value = range.duration;
     inputs.forEach(input => { input.checked = false; input.disabled = true; }); availabilityReady = false; pending?.abort(); sequence++;
     document.querySelectorAll('#time-slots [data-minute]').forEach(button => { const minute = Number(button.dataset.minute), active = minute >= range.start && minute < range.start + range.duration; button.classList.toggle('selected', active); button.setAttribute('aria-pressed', String(active)); });
-    document.querySelector('#selected-time-range').textContent = `${timeLabel(range.start)}–${timeLabel(range.start + range.duration)} · ${durationLabel(range.duration)}`;
+    displayRange(range.start, range.duration);
     summary(); if (commit) refresh();
   }
   window.addEventListener('pointerup', () => { if (!timeDrag) return; suppressTimeClick = timeDrag.moved; timeDrag = null; if (suppressTimeClick) refresh(); setTimeout(() => suppressTimeClick = false, 0); });
@@ -508,7 +664,7 @@ if (typeof document !== 'undefined') (() => {
       const data = await response.json(); if (token !== sequence) return;
       const wholeShop = bookingType() === 'WholeShop';
       sessionProblem = t(ReservationCalendar.sessionIssue(bookingType(), data));
-      if (wholeShop && !sessionProblem && (data.length !== inputs.length || data.some(bay => !inputs.some(input => input.value === bay.resource.id)))) {
+      if (wholeShop && !sessionProblem && (data.some(bay => !inputs.some(input => input.value === bay.resource.id)))) {
         sessionProblem = t('The bay catalog changed. Reload and select the whole-shop session again.');
       }
       autoBays = data.filter(b => b.available).map(b => b.resource).sort((a,b) => a.maxTotalGuests - b.maxTotalGuests || a.id.localeCompare(b.id));
@@ -517,12 +673,12 @@ if (typeof document !== 'undefined') (() => {
         const item = data.find(bay => bay.resource.id === input.value);
         input.disabled = autoBay() || !item?.available || (wholeShop && Boolean(sessionProblem));
         input.closest('label').classList.toggle('unavailable', !item?.available);
-        input.closest('label').querySelector('.resource-status').textContent = item?.available ? t('Available for your session') : t('Unavailable');
-        if (wholeShop || input.disabled) input.checked = wholeShop && !sessionProblem;
+        input.closest('label').querySelector('.resource-status').textContent = item?.available ? '' : t('Unavailable');
+        if (wholeShop || input.disabled) input.checked = wholeShop && !input.disabled;
       }
       availabilityReady = true;
       if (wholeShop && sessionProblem) { monthAvailability.delete(calendarKey()); calendar(); slots(); }
-      const message = sessionProblem || (wholeShop ? t('All active bays are available together.') : autoBay() ? t('We’ll assign an available bay for your group.') : '');
+      const message = sessionProblem || (wholeShop ? t('All included bays are available together.') : autoBay() ? t('We’ll assign an available bay for your group.') : '');
       status.textContent = message; showSessionStatus(message, Boolean(sessionProblem)); summary(); void updateQuote();
     } catch (e) {
       if (e.name === 'AbortError' || token !== sequence) return;
@@ -560,6 +716,7 @@ if (typeof document !== 'undefined') (() => {
     fields.forEach(input => { const target = input.closest('.field,.booking-privacy') || input; target.classList.remove('field--shake'); void target.offsetWidth; target.classList.add('field--shake'); });
   }
   function validate(step) {
+    if (step === 1 && dayChecks.get(dayKey(field('Date').value))?.loading) return false;
     error.textContent = '';
     if (bookingType() === 'WholeShop' && form.dataset.demoPayments !== 'true') {
       error.textContent = t('Whole-shop online checkout is unavailable. Contact the venue.'); return false;
@@ -577,11 +734,8 @@ if (typeof document !== 'undefined') (() => {
       }
       if (sessionProblem || !availabilityReady) { showSessionStatus(sessionProblem || t('Checking your selected session…'), Boolean(sessionProblem)); return false; }
     }
-    if (step === 2 && autoBay()) return true;
+    if (step === 2 && skipBays()) return true;
     if (step === 2 && !selected().length) {
-      const bays = steps[step].querySelector('.resource-options');
-      bays?.classList.remove('field--shake');
-      if (bays) { void bays.offsetWidth; bays.classList.add('field--shake'); }
       showMissingToast(t('Select at least one bay to continue.')); return false;
     }
     if (step === 3) {
@@ -593,17 +747,17 @@ if (typeof document !== 'undefined') (() => {
         invalid[0].focus(); return false;
       }
     }
-    if ((step === 2 || step === 3 && autoBay()) && !quote) {
+    if ((step === 2 || step === 3 && skipBays()) && !quote) {
       error.textContent = quoteError || t(quotePending ? 'Wait for the quote to finish loading.' : autoBay() ? 'The quote could not be loaded. Choose your time again.' : 'The quote could not be loaded. Select your bays again to retry.'); return false;
     }
     const missing = [...steps[step].querySelectorAll('input,select,textarea')].filter(input => input.willValidate && !input.validity.valid);
     if (missing.length) { shakeFields(missing); showMissingToast(t('Please complete the highlighted fields.')); missing[0].focus(); return false; }
     return true;
   }
-  function show(next, focus = true) { index = next === 2 && autoBay() ? 1 : next; form.classList.toggle('is-review-step', index === 4); const shopPolicy = document.getElementById('whole-shop-policy'); if (shopPolicy) shopPolicy.hidden = bookingType() !== 'WholeShop'; const wholeShop = bookingType() === 'WholeShop'; document.querySelector('#coaching-policy-tip').hidden = wholeShop || ['Regular', 'VIP'].includes(bookingType()); document.querySelector('#review-policy-tip').hidden = wholeShop; for (const id of ['booking-submit', 'booking-verify-required']) { const button = document.getElementById(id); if (button) { button.hidden = index !== 4; if (id === 'booking-submit') button.disabled = wholeShop && form.dataset.demoPayments !== 'true'; } } const note = document.querySelector('#service-capacity-note'); note.hidden = !wholeShop; note.textContent = form.dataset.demoPayments !== 'true' ? t('Whole-shop online checkout is unavailable. Contact the venue.') : t('All active bays are held together. The 50% simulated deposit must succeed within 60 minutes. No real money is collected.'); document.querySelector('#bay-selection-help').textContent = bookingType() === 'WholeShop' ? t('All active bays are selected together for exclusive use. If any bay is unavailable, choose a different session.') : t('Choose one bay or bring your group together across several. Click a bay or drag across available bays to select several.'); steps.forEach((s, i) => s.hidden = i !== index); tabs.forEach((tab, i) => { tab.hidden = autoBay() && i === 2; tab.querySelector(".step-tab-num").textContent = String((autoBay() && i > 2 ? i : i + 1)).padStart(2, "0"); tab.disabled = i > completed; tab.classList.toggle('current', i === index); tab.classList.toggle('complete', i < index); if (i === index) tab.setAttribute('aria-current', 'step'); else tab.removeAttribute('aria-current'); }); document.querySelector('#step-back').hidden = index === 0; document.querySelector('#step-next').hidden = index === 4; summary(); window.ScrollTrigger?.refresh(); if (focus) { const heading = steps[index].querySelector('legend'); heading.tabIndex = -1; heading.focus({ preventScroll: true }); if (!matchMedia('(prefers-reduced-motion: reduce)').matches) { window.HoleInHubMotion?.enter(steps[index], { y: 12, opacity: .5, duration: .4 }); const smoother = window.ScrollSmoother?.get(); if (smoother) smoother.scrollTo(120, true); else window.scrollTo({ top: 120, behavior: 'smooth' }); } } }
+  function show(next, focus = true) { index = next === 2 && skipBays() ? 1 : next; document.querySelector('#step-next').disabled = false; form.classList.toggle('is-review-step', index === 4); if (index === 1) { calendar(); slots(); } const shopPolicy = document.getElementById('whole-shop-policy'); if (shopPolicy) shopPolicy.hidden = bookingType() !== 'WholeShop'; const wholeShop = bookingType() === 'WholeShop'; document.querySelector('#coaching-policy-tip').hidden = wholeShop || ['Regular', 'VIP'].includes(bookingType()); document.querySelector('#review-policy-tip').hidden = wholeShop; for (const id of ['booking-submit', 'booking-verify-required']) { const button = document.getElementById(id); if (button) { button.hidden = index !== 4; if (id === 'booking-submit') button.disabled = wholeShop && form.dataset.demoPayments !== 'true'; } } const note = document.querySelector('#service-capacity-note'); note.hidden = !wholeShop; note.textContent = form.dataset.demoPayments !== 'true' ? t('Whole-shop online checkout is unavailable. Contact the venue.') : t('Your bays are held together for 60 minutes while you complete the 50% deposit.'); document.querySelector('#bay-selection-help').textContent = bookingType() === 'WholeShop' ? t('All active bays are selected together for exclusive use. If any bay is unavailable, choose a different session.') : t('Choose one bay or bring your group together across several. Click a bay or drag across available bays to select several.'); steps.forEach((s, i) => s.hidden = i !== index); tabs.forEach((tab, i) => { tab.hidden = skipBays() && i === 2; tab.querySelector(".step-tab-num").textContent = String((skipBays() && i > 2 ? i : i + 1)).padStart(2, "0"); tab.disabled = i > completed; tab.classList.toggle('current', i === index); tab.classList.toggle('complete', i < index); if (i === index) tab.setAttribute('aria-current', 'step'); else tab.removeAttribute('aria-current'); }); document.querySelector('#step-back').hidden = index === 0; document.querySelector('#step-next').hidden = index === 4; summary(); window.ScrollTrigger?.refresh(); if (focus) { const heading = steps[index].querySelector('legend'); heading.tabIndex = -1; heading.focus({ preventScroll: true }); if (!matchMedia('(prefers-reduced-motion: reduce)').matches) { window.HoleInHubMotion?.enter(steps[index], { y: 12, opacity: .5, duration: .4 }); const smoother = window.ScrollSmoother?.get(); if (smoother) smoother.scrollTo(120, true); else window.scrollTo({ top: 120, behavior: 'smooth' }); } } }
   let stepTransition = 0;
   function transitionTo(next) {
-    const target = next === 2 && autoBay() ? 1 : next;
+    const target = next === 2 && skipBays() ? 1 : next;
     const current = steps[index];
     const token = ++stepTransition;
     const gsap = window.gsap;
@@ -621,7 +775,7 @@ if (typeof document !== 'undefined') (() => {
       if (smoother) smoother.scrollTo(120, true); else window.scrollTo({ top: 120, behavior: 'smooth' });
     } });
   }
-  document.querySelector('#previous-month').onclick = () => { month = ReservationCalendar.shiftMonth(month, -1); calendar(); }; document.querySelector('#next-month').onclick = () => { month = ReservationCalendar.shiftMonth(month, 1); calendar(); }; document.querySelector('#step-back').onclick = () => transitionTo(index === 3 && autoBay() ? 1 : index - 1); document.querySelector('#step-next').onclick = () => { if (validate(index)) { const next = index === 1 && autoBay() ? 3 : index + 1; completed = Math.max(completed, next); transitionTo(next); } }; tabs.forEach((tab, i) => tab.onclick = () => { if (i <= completed) transitionTo(i); }); form.addEventListener('input', summary); form.addEventListener('change', event => { if (event.target.name === 'ResourceIds' && bookingType() === 'WholeShop') inputs.forEach(x => x.checked = !x.disabled); if (event.target.name === 'ResourceIds') void updateQuote(); if (['Service', 'Date', 'StartTime', 'DurationMinutes'].includes(event.target.name)) { if (program()) {
+  document.querySelector('#previous-month').onclick = () => { month = ReservationCalendar.shiftMonth(month, -1); calendar(); }; document.querySelector('#next-month').onclick = () => { month = ReservationCalendar.shiftMonth(month, 1); calendar(); }; document.querySelector('#step-back').onclick = () => transitionTo(index === 3 && skipBays() ? 1 : index - 1); document.querySelector('#step-next').onclick = () => { if (validate(index)) { const next = index === 1 && skipBays() ? 3 : index + 1; completed = Math.max(completed, next); transitionTo(next); } }; tabs.forEach((tab, i) => tab.onclick = () => { if (i <= completed && !(index === 1 && i > 1 && !validate(1))) transitionTo(i); }); form.addEventListener('input', summary); form.addEventListener('change', event => { if (event.target.name === 'ResourceIds' && bookingType() === 'WholeShop') inputs.forEach(x => x.checked = !x.disabled); if (event.target.name === 'ResourceIds') void updateQuote(); if (['Service', 'Date', 'StartTime', 'DurationMinutes'].includes(event.target.name)) { if (program()) {
       selectFirstLesson();
       inputs.forEach(input => input.checked = false); calendar(); slots(); refresh(); return;
     }
@@ -639,9 +793,10 @@ if (typeof document !== 'undefined') (() => {
   let bayDrag = null, suppressBayClick = false;
   const tiles = inputs.map(input => input.closest('label'));
   tiles.forEach(tile => {
+    tile.addEventListener('dragstart', event => event.preventDefault());
     tile.addEventListener('pointerdown', event => { const input = tile.querySelector('input'); if (event.pointerType !== 'mouse' || event.button !== 0 || input.disabled || bookingType() === 'WholeShop') return; bayDrag = { anchor: input, value: !input.checked, before: new Map(inputs.map(x => [x, x.checked])), moved: false }; });
     tile.addEventListener('pointerenter', event => { if (!bayDrag || !(event.buttons & 1)) return; const input = tile.querySelector('input'); if (input.disabled) return; bayDrag.moved = true; const available = inputs.filter(x => !x.disabled && !x.closest('label').hidden), range = ReservationCalendar.bayRange(available, bayDrag.anchor, input); inputs.forEach(x => x.checked = range.includes(x) ? bayDrag.value : bayDrag.before.get(x)); summary(); });
-    tile.addEventListener('click', event => { if (suppressBayClick) event.preventDefault(); });
+    tile.addEventListener('click', event => { if (suppressBayClick) { event.preventDefault(); event.stopPropagation(); } });
   });
   window.addEventListener('pointerup', () => { suppressBayClick = !!bayDrag?.moved; bayDrag = null; if (suppressBayClick) void updateQuote(); setTimeout(() => suppressBayClick = false, 0); });
   window.addEventListener('pointercancel', () => bayDrag = null); window.addEventListener('blur', () => bayDrag = null);

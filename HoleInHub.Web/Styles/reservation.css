@@ -969,7 +969,7 @@ Reservation page — consolidated stylesheet (replaces the stacked overrides)
   }
 
     .reservation-studio .review-checklist li::before {
-      content: "✓";
+      content: ""; display:block; width:5px; height:9px; top:.25em; border:solid currentColor; border-width:0 1.5px 1.5px 0; transform:rotate(45deg);
       position: absolute;
       left: 0;
       color: var(--rs-green);
@@ -2014,3 +2014,150 @@ body:has(.reservation-studio) .site-header .header-actions .header-action {
 .program-learners .family-guardian, .program-learners [data-guardian-fields] { grid-column: 1 / -1 }
 .program-session { display: block; border-inline-start: 2px solid var(--color-green); padding: .65rem .85rem }
 .program-date:not(.selected) { text-decoration: underline; text-underline-offset: .25em }
+
+/* Experience details and media remain readable throughout the booking flow. */
+.reservation-studio .service-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px }
+.reservation-studio .service-options .service-option { position:relative; display:flex; flex-direction:column; align-items:stretch; padding:0 0 24px; gap:0; overflow:hidden }
+.reservation-studio .booking-media-link { position:relative; display:block; width:100% }
+.reservation-studio .booking-media-link img { width:100%; height:190px; object-fit:cover }
+.booking-media-link > span,.summary-media > span { position:absolute; bottom:12px; right:12px; background:var(--color-ink); color:var(--color-paper); padding:8px 12px; font-size:.875rem }
+.reservation-studio .service-options .service-description { padding:20px 24px 0; gap:10px; line-height:1.6 }
+.reservation-studio .service-options .service-description strong { font-size:1.25rem; line-height:1.35 }
+.reservation-studio .service-options .service-description > span { font-size:.9375rem }
+.reservation-studio .service-options .service-option > input { position:absolute; right:16px; top:16px; background:var(--color-paper) }
+.reservation-studio .summary-media { position:relative; display:block }
+.reservation-studio .summary-media img { width:100%; aspect-ratio:4/3; object-fit:cover }
+.reservation-studio .summary h3 { font-size:1.6rem; line-height:1.2 }
+.reservation-studio .summary p { margin-top:18px; font-size:1rem; line-height:1.7; white-space:pre-line }
+.reservation-studio .summary .selection-rate { font-size:1.15rem; font-weight:400; color:var(--color-green) }
+.reservation-studio .selected-time-range { font-size:1.6rem; line-height:1.3; font-weight:600; margin-block:20px 24px; color:var(--color-green) }
+.reservation-studio .calendar-feedback { display:none }
+.reservation-studio .booking-address { grid-column:1 / -1 }
+.reservation-studio .resource-option { position:relative; min-height:280px; justify-content:flex-end; padding:24px; overflow:hidden; color:var(--color-paper); background:var(--color-ink); isolation:isolate }
+.reservation-studio .resource-option::before { content:''; position:absolute; inset:0; z-index:-1; background:linear-gradient(transparent,var(--color-ink)) }
+.reservation-studio .bay-photo { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:-2 }
+.reservation-studio .resource-option strong { font-size:1.5rem }
+.reservation-studio .resource-option .bay-number { display:none }
+.reservation-studio .resource-option :is(.resource-status,.bay-capacity) { color:inherit; font-size:.875rem; line-height:1.5 }
+.reservation-studio .bay-view { position:absolute; top:16px; right:16px; padding:8px 12px; color:var(--color-paper); background:var(--color-ink); font-size:.875rem }
+.booking-media-dialog { width:min(1000px,94vw); max-height:94dvh; padding:20px; color:var(--color-ink); background:var(--color-paper); border:1px solid var(--color-line) }
+.booking-media-dialog::backdrop { background:var(--color-auth-shade) }
+.booking-media-dialog [data-media-stage] { margin-top:16px }
+.booking-media-dialog :is(img,video) { display:block; max-width:100%; width:100%; height:70dvh; object-fit:contain }
+.booking-media-controls { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-top:16px }
+.booking-media-dialog button { min-height:44px; padding:8px 16px; border:1px solid var(--color-control-line) }
+.reservation-studio a:focus-visible,.booking-media-dialog button:focus-visible { outline:2px solid var(--color-green); outline-offset:4px }
+@media(max-width:700px) { .reservation-studio .service-options { grid-template-columns:1fr } .reservation-studio .selected-time-range { font-size:1.3rem } }
+.reservation-studio .service-options .service-teaser { display:none }
+.reservation-studio .resource-option:has(input:checked)::before { background:linear-gradient(transparent,var(--color-green)) }
+.reservation-studio .resource-option:has(input:checked) { outline:3px solid var(--color-green); outline-offset:2px; color:var(--color-paper) }
+
+.reservation-studio .service-options { grid-template-columns:minmax(0,1fr); gap:12px }
+.reservation-studio .service-options .service-option { display:grid; grid-template-columns:clamp(80px,12vw,130px) 1fr; align-items:center; padding:12px 50px 12px 12px; gap:18px }
+.reservation-studio .service-options .service-description { padding:0 }
+.reservation-studio .booking-media-link img { height:96px }
+.reservation-studio .service-options .service-option > input { top:50%; transform:translateY(-50%) }
+.reservation-studio #selected-time-range { font-size:.9rem; color:var(--color-muted); font-weight:400 }
+#selected-time-range strong { font-size:1.25rem; color:var(--color-ink) }
+.reservation-studio #time-slots.rental-slots { grid-template-columns:repeat(2,minmax(0,1fr)) }
+.reservation-studio .resource-option { padding:0 14px 16px; background:var(--color-paper); color:var(--color-ink); min-height:0; border-radius:0; user-select:none; gap:6px }
+.reservation-studio .resource-option::before { display:none }
+.reservation-studio .resource-option:has(input:checked) { color:var(--color-ink); background:var(--color-paper) }
+.bay-preview { display:block; position:relative; align-self:stretch; margin:0 -14px 8px }
+.reservation-studio .bay-preview .bay-photo { position:static; width:100%; height:auto; aspect-ratio:16/10; object-fit:cover }
+.bay-preview span { position:absolute; right:10px; top:10px; background:var(--color-ink); color:var(--color-paper); padding:6px 12px; font-size:1.25rem }
+@media(hover:hover){.bay-preview span{opacity:0}.bay-preview:is(:hover,:focus-visible) span{opacity:1}}
+.bay-select { border:1px solid var(--color-green); padding:6px 15px; margin-top:6px }
+.resource-option:has(:checked) .bay-select { background:var(--color-green);color:var(--color-paper) }
+.booking-media-dialog { margin:auto; width:fit-content; max-width:94vw; background:transparent; border:0; padding:0; overflow:auto }
+.booking-media-dialog [data-media-stage] { margin:0 }
+.booking-media-dialog [data-media-stage] > * { max-width:90vw; width:auto; margin:auto; height:74dvh }
+.booking-media-dialog :is([data-media-close],[data-media-prev],[data-media-next]) { position:absolute; z-index:1; background:var(--color-auth-shade);color:var(--color-paper);border:0;font-size:1.7rem }
+.booking-media-dialog [data-media-close] {right:0;top:0}
+.booking-media-dialog [data-media-prev]{left:0;top:35%}.booking-media-dialog [data-media-next]{right:0;top:35%}
+.booking-media-controls { margin:0;justify-content:center;color:var(--color-paper) }
+.media-thumbnails {display:flex;justify-content:safe center;overflow:auto;gap:8px;margin-top:8px}
+.media-thumbnails button {flex:none;padding:2px;background:var(--color-paper)}
+.media-thumbnails button[aria-current=true] {outline:2px solid var(--color-paper);outline-offset:-1px;background:var(--color-green)}
+.booking-media-dialog .media-thumbnails img {width:58px;height:42px;object-fit:cover}
+
+.reservation-studio .service-options .service-teaser { display:block; line-height:1.45; font-size:.875rem }
+.reservation-studio .service-options .service-description {gap:4px}
+.reservation-studio .summary p { margin-top:6px; line-height:1.45; font-size:.9rem }
+.reservation-studio .summary #live-selection { margin-top:12px }
+.reservation-studio #live-selection .summary-row {padding-block:6px;min-height:0}
+.reservation-studio [data-booking-media] {display:block;position:relative;overflow:hidden}
+.reservation-studio [data-booking-media] > span {position:absolute;inset:50% auto auto 50%;transform:translate(-50%,-50%);opacity:0;background:var(--color-auth-shade);color:var(--color-paper);padding:4px 10px;font-size:1.35rem;pointer-events:none}
+.reservation-studio [data-booking-media]:is(:hover,:focus-visible) > span {opacity:1}
+@media(prefers-reduced-motion:no-preference){
+.reservation-studio [data-booking-media] img,.reservation-studio [data-booking-media] > span {transition:transform .24s ease,opacity .24s ease}
+.reservation-studio [data-booking-media]:is(:hover,:focus-visible) img {transform:scale(1.045)}
+}
+.reservation-studio .resource-option {padding:10px;gap:3px}
+.reservation-studio .resource-option .bay-preview {margin:0 0 5px}
+.reservation-studio .resource-option .bay-photo {aspect-ratio:2.5;display:block}
+.reservation-studio .resource-option:has(input:checked) {background:var(--color-green);color:var(--color-paper);outline:0}
+.reservation-studio .resource-option:has(input:focus-visible) {outline:2px solid var(--color-green);outline-offset:3px}
+.reservation-studio .resource-status:empty {display:none}
+.reservation-studio .bay-select {margin-top:3px;padding:3px 10px}
+
+.booking-media-dialog[open] {display:grid;place-content:center;inset:0;width:100vw;height:100dvh;max-width:none;max-height:none;background:rgb(0 0 0 / .82)}
+.booking-media-dialog::backdrop {background:transparent}
+.booking-media-dialog [data-media-stage] > * {width:auto;height:auto;max-width:88vw;max-height:74dvh}
+.booking-media-dialog [data-media-close] {top:16px;right:clamp(16px,4vw,72px);width:44px;height:44px;padding:0;display:grid;place-items:center;background:transparent}
+.booking-media-dialog [data-media-next] {right:0;width:44px;padding-inline:0}
+.booking-media-dialog [data-media-close]:is(:hover,:focus-visible){background:var(--color-auth-shade)}
+.booking-media-dialog [data-media-prev],.booking-media-dialog [data-media-next]{top:50%;transform:translateY(-50%)}
+.booking-media-dialog .media-thumbnails {position:absolute;bottom:12px;inset-inline:12px}
+.booking-media-dialog .media-thumbnails button {opacity:.45}
+.booking-media-dialog .media-thumbnails button[aria-current=true]{opacity:1}
+.booking-media-controls [data-media-count] {font-size:.85rem}
+.reservation-studio #selected-time-range{color:var(--color-muted);font-size:.85rem}
+.reservation-studio #selected-time-range strong{display:block;font-size:1.65rem;margin-bottom:4px}
+.reservation-studio .bay-select {position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;opacity:0;background:var(--color-green);color:var(--color-paper);padding:5px 14px}
+.reservation-studio .resource-option:not(.unavailable):is(:hover,:focus-within) .bay-select {opacity:1}
+.reservation-studio .resource-option:has(.bay-preview:hover) .bay-select {opacity:0}
+.reservation-studio .bay-description {font-size:.85rem}
+
+.reservation-studio #selected-time-range {margin-block:6px 10px;line-height:1.2}
+.reservation-studio #selected-time-range strong {margin-bottom:1px}
+.reservation-studio .resource-option .bay-select,.reservation-studio .resource-option:has(input:checked) .bay-select{background:transparent;border:0;padding:0;pointer-events:none}
+.reservation-studio .resource-option:not(:hover) .bay-select{opacity:0}
+.reservation-studio .resource-option:not(.unavailable):hover .bay-select{opacity:1;text-shadow:0 1px 4px var(--color-ink);color:var(--color-paper)}
+.booking-media-dialog [data-media-prev]{left:clamp(16px,4vw,72px)}
+.booking-media-dialog [data-media-next]{right:clamp(16px,4vw,72px)}
+@media(min-width:900px){
+.reservation-studio .is-review-step:has(input[data-booking-type="WholeShop"]:checked) .reservation-summary{align-self:stretch;position:relative;margin-bottom:5rem}
+.reservation-studio .is-review-step:has(input[data-booking-type="WholeShop"]:checked) .summary-media{position:absolute;inset:0}
+.reservation-studio .is-review-step:has(input[data-booking-type="WholeShop"]:checked) .summary-media img{width:100%;height:100%;object-fit:cover}
+}
+
+.reservation-studio .slot-empty {grid-column:1/-1;margin:0;line-height:1.45}
+.reservation-studio .slot-skeleton {min-height:44px;border:1px solid var(--color-line);background:var(--color-staff-canvas)}
+@media(prefers-reduced-motion:no-preference){
+.reservation-studio .slot-skeleton {background:linear-gradient(105deg,var(--color-staff-canvas) 25%,var(--color-paper) 48%,var(--color-staff-canvas) 71%);background-size:250% 100%;animation:booking-slot-shine 1.4s ease-in-out infinite}
+@keyframes booking-slot-shine {from{background-position:120% 0}to{background-position:-65% 0}}
+}
+.reservation-studio .resource-option:has(input:checked) .bay-select {visibility:hidden}
+@media(min-width:1041px){
+.reservation-studio #reservation-form:not(.is-review-step) .booking-layout{grid-template-columns:minmax(0,1fr) minmax(360px,30%);column-gap:32px}
+.reservation-studio .reservation-summary .summary-media img{aspect-ratio:16/9;height:auto;object-fit:cover}
+.reservation-studio .is-review-step:has(input[data-booking-type="WholeShop"]:checked) .booking-layout{grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr)!important;column-gap:32px!important}
+.reservation-studio .is-review-step:has(input[data-booking-type="WholeShop"]:checked) .reservation-summary{position:static;align-self:start;margin:calc(clamp(26px,3vw,32px)*1.25 + 22px) 0 0}
+.reservation-studio .is-review-step:has(input[data-booking-type="WholeShop"]:checked) .summary-media{position:relative;inset:auto}
+.reservation-studio .is-review-step:has(input[data-booking-type="WholeShop"]:checked) .summary-media img{display:block;aspect-ratio:16/9;height:auto}
+}
+
+@media(min-width:1041px){
+  .reservation-studio #reservation-form.is-review-step .reservation-summary {position:static;align-self:start;height:var(--review-photo-height,auto)}
+  .reservation-studio #reservation-form.is-review-step .reservation-summary .summary-media {display:block;position:relative;inset:auto;height:100%}
+  .reservation-studio #reservation-form.is-review-step .reservation-summary #selection-image {display:block;width:100%;height:100%;aspect-ratio:auto;object-fit:cover}
+}
+
+@media(min-width:701px){
+  .reservation-studio .resource-options:has(.resource-option:not([hidden]) input[data-service="VIP"]){grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+.booking-media-dialog .media-thumbnails button {position:relative;min-width:62px;min-height:46px}
+.booking-media-dialog .media-video-thumbnail::after {content:"";position:absolute;top:50%;left:50%;transform:translate(-40%,-50%);border-top:7px solid transparent;border-bottom:7px solid transparent;border-left:10px solid var(--color-paper);filter:drop-shadow(0 1px 3px var(--color-ink));pointer-events:none}
+.booking-media-dialog .media-thumbnails button:focus-visible {outline:2px solid var(--color-paper);outline-offset:2px}

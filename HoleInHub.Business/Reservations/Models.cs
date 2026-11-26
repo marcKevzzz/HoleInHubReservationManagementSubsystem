@@ -13,6 +13,7 @@ public sealed class SubmitReservationRequest
     public string LastName { get; set; } = "";
     public string Phone { get; set; } = "";
     public int Attendees { get; set; } = 1;
+    public string? JuniorRelationship { get; set; }
     public int? ContactAge { get; set; }
     public string? ContactAddress { get; set; }
     public int? NonPlayerGuests { get; set; }
@@ -32,6 +33,10 @@ public sealed class SubmitReservationRequest
 }
 public sealed record ResourceDto(string Id, string Name, string Service)
 {
+    public bool HasSavedPresentation { get; init; }
+    public string Location { get; init; } = "";
+    public string Description { get; init; } = "";
+    public string[] Images { get; init; } = [];
     public int MaxPlayers { get; init; } = 6;
     public int MaxTotalGuests { get; init; } = Service == "VIP" ? 10 : 8;
     public int? MaxNonPlayers { get; init; }
@@ -48,6 +53,7 @@ public sealed record ReservationDto(string Id, string Reference, string Service,
     public decimal? PricePerLearner { get; init; }
     public IReadOnlyList<FamilyLearnerDto> Learners { get; init; } = [];
     public IReadOnlyList<FamilyGuardianDto> Guardians { get; init; } = [];
+    public string? RentalTitle { get; init; }
     public string? ServiceEntryId { get; init; }
     public bool IsUpcoming(DateTime nowUtc) => EndUtc > nowUtc && Status is "Pending" or "Confirmed" or "Checked-In";
     public long Revision { get; init; }
@@ -92,6 +98,7 @@ public sealed class ReservationPolicy
     public TimeSpan ReviewEnd { get; set; }
     public int[] ReviewDays { get; set; } = []; public string[] StaffEmails { get; set; } = [];
     public string? StaffEmailOverride { get; set; }
+    public string TestDepositOutcome { get; set; } = "success";
     public bool DemoPaymentsEnabled { get; set; }
     public void ValidateCoverage(DateTimeOffset now, int minutes = 30)
     {

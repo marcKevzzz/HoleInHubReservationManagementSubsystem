@@ -61,6 +61,13 @@ try
     }
     var store = new ReservationPersistence(context);
     var today = DateOnly.FromDateTime(HoleInHub.Business.Reservations.DashboardMetrics.Local(DateTime.UtcNow));
+    if (Environment.GetEnvironmentVariable("HIH_BROWSER_RENTAL") == "1")
+    {
+        var services = context.Database.GetCollection<HoleInHub.Data.Services.ServiceCatalogRecord>("service_catalog");
+        await services.UpdateOneAsync(x => x.Id == HoleInHub.Data.Services.SeasonalRental.Vip,
+            Builders<HoleInHub.Data.Services.ServiceCatalogRecord>.Update.Set(x => x.SeasonStart, today)
+                .Set(x => x.SeasonEnd, today.AddMonths(2)).Set(x => x.Active, true));
+    }
     var sample = new List<(string Customer, string Status, string Service, int Offset)> {
         ("Repeat", "Completed", "Regular", -12), ("Repeat", "Completed", "Regular", -1), ("New", "Cancelled", "VIP", -2) };
     if (Environment.GetEnvironmentVariable("HIH_REPORT_BENCHMARK") == "1")
@@ -156,6 +163,11 @@ async Task Run(string project, string[] arguments)
         ["ReservationPolicy__ReviewEnd"] = "1.00:00:00",
         ["ReservationPolicy__StaffEmails__0"] = "staff@browser.example.test"
     };
+    if (Environment.GetEnvironmentVariable("HIH_BROWSER_RENTAL") == "1")
+    {
+        settings["DOTNET_ENVIRONMENT"] = settings["ASPNETCORE_ENVIRONMENT"] = "Development";
+        settings["ReservationPolicy__DemoPaymentsEnabled"] = "true";
+    }
     for (var day = 0; day < 7; day++) { settings["ReservationPolicy__ReviewDays__" + day] = day.ToString(); }
     foreach (var (name, value) in settings) { start.Environment[name] = value; }
     using var child = Process.Start(start)!;

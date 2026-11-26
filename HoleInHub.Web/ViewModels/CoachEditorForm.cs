@@ -11,22 +11,25 @@ public sealed class CoachEditorForm
     [StringLength(100)] public string? Title { get; set; }
     [Phone, StringLength(30)] public string? Phone { get; set; }
     [EmailAddress, StringLength(254)] public string? Email { get; set; }
+    public IFormFile? Photo { get; set; }
+    public bool RemovePhoto { get; set; }
+    public string? PhotoPath { get; set; }
     public bool Active { get; set; } = true;
     public List<CoachWeekRow> Weekly { get; set; } = [];
     public List<CoachDateRow> Exceptions { get; set; } = [];
 
     public IEnumerable<ValidationResult> ValidateSchedule()
     {
-        var windows = new List<(string Group, string Label, string Prefix, TimeOnly Start, TimeOnly End)>();
+        var windows = new List<(string Group, string Label, string Prefix, int Start, int End)>();
         for (var i = 0; i < Weekly.Count; i++)
         {
             var row = Weekly[i];
             var prefix = $"Weekly[{i}]";
             var label = $"Shift {i + 1} ({row.Day})";
             foreach (var error in ValidatePair(prefix, label, row.Start, row.End)) { yield return error; }
-            if (row.Start is { } start && row.End is { } end && start < end)
+            if (row.Start is { } start && row.End is { } end && StartMinute(start) < EndMinute(end))
             {
-                windows.Add((row.Day.ToString(), label, prefix, start, end));
+                windows.Add((row.Day.ToString(), label, prefix, StartMinute(start), EndMinute(end)));
             }
         }
         for (var i = 0; i < Exceptions.Count; i++)
@@ -44,9 +47,9 @@ public sealed class CoachEditorForm
             {
                 yield return new($"{label} marks the day off. Remove the other exceptions on this date or enter a shift here.", [$"{prefix}.Date"]);
             }
-            if (row.Start is { } start && row.End is { } end && start < end)
+            if (row.Start is { } start && row.End is { } end && StartMinute(start) < EndMinute(end))
             {
-                windows.Add((row.Date.Value.ToString("yyyy-MM-dd"), label, prefix, start, end));
+                windows.Add((row.Date.Value.ToString("yyyy-MM-dd"), label, prefix, StartMinute(start), EndMinute(end)));
             }
         }
 
@@ -72,7 +75,7 @@ public sealed class CoachEditorForm
             var missing = start.HasValue ? "End" : "Start";
             yield return new($"{label} needs a {missing.ToLowerInvariant()} time.", [$"{prefix}.{missing}"]);
         }
-        else if (start.HasValue && end <= start)
+        else if (start.HasValue && end.HasValue && EndMinute(end.Value) <= StartMinute(start.Value))
         {
             yield return new($"{label} must end later than it starts on the same day.", [$"{prefix}.End"]);
         }
@@ -87,6 +90,7 @@ public sealed class CoachEditorForm
             form.Revision = coach.Revision;
             form.Name = coach.Name;
             form.Title = coach.Title;
+            form.PhotoPath = coach.PhotoPath;
             form.Phone = coach.Phone;
             form.Email = coach.Email;
             form.Active = coach.Active;
@@ -107,6 +111,10 @@ public sealed class CoachEditorForm
         form.Exceptions.Add(new());
         return form;
     }
+
+    public static int StartMinute(TimeOnly time) => time.Hour * 60 + time.Minute;
+    // A midnight end belongs to the end of the selected day, never its beginning.
+    public static int EndMinute(TimeOnly time) => time == TimeOnly.MinValue ? 1440 : StartMinute(time);
 
     private static TimeOnly? Time(int? minute) => minute.HasValue ? TimeOnly.MinValue.AddMinutes(minute.Value) : null;
 }

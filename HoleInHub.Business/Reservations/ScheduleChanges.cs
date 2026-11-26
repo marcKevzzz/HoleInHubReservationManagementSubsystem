@@ -57,7 +57,7 @@ public sealed partial class ReservationService
 
     public static void ValidateTimelineServiceChange(string source, string destination, int bays, bool confirmed)
     {
-        if (source == destination) { return; }
+        if (source == destination || source is "PhilippineCoach" or "KpgaPro" && destination == "Regular") { return; }
         if (source != "Regular" || destination != "VIP" || bays != 1)
         { throw new ReservationValidationException("Only single-bay Regular reservations can be upgraded to VIP."); }
         if (!confirmed) { throw new ReservationValidationException("Confirm the customer's agreement to VIP pricing before upgrading."); }
@@ -72,7 +72,7 @@ public sealed partial class ReservationService
     {
         if (booking.StartUtc <= now) { return "This reservation has already started and cannot be moved."; }
         if (booking.Status != "Confirmed") { return "Only confirmed reservations can be moved."; }
-        if (booking.Service is not ("Regular" or "VIP")) { return "Only Regular and VIP bookings can be moved on the timeline."; }
+        if (booking.Service is not ("Regular" or "VIP" or "PhilippineCoach" or "KpgaPro")) { return "Move published classes through the lesson schedule."; }
         if (booking.CancellationRequested) { return "Resolve the pending cancellation request before moving this reservation."; }
         return booking.ScheduleChange?.Status == "Pending" ? "Resolve the pending schedule change before moving this reservation." : null;
     }
