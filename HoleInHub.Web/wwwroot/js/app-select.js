@@ -22,7 +22,7 @@
                 text.textContent = [...select.selectedOptions].map(option => option.textContent.trim()).join(', ') || select.dataset.placeholder;
             }
             trigger.setAttribute('aria-required',String(select.required));wrapper.hidden=select.hidden;
-            [...menu.children].forEach((button,i)=>{button.setAttribute('aria-selected',String(options[i].selected));});
+            [...menu.children].forEach((button,i)=>{button.setAttribute('aria-selected',String(select.multiple ? options[i].selected : i === select.selectedIndex));});
         }
         function close(focus=false) {setTimeout(()=>{if(wrapper.dataset.open==='false')menu.hidePopover?.();},window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:180);wrapper.dataset.open='false';trigger.setAttribute('aria-expanded','false');if(opened?.select===select)opened=null;if(focus)trigger.focus();}
         function position() {
