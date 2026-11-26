@@ -64,6 +64,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_027_CoachDirectory>();
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_029_ClassCapacity>();
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_030_JuniorGolfProgram>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_031_CoachServiceAssignments>();
         services.AddSingleton<MongoMigrationRunner>();
 
         return services;

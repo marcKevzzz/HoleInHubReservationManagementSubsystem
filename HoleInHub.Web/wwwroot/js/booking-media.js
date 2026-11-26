@@ -17,9 +17,18 @@
         const video = /\.(mp4|webm)$/i.test(path);
         const element = document.createElement(video ? 'video' : 'img');
         element.src = path;
-        if (video) { element.controls = true; element.preload = 'metadata'; }
+        if (video) {
+            element.controls = true;
+            element.preload = 'metadata';
+            element.muted = true;
+            element.playsInline = true;
+        }
         else element.alt = dialog.dataset.title || 'Venue photo';
         stage.replaceChildren(element);
+        if (video && !reducedMotion.matches) {
+            // Controls remain usable if browser policy prevents automatic playback.
+            element.play().catch(() => {});
+        }
         const strip = dialog.querySelector('.media-thumbnails');
         strip.replaceChildren();
         if (media.length > 1) media.forEach((src, position) => {
@@ -27,8 +36,16 @@
             button.type = 'button';
             button.setAttribute('aria-label', 'View media ' + (position + 1));
             button.setAttribute('aria-current', String(position === index));
-            if (/\.(mp4|webm)$/i.test(src)) button.textContent = 'Video';
-            else { const thumb = document.createElement('img'); thumb.src = src; thumb.alt = ''; button.append(thumb); }
+            const isVideo = /\.(mp4|webm)$/i.test(src);
+            const thumb = document.createElement('img');
+            thumb.src = isVideo ? src.replace(/\.(mp4|webm)$/i, '.webp') : src;
+            thumb.alt = '';
+            if (isVideo) {
+                button.classList.add('media-video-thumbnail');
+                button.setAttribute('aria-label', 'Play video ' + (position + 1));
+                thumb.addEventListener('error', () => thumb.remove(), { once: true });
+            }
+            button.append(thumb);
             button.onclick = () => { index = position; render(); strip.children[position].focus(); };
             strip.append(button);
         });

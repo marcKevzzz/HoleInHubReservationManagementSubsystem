@@ -9,7 +9,7 @@
 }
 <section class="staff-workspace service-admin service-editor coach-editor">
     <a class="flow-back" data-nav-layout="coaches" asp-action="Index"><partial name="_BackArrow" /> Back to coaches</a>
-    <form method="post" asp-action="Save" novalidate>
+    <form method="post" asp-action="Save" enctype="multipart/form-data" novalidate>
         <header class="staff-workspace-heading service-admin-heading">
             <h1>@ViewData["Title"]</h1>
             <div class="service-admin-actions">
@@ -47,7 +47,7 @@
                     <li><strong>@clash.Reference</strong>
                         <span>@StaffReviewQueue.Local(clash.StartUtc).ToString("ddd, d MMM yyyy · h:mm tt") – @StaffReviewQueue.Local(clash.EndUtc).ToString("h:mm tt") Manila</span>
                         <span>@clash.Status</span>
-                        <a class="staff-hover-link" asp-controller="BookingReview" asp-action="Details" asp-route-id="@clash.Id" aria-label="Review booking @clash.Reference">Review booking</a>
+                        @if(clash.Id.StartsWith("CLS-")) { <a asp-controller="GroupClasses" asp-action="Roster" asp-route-id="@clash.Id">Review class</a> } else { <a class="staff-hover-link" asp-controller="BookingReview" asp-action="Details" asp-route-id="@clash.Id" aria-label="Review booking @clash.Reference">Review booking</a> }
                     </li>
                 }
                 </ul>
@@ -55,6 +55,18 @@
         }
         <section class="service-editor-section service-detail-fields coach-profile">
             <h2>Coach details</h2>
+            <div class="coach-profile-layout">
+            <div class="coach-photo-field">
+            <div class="coach-photo-preview" hidden="@(Model.PhotoPath is null)">
+                <button type="button" data-photo-open aria-label="Enlarge profile photo"><img src="@Model.PhotoPath" alt="@Model.Name" /></button>
+                <button type="button" class="coach-photo-delete" data-photo-delete aria-label="Delete profile photo"><partial name="_StaffIcon" model='"trash"' /></button>
+                <button type="button" class="coach-photo-change" data-photo-change>Change profile</button>
+            </div>
+            <label asp-for="Photo" class="coach-photo-tile" hidden="@(Model.PhotoPath is not null)"><partial name="_StaffIcon" model='"plus"' /><span class="sr-only">Profile photo</span></label>
+            <input name="RemovePhoto" type="hidden" value="@Model.RemovePhoto.ToString().ToLowerInvariant()" />
+            <input asp-for="Photo" type="file" aria-label="Profile photo" accept="image/jpeg,image/png,image/webp" />
+            <span asp-validation-for="Photo"></span>
+            <partial name="_EditorGalleryViewer" /></div>
             <div class="coach-contact-fields">
                 <div class="auth-input-wrap"><input asp-for="Name" maxlength="100" required placeholder=" " aria-describedby="Name-error" />
                 <label asp-for="Name">Coach name</label><span id="Name-error" class="service-field-error" asp-validation-for="Name"></span></div>
@@ -65,11 +77,13 @@
                 <div class="auth-input-wrap"><input asp-for="Email" type="email" maxlength="254" placeholder=" " aria-describedby="Email-error" />
                     <label asp-for="Email">Email address (optional)</label><span id="Email-error" class="service-field-error" asp-validation-for="Email"></span></div>
             </div>
+            </div>
         </section>
         <div class="service-configuration-grid coach-schedule-grid">
             <details class="service-configuration-section service-disclosure" open="@(focus?.StartsWith("Weekly") == true || focus == "add-week" || ViewData.ModelState.Any(x => x.Key.StartsWith("Weekly[") && x.Value?.Errors.Count > 0))">
                 <summary><span>Weekly hours</span><small>@shiftCount @(shiftCount == 1 ? "shift" : "shifts")</small></summary>
                 <div class="service-configuration-content">
+                <small>Times are in Manila. An end time of 12:00 AM means the end of the selected day.</small>
                 @for (var i = 0; i < Model.Weekly.Count; i++)
                 {
                     <fieldset class="coach-hours"><legend>Shift @(i + 1)</legend>
@@ -123,5 +137,6 @@
 </dialog>
 @section Scripts {
     <script src="~/js/profile-contact.js" asp-append-version="true"></script>
+    <script src="~/js/editor-gallery.js" asp-append-version="true"></script>
     <script src="~/js/coach-editor.js" asp-append-version="true"></script>
 }

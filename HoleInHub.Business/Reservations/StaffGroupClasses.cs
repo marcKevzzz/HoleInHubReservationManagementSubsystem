@@ -2,7 +2,7 @@ using HoleInHub.Data.Reservations;
 
 namespace HoleInHub.Business.Reservations;
 
-public sealed record StaffClassSession(string Id, string Offering, DateTime StartUtc, DateTime EndUtc, string[] Bays, int Capacity, int HeldSeats, string State, decimal Price, long Revision = 0);
+public sealed record StaffClassSession(string Id, string Offering, DateTime StartUtc, DateTime EndUtc, string[] Bays, int Capacity, int HeldSeats, string State, decimal Price, long Revision = 0, string? CoachName = null);
 public sealed record StaffClassOffering(string Id, string Name);
 public sealed record PackageSeatView(string SessionId, DateTime StartUtc, string LearnerId, string State, string Attendance);
 public sealed record PackageSchedule(string Id, string[] Sessions, decimal Price, DateTime? Deadline = null);
@@ -37,7 +37,7 @@ public sealed partial class ReservationService
             .Select(x => new StaffClassOffering(x.Id, x.Title)).ToArray();
 
     private static StaffClassSession StaffClass(ClassSessionRecord x) =>
-        new(x.ClassSessionId, x.ServiceEntryId, x.StartUtc, x.EndUtc, x.ResourceIds, x.Capacity, x.HeldSeats, x.State, x.PricePerLearner, x.ScheduleRevision);
+        new(x.ClassSessionId, x.ServiceEntryId, x.StartUtc, x.EndUtc, x.ResourceIds, x.Capacity, x.HeldSeats, x.State, x.PricePerLearner, x.ScheduleRevision, x.CoachName);
 
     public async Task<StaffClassSession[]> StaffClassesAsync(DateOnly from, CancellationToken ct) =>
         (await persistence.ClassesAsync(DashboardMetrics.Utc(from), DashboardMetrics.Utc(from.AddDays(31)), ct)).Select(StaffClass).ToArray();

@@ -1,0 +1,20 @@
+@using HoleInHub.Business.Reservations
+@model IReadOnlyList<CoachDto>
+@{ Layout = "_StaffLayout"; ViewData["Title"] = "Assign class coach"; var lesson = (StaffClassSession)ViewData["Class"]!; }
+<section class="staff-workspace service-admin service-editor">
+    <a class="flow-back" asp-controller="GroupClasses" asp-action="Roster" asp-route-id="@lesson.Id"><partial name="_BackArrow" /> Back to class</a>
+    <header class="staff-workspace-heading"><h1>Assign class coach</h1></header>
+    <p>@DashboardMetrics.Local(lesson.StartUtc).ToString("ddd, d MMM yyyy · h:mm tt") Manila · Current coach: @(lesson.CoachName ?? "Unassigned")</p>
+    <div asp-validation-summary="All" class="staff-error" role="alert"></div>
+    @if (Model.Count == 0) { <p>No assigned coach is available for the full class. Review service assignments and coach availability.</p> }
+    else
+    {
+        <form method="post" asp-action="ClassAssignment" asp-route-id="@lesson.Id" class="coach-assignment">
+            <input type="hidden" name="revision" value="@lesson.Revision" />
+            <label class="service-field">Available coach<select name="coachId" required><option value="">Choose a coach</option>
+                @foreach (var coach in Model) { <option value="@coach.Id">@coach.Name</option> }
+            </select></label>
+            <button class="button" type="submit">Save assignment</button>
+        </form>
+    }
+</section>

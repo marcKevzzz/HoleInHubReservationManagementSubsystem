@@ -44,7 +44,7 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         BookingRules.ValidateLeadTime(service, start, now);
         await ProcessPendingAsync(ct);
         var occupied = await persistence.OccupiedAsync(start, end, ct, now.UtcDateTime);
-        var coachAvailable = !RequiresCoach(service) || (await persistence.AvailableCoachesAsync(start, end, now.UtcDateTime, ct)).Count > 0;
+        var coachAvailable = !RequiresCoach(service) || (await persistence.AvailableCoachesAsync(start, end, now.UtcDateTime, ct, serviceEntryId: serviceEntryId ?? service)).Count > 0;
         var bays = service == "WholeShop" ? await GetRentalBaysAsync(serviceEntryId, ct)
             : (await GetCatalogAsync(ct)).Where(bay => bay.Service == BookingRules.ResourceService(service));
         return bays

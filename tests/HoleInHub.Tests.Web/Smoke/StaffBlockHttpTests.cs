@@ -611,13 +611,13 @@ public sealed partial class StaffBlockHttpTests
     [Theory]
     [InlineData("Manager")]
     [InlineData("Admin")]
-    public async Task VenueManagersCanOpenBayEditorWithDefaultCover(string role)
+    public async Task VenueManagersCanOpenBayEditorWithoutDefaultCover(string role)
     {
         await using var factory = Factory("test_resource_editor_access");
         using var client = Client(factory, role);
         var html = await client.GetStringAsync("/admin/resources/new");
         Assert.Contains("multipart/form-data", html);
-        Assert.Contains("/media/facebook/venue-overview.webp", html);
+        Assert.DoesNotContain("/media/facebook/venue-overview.webp", html);
         Assert.Contains("name=\"Uploads\"", html);
         Assert.Contains("name=\"EditPresentation\"", html);
     }
@@ -657,6 +657,13 @@ public sealed partial class StaffBlockHttpTests
                 Assert.Equal(bool.Parse(active), (await resources.Find(x => x.Id == "test-bay").SingleAsync()).Active);
                 Assert.Contains(active == "true" ? "Bay restored" : "Bay retired", await client.GetStringAsync("/admin/resources"));
             }
+            foreach (var active in new[] { "false", "true" })
+            {
+                form["active"] = active;
+                form["ExpectedRevision"] = (await resources.Find(x => x.Id == "test-bay").SingleAsync()).Revision.ToString();
+                Assert.Equal(HttpStatusCode.OK, (await client.PostAsync("/admin/resources/edit", new FormUrlEncodedContent(form))).StatusCode);
+                Assert.Equal(bool.Parse(active), (await resources.Find(x => x.Id == "test-bay").SingleAsync()).Active);
+            }
             await context.Database.GetCollection<ReservationRecord>("reservations").InsertOneAsync(new ReservationRecord
             {
                 AccountId = "resource-test",
@@ -674,6 +681,13 @@ public sealed partial class StaffBlockHttpTests
             Assert.Equal(HttpStatusCode.Conflict, blocked.StatusCode);
             Assert.Contains("Resolve current or upcoming", await blocked.Content.ReadAsStringAsync());
             Assert.True((await resources.Find(x => x.Id == "test-bay").SingleAsync()).Active);
+            form["ExpectedRevision"] = (await resources.Find(x => x.Id == "test-bay").SingleAsync()).Revision.ToString();
+            form["name"] = "Must not be saved";
+            var blockedEdit = await client.PostAsync("/admin/resources/edit", new FormUrlEncodedContent(form));
+            Assert.Equal(HttpStatusCode.Conflict, blockedEdit.StatusCode);
+            var unchanged = await resources.Find(x => x.Id == "test-bay").SingleAsync();
+            Assert.True(unchanged.Active);
+            Assert.Equal("Test bay", unchanged.Name);
         }
         finally { await context.Client.DropDatabaseAsync(database); }
     }

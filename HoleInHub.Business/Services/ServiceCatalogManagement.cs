@@ -14,6 +14,7 @@ public sealed record ServiceEdit(string Id, long Revision, string CommandId, boo
     string RateText, string Details, string BookingService, string Action, string ActionLabel, int Order, bool Active,
     string DepositType, decimal DepositValue, string[] Images)
 {
+    public string[]? CoachIds { get; init; }
     public bool JuniorOnly { get; set; }
     public DateOnly? SeasonStart { get; set; }
     public DateOnly? SeasonEnd { get; set; }
@@ -43,7 +44,7 @@ public sealed partial class ServiceCatalog
         Guid.NewGuid().ToString("N"), false, record.Title, record.Summary, record.RateText, record.Details,
         record.BookingService, record.Action, record.ActionLabel, record.Order, record.Active,
         record.DepositType, record.DepositValue, ImagePaths(record))
-    { JuniorOnly = record.JuniorOnly, SeasonStart = record.SeasonStart, SeasonEnd = record.SeasonEnd, MaxPax = record.MaxPax, CustomerSelectsBays = record.CustomerSelectsBays, Pricing = record.Pricing, BookingTypeName = record.BookingTypeName, AvailabilityRules = record.AvailabilityRules };
+    { CoachIds = record.CoachIds, JuniorOnly = record.JuniorOnly, SeasonStart = record.SeasonStart, SeasonEnd = record.SeasonEnd, MaxPax = record.MaxPax, CustomerSelectsBays = record.CustomerSelectsBays, Pricing = record.Pricing, BookingTypeName = record.BookingTypeName, AvailabilityRules = record.AvailabilityRules };
     public async Task<IReadOnlyList<ServiceEdit>> GetAllAsync(CancellationToken ct) =>
         (await persistence.GetAllAsync(ct)).Select(Edit).ToArray();
     public async Task<ServiceEdit?> GetAsync(string id, CancellationToken ct) =>
@@ -60,6 +61,10 @@ public sealed partial class ServiceCatalog
     }
     public static void Validate(ServiceEdit edit)
     {
+        if (edit.CoachIds is { } coaches && (coaches.Length > 100 || coaches.Any(string.IsNullOrWhiteSpace)
+            || coaches.Distinct(StringComparer.Ordinal).Count() != coaches.Length
+            || coaches.Length > 0 && edit.BookingService is not ("PhilippineCoach" or "KpgaPro" or "KpgaGroup")))
+        { throw new ArgumentException("Choose distinct coaches for a coaching service."); }
         if (edit.AvailabilityRules is { } availability) { Reservations.ServiceAvailabilityRules.Validate(availability); }
         if (edit.BookingTypeName.Length > 80 || edit.BookingTypeName.Any(char.IsControl))
         {
@@ -190,6 +195,7 @@ public sealed partial class ServiceCatalog
             RateText = edit.RateText.Trim(),
             Pricing = edit.Pricing,
             BookingService = edit.BookingService,
+            CoachIds = edit.CoachIds,
             CustomerSelectsBays = edit.BookingService == "WholeShop" ? null : edit.CustomerSelectsBays,
             JuniorOnly = edit.BookingService == "KpgaGroup" && edit.JuniorOnly,
             SeasonStart = edit.SeasonStart,

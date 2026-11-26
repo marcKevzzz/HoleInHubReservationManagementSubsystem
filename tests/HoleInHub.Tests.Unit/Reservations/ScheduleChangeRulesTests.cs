@@ -42,8 +42,9 @@ public sealed class ScheduleChangeRulesTests
     [InlineData("Checked-In", "Regular", 120, false)]
     [InlineData("Completed", "Regular", 120, false)]
     [InlineData("Confirmed", "WholeShop", 120, false)]
-    [InlineData("Confirmed", "KpgaPro", 120, false)]
-    public void CustomerChangesRequireConfirmedRegularOrVipWithOneHourNotice(string status, string service, int lead, bool expected)
+    [InlineData("Confirmed", "KpgaPro", 120, true)]
+    [InlineData("Confirmed", "PhilippineCoach", 120, true)]
+    public void CustomerChangesRequireConfirmedIndividualSessionWithOneHourNotice(string status, string service, int lead, bool expected)
     {
         var now = new DateTime(2026, 11, 3, 4, 0, 0, DateTimeKind.Utc);
         var booking = new ReservationDto("id", "ref", service, status, now.AddMinutes(lead), now.AddMinutes(lead + 60),

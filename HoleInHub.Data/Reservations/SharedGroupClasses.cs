@@ -101,6 +101,8 @@ public sealed partial class ReservationPersistence
                     { throw new AllocationConflictException("Keep lessons in package order, after the registration deadline and without overlapping dates."); }
                 }
             }
+            occurrence.CoachId = existing.CoachId;
+            occurrence.CoachName = existing.CoachName;
             occurrence.Id = existing.Id;
             occurrence.HeldSeats = existing.HeldSeats;
             occurrence.CreatedBy = existing.CreatedBy;
@@ -127,6 +129,14 @@ public sealed partial class ReservationPersistence
         { throw new AllocationConflictException("Check the class offering, time, price, active bays and learner capacity."); }
         if (await HasAllocationConflictAsync(allocation, s, token, now))
         { throw new AllocationConflictException("A booking, block or class already holds these bays."); }
+        if (offering.CoachIds is not null || occurrence.CoachId is not null)
+        {
+            allocation.Service = "KpgaGroup";
+            allocation.ServiceEntryId = occurrence.ServiceEntryId;
+            await ClaimCoachAsync(s, allocation, occurrence.CoachId, now, token, assigningExisting: editing != null);
+            occurrence.CoachId = allocation.CoachId;
+            occurrence.CoachName = allocation.CoachName;
+        }
         await Classes.InsertOneAsync(s, occurrence, cancellationToken: token);
         return occurrence;
     }

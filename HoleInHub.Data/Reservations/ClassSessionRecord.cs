@@ -7,6 +7,8 @@ public sealed class ClassSessionRecord
     [BsonId] public string Id { get; set; } = Guid.NewGuid().ToString("N");
     [BsonElement("class_session_id")] public string ClassSessionId => BusinessIdentifier.Format("CLS", Id);
     public string ServiceEntryId { get; set; } = "KpgaGroup";
+    [BsonIgnoreIfNull] public string? CoachId { get; set; }
+    [BsonIgnoreIfNull] public string? CoachName { get; set; }
     public DateTime StartUtc { get; set; }
     public DateTime EndUtc { get; set; }
     public string[] ResourceIds { get; set; } = [];

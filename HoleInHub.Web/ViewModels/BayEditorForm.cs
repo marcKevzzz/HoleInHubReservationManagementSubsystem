@@ -6,6 +6,7 @@ public sealed class BayEditorForm
 {
     public string Id { get; set; } = "";
     public string Name { get; set; } = "";
+    public bool? Active { get; set; }
     public string Service { get; set; } = "Regular";
     public int? MaxPlayers { get; set; }
     public int? MaxTotalGuests { get; set; }

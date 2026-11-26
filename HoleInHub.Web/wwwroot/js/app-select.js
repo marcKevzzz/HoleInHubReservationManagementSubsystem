@@ -1,11 +1,12 @@
 (() => {
     const controls = new WeakMap(); let opened, sequence=0;
     function enhance(select) {
-        if (controls.has(select) || select.multiple || select.size>1 || select.hasAttribute('data-native-select')) return;
+        if (controls.has(select) || (select.multiple && !select.hasAttribute('data-app-multiple')) || select.size>1 || select.hasAttribute('data-native-select')) return;
         const wrapper=document.createElement('div'); wrapper.className='app-select'; wrapper.dataset.open='false';
         const trigger=document.createElement('button');trigger.type='button';trigger.className='app-select-trigger';
         const text=document.createElement('span'), caret=document.createElement('span');caret.className='app-select-caret';caret.setAttribute('aria-hidden','true');trigger.append(text,caret);
         const menu=document.createElement('div');menu.className='app-select-menu';if(typeof menu.showPopover==='function')menu.setAttribute('popover','manual');menu.id='app-select-'+(++sequence);menu.setAttribute('role','listbox');
+        if (select.multiple) menu.setAttribute('aria-multiselectable','true');
         trigger.setAttribute('aria-haspopup','listbox');trigger.setAttribute('aria-controls',menu.id);trigger.setAttribute('aria-expanded','false');
         const label=select.getAttribute('aria-label') || select.labels?.[0]?.textContent.trim() || select.name || 'Choose an option';trigger.setAttribute('aria-label',label);menu.setAttribute('aria-label',label);
         const nativeTabIndex=select.tabIndex;let options=[],index=0,typeahead='',typeTimer;
@@ -17,8 +18,11 @@
                 text.replaceChildren(flag,document.createTextNode(options[index].dataset.selectedLabel || options[index].textContent));
                 trigger.setAttribute('aria-label',label+': '+options[index].textContent.trim());
             } else trigger.setAttribute('aria-label',label);
+            if (select.multiple) {
+                text.textContent = [...select.selectedOptions].map(option => option.textContent.trim()).join(', ') || select.dataset.placeholder;
+            }
             trigger.setAttribute('aria-required',String(select.required));wrapper.hidden=select.hidden;
-            [...menu.children].forEach((button,i)=>{button.setAttribute('aria-selected',String(i===select.selectedIndex));});
+            [...menu.children].forEach((button,i)=>{button.setAttribute('aria-selected',String(options[i].selected));});
         }
         function close(focus=false) {setTimeout(()=>{if(wrapper.dataset.open==='false')menu.hidePopover?.();},window.matchMedia('(prefers-reduced-motion: reduce)').matches?0:180);wrapper.dataset.open='false';trigger.setAttribute('aria-expanded','false');if(opened?.select===select)opened=null;if(focus)trigger.focus();}
         function position() {
@@ -28,7 +32,7 @@
             menu.style.maxHeight=height+'px';menu.style.top=(spaceBelow>=160?bounds.bottom+4:Math.max(8,bounds.top-Math.min(menu.scrollHeight,height)-4))+'px';
         }
         function open() {if(select.disabled)return;opened?.close();sync();menu.showPopover?.();wrapper.dataset.open='true';trigger.setAttribute('aria-expanded','true');opened={select,close,position};position();menu.children[index]?.focus({preventScroll:true});}
-        function choose(i) {if(!options[i] || options[i].disabled || options[i].parentElement?.disabled)return;select.selectedIndex=i;select.dispatchEvent(new Event('change',{bubbles:true}));sync();close(true);}
+        function choose(i) {if(!options[i] || options[i].disabled || options[i].parentElement?.disabled)return;if(select.multiple) options[i].selected=!options[i].selected;else select.selectedIndex=i;select.dispatchEvent(new Event('change',{bubbles:true}));sync();close(true);}
         function rebuild() {
             menu.replaceChildren(...[...select.options].map((option,i)=>{
                 const button=document.createElement('button');button.type='button';button.tabIndex=-1;button.setAttribute('role','option');button.textContent=option.textContent;

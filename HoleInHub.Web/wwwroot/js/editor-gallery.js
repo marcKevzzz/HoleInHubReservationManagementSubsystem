@@ -1,10 +1,40 @@
+window.HoleInHubImageViewer = function (viewer) {
+    const content = viewer.querySelector('[data-viewer-content]');
+    const dismiss = viewer.querySelector('[data-viewer-close]');
+    const canAnimate = () => window.gsap && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let motion;
+    function close() {
+        if (!viewer.open) return;
+        motion?.kill();
+        if (canAnimate()) {
+            motion = window.gsap.to(content, {opacity:0, scale:.96, duration:.2, ease:'power2.in', onComplete:()=>viewer.close()});
+        } else viewer.close();
+    }
+    function show(figures) {
+        if (!figures.length || viewer.open) return;
+        motion?.kill();
+        window.gsap?.set(content, {clearProps:'all'});
+        content.replaceChildren(...figures);
+        figures[0].append(dismiss);
+        viewer.showModal();
+        if (canAnimate()) {
+            motion = window.gsap.fromTo(content, {opacity:0, scale:.94, y:12, transformOrigin:'center'},
+                {opacity:1, scale:1, y:0, duration:.36, ease:'power3.out', clearProps:'all'});
+        }
+    }
+    dismiss.addEventListener('click', close);
+    viewer.addEventListener('click', event => { if (event.target === viewer) close(); });
+    viewer.addEventListener('cancel', event => { event.preventDefault(); close(); });
+    return { show, close };
+};
+
 window.HoleInHubEditorGallery = function (form, notify, shake) {
     const gallery = form.querySelector('[data-service-gallery]');
     const add = form.querySelector('[data-image-add]');
     const input = form.querySelector('[data-service-uploads]');
     const imageError = form.querySelector('[data-images-error]');
     const viewer = document.querySelector('[data-image-viewer]');
-    const viewerContent = viewer.querySelector('[data-viewer-content]');
+    const imageViewer = window.HoleInHubImageViewer(viewer);
     const details = form.querySelector('.service-detail-fields');
     if (details && typeof ResizeObserver === 'function') {
         const observer = new ResizeObserver(() => {
@@ -25,41 +55,19 @@ window.HoleInHubEditorGallery = function (form, notify, shake) {
     function move(from, to) {
         items.splice(to, 0, items.splice(from, 1)[0]); render();
     }
-    const reduceMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? true;
-    let viewerMotion;
-    function closeViewer() {
-        if (window.gsap && !reduceMotion()) { viewerMotion?.kill(); viewerMotion = window.gsap.to(viewerContent, {opacity:0,scale:.96,duration:.2,ease:'power2.in',onComplete:()=>viewer.close()}); }
-        else viewer.close();
-    }
     function showImages(index, all) {
-        viewerMotion?.kill();
-        window.gsap?.set(viewerContent,{clearProps:'all'});
-
-        const previousClose = viewer.querySelector('[data-viewer-close]');
-        if (previousClose) viewer.append(previousClose);
-        viewerContent.replaceChildren();
-        (all ? items : [items[index]]).forEach((item, offset) => {
+        const figures = (all ? items : [items[index]]).map((item, offset) => {
             const figure = document.createElement('figure');
             const img = document.createElement('img'); img.src = item.src; img.alt = 'Gallery photo';
             const primary = document.createElement('button'); primary.type = 'button'; primary.className = 'service-viewer-primary'; primary.textContent = 'Set as primary';
-            primary.addEventListener('click', () => { move(all ? offset : index, 0); closeViewer(); });
-            figure.append(img, primary); addImageId(figure, item); viewerContent.append(figure);
+            primary.addEventListener('click', () => { move(all ? offset : index, 0); imageViewer.close(); });
+            figure.append(img, primary); addImageId(figure, item);
+            return figure;
         });
-        const close = viewer.querySelector('[data-viewer-close]');
-        viewerContent.children[0]?.append(close);
-        const animateOpen = () => {
-            viewer.showModal();
-            if (window.gsap && !reduceMotion()) {
-                viewerMotion = window.gsap.fromTo(viewerContent,{opacity:0,scale:.94,y:12,transformOrigin:'center'}, {opacity:1,scale:1,y:0,duration:.36,ease:'power3.out',clearProps:'all'});
-            }
-        };
-        const firstImage = viewerContent.children[0]?.querySelector('img');
-        if (firstImage?.decode) firstImage.decode().then(animateOpen, animateOpen);
-        else animateOpen();
+        const image = figures[0]?.querySelector('img');
+        if (image?.decode) image.decode().then(() => imageViewer.show(figures), () => imageViewer.show(figures));
+        else imageViewer.show(figures);
     }
-    viewer.querySelector('[data-viewer-close]').addEventListener('click', closeViewer);
-    viewer.addEventListener('click', event => { if (event.target === viewer) closeViewer(); });
-    viewer.addEventListener('cancel', event => { event.preventDefault(); closeViewer(); });
     function addImageId(figure, item) {
         if (!item.caption) return;
         const caption = document.createElement('figcaption');

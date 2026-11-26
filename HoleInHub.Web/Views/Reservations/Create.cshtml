@@ -107,8 +107,9 @@ else
                 .ToArray();
             bool IsVideo(string path) => path.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".webm", StringComparison.OrdinalIgnoreCase);
             var photos = resource.HasSavedPresentation ? resource.Images : configuredMedia.Where(path => !IsVideo(path)).ToArray();
-            var cover = photos.FirstOrDefault() ?? overview;
-            var gallery = photos.DefaultIfEmpty(overview).Concat(configuredMedia.Where(IsVideo)).Distinct();
+            var videoCover = Configuration[$"BookingMedia:BayCovers:{resource.Id}"];
+            var cover = photos.FirstOrDefault() ?? (videoCover is not null && videoCover.StartsWith("/media/") && !videoCover.Contains("..") && !videoCover.Contains('\\') ? videoCover : overview);
+            var gallery = photos.Concat(configuredMedia.Where(IsVideo)).Distinct().DefaultIfEmpty(overview);
 
             <label class="resource-option" data-resource="@resource.Id" data-media="@System.Text.Json.JsonSerializer.Serialize(gallery)">
                 <a draggable="false" class="bay-preview" data-booking-media aria-label="View media for @resource.Name" href="@cover">

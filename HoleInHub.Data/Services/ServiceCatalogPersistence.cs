@@ -29,6 +29,7 @@ public sealed class ServiceCatalogRecord
     public string Details { get; set; } = "";
     public string BookingService { get; set; } = "";
     [BsonIgnoreIfNull] public bool? CustomerSelectsBays { get; set; }
+    [BsonIgnoreIfNull] public string[]? CoachIds { get; set; }
     public string BookingTypeName { get; set; } = "";
     [BsonIgnoreIfNull] public ServiceAvailabilityRule[]? AvailabilityRules { get; set; }
     public string Action { get; set; } = "Book";

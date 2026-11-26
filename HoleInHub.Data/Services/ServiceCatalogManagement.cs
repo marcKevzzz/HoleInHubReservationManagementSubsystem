@@ -57,6 +57,27 @@ public sealed partial class ServiceCatalogPersistence
                 throw new InvalidOperationException("This service changed. Reload its latest details before saving.");
             }
 
+            if (record.CoachIds is { Length: > 0 } coachIds)
+            {
+                var known = await context.Database.GetCollection<HoleInHub.Data.Reservations.CoachRecord>("coaches")
+                    .Find(s, coach => Enumerable.Contains(coachIds, coach.Id)).CountDocumentsAsync(token);
+                if (known != coachIds.Length) { throw new InvalidOperationException("A selected coach no longer exists. Reload the service and choose again."); }
+            }
+
+            if (prior is not null && record.CoachIds is { } eligible)
+            {
+                var now = record.UpdatedUtc ?? DateTime.UtcNow;
+                var bookings = await context.Database.GetCollection<HoleInHub.Data.Reservations.ReservationRecord>("reservations")
+                    .Find(s, x => (x.ServiceEntryId == record.Id || x.ServiceEntryId == null && x.Service == record.Id)
+                        && x.EndUtc > now && x.CoachId != null && !Enumerable.Contains(eligible, x.CoachId)
+                        && (x.Status == "Confirmed" || x.Status == "Checked-In" || x.Status == "Pending" && x.ReviewDeadlineUtc > now)).AnyAsync(token);
+                var classes = await context.Database.GetCollection<HoleInHub.Data.Reservations.ClassSessionRecord>("class_sessions")
+                    .Find(s, x => x.ServiceEntryId == record.Id && x.EndUtc > now && x.State != "Released"
+                        && x.CoachId != null && !Enumerable.Contains(eligible, x.CoachId)).AnyAsync(token);
+                if (bookings || classes)
+                { throw new InvalidOperationException("Reassign upcoming lessons before removing their coach from this service."); }
+            }
+
             if (record.Active && SeasonalRental.IsPackage(record.Id))
             {
                 var resources = await context.Database.GetCollection<HoleInHub.Data.Reservations.ResourceRecord>("resources")

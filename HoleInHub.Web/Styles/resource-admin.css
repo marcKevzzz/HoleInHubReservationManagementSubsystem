@@ -42,3 +42,30 @@
 .resource-form .logout-actions {display:flex;justify-content:flex-end;gap:12px}
 @media(prefers-reduced-motion:no-preference) {.resource-form .auth-input-wrap label {transition:transform .2s var(--ease),font-size .2s var(--ease)}}
 @media(max-width:600px) {.resource-table :is(th,td) {padding:12px 8px}.resource-symbol {display:none}.resource-table tbody th {min-width:115px}.resource-action {padding-inline:6px}.resource-toolbar {align-items:flex-start;flex-direction:column;gap:10px}}
+
+/* Bay editor follows the service editor's spacing and photo composition. */
+.service-editor.bay-editor .service-detail-fields {row-gap:20px}
+.service-editor.bay-editor .service-detail-fields>h2 {margin-bottom:0}
+.bay-editor .bay-capacity-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.bay-editor form>.service-editor-section {margin-top:32px;padding-top:24px;gap:20px}
+.service-editor.bay-editor .bay-description {margin-top:28px}
+.resource-table thead th {background:var(--color-staff-surface);font-weight:600}
+.resource-table .resource-cover {width:80px;height:60px;object-fit:cover;flex:none;background:var(--color-staff-surface)}
+.resource-table .resource-identity {gap:14px}
+.resource-table .resource-location {max-width:220px;min-width:150px;overflow-wrap:anywhere}
+.resource-limits {white-space:nowrap}
+.resource-limits small {display:block;margin-top:5px;color:var(--color-muted);font-size:.75rem}
+@media(max-width:760px) {
+    .bay-editor .bay-capacity-grid {grid-template-columns:1fr;gap:20px}
+    .resource-table .resource-cover {width:64px;height:48px}
+    .resource-table .resource-identity {min-width:190px}
+}
+
+.bay-editor .service-image-section:has(.bay-video-gallery) {display:flex;flex-direction:column;gap:16px}
+.bay-video-gallery {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.bay-video-gallery figure {margin:0;min-width:0}
+.bay-video-gallery video {display:block;width:100%;aspect-ratio:9/16;max-height:360px;background:var(--color-ink);object-fit:contain}
+.bay-video-gallery figcaption {margin-top:8px;color:var(--color-muted);font-size:.75rem}
+.bay-editor .service-image-section:has(.bay-video-gallery) .service-editor-gallery:not(:has(figure)),
+.bay-editor .service-image-section:has(.bay-video-gallery) .service-editor-gallery:not(:has(figure))>.service-upload {height:64px;min-height:64px}
+.bay-video-gallery video:focus-visible {outline:2px solid var(--color-green);outline-offset:3px}

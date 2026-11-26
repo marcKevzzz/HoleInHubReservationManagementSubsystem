@@ -10,7 +10,7 @@ namespace HoleInHubReservationManagementSubsystem.Controllers;
 [Authorize(Policy = HoleInHub.Web.Accounts.StaffAuthorization.Workspace, Roles = StaffRoles.VenueManagement)]
 [AutoValidateAntiforgeryToken, ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 [Route("admin/services")]
-public sealed class ServiceManagementController(ServiceCatalog catalog) : Controller
+public sealed class ServiceManagementController(ServiceCatalog catalog, ReservationService reservations) : Controller
 {
     private static string PricingField(PricingValidationException error) => error.Field == "BaseRate" ? "RateAmount" : error.Field;
 
@@ -35,9 +35,12 @@ public sealed class ServiceManagementController(ServiceCatalog catalog) : Contro
         }
         return View(form);
     }
-    private async Task LoadBookingTypesAsync(CancellationToken ct) =>
+    private async Task LoadBookingTypesAsync(CancellationToken ct)
+    {
+        ViewData["Coaches"] = await reservations.CoachesAsync(ct);
         ViewData["BookingTypeNames"] = (await catalog.GetAllAsync(ct)).Select(item => item.BookingTypeName)
             .Where(name => !string.IsNullOrWhiteSpace(name)).Distinct(StringComparer.OrdinalIgnoreCase).Order().ToArray();
+    }
 
     [HttpPost("reorder")]
     public async Task<IActionResult> Reorder(string positions, CancellationToken ct)

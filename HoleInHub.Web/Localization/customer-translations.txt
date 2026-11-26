@@ -940,3 +940,6 @@ Your reservation is confirmed when the deposit is verified.|예약금 확인 후
 Complete the 50% deposit within 60 minutes to confirm your rental.|60분 이내에 예약금 50%를 결제하면 대관 예약이 확정됩니다.
 Your bays are held together for 60 minutes while you complete the 50% deposit.|예약금 50%를 결제하는 동안 선택한 베이가 60분간 확보됩니다.
 All included bays are available together.|포함된 모든 베이를 함께 이용할 수 있습니다.
+
+You must be of legal age (18 or older) to make a reservation.|예약하려면 만 18세 이상이어야 합니다.
+Enter a valid age between 18 and 120.|18세에서 120세 사이의 올바른 나이를 입력해 주세요.

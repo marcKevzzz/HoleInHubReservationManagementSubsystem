@@ -9,7 +9,8 @@ namespace HoleInHubReservationManagementSubsystem.Controllers;
 public sealed partial class LeadershipController
 {
     [Authorize(Roles = StaffRoles.VenueManagement), HttpGet("/admin/resources")]
-    public async Task<IActionResult> Resources(CancellationToken ct) => View(await reservations.GetResourceDirectoryAsync(ct));
+    public async Task<IActionResult> Resources(CancellationToken ct) => View((await reservations.GetResourceDirectoryAsync(ct))
+        .Select(bay => bay.HasSavedPresentation ? bay : bay with { Images = ConfiguredBayPhotos(bay.Id) }).ToArray());
 
     [Authorize(Roles = StaffRoles.VenueManagement), HttpGet("/admin/resources/new")]
     public IActionResult NewBay() => BayEditor(new(), true);
@@ -21,7 +22,7 @@ public sealed partial class LeadershipController
         if (bay is null) { return NotFound(); }
         return BayEditor(new()
         {
-            Id = bay.Id, Name = bay.Name, Service = bay.Service, ExpectedRevision = bay.Revision,
+            Id = bay.Id, Name = bay.Name, Service = bay.Service, Active = bay.Active, ExpectedRevision = bay.Revision,
             MaxPlayers = bay.MaxPlayers, MaxTotalGuests = bay.MaxTotalGuests, MaxNonPlayers = bay.MaxNonPlayers,
             Location = bay.Location, Description = bay.Description,
             Images = bay.HasSavedPresentation ? bay.Images : ConfiguredBayPhotos(id)
@@ -42,10 +43,10 @@ public sealed partial class LeadershipController
             var presentation = await form.PresentationAsync(create ? [] : ConfiguredBayPhotos(form.Id), ct);
             if (create)
             {
-                await reservations.AddBayAsync(form.Id, form.Name, form.Service, form.MaxPlayers, form.MaxTotalGuests, form.MaxNonPlayers, ct, presentation);
+                await reservations.AddBayAsync(form.Id, form.Name, form.Service, form.MaxPlayers, form.MaxTotalGuests, form.MaxNonPlayers, ct, presentation, form.Active ?? true);
             }
             else if (!await reservations.EditBayAsync(form.Id, form.Name, form.Service, form.MaxPlayers, form.MaxTotalGuests,
-                form.MaxNonPlayers, form.ExpectedRevision, form.CapacityAcknowledgement, ct, presentation))
+                form.MaxNonPlayers, form.ExpectedRevision, form.CapacityAcknowledgement, ct, presentation, form.Active))
             { return NotFound(new { error = "This bay no longer exists. Reload the inventory." }); }
             new ToastNotice("success", create ? "Bay added" : "Bay updated", $"{form.Name.Trim()} has been saved.").Store(TempData);
             return ResourceSaved();
@@ -69,6 +70,10 @@ public sealed partial class LeadershipController
 
     private ViewResult BayEditor(BayEditorForm form, bool create)
     {
+        var configuration = HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+        ViewData["GalleryVideos"] = (configuration.GetSection($"BookingMedia:Bays:{form.Id}").Get<string[]>() ?? [])
+            .Where(path => SafeMediaPath(path) && (path.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase)
+                || path.EndsWith(".webm", StringComparison.OrdinalIgnoreCase))).Distinct().ToArray();
         ViewData["CreateBay"] = create;
         ViewData["LeadershipPage"] = nameof(Resources);
         return View("BayEditor", form);

@@ -36,7 +36,7 @@ public sealed partial class ReservationService
         }).ToArray();
 
     public async Task AddBayAsync(string id, string name, string service, int? maxPlayers, int? maxTotalGuests,
-        int? maxNonPlayers, CancellationToken ct, BayPresentationEdit? presentation = null)
+        int? maxNonPlayers, CancellationToken ct, BayPresentationEdit? presentation = null, bool active = true)
     {
         id = id.Trim().ToLowerInvariant();
         name = name.Trim();
@@ -46,6 +46,7 @@ public sealed partial class ReservationService
             throw new ReservationValidationException("Enter a bay name, a unique ID using letters, numbers or hyphens, and a bay type.");
         }
         var bay = BuildResource(id, name, service, maxPlayers, maxTotalGuests, maxNonPlayers);
+        bay.Active = active;
         var images = PrepareBayGallery(bay, presentation, []);
         try { await persistence.AddResourceAsync(bay, ct, images); }
         catch (AllocationConflictException ex) { throw new ReservationValidationException(ex.Message); }
@@ -57,7 +58,7 @@ public sealed partial class ReservationService
         catch (AllocationConflictException ex) { throw new ReservationValidationException(ex.Message); }
     }
     public async Task<bool> EditBayAsync(string id, string name, string service, int? maxPlayers, int? maxTotalGuests,
-        int? maxNonPlayers, long? expectedRevision, string? acknowledgement, CancellationToken ct, BayPresentationEdit? presentation = null)
+        int? maxNonPlayers, long? expectedRevision, string? acknowledgement, CancellationToken ct, BayPresentationEdit? presentation = null, bool? active = null)
     {
         name = name.Trim();
         if (string.IsNullOrWhiteSpace(id) || id.Length > 32 || name.Length is < 1 or > 80 || service is not ("Regular" or "VIP"))
@@ -71,7 +72,7 @@ public sealed partial class ReservationService
         try
         {
             return await persistence.EditResourceAsync(bay, expectedRevision.Value, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime, ct,
-                (current, edited, catalog, upcoming) => VerifyCapacityChange(current, edited, catalog, upcoming, acknowledgement), images);
+                (current, edited, catalog, upcoming) => VerifyCapacityChange(current, edited, catalog, upcoming, acknowledgement), images, active);
         }
         catch (AllocationConflictException ex) { throw new ReservationValidationException(ex.Message); }
     }

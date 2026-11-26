@@ -33,7 +33,7 @@ async function createCoach(page, name, weekday, dayOff) {
     await page.locator('[name="Exceptions[0].Date"]').fill(dayOff.toISOString().slice(0, 10));
     await page.getByRole('button', { name: 'Save coach' }).press('Enter');
     const card = page.locator('article').filter({ has: page.getByRole('heading', { name, exact: true }) });
-    await expect(card).toContainText(/Next free|Free now until/);
+    await expect(card.getByRole('link', { name: 'Open ' + name, exact: true })).toBeVisible();
     await card.getByRole('link', { name: 'Edit ' + name }).click();
     await expect(page.getByLabel('Professional title')).toHaveValue('KPGA Pro');
     await expect(page.getByLabel('Contact number')).toHaveValue('9123456789');

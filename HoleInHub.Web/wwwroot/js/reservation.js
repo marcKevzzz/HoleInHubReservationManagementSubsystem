@@ -316,7 +316,10 @@ if (typeof document !== 'undefined') (() => {
       if (input.closest('[data-family-learner]') && ['FirstName','LastName'].includes(key)) return t(key === 'FirstName' ? 'Enter the learner’s first name.' : 'Enter the learner’s last name.');
       if (prompts[key]) return t(prompts[key]);
     }
-    if (input.name === 'ContactAge' && value && (!/^\d{1,3}$/.test(value) || Number(value) < 18 || Number(value) > 120)) return t('Invalid age.');
+    if (input.name === 'ContactAge' && value) {
+      if (!/^\d{1,3}$/.test(value) || Number(value) > 120) return t('Enter a valid age between 18 and 120.');
+      if (Number(value) < 18) return t('You must be of legal age (18 or older) to make a reservation.');
+    }
     if (input.name === 'NonPlayerGuests' && !input.disabled && (!value || !Number.isInteger(Number(input.value)) || Number(input.value) < Number(input.min) || Number(input.value) > Number(input.max))) return t('Enter the number of non-playing guests') + ' (' + input.min + '�' + input.max + ').';
     if (input.matches('[data-age]') && (!value || !input.validity.valid)) return t(input.max === '17' ? 'Junior learners must be 17 or younger.' : 'Enter a whole number from 0 to 120.');
     if (input.closest('#program-learners') && input.required && /\.(FirstName|LastName|Name|Relationship)$/.test(input.name) && !/^[\p{L}\p{M}][\p{L}\p{M} .,’'\-]*$/u.test(value)) return t('Enter a name or relationship using letters.');

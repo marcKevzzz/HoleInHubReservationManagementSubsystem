@@ -1,3 +1,4 @@
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 @model IReadOnlyList<HoleInHub.Business.Reservations.ResourceDirectoryEntry>
 @{
     ViewData["Title"] = "Resources";
@@ -15,13 +16,17 @@
     {
         <div class="resource-table" role="region" aria-label="Bay inventory" tabindex="0">
             <table>
-                <thead><tr><th scope="col">Bay</th><th scope="col">Type</th><th scope="col">Status</th><th scope="col" class="resource-action-heading">Actions</th></tr></thead>
+                <thead><tr><th scope="col">Bay</th><th scope="col">Type</th><th scope="col">Location</th><th scope="col">Capacity</th><th scope="col">Status</th><th scope="col" class="resource-action-heading">Actions</th></tr></thead>
                 <tbody>
                 @foreach (var bay in Model)
                 {
+                    var videoCover = Configuration[$"BookingMedia:BayCovers:{bay.Id}"];
+                    var cover = bay.Images.FirstOrDefault() ?? (videoCover is not null && videoCover.StartsWith("/media/") && !videoCover.Contains("..") && !videoCover.Contains('\\') ? videoCover : null);
                     <tr data-resource-name="@bay.Name">
-                        <th scope="row"><span class="resource-identity"><span class="resource-symbol" aria-hidden="true"><partial name="_StaffIcon" model='@(bay.Service == "VIP" ? "vip-bay" : "regular-bay")' /></span><span><a asp-action="BayDetails" asp-route-id="@bay.Id">@bay.Name</a><small>Resource ID @bay.Id</small></span></span></th>
+                        <th scope="row"><span class="resource-identity">@if (cover is not null) { <img class="resource-cover" src="@cover" alt="" loading="lazy" width="80" height="60" /> } else { <span class="resource-symbol" aria-hidden="true"><partial name="_StaffIcon" model='@(bay.Service == "VIP" ? "vip-bay" : "regular-bay")' /></span> }<span><a asp-action="BayDetails" asp-route-id="@bay.Id">@bay.Name</a><small>Resource ID @bay.Id</small></span></span></th>
                         <td>@bay.Service</td>
+                        <td class="resource-location">@(string.IsNullOrWhiteSpace(bay.Location) ? "—" : bay.Location)</td>
+                        <td class="resource-limits"><span>@bay.MaxPlayers players · @bay.MaxTotalGuests total guests</span><small>@(bay.MaxNonPlayers is int limit ? $"Up to {limit} non-playing guests" : "Non-playing guests within total limit")</small></td>
                         <td><span class="staff-status" data-status="@(bay.Active ? "Confirmed" : "Completed")">@(bay.Active ? "Active" : "Retired")</span></td>
                         <td class="resource-actions">
                             <a class="resource-action" asp-action="BayDetails" asp-route-id="@bay.Id" title="Edit bay" aria-label="Edit @bay.Name"><partial name="_StaffIcon" model='"edit"' /></a>

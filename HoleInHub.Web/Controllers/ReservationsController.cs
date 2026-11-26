@@ -215,7 +215,8 @@ public sealed class ReservationsController(ReservationService reservations, Gues
         }
 
         if (request.ContactAge is null) { ModelState.AddModelError(nameof(request.ContactAge), "Enter your age."); }
-        else if (request.ContactAge is < 18 or > 120) { ModelState.AddModelError(nameof(request.ContactAge), "Invalid age."); }
+        else if (request.ContactAge < 18) { ModelState.AddModelError(nameof(request.ContactAge), "You must be of legal age (18 or older) to make a reservation."); }
+        else if (request.ContactAge > 120) { ModelState.AddModelError(nameof(request.ContactAge), "Enter a valid age between 18 and 120."); }
         if (string.IsNullOrWhiteSpace(request.ContactAddress)) { ModelState.AddModelError(nameof(request.ContactAddress), "Enter your address."); }
         if (!ContactRules.IsName(request.FirstName)) { ModelState.AddModelError(nameof(request.FirstName), ContactRules.NameError); }
         if (!ContactRules.IsName(request.LastName)) { ModelState.AddModelError(nameof(request.LastName), ContactRules.NameError); }

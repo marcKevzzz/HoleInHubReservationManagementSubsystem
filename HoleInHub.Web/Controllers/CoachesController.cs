@@ -23,9 +23,10 @@ public sealed class CoachesController(ReservationService bookings) : Controller
         return coach is null ? NotFound() : View(CoachEditorForm.From(coach));
     }
 
-    [HttpPost("save"), ValidateAntiForgeryToken]
+    [HttpPost("save"), ValidateAntiForgeryToken, RequestSizeLimit(5242880)]
     public async Task<IActionResult> Save(CoachEditorForm form, string? intent, CancellationToken ct)
     {
+        form.PhotoPath = form.Id is null ? null : (await bookings.CoachesAsync(ct)).FirstOrDefault(x => x.Id == form.Id)?.PhotoPath;
         if (intent is not null)
         {
             var focus = ChangeRows(form, intent);
@@ -43,11 +44,19 @@ public sealed class CoachesController(ReservationService bookings) : Controller
         if (ModelState.IsValid)
         {
             var coach = new CoachDto(form.Id ?? Guid.NewGuid().ToString("N"), form.Name.Trim(), form.Active, form.Revision ?? 0,
-                form.Weekly.Where(x => x.Start.HasValue).Select(x => new CoachWeeklyHoursDto(x.Day, Minute(x.Start)!.Value, Minute(x.End)!.Value)).ToArray(),
-                form.Exceptions.Where(x => x.Date.HasValue).Select(x => new CoachDateHoursDto(x.Date!.Value.ToString("yyyy-MM-dd"), Minute(x.Start), Minute(x.End))).ToArray(), form.Phone, form.Email, form.Title);
+                form.Weekly.Where(x => x.Start.HasValue).Select(x => new CoachWeeklyHoursDto(x.Day, Minute(x.Start)!.Value, CoachEditorForm.EndMinute(x.End!.Value))).ToArray(),
+                form.Exceptions.Where(x => x.Date.HasValue).Select(x => new CoachDateHoursDto(x.Date!.Value.ToString("yyyy-MM-dd"), Minute(x.Start), x.End.HasValue ? CoachEditorForm.EndMinute(x.End.Value) : null)).ToArray(), form.Phone, form.Email, form.Title);
             try
             {
-                if (await bookings.SaveCoachAsync(coach, form.Revision, ct))
+                byte[]? photo = null;
+                if (form.Photo is { Length: > 0 } upload)
+                {
+                    if (upload.Length > 4194304) { throw new ArgumentException("Choose a JPEG, PNG or WebP up to 4 MB."); }
+                    using var content = new MemoryStream();
+                    await upload.CopyToAsync(content, ct);
+                    photo = content.ToArray();
+                }
+                if (await bookings.SaveCoachAsync(coach, form.Revision, ct, photo, form.RemovePhoto))
                 {
                     new ToastNotice("success", form.Revision.HasValue ? "Coach updated" : "Coach added", coach.Name).Store(TempData);
                     return RedirectToAction(nameof(Index));
@@ -57,9 +66,32 @@ public sealed class CoachesController(ReservationService bookings) : Controller
                 ModelState.AddModelError("", "Another staff member changed this profile. Reopen it to review their changes.");
             }
             catch (CoachCommitmentException error) { ViewData["Conflicts"] = error.Bookings; ModelState.AddModelError("", error.Message); }
+            catch (ArgumentException error) { ModelState.AddModelError(nameof(form.Photo), error.Message); }
             catch (ReservationValidationException error) { ModelState.AddModelError("", error.Message); }
         }
         return View("Edit", form);
+    }
+
+    [HttpGet("classes/{id}/assignment")]
+    public async Task<IActionResult> ClassAssignment(string id, CancellationToken ct)
+    {
+        var roster = await bookings.StaffClassRosterAsync(id, ct);
+        if (roster is null) { return NotFound(); }
+        ViewData["Class"] = roster.Value.Item1;
+        return View(await bookings.AvailableClassCoachesAsync(id, ct));
+    }
+
+    [HttpPost("classes/{id}/assignment"), ValidateAntiForgeryToken]
+    public async Task<IActionResult> ClassAssignment(string id, long revision, string coachId, CancellationToken ct)
+    {
+        try
+        {
+            if (await bookings.AssignClassCoachAsync(id, revision, coachId, ct))
+            { return RedirectToAction("Roster", "GroupClasses", new { id }); }
+            ModelState.AddModelError("", "The class changed. Review the latest assignment before saving.");
+        }
+        catch (ReservationValidationException error) { ModelState.AddModelError("", error.Message); }
+        return await ClassAssignment(id, ct);
     }
 
     private string? ChangeRows(CoachEditorForm form, string intent)
@@ -100,7 +132,7 @@ public sealed class CoachesController(ReservationService bookings) : Controller
     public async Task<IActionResult> Assignment(string id, CancellationToken ct)
     {
         var booking = await bookings.GetStaffAsync(id, ct);
-        if (booking is null || booking.Service != "PhilippineCoach")
+        if (booking is null || booking.Service is not ("PhilippineCoach" or "KpgaPro"))
         {
             return NotFound();
         }

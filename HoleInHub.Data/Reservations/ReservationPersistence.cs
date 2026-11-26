@@ -118,7 +118,7 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
                     throw new AllocationConflictException("These bays are no longer available. Please choose another time or bay.", sessionUnavailable: true);
                 }
 
-                if (record.Service == "PhilippineCoach" && (requireCoach || requestedCoach != null))
+                if ((record.Service is "PhilippineCoach" or "KpgaPro") && (requireCoach || requestedCoach != null))
                 { await ClaimCoachAsync(s, record, requestedCoach, now, token); }
                 if (record.EmailVerificationId != null)
                 {
@@ -241,7 +241,7 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
 
     public async Task<bool> EditResourceAsync(ResourceRecord edited, long expectedRevision, DateTime now, CancellationToken ct,
         Action<ResourceRecord, ResourceRecord, IReadOnlyList<ResourceRecord>, IReadOnlyList<ReservationRecord>>? validateCapacityChange = null,
-        IReadOnlyList<ServiceImageRecord>? images = null)
+        IReadOnlyList<ServiceImageRecord>? images = null, bool? active = null)
     {
         using var session = await context.Client.StartSessionAsync(cancellationToken: ct);
         return await session.WithTransactionAsync(async (s, token) =>
@@ -254,6 +254,13 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
             var filters = Builders<ReservationRecord>.Filter;
             var affected = filters.AnyEq(x => x.ResourceIds, edited.Id);
             var blocking = filters.Eq(x => x.Status, "Checked-In") | (HoldingCapacity(now) & filters.Gt(x => x.EndUtc, now));
+            if (active.HasValue && resource.Active != active.Value)
+            {
+                var availabilityAffected = filters.Eq(x => x.Service, "WholeShop");
+                if (!active.Value) { availabilityAffected |= affected; }
+                if (await Reservations.Find(s, availabilityAffected & blocking).AnyAsync(token))
+                { throw new AllocationConflictException("Resolve current or upcoming reservations on this bay and any whole-shop bookings before changing availability."); }
+            }
             if (resource.Service != edited.Service)
             {
                 if (await Reservations.Find(s, (affected | filters.Eq(x => x.Service, "WholeShop")) & blocking).AnyAsync(token))
@@ -272,6 +279,7 @@ public sealed partial class ReservationPersistence(IMongoDbContext context)
             var update = Builders<ResourceRecord>.Update.Set(x => x.Name, edited.Name).Set(x => x.Service, edited.Service)
                 .Set(x => x.MaxPlayers, edited.MaxPlayers).Set(x => x.MaxTotalGuests, edited.MaxTotalGuests)
                 .Set(x => x.MaxNonPlayers, edited.MaxNonPlayers).Inc(x => x.Revision, 1);
+            if (active.HasValue) { update = update.Set(x => x.Active, active.Value); }
             if (edited.Images is not null)
             {
                 update = update.Set(x => x.Images, edited.Images).Set(x => x.Location, edited.Location).Set(x => x.Description, edited.Description);

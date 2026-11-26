@@ -333,3 +333,12 @@ Managers and Admins maintain bay photos, location, and description under **Resou
 Keep bay videos in `BookingMedia:Bays:<resource-id>` as an array of local paths, for example `["/media/bays/regular-1.mp4"]`. Place the files under `HoleInHub.Web/wwwroot/media/` and use the actual resource ID from inventory. MP4 and WebM videos appear after the bay photos in the booking lightbox. Editing a bay's photos does not modify the configured videos.
 
 Service catalog images and details continue to come from service management. Optional extra service media can be configured in `BookingMedia:Services:<service-catalog-id>` using local `/media/` paths.
+
+
+### Bay walkthrough videos
+
+The Resources editor shows the configured bay videos with native playback controls; it no longer inserts a venue-overview photo. Bay 1–3 share the two `bays-1-2-3` clips, Bay 4–5 share `bays-4-5`, and VIP 1–2 share `vip`. These map to the current active resource IDs (`bay-2`–`bay-6`, `vip-7`–`vip-8`); the retired `bay-1` has no assigned video.
+
+`BookingMedia:Bays` holds the local MP4 paths. Each walkthrough has a same-basename `.webp` preview frame for the editor, and `BookingMedia:BayCovers` selects the table/booking-card preview. Saved photos still take priority for covers; when none exist the booking gallery opens directly on the videos, without inserting the overview. Playback starts only on request. Photo uploads remain JPEG/PNG/WebP; video files are configured locally.
+
+The six supplied clips are stored once under `wwwroot/media/bays/`. The 4K HDR MOV sources were converted to portrait 1080p H.264 MP4 with SDR tone mapping, original frame rates, AAC audio and fast-start playback. The compact 720p VIP clip was remuxed without re-encoding. Original source files are not modified.

@@ -45,6 +45,7 @@ public sealed partial class ServiceEditorForm
     [DisplayFormat(ConvertEmptyStringToNull = false), StringLength(160)] public string RateText { get; set; } = "";
     [DisplayFormat(ConvertEmptyStringToNull = false), StringLength(12000)] public string Details { get; set; } = "";
     [Required] public string BookingService { get; set; } = "Regular";
+    public string[] CoachIds { get; set; } = [];
     public bool JuniorOnly { get; set; }
     public DateOnly? SeasonStart { get; set; }
     public DateOnly? SeasonEnd { get; set; }
@@ -84,6 +85,7 @@ public sealed partial class ServiceEditorForm
         return new(Id, Revision, CommandId, Create, Title, Summary, rate, string.IsNullOrWhiteSpace(Details) ? Summary : Details,
         BookingService, "Book", "Request a booking", Order, Active, SeasonalRental.IsPackage(Id) ? "Percentage" : DepositType, SeasonalRental.IsPackage(Id) ? 50 : DepositValue, Images)
         {
+            CoachIds = BookingService is "PhilippineCoach" or "KpgaPro" or "KpgaGroup" ? CoachIds : null,
             JuniorOnly = JuniorOnly,
             SeasonStart = SeasonStart,
             SeasonEnd = SeasonEnd,
@@ -99,6 +101,7 @@ public sealed partial class ServiceEditorForm
     private static decimal? ParseRate(string text) => decimal.TryParse(System.Text.RegularExpressions.Regex.Match(text, @"[0-9][0-9,]*(?:\.[0-9]+)?").Value.Replace(",", ""), System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var value) ? value : null;
     public static ServiceEditorForm From(ServiceEdit item) => new ServiceEditorForm
     {
+        CoachIds = item.CoachIds ?? [],
         JuniorOnly = item.JuniorOnly,
         SeasonStart = item.SeasonStart,
         SeasonEnd = item.SeasonEnd,
