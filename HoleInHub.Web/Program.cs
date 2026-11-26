@@ -14,6 +14,7 @@ if (builder.Environment.IsEnvironment("Testing"))
 builder.Services.AddHoleInHubBusiness(builder.Configuration);
 
 // Add services to the container.
+builder.Services.AddScoped<HoleInHub.Business.Services.IntegrationAccess>();
 builder.Services.AddControllersWithViews(options => { options.Filters.Add<HoleInHubReservationManagementSubsystem.Filters.ServiceUnavailableFilter>(); options.Filters.Add<HoleInHubReservationManagementSubsystem.Filters.CustomerLanguageFilter>(); });
 builder.Services.AddLocalization();
 builder.Services.Configure<RequestLocalizationOptions>(options =>

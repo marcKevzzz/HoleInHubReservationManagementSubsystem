@@ -1666,3 +1666,33 @@ button.flow-back{border:0;background:transparent;cursor:pointer}
 .site-header .profile-link {border-radius:9999px}
 .site-header .profile-link:is(:hover,:focus-visible) {background:var(--color-line);color:var(--color-ink)!important}
 .site-header .profile-link:focus-visible {outline:2px solid var(--color-green);outline-offset:2px}
+.api-heading { display:flex; justify-content:space-between; align-items:center; gap:1rem; }
+.api-workspace .staff-empty-state { display:grid; justify-items:center; text-align:center; }
+.api-editor { display:grid; gap:2rem; }
+.api-editor .validation-summary-valid { display:none; }
+.api-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1.5rem; align-items:end; }
+.api-fields input,.api-fields select { width:100%; }
+.api-editor .api-group-title { font:inherit; font-weight:600; margin-bottom:.6rem; }
+.api-groups { margin:1rem 0; border:1px solid var(--color-line); border-radius:.4rem; }
+.api-groups fieldset { min-width:0; padding:.85rem 1rem; }
+.api-groups fieldset + fieldset { border-top:1px solid var(--color-line); }
+.api-editor .api-group-title { float:left; width:100%; }
+.api-group-title label,.api-groups .api-scope { display:flex; align-items:center; gap:.6rem; cursor:pointer; }
+.api-groups .api-scope { clear:both; display:grid; grid-template-columns:auto minmax(10rem,1fr) 2fr; padding:.35rem 0 .35rem 1.45rem; }
+.api-groups input[type=checkbox] { width:1rem; height:1rem; margin:0; accent-color:var(--color-green); }
+.api-scope code { overflow-wrap:anywhere; }
+@media(max-width:620px){.api-fields { gap:.75rem; }.api-groups .api-scope {grid-template-columns:auto 1fr;}.api-scope small {grid-column:2;}}
+
+.api-editor .api-groups { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; border:0; align-items:start; }
+.api-editor .api-groups fieldset { border:1px solid var(--color-line); border-radius:.4rem; padding:.65rem .85rem; }
+.api-editor .api-group-title { margin:0 0 .25rem; padding:0; }
+.api-editor .api-group-title label,.api-editor .api-groups label.api-scope { min-height:0; margin:0; line-height:1.35; }
+.api-editor .api-group-title label { display:inline-flex; align-items:center; padding:0; gap:.5rem; }
+.api-editor .api-groups label.api-scope { align-items:center; padding:.22rem 0 .22rem 1.35rem; grid-template-columns:1rem minmax(0,1fr) minmax(0,1.5fr); }
+.api-editor .api-groups input[type=checkbox] { min-height:0; padding:0; align-self:center; position:static; transform:none; }
+@media(max-width:760px){.api-editor .api-groups {grid-template-columns:1fr;}}
+.staff-shell .api-editor .api-group-title label { font:600 1rem/1.5 var(--body); }
+.staff-shell .api-editor .api-scope :is(code,small) { font:400 .9375rem/1.45 var(--body); overflow-wrap:anywhere; }
+.staff-shell .api-editor .api-scope code { font-weight:500; }
+.staff-shell .api-editor .api-scope { padding-block:.375rem; }
+@media(max-width:480px){.api-editor .api-groups label.api-scope {grid-template-columns:1rem minmax(0,1fr);}.api-editor .api-scope small {grid-column:2;}}

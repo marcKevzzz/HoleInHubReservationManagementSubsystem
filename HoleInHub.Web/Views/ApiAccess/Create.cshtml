@@ -1,0 +1,44 @@
+@using HoleInHub.Business.Services
+@{ ViewData["Title"] = "Create API key"; }
+<section class="staff-workspace service-admin service-editor api-workspace">
+    <a class="flow-back" asp-action="Keys"><partial name="_BackArrow" /> Back to API keys</a>
+    <header class="staff-workspace-heading service-admin-heading">
+        <h1>Create API key</h1>
+        <div class="service-admin-actions">
+            <a class="button button-secondary" asp-action="Keys">Cancel</a>
+            <button class="button" form="create-key">Create key</button>
+        </div>
+    </header>
+    <form id="create-key" method="post" asp-action="Create" class="api-editor">
+        <div asp-validation-summary="All" class="staff-error" role="alert"></div>
+        <section class="service-editor-section api-details">
+            <h2>Key details</h2>
+            <div class="api-fields"><div class="auth-input-wrap">@Html.TextBox("name", null, new { required = "required", maxlength = 80, placeholder = " " })<label for="name">Key name</label></div>
+            <div class="service-editor-field"><label for="days">Expires after</label>
+                @Html.DropDownList("days", new SelectList(new[] { new { Value = 30, Text = "30 days" }, new { Value = 60, Text = "60 days" }, new { Value = 90, Text = "90 days" } }, "Value", "Text"))
+            </div></div>
+        </section>
+        <section class="service-editor-section api-permissions">
+            <header><h2>Permissions</h2><p class="service-field-help">Choose individual permissions for this key. Planned permissions take effect when their endpoints launch.</p></header>
+            <div class="api-groups">
+            @foreach (var group in IntegrationAccess.Catalog.GroupBy(scope => scope.Group))
+            {
+                <fieldset>
+                    <legend class="api-group-title"><label><input type="checkbox" data-category hidden /> @group.Key</label></legend>
+                    @foreach (var scope in group)
+                    {
+                        <label class="api-scope">
+                            <input type="checkbox" name="permission" value="@scope.Code" checked="@(Context.Request.HasFormContentType && Context.Request.Form["permission"].Contains(scope.Code))" />
+                            <code>@scope.Code</code><small>@scope.Description @(scope.Live ? "" : "(Planned)")</small>
+                        </label>
+                    }
+                </fieldset>
+            }
+            </div>
+            <p class="service-field-help">Customer registration and sign-in use shared account authorization. A key alone cannot sign in a customer.</p>
+        </section>
+    </form>
+</section>
+
+@section Scripts { <script src="~/js/api-permissions.js" asp-append-version="true"></script> }
+

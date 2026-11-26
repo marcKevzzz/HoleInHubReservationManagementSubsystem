@@ -1,0 +1,7 @@
+@model HoleInHub.Business.Services.RequestSummary[]
+<section class="staff-workspace leadership-page api-workspace"><header class="staff-workspace-heading"><h1>Request logs</h1></header>
+@if(Model.Length == 0){<partial name="_StaffEmptyState" model='("history", "No requests recorded", "API calls appear here when an integration sends a request.", (string?)null, (string?)null)' />}else{
+<div class="leadership-table" tabindex="0" role="region" aria-label="Request logs"><table><thead><tr><th>Time (PHT)</th><th>Caller prefix</th><th>Request</th><th>Status</th><th>Duration</th><th>Trace ID</th></tr></thead><tbody>
+@foreach(var row in Model){<tr><td>@TimeZoneInfo.ConvertTimeFromUtc(row.AtUtc,HoleInHub.Business.Reservations.ReservationRules.Manila).ToString("dd MMM yyyy HH:mm")</td><td>@(row.KeyId?[..8] ?? "Unknown")</td><td>@row.Route</td><td>@row.Status</td><td>@row.DurationMs ms</td><td>@row.Id</td></tr>}
+</tbody></table></div>}</section>
+

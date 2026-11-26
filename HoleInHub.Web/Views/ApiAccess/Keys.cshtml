@@ -1,0 +1,10 @@
+@model HoleInHub.Business.Services.KeySummary[]
+<section class="staff-workspace leadership-page api-workspace"><header class="staff-workspace-heading api-heading"><h1>API keys</h1><a class="button button-primary" asp-action="Create">Create API key</a></header>
+@if(Model.Length == 0){<partial name="_StaffEmptyState" model='("settings", "No API keys yet", "Create a key to grant access to selected API permissions.", (string?)null, (string?)null)' />}
+@foreach(var key in Model){
+<article><h2>@key.Name</h2><p>@(string.IsNullOrEmpty(key.Subsystem) ? "" : key.Subsystem + " · ") @string.Join(", ", key.Permissions) · @(key.Revoked ? "Revoked" : key.ExpiresUtc <= DateTime.UtcNow ? "Expired" : "Active") · Expires @key.ExpiresUtc.ToString("u")</p>
+<a asp-action="Logs" asp-route-key="@key.Id">View requests</a>
+@if(!key.Revoked){<details><summary>Revoke key</summary><form method="post" asp-action="Revoke" asp-route-id="@key.Id"><button class="button button-secondary">Revoke @key.Name</button></form></details>}</article>
+}</section>
+
+

@@ -57,6 +57,8 @@
         ("People", "Leadership", "People", "roles", "Team & access", managesVenue),
         ("Administration", "Leadership", "Resources", "resources", "Resources", managesVenue),
         ("Administration", "ServiceManagement", "Index", "queue", "Services", isAdmin || User.IsInRole("Manager")),
+        ("API access", "ApiAccess", "Keys", "settings", "API keys", isAdmin),
+        ("API access", "ApiAccess", "Logs", "history", "Request logs", isAdmin),
         ("Administration", "Activity", "Index", "history", "Activity", true),
         ("Administration", notificationController, "Index", "notifications", "Notifications", true),
         ("Venue management", "Leadership", "Reports", "reports", "Reports", managesVenue),
