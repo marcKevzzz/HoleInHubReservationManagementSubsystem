@@ -1,0 +1,13 @@
+@using HoleInHub.Web.Accounts
+@inject TimeProvider Clock
+@{
+    var hint = Context.Request.Cookies[AccountSessionNotice.Cookie];
+    var end = hint is "customer" or AccountSessionNotice.Admin
+        ? await AccountSessionNotice.DeadlineAsync(Context, hint == AccountSessionNotice.Admin) : null;
+}
+@if (end is { } deadline)
+{
+    <script src="~/js/account-expiry.js" asp-append-version="true" defer
+            data-remaining="@((long)Math.Max(0, (deadline - Clock.GetUtcNow()).TotalMilliseconds))"
+            data-status-url="@Url.Content("~/account/session-status")" data-login-url="@Url.Content("~/account/sign-in")"></script>
+}

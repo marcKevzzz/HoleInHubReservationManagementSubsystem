@@ -67,6 +67,7 @@ public sealed partial class StaffAccessController(StaffPinAccess access, StaffPi
     {
         logger.LogInformation("Workspace session ended for {EmployeeId}.", User.FindFirstValue(ClaimTypes.NameIdentifier));
         await HttpContext.SignOutAsync(StaffPinAccess.Scheme);
+        Response.Cookies.Delete(AccountSessionNotice.Cookie);
         await signIn.SignOutAsync();
         new HoleInHubReservationManagementSubsystem.ViewModels.ToastNotice("success", "Signed out", "See you next time.", Icon: "sign-out").Store(TempData);
         if (User.IsInRole(StaffRoles.Admin))

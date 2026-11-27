@@ -24,6 +24,19 @@ public sealed partial class ReservationService
     public async Task<IReadOnlyList<CoachDto>> CoachesAsync(CancellationToken ct) =>
         (await persistence.ReadCoachesAsync(ct)).Select(MapCoach).ToArray();
 
+    public async Task<IReadOnlyList<CoachDto>> AvailableSessionCoachesAsync(string serviceId, DateOnly date,
+        TimeOnly startTime, int durationMinutes, CancellationToken ct)
+    {
+        var entry = serviceCatalog is null ? null : await serviceCatalog.GetBookingServiceAsync(serviceId, ct);
+        if (entry is null || !entry.Active || entry.Deleted || entry.BookingService is not ("PhilippineCoach" or "KpgaPro"))
+        { throw new ReservationValidationException("Choose an active individual coaching service."); }
+        var (start, end) = PreviewServiceInterval(entry, date, startTime, durationMinutes, entry.BookingService);
+        var now = (clock ?? TimeProvider.System).GetUtcNow();
+        BookingRules.ValidateLeadTime(entry.BookingService, start, now);
+        return (await persistence.AvailableCoachesAsync(start, end, now.UtcDateTime, ct, serviceEntryId: entry.Id))
+            .Select(MapCoach).ToArray();
+    }
+
     public async Task<IReadOnlyList<CoachDto>> AvailableCoachesAsync(string reservationId, CancellationToken ct)
     {
         var booking = await persistence.ByIdAsync(reservationId, ct);

@@ -1696,3 +1696,9 @@ button.flow-back{border:0;background:transparent;cursor:pointer}
 .staff-shell .api-editor .api-scope code { font-weight:500; }
 .staff-shell .api-editor .api-scope { padding-block:.375rem; }
 @media(max-width:480px){.api-editor .api-groups label.api-scope {grid-template-columns:1rem minmax(0,1fr);}.api-editor .api-scope small {grid-column:2;}}
+
+.staff-shell dialog.api-key-dialog {white-space:normal;overflow-wrap:anywhere;text-align:left}
+.staff-shell .api-key-dialog .logout-confirm:is(:hover,:focus-visible) {background:var(--color-error);color:var(--paper)}
+.issued-key-value {display:block;white-space:normal;overflow-wrap:anywhere;padding:12px;border:1px solid var(--color-line);user-select:all}
+.api-key-dialog .issued-key-actions {grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);margin:20px 0}
+.staff-shell #issued-key {width:min(540px,calc(100vw - 32px))}

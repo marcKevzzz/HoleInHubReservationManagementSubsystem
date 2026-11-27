@@ -50,6 +50,27 @@ public sealed class AccountHubController(UserManager<AccountUser> users, Reserva
         return View(records.Where(x => x.Service == "WholeShop" && x.PaymentStatus != "NotRequired").OrderByDescending(x => x.CreatedUtc).ToArray());
     }
 
+    [HttpGet("/my-profile/share/{keyId}")]
+    public async Task<IActionResult> Share(string keyId, [FromServices] HoleInHub.Business.Services.IntegrationAccess access, CancellationToken ct)
+    {
+        if (StaffRoles.Workspace.Any(User.IsInRole)) { return Forbid(); }
+        var recipient = await access.ProfileRecipientAsync(keyId, ct);
+        return recipient is null ? NotFound() : View("Share", recipient);
+    }
+
+    [HttpPost("/my-profile/share/{keyId}"), ValidateAntiForgeryToken]
+    public async Task<IActionResult> ApproveShare(string keyId, [FromServices] HoleInHub.Business.Services.IntegrationAccess access,
+        [FromServices] CustomerShareCode codes, CancellationToken ct)
+    {
+        if (StaffRoles.Workspace.Any(User.IsInRole)) { return Forbid(); }
+        var user = await users.GetUserAsync(User);
+        if (user is null) { return Challenge(); }
+        var recipient = await access.ProfileRecipientAsync(keyId, ct);
+        if (recipient is null) { return NotFound(); }
+        ViewData["ShareCode"] = codes.Issue(keyId, SharedContact.FromAccount(user));
+        return View("Share", recipient);
+    }
+
     [HttpGet("/my-profile")]
     public async Task<IActionResult> Profile(CancellationToken ct)
     {

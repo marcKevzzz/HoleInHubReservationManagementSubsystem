@@ -1,0 +1,19 @@
+@model string
+@{ ViewData["Title"] = "Share contact details"; }
+<section class="page-content account-hub">
+    <header class="account-heading"><h1>Share contact details</h1></header>
+    @if (ViewData["ShareCode"] is string code)
+    {
+        <p>Give this code to <strong>@Model</strong>. It works once and expires in five minutes.</p>
+        <p><code class="break-all select-all">@code</code></p>
+        <a asp-action="Profile">Done</a>
+    }
+    else
+    {
+        <p>Share your account ID, first name, last name, email and phone number with <strong>@Model</strong> once? They can save your account ID to recognize you on future visits.</p>
+        <form method="post" asp-action="ApproveShare" asp-route-keyId="@ViewContext.RouteData.Values["keyId"]">
+            <button class="button" type="submit">Approve and get code</button>
+            <a asp-action="Profile" class="button button-secondary">Cancel</a>
+        </form>
+    }
+</section>

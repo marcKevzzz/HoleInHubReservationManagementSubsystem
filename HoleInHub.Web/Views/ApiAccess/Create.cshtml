@@ -10,6 +10,7 @@
         </div>
     </header>
     <form id="create-key" method="post" asp-action="Create" class="api-editor">
+        <input type="hidden" name="submission" value="@Guid.NewGuid()" />
         <div asp-validation-summary="All" class="staff-error" role="alert"></div>
         <section class="service-editor-section api-details">
             <h2>Key details</h2>

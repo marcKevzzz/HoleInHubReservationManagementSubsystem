@@ -44,8 +44,31 @@ public sealed partial class AccountController(UserManager<AccountUser> users, Si
     }
 
     [HttpGet("sign-in")]
-    public async Task<IActionResult> SignIn(string? returnUrl) => await SignedInDestinationAsync(returnUrl) is { } destination
-        ? LocalRedirect(destination) : View(new SignInModel { ReturnUrl = SafeReturnUrl(returnUrl) });
+    public async Task<IActionResult> SignIn(string? returnUrl)
+    {
+        var hint = Request.Cookies[AccountSessionNotice.Cookie];
+        if (hint is "customer" or AccountSessionNotice.Admin &&
+            await AccountSessionNotice.DeadlineAsync(HttpContext, hint == AccountSessionNotice.Admin) is null)
+        {
+            if (hint == AccountSessionNotice.Admin)
+            {
+                await HttpContext.SignOutAsync(StaffPinAccess.Scheme);
+                await signIn.SignOutAsync();
+            }
+            Response.Cookies.Delete(AccountSessionNotice.Cookie);
+            new ToastNotice("warning", "Session expired", "Sign in again to continue.").Store(TempData);
+            return View(new SignInModel { ReturnUrl = SafeReturnUrl(returnUrl) });
+        }
+        return await SignedInDestinationAsync(returnUrl) is { } destination
+            ? LocalRedirect(destination) : View(new SignInModel { ReturnUrl = SafeReturnUrl(returnUrl) });
+    }
+
+    [HttpGet("session-status")]
+    public async Task<IActionResult> SessionStatus()
+    {
+        var end = await AccountSessionNotice.DeadlineAsync(HttpContext, Request.Cookies[AccountSessionNotice.Cookie] == AccountSessionNotice.Admin);
+        return end.HasValue ? Json(new { remainingMs = Math.Max(0, (end.Value - clock.GetUtcNow()).TotalMilliseconds) }) : Unauthorized();
+    }
 
     [HttpPost("sign-in")]
     public async Task<IActionResult> SignIn(SignInModel model)
@@ -91,6 +114,7 @@ public sealed partial class AccountController(UserManager<AccountUser> users, Si
     public async Task<IActionResult> SignOutAccount()
     {
         await HttpContext.SignOutAsync(StaffPinAccess.Scheme);
+        Response.Cookies.Delete(AccountSessionNotice.Cookie);
         await signIn.SignOutAsync();
         new ToastNotice("success", "Signed out", "See you next time.", Icon: "sign-out").Store(TempData);
         return Redirect("/");

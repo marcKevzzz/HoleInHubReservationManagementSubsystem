@@ -181,7 +181,8 @@
         {
             <div class="staff-workspace"><a class="flow-back customer-back" href="@activityReturn"><partial name="_BackArrow" /> Back to activity</a></div>
         }
-        <partial name="_ToastStack" />
+        <partial name="_AccountExpiry" />
+<partial name="_ToastStack" />
         @RenderBody()
     </main>
     <partial name="_LogoutConfirmation" model='(isAdmin ? "You’ll need to sign in again to open your workspace." : "You’ll need to enter your PIN again to open your workspace.")' />

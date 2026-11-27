@@ -76,6 +76,15 @@ public static class AccountExtensions
             options.Cookie.SecurePolicy = environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
             options.ExpireTimeSpan = TimeSpan.FromHours(8);
             options.SlidingExpiration = false;
+            options.Events.OnSignedIn = context =>
+            {
+                if (context.Principal is { } principal &&
+                    (principal.IsInRole(StaffRoles.Admin) || !StaffRoles.Workspace.Any(principal.IsInRole)))
+                {
+                    AccountSessionNotice.Remember(context.HttpContext, principal.IsInRole(StaffRoles.Admin), context.Properties.IsPersistent);
+                }
+                return Task.CompletedTask;
+            };
             options.Events.OnValidatePrincipal = async context =>
             {
                 var now = context.HttpContext.RequestServices.GetRequiredService<TimeProvider>().GetUtcNow();
