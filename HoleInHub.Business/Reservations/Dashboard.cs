@@ -14,6 +14,9 @@ public sealed record DashboardSnapshot(DateOnly From, DateOnly To, DateTime Gene
     IReadOnlyDictionary<string, long> Attention, IReadOnlyList<DashboardBay> Bays)
 {
     public DashboardBaseline? Previous { get; init; }
+    public BookingOutcomes Outcomes { get; init; } = new(default, default, default, default, default);
+    public long UnmarkedToday { get; init; }
+    public long ExpiringSoon { get; init; }
     public int FollowUpsDue { get; init; }
 }
 public sealed record DashboardBooking(string Id, string Reference, string Guest, string Service, string Status, DateTime StartUtc, DateTime EndUtc, string[] Bays)
@@ -152,8 +155,13 @@ public sealed partial class ReservationService
             }
         }
         var data = DashboardMetrics.Calculate(from, to, now, await rows, await attention, (await catalog).ToDictionary(x => x.Id, x => x.Service), bays);
+        var outcomeRows = await persistence.ReadOutcomeRowsAsync(DashboardMetrics.Utc(from), DashboardMetrics.Utc(to.AddDays(1)), null, ct);
+        ValidateReportSize(outcomeRows.Count);
         return data with
         {
+            Outcomes = BookingOutcomes.ForPeriod(outcomeRows, from, to),
+            UnmarkedToday = await persistence.CountUnmarkedAsync(DashboardMetrics.Utc(DateOnly.FromDateTime(DashboardMetrics.Local(now))), now, ct),
+            ExpiringSoon = await persistence.CountExpiringSoonAsync(now, now.AddMinutes(15), ct),
             Previous = previousRows is not null && (await previousRows).Count <= 20000 && previousRange is { } range
             ? DashboardMetrics.Baseline(range.From, range.To, await previousRows) : null
         };

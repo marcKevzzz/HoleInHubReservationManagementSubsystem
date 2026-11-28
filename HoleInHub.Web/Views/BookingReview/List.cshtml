@@ -11,12 +11,7 @@
     <header class="staff-workspace-heading"><h1>Reservations</h1></header>
     <section class="staff-schedule" aria-label="Schedule list">
         <div class="staff-date-controls schedule-list-controls">
-            <form asp-action="List" method="get" class="schedule-list-filter">
-                @if (customerProfileId is not null) { <input type="hidden" name="customerProfileId" value="@customerProfileId" /> }
-                <label>From <input type="date" name="from" value="@Model.From" min="2000-01-01" max="2100-12-31" required /></label>
-                <label>To <input type="date" name="to" value="@Model.To" min="2000-01-01" max="2100-12-31" required /></label>
-                <button class="button" type="submit">Apply</button>
-            </form>
+            <partial name="_SchedulePeriod" model="new ScheduleViewLinks(Model.From, Model.To, true, customerProfileId)" />
             <partial name="_ScheduleViews" model="new ScheduleViewLinks(Model.From, Model.To, true, customerProfileId)" />
         </div>
         @if (Model.Error is not null)

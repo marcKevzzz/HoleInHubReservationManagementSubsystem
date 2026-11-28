@@ -1,0 +1,54 @@
+@using HoleInHub.Business.Reservations
+@model ReservationReport
+@{ var totals = Model.Outcomes; var series = new[] { ("No-shows", "user-clock", "missed"), ("Expired requests", "pending", "expired"), ("Cancellations", "close", "cancelled") }; }
+<div class="reports-grid">
+    <section class="reports-panel outcome-panel">
+        <h2>Booking outcomes</h2>
+        @if (totals.NoShows.Eligible + totals.Expired.Eligible + totals.Cancelled.Eligible == 0)
+        {
+            <partial name="_DashboardEmptyState" model='@(("calendar", "No booking outcomes", "Try another date range or service."))' />
+        }
+        else
+        {
+        <partial name="_OutcomeBar" model='@(("No-shows", totals.NoShows, "bookings with recorded attendance"))' />
+        <partial name="_OutcomeBar" model='@(("Cancellations", totals.Cancelled, "confirmed bookings"))' />
+        <partial name="_OutcomeBar" model='@(("Expired requests", totals.Expired, "requests due for review"))' />
+        <h3>Expired by deadline type</h3>
+        <partial name="_OutcomeBar" model='@(("Ordinary review", totals.Ordinary, "ordinary review deadlines"))' />
+        <partial name="_OutcomeBar" model='@(("Whole-shop deposit", totals.Deposits, "deposit deadlines"))' />
+        }
+    </section>
+    <section class="reports-panel outcome-panel" data-outcome-trend>
+        <header class="outcome-panel-header">
+        <h2>Weekly outcome rates</h2>
+        <div class="staff-view-controls outcome-tabs" role="tablist" aria-label="Weekly outcome" data-outcome-controls hidden>
+            @foreach (var (label, _, id) in series)
+            {
+                <button type="button" role="tab" id="tab-@id" aria-controls="series-@id">@label</button>
+            }
+        </div>
+        </header>
+        @foreach (var (label, icon, id) in series)
+        {
+            var total = id == "missed" ? totals.NoShows : id == "expired" ? totals.Expired : totals.Cancelled;
+            <div data-series="@label" id="series-@id">
+                <h3>@label</h3>
+                @if (total.Eligible == 0)
+                {
+                    var title = id == "missed" ? "No attendance recorded" : id == "expired" ? "No review deadlines" : "No confirmed bookings";
+                    <partial name="_DashboardEmptyState" model='@((icon, title, "Try another date range or service."))' />
+                }
+                else
+                {
+                @foreach (var week in Model.Weeks)
+                {
+                    var rate = label == "No-shows" ? week.Outcomes.NoShows : label == "Expired requests" ? week.Outcomes.Expired : week.Outcomes.Cancelled;
+                    var basis = label == "No-shows" ? "bookings with recorded attendance" : label == "Expired requests" ? "requests due for review" : "confirmed bookings";
+                    var dates = week.From == week.To ? week.From.ToString("d MMM") : $"{week.From:d MMM} – {week.To:d MMM}";
+                    <partial name="_OutcomeBar" model="@((dates, rate, basis))" />
+                }
+                }
+            </div>
+        }
+    </section>
+</div>

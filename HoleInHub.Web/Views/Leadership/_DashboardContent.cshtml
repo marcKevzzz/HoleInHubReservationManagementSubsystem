@@ -13,7 +13,6 @@
     var previous = data.Previous;
     var comparisonPeriod = data.From == data.To ? "previous day" : $"previous {data.To.DayNumber - data.From.DayNumber + 1} days";
     var unavailableBays = data.Bays.Where(x => x.State != "Available").ToArray();
-    var activityUrl = new ActivityQuery { Range = "custom", From = data.From, To = data.To }.Url();
     var peak = trends ? data.Days.Max(x => (double)x.Booked) : hours.Max(x => x.Regular + x.Vip + x.Other);
     var periodLabel = !trends ? data.From == today ? "Today" : data.From.ToString("d MMM yyyy")
         : data.To == today && data.To.DayNumber - data.From.DayNumber == 6 ? "Last 7 days"
@@ -130,21 +129,43 @@
             }
         </div>
     }
-    <section class="dashboard-activity">
-        <div class="dashboard-section-heading"><h2>Latest activity</h2><a class="staff-hover-link" href="@activityUrl">View all</a></div>
-        @if (Model.LatestActivity.Count == 0)
-        {
-            <partial name="_DashboardEmptyState" model='@("history", "No activity in this period", "Try another date or date range.")' />
-        }
-        else
-        {
-            <div class="dashboard-table-wrap"><table aria-label="Five latest activities"><thead><tr><th scope="col">Time, Manila</th><th scope="col">Activity</th><th scope="col">Record</th><th scope="col">By</th><th scope="col"><span class="sr-only">Open activity</span></th></tr></thead><tbody>
-            @foreach (var entry in Model.LatestActivity)
+    <section class="dashboard-outcomes">
+        <h2 class="sr-only">Booking outcomes</h2>
+        <div class="outcome-summary">
+            @foreach (var (label, rate, basis, link, action, queue) in new[] {
+                ("No-show rate", data.Outcomes.NoShows, "bookings with recorded attendance", Url.Action("Index", "BookingReview"), "Today's schedule", $"{data.UnmarkedToday} awaiting attendance"),
+                ("Expired request rate", data.Outcomes.Expired, "requests due for review", Url.RouteUrl("staff-review-section", new { section = "pending" }), "Pending queue", $"{data.ExpiringSoon} due within 15 min") })
             {
-                <tr data-dashboard-activity-row><td><time datetime="@entry.OccurredUtc.ToString("O")">@DashboardMetrics.Local(entry.OccurredUtc).ToString("d MMM, h:mm tt")</time></td><td><a href="@QueryHelpers.AddQueryString(activityUrl, "open", entry.Key)" data-dashboard-activity-link>@entry.Title</a></td><td>@entry.TargetLabel</td><td>@entry.Actor</td><td class="dashboard-activity-arrow"><partial name="_StaffIcon" model='"arrow-right"' /></td></tr>
+                var state = rate.Eligible == 0 ? "empty" : rate.Count == 0 ? "healthy" : "attention";
+                var percent = rate.Eligible == 0 ? 0 : 100d * rate.Count / rate.Eligible;
+                <div class="reports-panel outcome-card" data-state="@state">
+                    @if (rate.Eligible == 0)
+                    {
+                        <partial name="_DashboardEmptyState" model='@((label == "No-show rate" ? "user-clock" : "pending", label, $"No {basis} in this period."))' />
+                    }
+                    else
+                    {
+                    <div class="outcome-reading">
+                        <div>
+                            <h3>@label</h3>
+                            <div class="outcome-value"><strong>@rate.Display</strong>
+                                <span class="outcome-status">@(state == "healthy" ? "Healthy" : "Needs attention")</span>
+                            </div>
+                            <small>@rate.Count of @rate.Eligible @basis</small>
+                        </div>
+                        <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+                            <circle cx="24" cy="24" r="20" class="outcome-track" />
+                            @if (percent > 0)
+                            {
+                                <circle cx="24" cy="24" r="20" pathLength="100" stroke-dasharray="@percent.ToString(System.Globalization.CultureInfo.InvariantCulture) 100" transform="rotate(-90 24 24)" />
+                            }
+                        </svg>
+                    </div>
+                    <a class="outcome-footer" href="@link"><span>@action</span><span class="outcome-count">@queue</span><partial name="_StaffIcon" model='"arrow-right"' /></a>
+                    }
+                </div>
             }
-            </tbody></table></div>
-        }
+        </div>
     </section>
     </div>
     <script type="application/json" data-dashboard-data>@Html.Raw(chartData)</script>

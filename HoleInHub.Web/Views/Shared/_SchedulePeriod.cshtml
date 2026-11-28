@@ -1,0 +1,35 @@
+@model ScheduleViewLinks
+@inject TimeProvider Clock
+@{
+    var today = DateOnly.FromDateTime(Clock.GetUtcNow().UtcDateTime.AddHours(8));
+    var end = today.ToString("yyyy-MM-dd");
+    var label = Model.From == end && (!Model.List || Model.To == end) ? "Today"
+        : Model.List && Model.From != Model.To ? $"{Model.From} – {Model.To}" : Model.From;
+}
+<details class="dashboard-period schedule-period">
+    <summary><partial name="_StaffIcon" model='"calendar"' /><span>@label</span><partial name="_StaffIcon" model='"chevron-down"' /></summary>
+    <div class="dashboard-period-panel">
+        <nav class="dashboard-presets" aria-label="Quick periods">
+            @foreach (var days in Model.List ? new[] { 1, 7, 30 } : new[] { 1 })
+            {
+                var from = today.AddDays(1 - days).ToString("yyyy-MM-dd");
+                var url = Model.List ? Url.Action("List", new { from, to = end, Model.CustomerProfileId }) : Url.Action("Index", new { from });
+                <a href="@url">@(days == 1 ? "Today" : $"Last {days} days")</a>
+            }
+        </nav>
+        <form method="get">
+            @if (Model.CustomerProfileId is not null) { <input type="hidden" name="customerProfileId" value="@Model.CustomerProfileId" /> }
+            @if (Model.List)
+            {
+                <label hidden data-mode-label for="schedule-mode">View</label>
+                <select hidden id="schedule-mode" data-schedule-mode><option value="day">Single day</option><option value="range" selected="@(Model.From != Model.To)">Date range</option></select>
+            }
+            <div><label for="schedule-from">@(Model.List ? "From" : "Starting date")</label><input id="schedule-from" name="from" type="date" value="@Model.From" min="2000-01-01" max="2100-12-31" required /></div>
+            @if (Model.List)
+            {
+                <div data-schedule-end><label for="schedule-to">To</label><input id="schedule-to" name="to" type="date" value="@Model.To" min="2000-01-01" max="2100-12-31" required /></div>
+            }
+            <button class="button" type="submit">Apply</button>
+        </form>
+    </div>
+</details>

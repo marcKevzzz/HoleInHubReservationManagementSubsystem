@@ -7,6 +7,35 @@
     const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 
     function mount() {
+        const outcome = report.querySelector('[data-outcome-trend]');
+        if (outcome) {
+            const controls = outcome.querySelector('[data-outcome-controls]');
+            const tabs = [...controls.querySelectorAll('[role=tab]')];
+            const panels = [...outcome.querySelectorAll('[data-series]')];
+            function activate(index) {
+                tabs.forEach((tab, i) => {
+                    tab.setAttribute('aria-selected', String(i === index));
+                    tab.tabIndex = i === index ? 0 : -1;
+                    panels[i].hidden = i !== index;
+                });
+            }
+            tabs.forEach((tab, index) => {
+                panels[index].setAttribute('role', 'tabpanel');
+                panels[index].setAttribute('aria-labelledby', tab.id);
+                panels[index].tabIndex = 0;
+                tab.addEventListener('click', () => activate(index));
+                tab.addEventListener('keydown', event => {
+                    const next = { ArrowRight: (index + 1) % tabs.length, ArrowLeft: (index + tabs.length - 1) % tabs.length,
+                        Home: 0, End: tabs.length - 1 }[event.key];
+                    if (next === undefined) return;
+                    event.preventDefault();
+                    activate(next);
+                    tabs[next].focus();
+                });
+            });
+            activate(Math.max(0, panels.findIndex(panel => panel.querySelector('progress'))));
+            controls.hidden = false;
+        }
         if (!window.Chart) return;
         const donut = report.querySelector('[data-customer-donut][data-empty="false"]');
         if (donut) {

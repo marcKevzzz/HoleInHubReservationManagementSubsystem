@@ -8,6 +8,26 @@ public sealed class DashboardMetricsTests
 {
     private static readonly DateOnly Day = new(2026, 11, 13);
     private static readonly DateTime Start = DashboardMetrics.Utc(Day);
+
+    [Fact]
+    public void OutcomeRatesUseSeparateSessionAndDeadlineCohorts()
+    {
+        var yesterday = Start.AddDays(-1);
+        var result = BookingOutcomes.ForPeriod([
+            new(Start, yesterday, "No-show", false, false),
+            new(Start, yesterday, "Completed", false, false),
+            new(Start, yesterday, "Cancelled", false, true),
+            new(Start, yesterday, "Cancelled", false, false),
+            new(Start.AddDays(1), Start, "Expired", true, false),
+            new(Start.AddDays(2), Start, "Confirmed", false, false)
+        ], Day, Day);
+        Assert.Equal(new OutcomeRate(1, 2), result.NoShows);
+        Assert.Equal(new OutcomeRate(1, 3), result.Cancelled);
+        Assert.Equal(new OutcomeRate(1, 2), result.Expired);
+        Assert.Equal(new OutcomeRate(1, 1), result.Deposits);
+        Assert.Equal(new OutcomeRate(0, 1), result.Ordinary);
+        Assert.Equal("—", default(OutcomeRate).Display);
+    }
     private static DashboardRow Row(string id, string status = "Confirmed", int hour = 11, int duration = 120, string[]? bays = null) => new()
     {
         Id = id,

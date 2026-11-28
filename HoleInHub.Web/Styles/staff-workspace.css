@@ -406,7 +406,8 @@ a.staff-timeline-bar{cursor:pointer}a.staff-timeline-bar:hover{filter:brightness
 .staff-date-controls :is(a,button):is(:hover,:focus-visible,[aria-current]) {color:var(--color-green);background:var(--color-staff-surface)}
 .staff-view-controls a[aria-current=page] {background:var(--color-staff-surface);color:var(--color-green)}
 .staff-view-controls a + a {border-left:1px solid var(--color-line)}
-.schedule-list-controls {justify-content:space-between}
+.schedule-list-controls {justify-content:flex-end}
+.schedule-list-controls .staff-view-controls {margin-left:0}
 .schedule-list-filter,.schedule-list-filter label {display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .schedule-list-filter {gap:12px}
 .schedule-list-count {margin:16px 0;color:var(--color-muted)}

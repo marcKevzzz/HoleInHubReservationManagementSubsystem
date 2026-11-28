@@ -905,12 +905,13 @@ video[role=button]{cursor:pointer}video[role=button]:focus-visible{outline:2px s
 /* Keep chrome stable while the menu opens over a scrolled page. */
 .site-header.header.scrolled.menu-open{background:var(--paper)!important}
 
-html.mvc-arriving::before{content:"";position:fixed;inset:0;background:var(--paper);z-index:1100;transform:translateY(var(--arrival-y,0%))}
-html.mvc-arriving::after,.page-departure::after{content:"";position:absolute;inset:0;pointer-events:none;background:url('/media/brand/wordmark-hq.webp') center/min(9rem,36vw) auto no-repeat;opacity:var(--wipe-logo,1)}
-html.mvc-arriving::after{position:fixed;z-index:1101;pointer-events:none}
-html.mvc-arriving { --wipe-logo:1; }
+html.mvc-arriving:not([data-wipe-ready])::before{content:"";position:fixed;inset:0;background:var(--paper);z-index:1100}
+html:is(.mvc-arriving,.mvc-leaving)::after{content:"";position:absolute;inset:0;pointer-events:none;background:url('/media/brand/wordmark-hq.webp') center/min(9rem,36vw) auto no-repeat;opacity:var(--wipe-logo,1)}
+html:is(.mvc-arriving,.mvc-leaving)::after{position:fixed;z-index:1101;pointer-events:none}
+html.mvc-arriving { --wipe-logo:0; }
+html.mvc-intro, html.mvc-leaving { --wipe-logo:0; }
 html:is(.mvc-arriving,.mvc-leaving) { overflow:hidden; overscroll-behavior:none; touch-action:none; scrollbar-gutter:stable; }
-html.mvc-arriving.mvc-intro { --wipe-logo:0; }
+
 
 /* Account screens retain visible defaults without JavaScript. */
 .auth-shell{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);min-height:100svh}
@@ -1621,7 +1622,6 @@ button.flow-back{border:0;background:transparent;cursor:pointer}
   .home-page .hero-content h1{font-size:clamp(34px,9.5vw,50px);line-height:1.06;letter-spacing:.055em;margin-bottom:24px}
   .home-page .hero-content .eyebrow{font-size:10px;letter-spacing:.13em}
   .home-page .hero-content .button{width:min(100%,220px);min-width:0;min-height:48px;height:auto}
-  .home-page .hero:not(:first-child) :is(.hero-content,.statement-content) h2{font-size:clamp(40px,12vw,60px);line-height:1.02}
   .home-page .hero:not(:first-child) :is(.hero-content,.statement-content) p{max-width:34ch;margin:18px auto;font-size:14px;line-height:1.65}
   .home-page .editorial-copy[data-experience-intro]{width:100%;margin:64px auto 38px;padding-inline:22px}
   .home-page .editorial-copy[data-experience-intro]>p:last-child{max-width:38ch;font-size:14px;line-height:1.75}
@@ -1670,8 +1670,9 @@ button.flow-back{border:0;background:transparent;cursor:pointer}
   }
 }
 .site-header .profile-link {border-radius:9999px}
-.site-header .profile-link:is(:hover,:focus-visible) {background:var(--color-line);color:var(--color-ink)!important}
+.site-header .profile-link:is(:hover,:focus-visible) {background:color-mix(in srgb,var(--color-line) 25%,transparent)}
 .site-header .profile-link:focus-visible {outline:2px solid var(--color-green);outline-offset:2px}
+
 .api-heading { display:flex; justify-content:space-between; align-items:center; gap:1rem; }
 .api-workspace .staff-empty-state { display:grid; justify-items:center; text-align:center; }
 .api-editor { display:grid; gap:2rem; }
@@ -1718,8 +1719,8 @@ button.flow-back{border:0;background:transparent;cursor:pointer}
 .venue-footer nav .prototype-link { min-height:28px; padding:.2rem 0; font:400 .88rem/1.45 var(--font-body); color:inherit; }
 .venue-footer .prototype-link::after { bottom:2px; }
 .footer-meta { display:flex; align-items:center; flex-wrap:wrap; gap:.4rem; margin:.5rem 0 0; }
-.venue-footer .footer-signature { position:relative; overflow:hidden; aspect-ratio:1200 / 273; }
-.footer-signature img { display:block; width:100%; height:auto; position:absolute; top:-5.86%; }
+.venue-footer .footer-signature { position:relative; overflow:hidden; aspect-ratio:1200 / 230; }
+.footer-signature img { display:block; width:100%; height:auto; position:absolute; top:-25%; }
 .venue-footer :focus-visible { outline:2px solid currentColor; outline-offset:3px; }
 @media(max-width:700px) {
     .venue-footer-grid { grid-template-columns:1fr; gap:0; }
@@ -1731,4 +1732,35 @@ button.flow-back{border:0;background:transparent;cursor:pointer}
     .footer-meta { margin-right:3.5rem; }
 }
 
-.footer-signature::after { content:''; position:absolute; top:-5.86%; width:100%; aspect-ratio:3; left:0; background:white; mask:url('/media/brand/wordmark-hq.webp') center/contain no-repeat; clip-path:polygon(35% 46%, 59.2% 46%, 59.2% 50%, 70% 50%, 70% 46%, 100% 46%, 100% 78%, 35% 78%); pointer-events:none; }
+.footer-signature::after { content:''; position:absolute; top:-25%; width:100%; aspect-ratio:3; left:0; background:white; mask:url('/media/brand/wordmark-hq.webp') center/contain no-repeat; clip-path:polygon(35% 46%, 59.2% 46%, 59.2% 50%, 70% 50%, 70% 46%, 100% 46%, 100% 78%, 35% 78%); pointer-events:none; }
+
+@media (prefers-reduced-motion: no-preference) {
+    .booking-auth-dialog {
+        opacity:0;
+        scale:.96;
+        transition:opacity .16s ease-in, scale .16s ease-in, display .16s allow-discrete, overlay .16s allow-discrete;
+    }
+    .booking-auth-dialog[open] {
+        opacity:1;
+        scale:1;
+        transition-duration:.24s;
+        transition-timing-function:ease-out;
+    }
+    @starting-style {
+        .booking-auth-dialog[open] { opacity:0; scale:.96; }
+    }
+}
+
+.home-page .statement-content .button:not(:hover,:focus-visible) { background:var(--color-paper); border-color:var(--color-paper); color:var(--color-ink); }
+
+.home-page .hero :is(.hero-content,.statement-content) .home-hero-title {
+  font-family:var(--display); font-size:clamp(38px,5vw,70px); line-height:1.12;
+  letter-spacing:.04em; margin:0 0 1.5rem; color:var(--paper);
+}
+.home-page .hero .home-hero-title ~ .button { width:min(100%,210px); min-height:44px; }
+.home-page .hero .statement-content .eyebrow { margin:0 auto 1.25rem; }
+.service-outage { max-width:48rem; min-height:65vh; margin:auto; padding:clamp(9rem,16vh,13rem) var(--gutter) 5rem; }
+.service-outage h1 { font:500 clamp(2.1rem,5vw,3.6rem)/1.08 var(--display); margin:0 0 1rem; }
+.service-outage p { line-height:1.6; margin:.75rem 0; }
+.service-outage .outage-actions { display:flex; flex-wrap:wrap; align-items:center; gap:1.5rem; margin:1.5rem 0; }
+.service-outage .outage-reference { padding-top:1rem; border-top:1px solid var(--line); color:var(--muted); overflow-wrap:anywhere; }

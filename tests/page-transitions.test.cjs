@@ -7,8 +7,8 @@ const source = fs.readFileSync(path.join(__dirname, '../HoleInHub.Web/wwwroot/js
 function setup(reduced = false, storageFails = false, skipPageTransition = false, pathname = '/') {
     const events = {}, windowEvents = {}, navigations = [], stored = [];
     const cover = { setAttribute() {}, remove() { this.removed = true; } };
-    const html = { dataset: { skipPageTransition: String(skipPageTransition) }, classList: { contains: () => false, remove() {} }, style: { removeProperty() {} } };
-    const gsap = { fromTo(_, __, values) { values.onComplete(); return { kill() {} }; } };
+    const html = { dataset: { skipPageTransition: String(skipPageTransition) }, classList: { contains: () => false, add() {}, remove() {} }, style: { removeProperty() {} } };
+    const gsap = { timeline({ onComplete }) { return { fromTo() { return this; }, to() { onComplete(); return this; }, kill() {} }; } };
     const location = { href: 'https://example.test'+pathname, origin: 'https://example.test', pathname, search: '', assign: value => navigations.push(value) };
     vm.runInNewContext(source, { window: { matchMedia: () => ({ matches: reduced, addEventListener() {} }), gsap, addEventListener: (event, callback) => windowEvents[event] = callback },
         gsap, location, URL, sessionStorage: { setItem(key, value) { if (storageFails) throw Error('Unavailable'); stored.push(JSON.parse(value)); } },
@@ -73,7 +73,7 @@ for (const reduced of [false, true]) test(`sign-in arrival works without browser
     vm.runInNewContext(arrivalSource, {
         document: { documentElement: { dataset: { pageArrival: 'true' }, classList: { add() { visible = true; }, remove() {} } } },
         sessionStorage: { getItem() { throw Error('Storage unavailable'); } },
-        window: { matchMedia: () => ({ matches: reduced }) }, setTimeout() {}
+        location: { pathname: '/account' }, window: { addEventListener() {}, matchMedia: () => ({ matches: reduced }) }, setTimeout() {}
     });
     assert.equal(visible, !reduced);
 });

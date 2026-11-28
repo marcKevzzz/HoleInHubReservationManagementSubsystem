@@ -34,7 +34,6 @@ public sealed class DashboardQuery
 
 public sealed record DashboardViewModel(DashboardSnapshot Data, string Mode, bool CanManage)
 {
-    public IReadOnlyList<HoleInHub.Business.Activity.ActivityEntry> LatestActivity { get; init; } = [];
     private Dictionary<string, string?> Query => new()
     {
         ["mode"] = Mode,

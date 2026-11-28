@@ -25,10 +25,7 @@ public sealed partial class LeadershipController
             var (from, to) = query.Resolve(Today);
             var data = await reservations.GetDashboardAsync(from, to, query.Mode == "today" && from == Today, ct);
             ViewData["PendingReviews"] = data.Attention.GetValueOrDefault("awaiting");
-            var model = new DashboardViewModel(data, query.Mode, User.ManagesVenue())
-            {
-                LatestActivity = await activity.LatestAsync(from, to, User.IsInRole(HoleInHub.Business.Accounts.StaffRoles.Admin), ct)
-            };
+            var model = new DashboardViewModel(data, query.Mode, User.ManagesVenue());
             return Request.Headers["X-Dashboard"] == "true" ? PartialView("_DashboardContent", model) : View(model);
         }
         catch (ReservationValidationException error) { return BadRequest(error.Message); }

@@ -245,3 +245,71 @@
 .reports-customer-donut > span {position:relative;pointer-events:none}
 .reports-facts dt button {min-height:32px;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer}
 .reports-facts dt button:hover {text-decoration:underline;text-underline-offset:3px}
+
+.schedule-period {width:fit-content;border-top:0;margin:0;padding:0}
+.staff-workspace:has(.schedule-list-controls) > .staff-workspace-heading {margin-bottom:12px}
+.schedule-period .dashboard-period-panel {left:auto;right:0}
+@media(max-width:480px) {
+    .schedule-list-controls {position:relative}
+    .schedule-list-controls .schedule-period {position:static}
+    .schedule-list-controls .dashboard-period-panel {max-width:100%}
+}
+.schedule-list-controls .dashboard-presets {display:grid;gap:2px}
+.schedule-list-controls .dashboard-presets a {display:flex;min-height:40px;padding:6px 8px}
+.staff-view-controls svg {width:16px;height:16px}
+@media (prefers-reduced-motion:no-preference) {
+    .schedule-period[open] .dashboard-period-panel {animation:schedule-period-in .16s ease-out}
+    @keyframes schedule-period-in {from {opacity:0;transform:translateY(-4px)}}
+}
+
+.class-attendance-page .lesson-schedule-heading {flex-wrap:nowrap;gap:12px;margin-bottom:12px}
+.lesson-schedule-heading .schedule-period {flex:none}
+
+.dashboard-outcomes {margin-top:16px}
+.outcome-summary {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.outcome-bar {margin-top:16px}
+.outcome-bar-heading {display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.outcome-bar-heading strong {font-variant-numeric:tabular-nums}
+.outcome-bar progress {display:block;appearance:none;width:100%;height:8px;margin:8px 0;border:0;background:var(--color-staff-surface);color:var(--color-chart-booked)}
+.outcome-bar progress::-webkit-progress-bar {background:var(--color-staff-surface)}
+.outcome-bar progress::-webkit-progress-value {background:var(--color-chart-booked)}
+.outcome-bar progress::-moz-progress-bar {background:var(--color-chart-booked)}
+.outcome-bar small {display:block;margin-top:4px;font-size:.8rem;color:var(--color-muted)}
+.outcome-card {--outcome-color:var(--color-muted);display:flex;flex-direction:column;min-width:0}
+.outcome-card[data-state=healthy] {--outcome-color:var(--color-green)}
+.outcome-card[data-state=attention] {--outcome-color:var(--color-error)}
+.outcome-reading {display:flex;justify-content:space-between;align-items:center;gap:12px;padding-block:16px}
+.outcome-reading h3 {font:inherit;margin:0}
+.outcome-value {display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:5px 0}
+.outcome-value strong {font:500 36px/1.15 var(--font-display);color:var(--outcome-color);font-variant-numeric:tabular-nums}
+.outcome-status,.outcome-count {border-radius:999px;padding:3px 8px;font-size:.75rem}
+.outcome-status {color:var(--outcome-color);background:color-mix(in srgb,var(--outcome-color) 9%,var(--color-paper))}
+.outcome-reading small {color:var(--color-muted)}
+.outcome-reading svg {width:52px;height:52px;flex:none;fill:none;stroke:var(--outcome-color);stroke-width:5}
+.outcome-reading .outcome-track {stroke:var(--color-line)}
+.dashboard-outcomes .outcome-footer {display:flex;align-items:center;gap:8px;margin-top:auto;padding:10px 12px;background:var(--color-staff-surface);color:var(--color-ink);font-size:.8rem;text-decoration:none}
+.outcome-card > .dashboard-empty-state {flex:1;align-content:center}
+.outcome-footer:focus-visible {outline:2px solid var(--color-green);outline-offset:-2px}
+@media (hover:hover) and (prefers-reduced-motion:no-preference) {
+    .outcome-footer svg {transition:transform 160ms ease-out}
+    .outcome-footer:hover svg {transform:translateX(3px)}
+}
+.outcome-count {margin-left:auto;background:var(--color-paper);font-variant-numeric:tabular-nums}
+.outcome-footer svg {width:16px;height:16px;flex:none}
+.outcome-panel h3 {margin-top:24px;font:inherit;font-weight:600}
+.outcome-panel-header {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 12px}
+.outcome-tabs {width:fit-content;max-width:100%;margin:0 0 0 auto}
+.outcome-panel {display:flex;flex-direction:column}
+.outcome-panel > .dashboard-empty-state,.outcome-panel [data-series]:not([hidden]):has(.dashboard-empty-state) {flex:1;display:grid;align-content:center;min-height:140px}
+.outcome-panel .dashboard-empty-state h3 {margin:0}
+.outcome-panel:has(.outcome-tabs:not([hidden])) [data-series] > h3 {display:none}
+.outcome-tabs[hidden] {display:none}
+.outcome-tabs button {display:grid;place-items:center;padding-inline:8px;font-size:.8rem;min-height:var(--staff-control-size);background:var(--color-paper);cursor:pointer}
+.outcome-tabs button[aria-selected=true] {background:var(--color-green);color:var(--color-paper)}
+.outcome-tabs button:focus-visible {outline:2px solid var(--color-green);outline-offset:2px;z-index:1}
+.outcome-panel [data-series] h3 {margin:16px 0 4px}
+.outcome-panel .outcome-bar-heading {justify-content:flex-start;gap:10px}
+.outcome-panel .outcome-bar-heading strong {font:500 1.4rem/1 var(--font-display)}
+.outcome-panel .outcome-bar progress {--color-chart-booked:var(--color-error);height:6px}
+.outcome-panel .outcome-bar small {font-variant-numeric:tabular-nums}
+@media(max-width:720px) {.outcome-summary {grid-template-columns:1fr;gap:8px}}

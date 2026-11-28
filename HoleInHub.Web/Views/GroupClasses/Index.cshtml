@@ -3,9 +3,10 @@
 @model StaffClassSession[]
 @inject Microsoft.Extensions.Options.IOptions<ReservationPolicy> Policy
 @{ Layout = "_StaffLayout"; ViewData["Title"] = "Lesson schedule"; var day = (DateOnly)ViewData["From"]!; }
-<div class="staff-workspace class-attendance-page"><a class="flow-back" asp-controller="BookingReview" asp-action="Index"><partial name="_BackArrow" /> Back to schedule</a><header class="staff-workspace-heading"><div><h1>Lesson schedule</h1><p>@Model.Length scheduled sessions · @day.ToString("d MMM") – @day.AddDays(30).ToString("d MMM yyyy")</p></div>
+<div class="staff-workspace class-attendance-page"><a class="flow-back" asp-controller="BookingReview" asp-action="Index"><partial name="_BackArrow" /> Back to schedule</a><header class="staff-workspace-heading lesson-schedule-heading"><div><h1>Lesson schedule</h1><p>@Model.Length scheduled sessions · @day.ToString("d MMM") – @day.AddDays(30).ToString("d MMM yyyy")</p></div>
+<partial name="_SchedulePeriod" model='new ScheduleViewLinks(day.ToString("yyyy-MM-dd"), "", false, null)' />
 </header>
-<section class="staff-schedule"><form method="get" class="schedule-list-filter"><label>Starting date <input type="date" name="from" value="@day.ToString("yyyy-MM-dd")" required /></label><button class="button" type="submit">Apply</button></form>
+<section class="staff-schedule">
 @if(Model.Length==0){<p>No group classes in this period.</p>}else{
 <div class="dashboard-table-wrap"><table><thead><tr><th>Class (Manila)</th><th>Bays</th><th>Seats remaining</th><th>Enrollment</th><th>Action</th></tr></thead><tbody>
 @foreach(var item in Model){<tr><th><a asp-action="Roster" asp-route-id="@item.Id" asp-route-from="@day.ToString("yyyy-MM-dd")">@DashboardMetrics.Local(item.StartUtc).ToString("ddd, d MMM yyyy Â· h:mm tt")</a></th><td>@string.Join(", ",item.Bays)</td><td>@(item.Capacity-item.HeldSeats) of @item.Capacity</td><td>@item.State</td><td><a class="customer-profile-link" asp-action="Roster" asp-route-id="@item.Id" asp-route-from="@day.ToString("yyyy-MM-dd")" aria-label="View registered learners for @DashboardMetrics.Local(item.StartUtc)"><partial name="_StaffIcon" model='"arrow-right"' /></a></td></tr>}
