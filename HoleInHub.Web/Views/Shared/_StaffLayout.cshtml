@@ -151,6 +151,13 @@
                                 }
                             </a>
                         }
+                        @if (isAdmin && group.Key == "Administration")
+                        {
+                            <a class="gallery-content-link" href="~/staff/gallery-content" data-rail-tooltip="Gallery Content" data-nav-layout="gallery-content"
+                               aria-current="@(Context.Request.Path.Equals("/staff/gallery-content", StringComparison.OrdinalIgnoreCase) ? "page" : null)">
+                                <partial name="_StaffIcon" model='"resources"' /><span class="staff-nav-label">Gallery Content</span>
+                            </a>
+                        }
                     </nav>
                 }
             </div>

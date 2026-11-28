@@ -83,33 +83,26 @@
         dialog.addEventListener('close', () => pending?.querySelector('button').focus({ preventScroll: true }));
     }
 
-    const list = document.querySelector('[data-service-list]');
-    if (list) {
-        const reorderForm = document.querySelector('[data-service-reorder]');
-        let busy = false, drag, dragFrame;
-        const rows = () => [...list.querySelectorAll('[data-service-id]')];
-        const number = () => rows().forEach((row, index) => row.querySelector('[data-service-position]').textContent = String(index + 1).padStart(2, '0'));
-        async function reorder(row, target, beforeOrder) {
-            if (busy || (!beforeOrder && (!target || row === target))) return;
-            busy = true;
-            const before = beforeOrder || rows();
-            const forward = before.indexOf(row) < before.indexOf(target);
-            if (target) list.insertBefore(row, forward ? target.nextSibling : target); number();
-            if (before.every((item,index) => item === rows()[index])) { busy = false; return; }
-            list.setAttribute('aria-busy', 'true');
-            const controls = [...list.querySelectorAll('button,input,a')];
-            controls.forEach(control => { if ('disabled' in control) control.disabled = true; });
-            try {
-                const body = new FormData(reorderForm);
-                body.set('positions', JSON.stringify(rows().map(row => ({ id: row.dataset.serviceId, revision: Number(row.dataset.revision) }))));
-                const response = await fetch(reorderForm.action, {method:'POST',body,headers:{Accept:'application/json'}});
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.error);
-                result.rows.forEach(item => { const current = rows().find(row => row.dataset.serviceId === item.id); if (!current) return; current.dataset.revision = String(item.revision); current.querySelectorAll('[name=revision]').forEach(input => input.value = item.revision); });
-                window.HoleInHubToasts?.show({kind:'success',title:'Service order saved',autoDismiss:true});
-            } catch { before.forEach(row => list.append(row)); number(); shake(row); notify('Reload services to verify the saved order before trying again.', 'Order could not be verified'); }
-            finally { busy = false; list.removeAttribute('aria-busy'); controls.forEach(control => { if ('disabled' in control) control.disabled = false; }); row.querySelector('.service-row-grip').focus({preventScroll:true}); }
+    function cloneServiceRow(row) {
+        const ghost = row.cloneNode(true);
+        const rowStyle = getComputedStyle(row);
+        for (const property of ['gridTemplateColumns', 'gap', 'padding', 'borderWidth', 'boxSizing']) {
+            ghost.style[property] = rowStyle[property];
         }
+        [...row.children].forEach((child, index) => {
+            const style = getComputedStyle(child), copy = ghost.children[index];
+            if (copy) {
+                copy.style.gridColumn = style.gridColumn;
+                copy.style.gridRow = style.gridRow;
+            }
+        });
+        return ghost;
+    }
+
+    function mountRowReorder(list, { rowSelector, canReorder, commitOrder, createGhost = cloneServiceRow }) {
+        let drag, dragFrame;
+        const rows = () => [...list.querySelectorAll(rowSelector)];
+        const number = () => rows().forEach((row, index) => row.querySelector('[data-service-position]').textContent = String(index + 1).padStart(2, '0'));
         const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         function previewOrder() {
             if (!drag?.active) return;
@@ -140,11 +133,11 @@
             const ghost = current.ghost, destination = current.row.getBoundingClientRect(), origin = ghost.getBoundingClientRect();
             if (!reduced()) { const flight=ghost.animate([{transform:'translate(0,0)',opacity:1},{transform:'translate('+(destination.left-origin.left)+'px,'+(destination.top-origin.top)+'px)',opacity:0}],{duration:160,easing:'ease-out'}); flight.onfinish=()=>ghost.remove(); } else ghost.remove();
             const suppress = event => {event.preventDefault();event.stopImmediatePropagation();}; document.addEventListener('click',suppress,{capture:true,once:true}); setTimeout(()=>document.removeEventListener('click',suppress,true),0);
-            if (commit) void reorder(current.row,null,current.before);
+            if (commit) void commitOrder(current.row, current.before);
         }
         list.addEventListener('pointerdown', event => {
-            const row=event.target.closest('[data-service-id]'), handle=event.target.closest('.service-row-grip');
-            if (!row || busy || event.button || event.isPrimary === false || (!handle && event.target.closest('a,button,input,select,textarea')) || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+            const row=event.target.closest(rowSelector), handle=event.target.closest('.service-row-grip');
+            if (!row || drag || !canReorder() || handle?.disabled || event.button || event.isPrimary === false || (!handle && event.target.closest('a,button,input,select,textarea')) || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
             const rect=row.getBoundingClientRect();
             drag={row,id:event.pointerId,startX:event.clientX,startY:event.clientY,x:event.clientX,y:event.clientY,offsetX:event.clientX-rect.left,offsetY:event.clientY-rect.top,width:Math.min(rect.width,innerWidth-16),before:rows()};
             list.setPointerCapture(event.pointerId);
@@ -153,11 +146,8 @@
             if (drag?.id !== event.pointerId) return; drag.x=event.clientX;drag.y=event.clientY;
             if (!drag.active && Math.hypot(drag.x-drag.startX,drag.y-drag.startY)>=6) {
                 event.preventDefault(); drag.active=true; window.getSelection()?.removeAllRanges();
-                drag.ghost=drag.row.cloneNode(true);drag.ghost.classList.add('service-row-floating');drag.ghost.setAttribute('aria-hidden','true');drag.ghost.inert=true;
-                const rowStyle=getComputedStyle(drag.row);
+                drag.ghost=createGhost(drag.row);drag.ghost.classList.add('service-row-floating');drag.ghost.setAttribute('aria-hidden','true');drag.ghost.inert=true;
                 drag.ghost.style.width=drag.width+'px';
-                for (const property of ['gridTemplateColumns','gap','padding','borderWidth','boxSizing']) drag.ghost.style[property]=rowStyle[property];
-                [...drag.row.children].forEach((child,index)=>{const style=getComputedStyle(child),copy=drag.ghost.children[index];if(copy){copy.style.gridColumn=style.gridColumn;copy.style.gridRow=style.gridRow;}});
                 drag.ghost.querySelectorAll('[id]').forEach(element=>element.removeAttribute('id')); document.body.append(drag.ghost);
                 drag.row.classList.add('is-sorting-source');document.documentElement.classList.add('service-is-sorting');previewOrder();
             }
@@ -168,7 +158,50 @@
         window.addEventListener('blur',()=>endDrag(false));
         document.addEventListener('keydown',event=>{if(event.key==='Escape' && drag){event.preventDefault();endDrag(false);}});
         list.addEventListener('dragstart',event=>event.preventDefault());
-        list.addEventListener('keydown', event => {const handle = event.target.closest('.service-row-grip'); if (!handle || !event.altKey || !['ArrowUp','ArrowDown'].includes(event.key)) return; event.preventDefault(); const row = handle.closest('[data-service-id]'); const current = rows(); void reorder(row, current[current.indexOf(row)+(event.key === 'ArrowUp' ? -1 : 1)]);});
+        list.addEventListener('keydown', event => {
+            const handle = event.target.closest('.service-row-grip');
+            if (!handle || handle.disabled || drag || !canReorder() || !event.altKey || !['ArrowUp', 'ArrowDown'].includes(event.key)) return;
+            event.preventDefault();
+            const row = handle.closest(rowSelector), before = rows(), up = event.key === 'ArrowUp';
+            const target = before[before.indexOf(row) + (up ? -1 : 1)];
+            if (!target) return;
+            list.insertBefore(row, up ? target : target.nextSibling);
+            number();
+            void commitOrder(row, before);
+        });
+        return () => endDrag(false);
+    }
+    window.HoleInHubRowReorder = mountRowReorder;
+
+    const list = document.querySelector('[data-service-list]');
+    if (list) {
+        const reorderForm = document.querySelector('[data-service-reorder]');
+        let busy = false;
+        const rows = () => [...list.querySelectorAll('[data-service-id]')];
+        const number = () => rows().forEach((row, index) => row.querySelector('[data-service-position]').textContent = String(index + 1).padStart(2, '0'));
+        async function reorder(row, before) {
+            const ordered = rows();
+            if (busy || before.every((item, index) => item === ordered[index])) return;
+            busy = true;
+            list.setAttribute('aria-busy', 'true');
+            const controls = [...list.querySelectorAll('button,input,a')];
+            controls.forEach(control => { if ('disabled' in control) control.disabled = true; });
+            try {
+                const body = new FormData(reorderForm);
+                body.set('positions', JSON.stringify(rows().map(row => ({ id: row.dataset.serviceId, revision: Number(row.dataset.revision) }))));
+                const response = await fetch(reorderForm.action, {method:'POST',body,headers:{Accept:'application/json'}});
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error);
+                result.rows.forEach(item => { const current = rows().find(row => row.dataset.serviceId === item.id); if (!current) return; current.dataset.revision = String(item.revision); current.querySelectorAll('[name=revision]').forEach(input => input.value = item.revision); });
+                window.HoleInHubToasts?.show({kind:'success',title:'Service order saved',autoDismiss:true});
+            } catch { before.forEach(row => list.append(row)); number(); shake(row); notify('Reload services to verify the saved order before trying again.', 'Order could not be verified'); }
+            finally { busy = false; list.removeAttribute('aria-busy'); controls.forEach(control => { if ('disabled' in control) control.disabled = false; }); row.querySelector('.service-row-grip').focus({preventScroll:true}); }
+        }
+        mountRowReorder(list, {
+            rowSelector: '[data-service-id]',
+            canReorder: () => !busy,
+            commitOrder: reorder
+        });
     }
     const form = document.querySelector('[data-service-editor]');
     if (!form) return;

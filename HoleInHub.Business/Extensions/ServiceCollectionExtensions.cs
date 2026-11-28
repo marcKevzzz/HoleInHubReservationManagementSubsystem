@@ -13,6 +13,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddHoleInHubData(configuration);
         services.AddScoped<IHealthService, HealthService>();
+        services.AddScoped<HoleInHub.Business.Website.WebsiteContentService>();
         services.AddScoped<HoleInHub.Business.Activity.ActivityService>();
         services.AddScoped<HoleInHub.Business.Activity.WorkspaceChangeService>();
         services.AddScoped<HoleInHub.Business.Customers.CustomerProfileService>();

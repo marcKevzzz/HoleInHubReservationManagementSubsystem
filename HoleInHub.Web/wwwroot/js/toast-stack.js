@@ -83,12 +83,14 @@
         }
     }
 
-    function show({ kind = 'info', title, message, href, action, autoDismiss, durationMs, replaceKey, icon } = {}) {
+    function show({ kind = 'info', title, message, href, action, autoDismiss, durationMs, replaceKey, icon, dialog } = {}) {
         if (!title) return false;
-        const modal = document.querySelector('dialog[open]');
+        const modal = dialog?.open ? dialog : document.querySelector('dialog[open]');
         if (modal && !modal.contains(host)) {
             modal.append(host);
-            modal.addEventListener('close', () => home.append(host), { once: true });
+            modal.addEventListener('close', () => {
+                if (host.parentElement === modal) home.append(host);
+            }, { once: true });
         }
         if (!['success', 'info', 'warning', 'error'].includes(kind)) kind = 'info';
         const card = document.createElement('article');

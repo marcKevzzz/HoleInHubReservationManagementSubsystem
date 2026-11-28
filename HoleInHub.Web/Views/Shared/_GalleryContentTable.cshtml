@@ -1,0 +1,27 @@
+@model (string Tab, int SkeletonRows)
+<div class="activity-table content-table-wrap" tabindex="0" role="region" aria-label="@Model.Tab items" aria-busy="true">
+    <table class="content-table">
+        <colgroup><col class="content-position"><col><col class="content-category-column"><col class="content-visibility-column"><col class="content-actions-column"></colgroup>
+        <thead class="activity-day">
+            <tr>
+                <th scope="col"><span class="sr-only">Position</span></th>
+                @foreach (var label in new[] { "Item", "Category", "Visibility", "Actions" })
+                {
+                    <th scope="col"><span class="content-column-label">@label</span><span class="staff-skeleton-fill staff-skeleton-section-title content-column-placeholder" aria-hidden="true"></span></th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @for (var row = 0; row < Model.SkeletonRows; row++)
+            {
+                <tr class="content-skeleton-row" aria-hidden="true">
+                    <td><span class="staff-skeleton-fill content-skeleton-position"></span></td>
+                    <td><div class="content-item"><span class="staff-skeleton-fill content-thumbnail"></span><div class="staff-skeleton-copy"><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill"></span></div></div></td>
+                    <td><span class="staff-skeleton-fill"></span></td>
+                    <td><div class="content-item"><span class="staff-skeleton-fill staff-skeleton-pill"></span><span class="staff-skeleton-fill"></span></div></td>
+                    <td><div class="content-row-actions"><span class="staff-skeleton-fill staff-skeleton-icon"></span><span class="staff-skeleton-fill staff-skeleton-icon"></span><span class="staff-skeleton-fill staff-skeleton-icon"></span></div></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

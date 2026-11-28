@@ -67,7 +67,8 @@
 @media(prefers-reduced-motion:no-preference) {
     .schedule-change-review .change-decision-notes label {transition:transform .2s var(--ease),font-size .2s var(--ease)}
 }
-.staff-shell :is(.staff-view-row,.review-request,.customer-directory-item,.activity-row[data-activity-row]):is(:hover,:focus-within) {
+.staff-shell :is(.staff-view-row,.review-request,.customer-directory-item,.activity-row[data-activity-row]):is(:hover,:focus-within),
+.staff-shell .content-table tr[data-index]:is(:hover,:focus-within) {
     background:color-mix(in srgb,var(--color-green) 3%,var(--color-paper));
 }
 .staff-shell :is(.review-row-actions,.resource-actions,.activity-action) .staff-icon {width:22px;height:22px;stroke-width:1.6}
@@ -273,7 +274,8 @@
 .staff-shell :is(.customer-directory-head,.customer-directory-item,.review-table-head,.review-request) {border-radius:0}
 .staff-shell :is(.customer-directory-head,.review-table-head,.resource-table thead th) {border-top:0}
 .staff-shell :is(.customer-directory-head,.customer-directory-item,.review-table-head,.review-request,.customer-bookings > li,.activity-row,
-    .leadership-table :is(th,td),.resource-table :is(th,td),.dashboard-page :is(th,td)) {
+    .leadership-table :is(th,td),.resource-table :is(th,td),.dashboard-page :is(th,td)),
+.staff-shell .content-table tbody tr {
     border-bottom-color:var(--color-staff-divider);
 }
 .staff-shell :is(.customer-directory-item:last-child,.review-request:last-child,

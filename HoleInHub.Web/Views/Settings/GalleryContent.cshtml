@@ -1,0 +1,195 @@
+@{
+    Layout = "_StaffLayout";
+    ViewData["Title"] = "Gallery Content";
+}
+<section class="staff-workspace website-content" data-content-url="@Url.Action("Read", "WebsiteContent")">
+    @Html.AntiForgeryToken()
+    <header class="staff-workspace-heading gallery-content-heading" data-list-heading>
+        <h1 id="gallery-content-heading">Gallery Content</h1>
+        <noscript><p class="settings-note">Enable JavaScript to use the content editors.</p></noscript>
+    </header>
+    <div data-content-controls>
+        <p class="sr-only" role="status" data-content-loading>Loading website content…</p>
+        <div class="content-tabs" role="tablist" aria-label="Website content sections">
+            <button type="button" role="tab" id="tab-gallery" aria-controls="content-gallery" aria-selected="true">Gallery</button>
+            <button type="button" role="tab" id="tab-offers" aria-controls="content-offers" aria-selected="false" tabindex="-1">Offers &amp; Coaching</button>
+        </div>
+        @foreach (var (key, tab, item) in new[] { ("gallery", "Gallery", "Gallery Item"), ("offers", "Offers & Coaching", "Offer") })
+        {
+            <section id="content-@key" class="content-section" data-content-list="@key" role="tabpanel" aria-labelledby="tab-@key" tabindex="0" hidden="@(key != "gallery")">
+                <div class="content-toolbar" inert>
+                    <search class="activity-filters content-filters" aria-label="@tab filters">
+                        <div class="staff-lookup people-search">
+                            <div class="auth-input-wrap">
+                                <partial name="_StaffIcon" model='"search"' />
+                                <label for="content-search-@key" class="sr-only">Search @tab</label>
+                                <input id="content-search-@key" type="search" data-content-search placeholder="Search by title" />
+                            </div>
+                        </div>
+                        <label class="activity-filter-field" for="content-category-@key">
+                            <span class="sr-only">Filter @tab by category</span>
+                            <select id="content-category-@key" data-content-category><option value="">All categories</option></select>
+                        </label>
+                    </search>
+                    <div class="content-actions content-toolbar-actions">
+                        @if (key == "gallery")
+                        {
+                            <button type="button" class="button button-secondary" data-action="categories" data-no-icon>Manage categories</button>
+                        }
+                        else
+                        {
+                            <button type="button" class="button button-secondary" data-action="section-settings" data-no-icon>Section Settings</button>
+                        }
+                        <button type="button" class="button" data-action="add" data-no-icon><partial name="_StaffIcon" model='"plus"' />Add @item</button>
+                    </div>
+                </div>
+                <p class="settings-note content-order-note" data-filter-note hidden>Clear search and category filters to reorder rows.</p>
+                <partial name="_GalleryContentTable" model='(tab, key == "gallery" ? 6 : 3)' />
+            </section>
+        }
+    </div>
+    <template data-content-row>
+        <tr>
+            <td class="content-position"><button type="button" class="service-row-grip" data-drag-handle aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown" title="Drag to reorder · Alt + Up or Down"><partial name="_StaffIcon" model='"grip"' /><span data-service-position></span></button></td>
+            <th scope="row"><div class="content-item"><img class="content-thumbnail" alt="" draggable="false" /><span data-item-title></span></div></th>
+            <td data-item-category></td>
+            <td><button type="button" class="content-visibility" role="switch" data-action="visibility"><span class="service-switch-track" aria-hidden="true"></span><span data-visibility-text aria-hidden="true"></span></button></td>
+            <td><div class="content-actions content-row-actions">
+                <button type="button" class="content-icon" data-action="edit" title="Edit"><partial name="_StaffIcon" model='"edit"' /></button>
+                <button type="button" class="content-icon" data-action="preview" title="Preview"><partial name="_StaffIcon" model='"view"' /></button>
+                <button type="button" class="content-icon" data-action="delete" title="Delete"><partial name="_StaffIcon" model='"trash"' /></button>
+            </div></td>
+        </tr>
+    </template>
+    <section class="service-admin service-editor content-editor" data-editor aria-labelledby="content-editor-heading" hidden>
+        <a class="flow-back" href="#gallery-content-heading" data-editor-back><partial name="_BackArrow" /> Back to Gallery Content</a>
+        <form class="service-editor-grid" novalidate>
+            <header class="staff-workspace-heading service-admin-heading">
+                <h1 id="content-editor-heading" tabindex="-1"></h1>
+                <div class="service-admin-actions">
+                    <label class="service-switch"><span>Published</span><input role="switch" type="checkbox" name="visibility" checked /><span class="service-switch-track" aria-hidden="true"></span></label>
+                    <button class="button button-secondary" type="button" data-editor-back data-no-icon>Cancel</button>
+                    <button class="button" type="submit" data-action-icon="save">Save Changes<partial name="_ButtonActionIcon" model='"save"' /></button>
+                </div>
+            </header>
+            <div class="service-editor-main service-composition">
+                <section class="service-editor-section service-image-section coach-photo-field" data-upload-area>
+                    <h2>Images</h2>
+                    <div class="content-dropzone" data-upload-empty>
+                        <button class="coach-photo-tile" type="button" data-upload-pick aria-describedby="content-upload-formats">
+                            <partial name="_StaffIcon" model='"plus"' />
+                            <span class="sr-only">Choose an image or drop it here</span>
+                        </button>
+                    </div>
+                    <div class="coach-photo-preview" data-upload-selected hidden>
+                        <img class="content-image-preview" data-upload-preview alt="Selected image preview" hidden />
+                        <button class="coach-photo-delete" type="button" data-upload-remove aria-label="Delete image"><partial name="_StaffIcon" model='"trash"' /></button>
+                        <button class="coach-photo-change" type="button" data-upload-pick aria-describedby="content-upload-formats">Change Photo</button>
+                    </div>
+                    <small id="content-upload-formats" class="settings-note">PNG, JPEG, WebP, AVIF, or GIF up to 10 MB</small>
+                    <div data-editor-field>
+                        <label class="sr-only" for="content-upload">Image file</label>
+                        <input class="sr-only" id="content-upload" type="file" name="upload" accept="image/png,image/jpeg,image/webp,image/avif,image/gif" tabindex="-1" />
+                    </div>
+                </section>
+                <section class="service-editor-section service-detail-fields">
+                    <h2 data-details-heading></h2>
+                    <div class="auth-input-wrap" data-editor-field><input id="content-title" name="title" placeholder=" " required maxlength="120" /><label for="content-title" data-title-label></label></div>
+                    <div class="service-editor-field" data-editor-field><label for="content-category" data-category-label></label><select id="content-category" name="category" required data-native-select></select></div>
+                    <div class="auth-input-wrap" data-editor-field><input id="content-order" name="order" placeholder=" " type="number" min="1" step="1" required /><label for="content-order" >Display order</label></div>
+                    <fieldset class="content-offer-fields" data-offer-fields>
+                        <legend>Overlay, button and details</legend>
+                        <div class="auth-input-wrap" data-editor-field><input id="content-overlayTitle" name="overlayTitle" placeholder=" " required maxlength="100" /><label for="content-overlayTitle" >Hover overlay title</label></div>
+                        <label class="service-switch"><span>Show button</span><input role="switch" type="checkbox" name="buttonVisibility" checked /><span class="service-switch-track" aria-hidden="true"></span></label>
+                        <div class="auth-input-wrap" data-editor-field><input id="content-buttonText" name="buttonText" placeholder=" " maxlength="60" /><label for="content-buttonText" >Button text</label></div>
+                        <div class="auth-input-wrap" data-editor-field><input id="content-buttonDestination" name="buttonDestination" placeholder=" " maxlength="500" aria-describedby="content-destination-help" /><label for="content-buttonDestination" >Button destination</label><small id="content-destination-help">Use a site path (such as /services) or an HTTP(S) URL.</small></div>
+                        <div class="auth-input-wrap" data-editor-field><input id="content-modalTitle" name="modalTitle" placeholder=" " required maxlength="120" /><label for="content-modalTitle" >Modal title</label></div>
+                    </fieldset>
+                </section>
+            </div>
+            <div class="content-description-fields">
+                <div class="auth-input-wrap service-description" data-editor-field><textarea id="content-description" name="description" placeholder=" " required maxlength="600" rows="3"></textarea><label for="content-description" data-description-label></label></div>
+                <fieldset class="service-description-grid content-offer-descriptions" data-offer-fields>
+                    <legend class="sr-only">Additional offer descriptions</legend>
+                    <div class="auth-input-wrap service-description" data-editor-field><textarea id="content-overlayDescription" name="overlayDescription" placeholder=" " required maxlength="400" rows="3"></textarea><label for="content-overlayDescription" >Hover overlay description</label></div>
+                    <div class="auth-input-wrap service-description" data-editor-field><textarea id="content-modalDescription" name="modalDescription" placeholder=" " required maxlength="600" rows="3"></textarea><label for="content-modalDescription" >Modal description</label></div>
+                </fieldset>
+            </div>
+        </form>
+    </section>
+    <dialog class="content-dialog content-drawer" data-section-drawer aria-labelledby="content-settings-heading">
+        <form class="content-drawer-form" data-section-settings novalidate>
+            <header class="content-drawer-heading">
+                <h2 id="content-settings-heading">Section Settings</h2>
+                <button class="content-icon" type="button" data-close aria-label="Close section settings" title="Close section settings"><partial name="_StaffIcon" model='"close"' /></button>
+            </header>
+            <div class="content-fields content-drawer-body">
+                <label>Section subtitle<input name="subtitle" required maxlength="60" /></label>
+                <label>Section heading<input name="heading" required maxlength="100" /></label>
+                <label>Section introduction<textarea name="introduction" required maxlength="500" rows="4"></textarea></label>
+                <label class="service-switch"><span>Section published</span><input role="switch" type="checkbox" name="visibility" checked /><span class="service-switch-track" aria-hidden="true"></span></label>
+                <div><button type="button" class="button button-secondary" data-section-preview data-no-icon>Preview section</button></div>
+            </div>
+            <footer class="content-drawer-footer"><button class="button button-secondary" type="button" data-close data-no-icon>Cancel</button><button type="submit" class="button" data-no-icon>Save Changes</button></footer>
+        </form>
+    </dialog>
+    <dialog class="logout-confirmation" data-categories aria-labelledby="content-categories-heading" aria-describedby="content-categories-description">
+        <button class="logout-close" type="button" data-close aria-label="Close Manage Categories"><partial name="_StaffIcon" model='"close"' /></button>
+        <h2 id="content-categories-heading">Gallery categories</h2>
+        <p id="content-categories-description">Renaming a category updates its items. Only unused categories can be removed.</p>
+        <ul class="content-categories" data-category-list></ul>
+        <form class="service-editor content-category-form" novalidate>
+            <div class="auth-input-wrap" data-editor-field>
+                <input id="content-category-name" name="name" placeholder=" " required maxlength="60" autofocus />
+                <label for="content-category-name">Category name</label>
+            </div>
+            <button class="button button-tertiary" type="button" data-category-cancel data-no-icon hidden>Cancel rename</button>
+            <div class="logout-actions">
+                <button class="button button-secondary" type="button" data-close data-no-icon>Done</button>
+                <button class="button" type="submit" data-category-submit data-no-icon>Add category</button>
+            </div>
+        </form>
+    </dialog>
+    <dialog class="logout-confirmation" data-delete aria-labelledby="content-delete-heading" aria-describedby="content-delete-description">
+        <button type="button" class="logout-close" data-close aria-label="Close delete confirmation"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg></button>
+        <h2 id="content-delete-heading">Delete item?</h2>
+        <p id="content-delete-description"></p>
+        <div class="logout-actions">
+            <button type="button" class="button button-tertiary" data-close data-no-icon autofocus>Cancel</button>
+            <button type="button" class="button logout-confirm" data-danger="true" data-confirm-delete data-no-icon>Delete item</button>
+        </div>
+    </dialog>
+    <dialog class="gallery-story content-gallery-preview" data-gallery-preview aria-labelledby="content-gallery-preview-heading">
+        <button class="gallery-story-close" type="button" data-close autofocus aria-label="Close details preview"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg></button>
+        <div class="gallery-story-scroll" tabindex="0">
+            <div class="gallery-story-media"><img alt="" /></div>
+            <div class="gallery-story-copy"><p class="gallery-category" data-preview-category></p><h2 id="content-gallery-preview-heading" data-preview-title></h2><p class="gallery-story-summary" data-preview-description></p></div>
+        </div>
+    </dialog>
+    <dialog class="content-dialog content-offer-preview" data-offer-preview aria-labelledby="content-offer-preview-heading">
+        <header class="settings-section-heading content-heading"><h3 id="content-offer-preview-heading">Homepage preview</h3><button type="button" class="button button-secondary" data-close data-no-icon autofocus>Close preview</button></header>
+        <p class="settings-note" data-preview-note></p>
+        <div class="home-page content-home-preview">
+            <div class="venue-promotions">
+                <header class="promotion-heading" data-preview-section><div><p class="eyebrow" data-section-label></p><h2 data-section-heading></h2></div><p class="promotion-note" data-section-description></p></header>
+                <div class="promotion-card-grid" data-preview-cards></div>
+            </div>
+        </div>
+    </dialog>
+    <template data-offer-card>
+        <article class="promotion-card">
+            <figure class="promotion-card-visual" tabindex="0" aria-label="Offer image and overlay">
+                <div class="promotion-card-image-frame"><img alt="" /></div>
+                <div class="content-promotion-overlay"><p class="promotion-info-label" data-overlay-title></p><p data-overlay-description></p><a class="button promotion-services-link" data-preview-link target="_blank" rel="noopener noreferrer"><span></span></a></div>
+            </figure>
+            <div class="promotion-card-caption"><p class="promotion-card-category" data-preview-category></p><h3 data-preview-title></h3><p data-preview-description></p>
+                <button type="button" class="button button-secondary" data-preview-modal data-no-icon>Preview details modal</button>
+            </div>
+        </article>
+    </template>
+</section>
+
+@section Scripts {
+    <script src="~/js/service-admin.js" asp-append-version="true"></script>
+    <script type="module" src="~/js/website-content.js" asp-append-version="true"></script>
+}
