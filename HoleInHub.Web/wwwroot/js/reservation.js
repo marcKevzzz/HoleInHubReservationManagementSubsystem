@@ -192,6 +192,7 @@ if (typeof document !== 'undefined') (() => {
   let index = 0, completed = 0, month = field('Date').value.slice(0, 7), pending, sequence = 0, availabilityReady = false, quote = null, quoteSequence = 0, quotePending = false, timePeriod = null, timeDrag = null, suppressTimeClick = false;
   let sessionProblem = '', availableCapacity = 0, autoBays = [], quoteError = '';
   const sessionStatus = document.querySelector('#session-availability');
+  let lostSessionKey;
   function showSessionStatus(message, invalid = false) {
     sessionStatus.textContent = invalid ? message : '';
     sessionStatus.classList.toggle('booking-session-invalid', invalid);
@@ -536,6 +537,10 @@ if (typeof document !== 'undefined') (() => {
       const start = minuteValue(field('StartTime').value);
       if (field('StartTime').value && (!candidates(date).some(option => option.start === start) || !rangeAvailable(date, start, Number(field('DurationMinutes').value)))) {
         field('StartTime').value = ''; inputs.forEach(input => input.checked = false); refresh();
+        if (['Regular', 'VIP'].includes(bookingType()) && !checks.failed) {
+          lostSessionKey = key;
+          showSessionStatus(t('No bays are available for this session. Choose another date or time.'), true);
+        }
       }
       calendar(); slots(); summary();
     }
@@ -616,6 +621,14 @@ if (typeof document !== 'undefined') (() => {
   }
   function toggleTime(minute) {
     const start = minuteValue(field('StartTime').value);
+    if (!field('StartTime').value && lostSessionKey === dayKey(field('Date').value)) {
+      const duration = Number(field('DurationMinutes').value);
+      if (rangeAvailable(field('Date').value, minute, duration) && allowsInterval(field('Date').value, minute, duration) &&
+          ReservationCalendar.startFits(bookingType(), field('Date').value, minute, duration, now())) {
+        selectTimeRange({ start: minute, duration }, true);
+      } else showSessionStatus(t('No bays are available for this session. Choose another date or time.'), true);
+      return;
+    }
     const end = start + Number(field('DurationMinutes').value);
     if (field('StartTime').value) {
       if (minute === start - 30 || minute === end) {
@@ -639,6 +652,7 @@ if (typeof document !== 'undefined') (() => {
     const opening = new Date(field('Date').value + 'T00:00:00Z').getUTCDay() === 1 ? 660 : 600;
     if (!rangeAvailable(field('Date').value, range.start, range.duration) || !allowsInterval(field('Date').value, range.start, range.duration) || range.start < opening || range.duration > 840 || !ReservationCalendar.startFits(bookingType(), field('Date').value, range.start, range.duration, now())) return;
     field('StartTime').value = timeValue(range.start); field('DurationMinutes').value = range.duration;
+    lostSessionKey = undefined;
     inputs.forEach(input => { input.checked = false; input.disabled = true; }); availabilityReady = false; pending?.abort(); sequence++;
     document.querySelectorAll('#time-slots [data-minute]').forEach(button => { const minute = Number(button.dataset.minute), active = minute >= range.start && minute < range.start + range.duration; button.classList.toggle('selected', active); button.setAttribute('aria-pressed', String(active)); });
     displayRange(range.start, range.duration);
@@ -802,6 +816,10 @@ if (typeof document !== 'undefined') (() => {
   window.addEventListener('pointercancel', () => bayDrag = null); window.addEventListener('blur', () => bayDrag = null);
 
   try {
+    const query = new URLSearchParams(location.search);
+    if (['service', 'date', 'startTime', 'durationMinutes'].every(key => query.has(key))) {
+      sessionStorage.removeItem('holeinhub-signin-selection');
+    }
     const draft = JSON.parse(sessionStorage.getItem('holeinhub-signin-selection'));
     if (form.dataset.signedIn === 'true' && draft) {
       sessionStorage.removeItem('holeinhub-signin-selection');

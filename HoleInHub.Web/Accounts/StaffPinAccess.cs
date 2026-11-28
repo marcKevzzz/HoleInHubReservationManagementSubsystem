@@ -70,7 +70,12 @@ public sealed class StaffPinAccess
             new(StartedClaim, now.ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture)),
             .. accessClaims
         ];
-        return context.SignInAsync(Scheme, new ClaimsPrincipal(new ClaimsIdentity(claims, Scheme)));
+        var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, Scheme));
+        var pinWorkspace = !principal.IsInRole(StaffRoles.Admin) && (principal.IsInRole(StaffRoles.Staff) || principal.IsInRole(StaffRoles.Manager));
+        if (pinWorkspace) { context.Response.Cookies.Delete(AccountSessionNotice.Cookie); }
+        return context.SignInAsync(Scheme, principal, pinWorkspace
+            ? new AuthenticationProperties { ExpiresUtc = DateTimeOffset.MaxValue, AllowRefresh = false }
+            : null);
     }
 
     public static IEnumerable<string> GetPinRoles(AccountUser? employee) =>
@@ -122,7 +127,7 @@ public sealed class StaffPinAccess
             var redirectToLogin = options.Events.OnRedirectToLogin;
             options.Events.OnRedirectToLogin = async context =>
             {
-                if (context.Request.Path.StartsWithSegments("/admin") || await ReadPasswordAdminAsync(context.HttpContext) is not null)
+                if (context.Request.Path.StartsWithSegments("/admin") || context.Request.Cookies[AccountSessionNotice.Cookie] == AccountSessionNotice.Admin || await ReadPasswordAdminAsync(context.HttpContext) is not null)
                 {
                     context.RedirectUri = new UriBuilder(context.RedirectUri)
                     {
@@ -176,7 +181,7 @@ public sealed class StaffPinAccess
         }
         if (principal is not null && id is not null
             && long.TryParse(principal.FindFirstValue(StartedClaim), NumberStyles.None, CultureInfo.InvariantCulture, out var started)
-            && started <= now.ToUnixTimeSeconds() && now.ToUnixTimeSeconds() - started < (long)TimeSpan.FromHours(8).TotalSeconds)
+            && started <= now.ToUnixTimeSeconds() && (!adminPassword || now.ToUnixTimeSeconds() - started < (long)TimeSpan.FromHours(8).TotalSeconds))
         {
             var employee = await services.GetRequiredService<UserManager<AccountUser>>().FindByIdAsync(id);
             if (employee is { EmailConfirmed: true } && (employee.LockoutEnd is null || employee.LockoutEnd <= now)

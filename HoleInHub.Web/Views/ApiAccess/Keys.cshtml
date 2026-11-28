@@ -1,0 +1,70 @@
+@using HoleInHub.Business.Services
+@using HoleInHub.Business.Reservations
+@model KeySummary[]
+@{
+    ViewData["Title"] = "API keys";
+    var now = DateTime.UtcNow;
+    var permissions = IntegrationAccess.Catalog.ToDictionary(scope => scope.Code);
+}
+<section class="staff-workspace leadership-page api-workspace">
+    <header class="staff-workspace-heading api-heading">
+        <h1>API keys</h1>
+        <a class="button button-primary" asp-action="Create">Create API key<partial name="_ButtonActionIcon" model='"plus"' /></a>
+    </header>
+    @if (Model.Length == 0)
+    {
+        <partial name="_StaffEmptyState" model='("settings", "No API keys yet", "Create a key to grant access to selected API permissions.", (string?)null, (string?)null)' />
+    }
+    else
+    {
+        <div class="leadership-table people-directory" role="region" aria-label="API keys" tabindex="0">
+            <table>
+                <thead><tr><th scope="col">Key</th><th scope="col">Status and expiration</th><th scope="col">Actions</th></tr></thead>
+                <tbody>
+                    @foreach (var key in Model)
+                    {
+                        var expired = key.ExpiresUtc <= now;
+                        var labels = key.Permissions.Select(code => permissions.TryGetValue(code, out var scope) ? scope.Label : code).ToArray();
+                        var expiry = TimeZoneInfo.ConvertTimeFromUtc(key.ExpiresUtc, ReservationRules.Manila);
+                        <tr>
+                            <th scope="row">
+                                <strong class="break-all">@key.Name</strong>
+                                @if (!string.IsNullOrWhiteSpace(key.Subsystem))
+                                {
+                                    <small class="block font-normal">@key.Subsystem</small>
+                                }
+                                <div class="mt-1 text-sm font-normal">
+                                    @string.Join(", ", labels.Take(3))
+                                    @if (labels.Length > 3)
+                                    {
+                                        <button type="button" popovertarget="permissions-@key.Id" class="cursor-help focus-visible:ring-2"
+                                                title="@string.Join(", ", labels.Skip(3))" aria-label="Show remaining permissions for @key.Name">…</button>
+                                        <span popover id="permissions-@key.Id" class="m-auto rounded bg-white p-3 text-sm">@string.Join(", ", labels.Skip(3))</span>
+                                    }
+                                </div>
+                            </th>
+                            <td>
+                                <span class="people-pill">@(key.Revoked ? "Revoked" : expired ? "Expired" : "Active")</span>
+                                <small class="mt-1 block">@(expired ? "Expired" : "Expires") <time datetime="@key.ExpiresUtc.ToString("O")">@expiry.ToString("dd MMM yyyy, HH:mm") PHT</time></small>
+                            </td>
+                            <td class="review-row-actions">
+                                <div class="inline-flex items-center gap-1">
+                                    <button type="button" class="service-icon-action service-icon-danger focus-visible:ring-2" commandfor="delete-@key.Id" command="show-modal" title="Delete API key" aria-label="Delete @key.Name"><partial name="_StaffIcon" model='"trash"' /></button>
+                                    <a class="people-detail-link focus-visible:ring-2 motion-safe:transition-transform motion-safe:hover:translate-x-1" asp-action="Logs" asp-route-key="@key.Id" aria-label="View requests for @key.Name" title="View requests"><partial name="_StaffIcon" model='"arrow-right"' /></a>
+                                </div>
+                                <dialog id="delete-@key.Id" class="logout-confirmation api-key-dialog text-left" aria-labelledby="delete-title-@key.Id">
+                                    <h2 id="delete-title-@key.Id">Delete @key.Name?</h2>
+                                    <p>Deleting this API key permanently removes its access. Its request history is retained.</p>
+                                    <div class="logout-actions">
+                                        <button type="button" class="button button-tertiary" autofocus commandfor="delete-@key.Id" command="close">Cancel</button>
+                                        <form method="post" asp-action="Delete" asp-route-id="@key.Id"><button type="submit" class="button logout-confirm">Delete key</button></form>
+                                    </div>
+                                </dialog>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

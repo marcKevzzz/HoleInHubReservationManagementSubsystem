@@ -20,6 +20,7 @@
 @import "./customer-language.css";
 @import "./staff-profile.css";
 @import "./policies.css";
+@import "./venue-chat.css";
 @source "../Views";
 @source "../wwwroot/js";
 @theme { --color-account-placeholder:color-mix(in srgb, #60645d 88%, #fff); --color-error-line:color-mix(in srgb, #9b3027 65%, #fff); --color-control-line:#83877f; --color-error:#9b3027; --color-auth-shade:rgb(16 17 15 / 78%); --color-ink:#10110f; --color-paper:#fff; --color-green:#354f3b; --color-muted:#60645d; --color-line:#d5d7d1; --font-display:Oswald,"Arial Narrow",sans-serif; --font-body:Inter,Arial,sans-serif; }
@@ -904,7 +905,12 @@ video[role=button]{cursor:pointer}video[role=button]:focus-visible{outline:2px s
 /* Keep chrome stable while the menu opens over a scrolled page. */
 .site-header.header.scrolled.menu-open{background:var(--paper)!important}
 
-html.mvc-arriving::before{content:"";position:fixed;inset:0;background:white;z-index:1000;pointer-events:none;transform:translateY(var(--arrival-y,0%))}
+html.mvc-arriving::before{content:"";position:fixed;inset:0;background:var(--paper);z-index:1100;transform:translateY(var(--arrival-y,0%))}
+html.mvc-arriving::after,.page-departure::after{content:"";position:absolute;inset:0;pointer-events:none;background:url('/media/brand/wordmark-hq.webp') center/min(9rem,36vw) auto no-repeat;opacity:var(--wipe-logo,1)}
+html.mvc-arriving::after{position:fixed;z-index:1101;pointer-events:none}
+html.mvc-arriving { --wipe-logo:1; }
+html:is(.mvc-arriving,.mvc-leaving) { overflow:hidden; overscroll-behavior:none; touch-action:none; scrollbar-gutter:stable; }
+html.mvc-arriving.mvc-intro { --wipe-logo:0; }
 
 /* Account screens retain visible defaults without JavaScript. */
 .auth-shell{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);min-height:100svh}
@@ -1666,3 +1672,63 @@ button.flow-back{border:0;background:transparent;cursor:pointer}
 .site-header .profile-link {border-radius:9999px}
 .site-header .profile-link:is(:hover,:focus-visible) {background:var(--color-line);color:var(--color-ink)!important}
 .site-header .profile-link:focus-visible {outline:2px solid var(--color-green);outline-offset:2px}
+.api-heading { display:flex; justify-content:space-between; align-items:center; gap:1rem; }
+.api-workspace .staff-empty-state { display:grid; justify-items:center; text-align:center; }
+.api-editor { display:grid; gap:2rem; }
+.api-editor .validation-summary-valid { display:none; }
+.api-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1.5rem; align-items:end; }
+.api-fields input,.api-fields select { width:100%; }
+.api-editor .api-group-title { font:inherit; font-weight:600; margin-bottom:.6rem; }
+.api-groups { margin:1rem 0; border:1px solid var(--color-line); border-radius:.4rem; }
+.api-groups fieldset { min-width:0; padding:.85rem 1rem; }
+.api-groups fieldset + fieldset { border-top:1px solid var(--color-line); }
+.api-editor .api-group-title { float:left; width:100%; }
+.api-group-title label,.api-groups .api-scope { display:flex; align-items:center; gap:.6rem; cursor:pointer; }
+.api-groups .api-scope { clear:both; display:grid; grid-template-columns:auto minmax(10rem,1fr) 2fr; padding:.35rem 0 .35rem 1.45rem; }
+.api-groups input[type=checkbox] { width:1rem; height:1rem; margin:0; accent-color:var(--color-green); }
+.api-scope code { overflow-wrap:anywhere; }
+@media(max-width:620px){.api-fields { gap:.75rem; }.api-groups .api-scope {grid-template-columns:auto 1fr;}.api-scope small {grid-column:2;}}
+
+.api-editor .api-groups { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; border:0; align-items:start; }
+.api-editor .api-groups fieldset { border:1px solid var(--color-line); border-radius:.4rem; padding:.65rem .85rem; }
+.api-editor .api-group-title { margin:0 0 .25rem; padding:0; }
+.api-editor .api-group-title label,.api-editor .api-groups label.api-scope { min-height:0; margin:0; line-height:1.35; }
+.api-editor .api-group-title label { display:inline-flex; align-items:center; padding:0; gap:.5rem; }
+.api-editor .api-groups label.api-scope { align-items:center; padding:.22rem 0 .22rem 1.35rem; grid-template-columns:1rem minmax(0,1fr) minmax(0,1.5fr); }
+.api-editor .api-groups input[type=checkbox] { min-height:0; padding:0; align-self:center; position:static; transform:none; }
+@media(max-width:760px){.api-editor .api-groups {grid-template-columns:1fr;}}
+.staff-shell .api-editor .api-group-title label { font:600 1rem/1.5 var(--body); }
+.staff-shell .api-editor .api-scope :is(code,small) { font:400 .9375rem/1.45 var(--body); overflow-wrap:anywhere; }
+.staff-shell .api-editor .api-scope code { font-weight:500; }
+.staff-shell .api-editor .api-scope { padding-block:.375rem; }
+@media(max-width:480px){.api-editor .api-groups label.api-scope {grid-template-columns:1rem minmax(0,1fr);}.api-editor .api-scope small {grid-column:2;}}
+
+.staff-shell dialog.api-key-dialog {white-space:normal;overflow-wrap:anywhere;text-align:left}
+.staff-shell .api-key-dialog .logout-confirm:is(:hover,:focus-visible) {background:var(--color-error);color:var(--paper)}
+.issued-key-value {display:block;white-space:normal;overflow-wrap:anywhere;padding:12px;border:1px solid var(--color-line);user-select:all}
+.api-key-dialog .issued-key-actions {grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);margin:20px 0}
+.staff-shell #issued-key {width:min(540px,calc(100vw - 32px))}
+.site-footer.venue-footer { display:block; border:0; padding:clamp(2rem,6vw,6rem) var(--gutter) 0; background:var(--color-green); color:var(--color-paper); overflow:hidden; text-align:left; }
+.venue-footer-grid { display:grid; grid-template-columns:2.5fr repeat(3, minmax(0, 1fr)); gap:2rem; align-items:start; }
+.venue-footer .footer-phrase { margin:0; font:500 clamp(1.8rem,3.4vw,3.8rem)/1.1 var(--font-display); }
+.venue-footer details { border:0; margin:0; padding:0; }
+.venue-footer summary { display:flex; justify-content:space-between; align-items:center; padding:0; min-height:2rem; font:500 1.12rem/1.25 var(--font-display); text-transform:uppercase; letter-spacing:.04em; }
+.venue-footer summary::-webkit-details-marker { display:none; }
+.venue-footer nav { display:grid; justify-items:start; gap:.25rem; margin-top:.65rem; }
+.venue-footer nav .prototype-link { min-height:28px; padding:.2rem 0; font:400 .88rem/1.45 var(--font-body); color:inherit; }
+.venue-footer .prototype-link::after { bottom:2px; }
+.footer-meta { display:flex; align-items:center; flex-wrap:wrap; gap:.4rem; margin:.5rem 0 0; }
+.venue-footer .footer-signature { position:relative; overflow:hidden; aspect-ratio:1200 / 273; }
+.footer-signature img { display:block; width:100%; height:auto; position:absolute; top:-5.86%; }
+.venue-footer :focus-visible { outline:2px solid currentColor; outline-offset:3px; }
+@media(max-width:700px) {
+    .venue-footer-grid { grid-template-columns:1fr; gap:0; }
+    .venue-footer .footer-phrase { margin-bottom:2rem; }
+    .venue-footer summary { padding:1rem 0; cursor:pointer; }
+    .venue-footer summary::after { content:"+"; }
+    .venue-footer details[open] summary::after { content:"−"; }
+    .venue-footer nav { margin:0 0 .75rem; }
+    .footer-meta { margin-right:3.5rem; }
+}
+
+.footer-signature::after { content:''; position:absolute; top:-5.86%; width:100%; aspect-ratio:3; left:0; background:white; mask:url('/media/brand/wordmark-hq.webp') center/contain no-repeat; clip-path:polygon(35% 46%, 59.2% 46%, 59.2% 50%, 70% 50%, 70% 46%, 100% 46%, 100% 78%, 35% 78%); pointer-events:none; }

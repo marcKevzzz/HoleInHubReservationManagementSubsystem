@@ -1120,8 +1120,6 @@ function animatePage(root) {
     try { context.revert(); } catch {}
   };
 }
-document.querySelectorAll('.spyker-footer-nav a,.spyker-footer-right a')
-  .forEach(link => link.classList.add('prototype-link'));
 let dispose;
 let disposed = false;
 const disposeComponents = window.HoleInHubMotion.mount(root);

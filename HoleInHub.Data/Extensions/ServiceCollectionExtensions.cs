@@ -16,6 +16,7 @@ public static class ServiceCollectionExtensions
         services.Configure<MongoDbOptions>(
             configuration.GetSection(MongoDbOptions.SectionName));
 
+        services.AddSingleton<HoleInHub.Data.Integrations.IntegrationStore>();
         services.AddSingleton<IMongoDbContext, MongoDbContext>();
         services.AddScoped<HoleInHub.Data.Activity.WorkspaceChangePersistence>();
         services.AddScoped<HoleInHub.Data.Accounts.AccountPersistence>();

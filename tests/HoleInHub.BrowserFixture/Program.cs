@@ -52,6 +52,17 @@ try
         LastName = "Manager"
     };
     var accounts = new AccountService(new AccountPersistence(context), TimeProvider.System);
+    var consentCustomer = new AccountUser { Email = "customer@browser.example.test", NormalizedEmail = "CUSTOMER@BROWSER.EXAMPLE.TEST",
+        FirstName = "Ana", LastName = "Cruz", Phone = "09175550123", EmailConfirmed = true };
+    var password = Convert.ToHexString(RandomNumberGenerator.GetBytes(16));
+    consentCustomer.PasswordHash = new PasswordHasher<AccountUser>().HashPassword(consentCustomer, password);
+    if (!await accounts.CreateAsync(consentCustomer.ToDetails(), default)) { throw new InvalidOperationException("Could not seed browser customer."); }
+    var integrations = new HoleInHub.Business.Services.IntegrationAccess(new HoleInHub.Data.Integrations.IntegrationStore(context), TimeProvider.System);
+    string[] permissions = [HoleInHub.Business.Services.IntegrationAccess.ReadCustomerProfile];
+    var ordering = await integrations.IssueAsync("Ordering", 30, permissions, default);
+    var other = await integrations.IssueAsync("POS", 30, permissions, default);
+    await File.WriteAllTextAsync(Path.Combine(directory.FullName, "consent.json"), System.Text.Json.JsonSerializer.Serialize(new {
+        consentCustomer.Email, password, ordering, other, accountId = HoleInHub.Business.BusinessIds.Account(consentCustomer.Id) }));
     var access = new StaffPinAccess { Pepper = pepper };
     var hashed = new PasswordHasher<AccountUser>().HashPassword(account, access.PinInput(account, pin));
     var pins = new StaffPinService(new StaffPinPersistence(context), TimeProvider.System);
@@ -60,6 +71,19 @@ try
         throw new InvalidOperationException("Could not seed browser manager.");
     }
     var store = new ReservationPersistence(context);
+    if (Environment.GetEnvironmentVariable("HIH_BROWSER_EXPIRY") == "1")
+    {
+        var admin = new AccountUser { Email = "admin@browser.example.test", NormalizedEmail = "ADMIN@BROWSER.EXAMPLE.TEST",
+            EmailConfirmed = true, Roles = [StaffRoles.Admin] };
+        admin.PasswordHash = new PasswordHasher<AccountUser>().HashPassword(admin, password);
+        var staff = new AccountUser { Email = "staff@browser.example.test", NormalizedEmail = "STAFF@BROWSER.EXAMPLE.TEST",
+            EmailConfirmed = true, Roles = [StaffRoles.Staff] };
+        var staffPin = (int.Parse(pin) + 1).ToString("D6")[^6..];
+        var staffHash = new PasswordHasher<AccountUser>().HashPassword(staff, access.PinInput(staff, staffPin));
+        if (!await accounts.CreateAsync(admin.ToDetails(), default) || !await accounts.CreateAsync(staff.ToDetails(), default)
+            || !await pins.TrySaveAsync(staff.Id, staffHash, staff.SecurityStamp, default))
+        { throw new InvalidOperationException("Could not seed session expiry accounts."); }
+    }
     var today = DateOnly.FromDateTime(HoleInHub.Business.Reservations.DashboardMetrics.Local(DateTime.UtcNow));
     if (Environment.GetEnvironmentVariable("HIH_BROWSER_RENTAL") == "1")
     {
@@ -120,6 +144,7 @@ finally
     shutdownWatch.Dispose();
     File.Delete(Path.Combine(directory.FullName, "shutdown"));
     File.Delete(certificatePath);
+    File.Delete(Path.Combine(directory.FullName, "consent.json"));
     directory.Delete();
 }
 
@@ -139,6 +164,7 @@ async Task Run(string project, string[] arguments)
     var settings = new Dictionary<string, string>
     {
         ["MongoDb__ConnectionString"] = uri,
+        ["BrowserTests__ShortSessions"] = (Environment.GetEnvironmentVariable("HIH_BROWSER_EXPIRY") == "1").ToString(),
         ["MongoDb__DatabaseName"] = database,
         ["MongoDb__ReplicaSetName"] = "rs0",
         ["DOTNET_ENVIRONMENT"] = "Testing",

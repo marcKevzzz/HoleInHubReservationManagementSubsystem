@@ -30,6 +30,18 @@ public sealed record ServiceEdit(string Id, long Revision, string CommandId, boo
 public sealed partial class ServiceCatalog
 {
     public static IReadOnlyList<string> BookingTypes { get; } = ["Regular", "VIP", "PhilippineCoach", "KpgaPro", "KpgaGroup", "WholeShop"];
+    public static ServiceEdit WithBaseRate(ServiceEdit item, decimal amount)
+    {
+        var pricing = (item.Pricing ?? PricingRules.Default(item.BookingService)) with { BaseRate = amount };
+        PricingRules.Validate(item.BookingService, pricing);
+        var label = PricingRules.Summary(item.BookingService, pricing);
+        if (SeasonalRental.IsPackage(item.Id))
+        {
+            var rates = pricing.RentalOverrides.Select(r => r.HalfDayRate).Append(amount);
+            label = $"₱{rates.Min():#,##0.##}–₱{rates.Max():#,##0.##} / eight hours";
+        }
+        return item with { Pricing = pricing, RateText = label };
+    }
     public static string[] ImagePaths(ServiceCatalogRecord record) =>
         (record.Images.Length > 0 ? record.Images : [record.ImagePath]).Where(ValidImagePath).Distinct().ToArray();
     private static bool ValidImagePath(string path) => path.StartsWith("/media/", StringComparison.Ordinal)

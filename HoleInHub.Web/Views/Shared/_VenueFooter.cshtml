@@ -1,0 +1,35 @@
+<footer class="site-footer venue-footer">
+    <div class="venue-footer-grid">
+        <p class="footer-phrase">@T("A NEW WAY TO PLAY")</p>
+        <details open>
+            <summary>@T("Explore the venue")</summary>
+            <nav aria-label="@T("Footer navigation")">
+                <a class="prototype-link" href="/">@T("Home")</a>
+                <a class="prototype-link" href="/Home/About">@T("About")</a>
+                <a class="prototype-link" href="/Home/Gallery">@T("Gallery")</a>
+                <a class="prototype-link" href="/Home/Services">@T("Services")</a>
+                <a class="prototype-link" href="/Home/Contacts">@T("Contacts")</a>
+            </nav>
+        </details>
+        <details open>
+            <summary>@T("Policies")</summary>
+            <nav aria-label="@T("Policies")">
+                <a class="prototype-link" href="/policies#rules">@T("Venue Policies")</a>
+                <a class="prototype-link" href="/policies#privacy">@T("Privacy Policy")</a>
+                <a class="prototype-link" href="/policies#terms">@T("Terms and Conditions")</a>
+                <button class="prototype-link" type="button" data-cookie-toggle aria-controls="cookie-policy-popout" aria-expanded="true">@T("Cookie Policy")</button>
+            </nav>
+        </details>
+        <details open>
+            <summary>@T("Connect")</summary>
+            <nav aria-label="@T("Connect")">
+                <a class="prototype-link" href="https://www.facebook.com/profile.php?id=61589175118662">Facebook</a>
+                <a class="prototype-link" href="https://www.instagram.com/holeinhub_golf_lounge">Instagram</a>
+                <a class="prototype-link" href="https://www.grab.com/ph/">Grab</a>
+                <a class="prototype-link" href="/Home/Contacts">@T("Get in touch")</a>
+            </nav>
+        </details>
+    </div>
+    <div class="footer-meta"><partial name="_LanguageSwitch" /><small>© @DateTime.UtcNow.Year Hole In Hub Golf &amp; Lounge</small></div>
+    <div class="footer-signature"><img src="~/media/brand/wordmark-hq.webp" alt="Hole In Hub Golf &amp; Lounge" loading="lazy" /></div>
+</footer>

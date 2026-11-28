@@ -1,0 +1,124 @@
+@using HoleInHub.Business.Services
+@model HoleInHub.Web.ViewModels.IssuedApiKey
+@{
+    ViewData["Title"] = "API key created";
+}
+<dialog open class="logout-confirmation api-key-dialog" id="issued-key" aria-labelledby="issued-title">
+    <a asp-action="Keys" class="logout-close focus-visible:ring-2" aria-label="Close and return to API keys" data-done><partial name="_StaffIcon" model='"close"' /></a>
+    <h2 id="issued-title">API key created</h2>
+    <p>Save the key for <strong>@Model.Name</strong> before closing. You can only copy or download it here.</p>
+    <code class="issued-key-value" data-key>@Model.Key</code>
+    <div class="logout-actions issued-key-actions">
+        <button type="button" class="button button-secondary" data-copy>Copy key</button>
+        <button type="button" class="button" data-download>Download key &amp; guide</button>
+    </div>
+
+    <noscript><p>Select and copy the key above. Enable JavaScript to download the setup guide.</p></noscript>
+</dialog>
+<template id="key-guide">Hole In Hub integration guide
+Key name: @Model.Name
+API key: @Model.Key
+Valid for @Model.Days days from creation, unless an administrator disables it earlier.
+
+Keep this file private. Anyone with this key can use its permissions. Store it in the integration's private settings. If it is shared by mistake, ask an administrator to delete it and issue a replacement.
+
+Connecting your system
+Use the Hole In Hub address supplied by your administrator. A localhost address works only on the computer hosting the preview. Send the key with each request in the X-Api-Key header. Use HTTPS for a deployed system.
+
+Permissions for this key
+@foreach (var scope in Model.Permissions)
+{
+<text>- @scope.Label: @scope.Description @(scope.Live ? "" : "(Planned; currently unavailable.)")
+</text>
+}
+@if (Model.Permissions.Any(p => p.Code == IntegrationAccess.ReadServices))
+{
+<text>
+View active services: GET @Url.Content("~/api/v1/services")
+Returns service names, descriptions, booking types and maximum party sizes.
+</text>
+}
+@if (Model.Permissions.Any(p => p.Code == IntegrationAccess.ReadRates))
+{
+<text>
+View displayed rates: GET @Url.Content("~/api/v1/service-rates")
+Match the service ID to the catalog to display its rate.
+</text>
+}
+@if (Model.Permissions.Any(p => p.Code == IntegrationAccess.CreateServices))
+{
+<text>
+Create a draft: POST @Url.Content("~/api/v1/services") with JSON fields title, summary, details and bookingService. Booking types: Regular, VIP, PhilippineCoach, KpgaPro, KpgaGroup or WholeShop. Include a new UUID in the Idempotency-Key header; retry with the same UUID and body. Save the returned service ID. Drafts start unpublished with the venue cover and the booking type's default rates. Review pricing before publication.
+</text>
+}
+@if (Model.Permissions.Any(p => p.Code == IntegrationAccess.UpdateRates))
+{
+<text>
+Change a base price: GET @Url.Content("~/api/v1/services/{id}/rate") for baseRate (PHP) and revision. PUT those two fields to the same address to change the base price. Existing special rates, deposits and package sizes are preserved.
+</text>
+}
+@if (Model.Permissions.Any(p => p.Code == IntegrationAccess.UpdateServices))
+{
+<text>
+Edit service text: GET @Url.Content("~/api/v1/services/{id}/details") for the current title, summary, details and revision. PUT those four fields to the same address as JSON. Replace {id} with the service ID.
+</text>
+}
+@if (Model.Permissions.Any(p => p.Code == IntegrationAccess.PublishServices))
+{
+<text>
+Publish or withdraw a service: GET @Url.Content("~/api/v1/services/{id}/publication") for its current revision and active flag. PUT the revision and active (true to publish, false to withdraw) to the same address as JSON. Replace {id} with the service ID.
+</text>
+}
+@if (Model.Permissions.Any(p => p.Code is IntegrationAccess.UpdateServices or IntegrationAccess.PublishServices or IntegrationAccess.UpdateRates))
+{
+<text>
+For each edit, send Content-Type: application/json and a new UUID in the Idempotency-Key header. Reuse the same UUID and body when retrying. If you receive 409, read the service again and review the latest values before submitting a new edit.
+</text>
+}
+@if (Model.Permissions.Any(p => p.Code == IntegrationAccess.ReadReservations))
+{
+<text>
+Find bookings for a Manila calendar date: GET @Url.Content("~/api/v1/reservations")?date=2026-11-26&amp;page=1
+Each page holds up to 20 bookings. Times are in UTC. To look up one booking, use GET @Url.Content("~/api/v1/reservations/{id}") with its returned ID.
+</text>
+}
+@if (Model.Permissions.Any(p => p.Code == IntegrationAccess.ReadCoachAvailability))
+{
+<text>
+Check a coaching session: GET @Url.Content("~/api/v1/coach-availability")?serviceId=PhilippineCoach&amp;date=YYYY-MM-DD&amp;startTime=14:00&amp;durationMinutes=60
+Use an active individual coaching service ID and the local Manila date and time. The response lists coach IDs and names available for the entire session. An empty list means no coach is available. Checking a time does not reserve it or guarantee a bay.
+</text>
+}
+@if (Model.Permissions.Any(p => p.Code == IntegrationAccess.ReadBays))
+{
+<text>
+List the venue's bays: GET @Url.Content("~/api/v1/bays")
+Each entry includes its ID, name, capacity and active status.
+</text>
+}
+@if (Model.Permissions.Any(p => p.Code == IntegrationAccess.ReadReservedBays))
+{
+<text>
+Find a booking's assigned bays: GET @Url.Content("~/api/v1/reservations/{id}/bays")
+Replace {id} with the booking ID. Match the returned bay IDs to the venue directory.
+</text>
+}
+@if (Model.Permissions.Any(p => p.Code == IntegrationAccess.ReadCustomerProfile))
+{
+<text>
+Customer-approved contact details: send the customer to the site address below followed by @Url.Content("~/my-profile/share/" + Model.Key.Split('.')[0]). They sign in, review your integration name and choose whether to share. Ask for their one-time code. Within five minutes, POST @Url.Content("~/api/v1/customers/shared-profile") with the code in X-Customer-Approval and your usual X-Api-Key header. The response includes accountId, firstName, lastName, email and phone. Save accountId on the linked customer record to recognize the same account even after a name, email or phone change. Reading fresh contact details requires a new approval. Keep both headers private.
+</text>
+}
+@if (Model.Permissions.Any(p => p.Code == IntegrationAccess.CreateCustomers))
+{
+<text>
+Add a customer: POST @Url.Content("~/api/v1/customers")
+Send JSON (Content-Type: application/json) with firstName, lastName and phone. Email is optional; use the field email. Include an Idempotency-Key header containing a new UUID for each submission. Reuse that UUID when retrying the same submission. Save the customerId returned.
+</text>
+}
+If a request fails
+400: Check the details you sent.
+401: Check the key. It may have expired or been disabled.
+403: Ask an administrator to check the key's permissions.
+Your administrator can review request logs under API keys. Share the key name when asking for help.</template>
+@section Scripts { <script src="~/js/api-key-issued.js" asp-append-version="true"></script> }

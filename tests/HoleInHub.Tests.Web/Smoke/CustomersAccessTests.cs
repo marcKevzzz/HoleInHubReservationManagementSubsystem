@@ -1,4 +1,6 @@
 using System.Net;
+using System.Net.Http.Json;
+using HoleInHub.Business.Services;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -255,6 +257,214 @@ public sealed class CustomersAccessTests
         }
         finally { await context.Client.DropDatabaseAsync(database); }
     }
+    [Fact]
+    public async Task IntegrationCustomerCreationRequiresPermissionAndReplaysTheSameCustomer()
+    {
+        var database = "test_customer_api_" + Guid.NewGuid().ToString("N");
+        await using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder => builder
+            .UseEnvironment("Testing").ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["MongoDb:ConnectionString"] = "mongodb://localhost:27017/?replicaSet=rs0",
+                ["MongoDb:DatabaseName"] = database
+            })));
+        using var client = factory.CreateClient(new() { BaseAddress = new Uri("https://localhost") });
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IMongoDbContext>();
+        var access = scope.ServiceProvider.GetRequiredService<IntegrationAccess>();
+        var contact = new { firstName = "Alex", lastName = "Santos", phone = "09175550123" };
+        const string route = "/api/v1/customers";
+        try
+        {
+            await new Migration_018_CustomerProfiles().UpAsync(context.Database, default);
+            Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync(route, contact)).StatusCode);
+            client.DefaultRequestHeaders.Add("X-Api-Key", await access.IssueAsync("POS", 30, [IntegrationAccess.ReadServices], default));
+            Assert.Equal(HttpStatusCode.Forbidden, (await client.PostAsJsonAsync(route, contact)).StatusCode);
+            client.DefaultRequestHeaders.Remove("X-Api-Key");
+            client.DefaultRequestHeaders.Add("X-Api-Key", await access.IssueAsync("Ordering", 30, [IntegrationAccess.CreateCustomers], default));
+            Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync(route, contact)).StatusCode);
+            client.DefaultRequestHeaders.Add("Idempotency-Key", Guid.NewGuid().ToString());
+            var created = await client.PostAsJsonAsync(route, contact);
+            var retry = await client.PostAsJsonAsync(route, contact);
+            created.EnsureSuccessStatusCode();
+            retry.EnsureSuccessStatusCode();
+            var result = await created.Content.ReadFromJsonAsync<JsonElement>();
+            Assert.StartsWith("cp_", result.GetProperty("customerId").GetString());
+            Assert.Equal(result.GetRawText(), (await retry.Content.ReadFromJsonAsync<JsonElement>()).GetRawText());
+        }
+        finally { await context.Client.DropDatabaseAsync(database); }
+    }
+
+    [Fact]
+    public async Task PosReadsRespectScopesAndManilaDates()
+    {
+        var database = "test_pos_reads_" + Guid.NewGuid().ToString("N");
+        await using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder => builder
+            .UseEnvironment("Testing").ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["MongoDb:ConnectionString"] = "mongodb://localhost:27017/?replicaSet=rs0",
+                ["MongoDb:DatabaseName"] = database
+            })));
+        using var client = factory.CreateClient(new() { BaseAddress = new Uri("https://localhost") });
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IMongoDbContext>();
+        var access = scope.ServiceProvider.GetRequiredService<IntegrationAccess>();
+        async Task UseKey(string permission)
+        {
+            client.DefaultRequestHeaders.Remove("X-Api-Key");
+            client.DefaultRequestHeaders.Add("X-Api-Key", await access.IssueAsync("POS", 30, [permission], default));
+        }
+        try
+        {
+            await new Migration_002_Reservations().UpAsync(context.Database, default);
+            var booking = new ReservationRecord
+            {
+                Reference = "POS-123", FirstName = "Private", Status = "Confirmed", Service = "Regular",
+                StartUtc = new DateTime(2026, 11, 25, 16, 0, 0, DateTimeKind.Utc),
+                EndUtc = new DateTime(2026, 11, 25, 17, 0, 0, DateTimeKind.Utc),
+                ResourceIds = ["bay-2"], IdempotencyKey = "pos-test"
+            };
+            await context.Database.GetCollection<ReservationRecord>("reservations").InsertOneAsync(booking);
+            var detail = "/api/v1/reservations/" + booking.Id;
+            const string day = "/api/v1/reservations?date=2026-11-26";
+            Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync(day)).StatusCode);
+            await UseKey(IntegrationAccess.ReadReservations);
+            var schedule = await client.GetFromJsonAsync<JsonElement>(day);
+            Assert.Equal(1, schedule.GetProperty("total").GetInt32());
+            Assert.Equal(booking.Id, schedule.GetProperty("items")[0].GetProperty("id").GetString());
+            var row = await client.GetFromJsonAsync<JsonElement>(detail);
+            Assert.Equal("Confirmed", row.GetProperty("status").GetString());
+            Assert.False(row.TryGetProperty("firstName", out _));
+            Assert.False(row.TryGetProperty("resourceIds", out _));
+            Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync(day + "&page=0")).StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync(detail + "/bays")).StatusCode);
+            await UseKey(IntegrationAccess.ReadReservedBays);
+            var assigned = await client.GetFromJsonAsync<JsonElement>(detail + "/bays");
+            Assert.Equal("bay-2", assigned.GetProperty("bayIds")[0].GetString());
+            Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/v1/bays")).StatusCode);
+            await UseKey(IntegrationAccess.ReadBays);
+            var bays = await client.GetFromJsonAsync<JsonElement>("/api/v1/bays");
+            Assert.Contains(bays.EnumerateArray(), bay => bay.GetProperty("id").GetString() == "bay-2");
+            Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync(day)).StatusCode);
+
+            var sessionDay = DateTime.UtcNow.Date.AddDays(14);
+            var coachRoute = $"/api/v1/coach-availability?serviceId=PhilippineCoach&date={sessionDay:yyyy-MM-dd}&startTime=14:00&durationMinutes=60";
+            Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync(coachRoute)).StatusCode);
+            await UseKey(IntegrationAccess.ReadCoachAvailability);
+            await new Migration_008_ServiceCatalog().UpAsync(context.Database, default);
+            await context.Database.GetCollection<CoachRecord>("coaches").InsertOneAsync(new()
+            {
+                Id = "available-coach", Name = "Alex", Active = true,
+                WeeklyHours = [new(sessionDay.DayOfWeek, 840, 900)]
+            });
+            var coaches = await client.GetFromJsonAsync<JsonElement>(coachRoute);
+            var coach = Assert.Single(coaches.EnumerateArray());
+            Assert.Equal("available-coach", coach.GetProperty("id").GetString());
+            Assert.Equal("Alex", coach.GetProperty("name").GetString());
+            Assert.Equal(2, coach.EnumerateObject().Count());
+            var outsideShift = await client.GetFromJsonAsync<JsonElement>(coachRoute.Replace("14:00", "14:30"));
+            Assert.Empty(outsideShift.EnumerateArray());
+            Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync(coachRoute.Replace("PhilippineCoach", "Regular"))).StatusCode);
+        }
+        finally { await context.Client.DropDatabaseAsync(database); }
+    }
+
+    [Fact]
+    public async Task CatalogPermissionsSeparateEditingFromPublishingAndRejectStaleWrites()
+    {
+        var database = "test_catalog_api_" + Guid.NewGuid().ToString("N");
+        await using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder => builder
+            .UseEnvironment("Testing").ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["MongoDb:ConnectionString"] = "mongodb://localhost:27017/?replicaSet=rs0",
+                ["MongoDb:DatabaseName"] = database
+            })));
+        using var client = factory.CreateClient(new() { BaseAddress = new Uri("https://localhost") });
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IMongoDbContext>();
+        var access = scope.ServiceProvider.GetRequiredService<IntegrationAccess>();
+        const string details = "/api/v1/services/Regular/details";
+        const string publication = "/api/v1/services/Regular/publication";
+        try
+        {
+            await new Migration_008_ServiceCatalog().UpAsync(context.Database, default);
+            client.DefaultRequestHeaders.Add("X-Api-Key", await access.IssueAsync("Editor", 30, [IntegrationAccess.UpdateServices], default));
+            var current = await client.GetFromJsonAsync<JsonElement>(details);
+            var edit = new { revision = current.GetProperty("revision").GetInt64(), title = "Updated title", summary = "Updated summary", details = "Updated description" };
+            Assert.Equal(HttpStatusCode.BadRequest, (await client.PutAsJsonAsync(details, edit)).StatusCode);
+            client.DefaultRequestHeaders.Add("Idempotency-Key", Guid.NewGuid().ToString());
+            (await client.PutAsJsonAsync(details, edit)).EnsureSuccessStatusCode();
+            (await client.PutAsJsonAsync(details, edit)).EnsureSuccessStatusCode();
+            current = await client.GetFromJsonAsync<JsonElement>(details);
+            Assert.Equal(edit.title, current.GetProperty("title").GetString());
+            Assert.Equal(edit.revision + 1, current.GetProperty("revision").GetInt64());
+            var withdraw = new { revision = edit.revision + 1, active = false };
+            Assert.Equal(HttpStatusCode.Forbidden, (await client.PutAsJsonAsync(publication, withdraw)).StatusCode);
+            client.DefaultRequestHeaders.Remove("X-Api-Key");
+            client.DefaultRequestHeaders.Add("X-Api-Key", await access.IssueAsync("Publisher", 30, [IntegrationAccess.PublishServices], default));
+            client.DefaultRequestHeaders.Remove("Idempotency-Key");
+            client.DefaultRequestHeaders.Add("Idempotency-Key", Guid.NewGuid().ToString());
+            Assert.Equal(HttpStatusCode.Forbidden, (await client.PutAsJsonAsync(details, edit)).StatusCode);
+            Assert.Equal(HttpStatusCode.Conflict, (await client.PutAsJsonAsync(publication, new { revision = edit.revision, active = false })).StatusCode);
+            (await client.PutAsJsonAsync(publication, withdraw)).EnsureSuccessStatusCode();
+            (await client.PutAsJsonAsync(publication, withdraw)).EnsureSuccessStatusCode();
+            var saved = await client.GetFromJsonAsync<JsonElement>(publication);
+            Assert.False(saved.GetProperty("active").GetBoolean());
+            Assert.Equal(withdraw.revision + 1, saved.GetProperty("revision").GetInt64());
+            async Task SwitchKey(string permission)
+            {
+                client.DefaultRequestHeaders.Remove("X-Api-Key");
+                client.DefaultRequestHeaders.Add("X-Api-Key", await access.IssueAsync("Partner", 30, [permission], default));
+                client.DefaultRequestHeaders.Remove("Idempotency-Key");
+                client.DefaultRequestHeaders.Add("Idempotency-Key", Guid.NewGuid().ToString());
+            }
+            await SwitchKey(IntegrationAccess.CreateServices);
+            var draft = new { title = "Practice", summary = "Practice session", details = "Individual practice", bookingService = "VIP" };
+            async Task<string> CreateDraft()
+            {
+                var result = await client.PostAsJsonAsync("/api/v1/services", draft);
+                result.EnsureSuccessStatusCode();
+                return (await result.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString()!;
+            }
+            var id = await CreateDraft();
+            Assert.Equal(id, await CreateDraft());
+            var rateRoute = $"/api/v1/services/{id}/rate";
+            Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync(rateRoute)).StatusCode);
+            var catalog = scope.ServiceProvider.GetRequiredService<ServiceCatalog>();
+            Assert.False((await catalog.GetAsync(id, default))!.Active);
+            await SwitchKey(IntegrationAccess.UpdateRates);
+            var rate = await client.GetFromJsonAsync<JsonElement>(rateRoute);
+            var price = new { revision = rate.GetProperty("revision").GetInt64(), baseRate = 750m };
+            (await client.PutAsJsonAsync(rateRoute, price)).EnsureSuccessStatusCode();
+            (await client.PutAsJsonAsync(rateRoute, price)).EnsureSuccessStatusCode();
+            Assert.Equal(750m, (await catalog.GetAsync(id, default))!.Pricing!.BaseRate);
+            await SwitchKey(IntegrationAccess.ReadCustomerProfile);
+            var caller = client.DefaultRequestHeaders.GetValues("X-Api-Key").Single().Split('.')[0];
+            var codes = scope.ServiceProvider.GetRequiredService<CustomerShareCode>();
+            const string share = "/api/v1/customers/shared-profile";
+            var account = new AccountUser { FirstName = "Ana", LastName = "Cruz", Email = "ana@example.test", Phone = "09175550123" };
+            var approval = codes.Issue(caller, SharedContact.FromAccount(account));
+            Assert.Null(codes.Redeem("another-key", approval));
+            Assert.Equal(HttpStatusCode.Forbidden, (await client.PostAsync(share, null)).StatusCode);
+            client.DefaultRequestHeaders.Add("X-Customer-Approval", approval);
+            var shared = await client.PostAsync(share, null);
+            shared.EnsureSuccessStatusCode();
+            var profile = await shared.Content.ReadFromJsonAsync<JsonElement>();
+            Assert.Equal("Ana", profile.GetProperty("firstName").GetString());
+            var accountId = profile.GetProperty("accountId").GetString();
+            Assert.Equal(HoleInHub.Business.BusinessIds.Account(account.Id), accountId);
+            Assert.Equal(HttpStatusCode.Forbidden, (await client.PostAsync(share, null)).StatusCode);
+            account.Email = "updated@example.test";
+            client.DefaultRequestHeaders.Remove("X-Customer-Approval");
+            client.DefaultRequestHeaders.Add("X-Customer-Approval", codes.Issue(caller, SharedContact.FromAccount(account)));
+            var returning = await client.PostAsync(share, null);
+            returning.EnsureSuccessStatusCode();
+            var updated = await returning.Content.ReadFromJsonAsync<JsonElement>();
+            Assert.Equal(accountId, updated.GetProperty("accountId").GetString());
+            Assert.Equal(account.Email, updated.GetProperty("email").GetString());
+        }
+        finally { await context.Client.DropDatabaseAsync(database); }
+    }
+
     private static Dictionary<string, string> FormFields(string html, string id)
     {
         var form = Regex.Match(html, "<form[^>]*id=\"" + Regex.Escape(id) + "\"[^>]*>(.*?)</form>", RegexOptions.Singleline).Groups[1].Value;

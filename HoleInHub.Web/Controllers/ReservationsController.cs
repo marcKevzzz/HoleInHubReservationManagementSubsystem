@@ -86,7 +86,6 @@ public sealed class ReservationsController(ReservationService reservations, Gues
     public async Task<IActionResult> Create(DateOnly? date, TimeOnly? startTime, int? durationMinutes, string? service, string? resourceId, bool editDraft, bool recover, CancellationToken ct)
     {
         var resources = await reservations.GetCatalogAsync(ct);
-        ViewData["Resources"] = resources;
         var (type, entryId) = BookingChoice(service);
         var model = new SubmitReservationRequest
         {
@@ -149,7 +148,7 @@ public sealed class ReservationsController(ReservationService reservations, Gues
             }
             model.Email = User.FindFirstValue(ClaimTypes.Email);
         }
-        await PrepareAsync(model, ct);
+        await PrepareAsync(model, ct, resources);
         if (recover) { TempData.Remove("BookingRecovery"); }
         return View(model);
     }
@@ -166,14 +165,14 @@ public sealed class ReservationsController(ReservationService reservations, Gues
         Response.Cookies.Append("hih-booking", value, new CookieOptions { HttpOnly = true, Secure = !environment.IsDevelopment() || Request.IsHttps, SameSite = SameSiteMode.Lax, MaxAge = TimeSpan.FromHours(8), IsEssential = true });
         return value;
     }
-    private async Task PrepareAsync(SubmitReservationRequest request, CancellationToken ct)
+    private async Task PrepareAsync(SubmitReservationRequest request, CancellationToken ct, IReadOnlyList<ResourceDto>? resources = null)
     {
         ViewData["SharedClassesEnabled"] = reservations.SharedClassesEnabled;
         if (reservations.SharedClassesEnabled && request.Service == "KpgaGroup")
         {
             ViewData["ClassSessions"] = await reservations.FamilyClassesAsync(request.ServiceEntryId, 1, ct);
         }
-        ViewData["Resources"] = await reservations.GetCatalogAsync(ct);
+        ViewData["Resources"] = resources ?? await reservations.GetCatalogAsync(ct);
         var services = await catalog.GetActiveAsync(ct);
         ViewData["BookingServices"] = services;
         if (reservations.SharedClassesEnabled)

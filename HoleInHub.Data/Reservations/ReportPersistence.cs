@@ -6,6 +6,12 @@ namespace HoleInHub.Data.Reservations;
 
 public sealed partial class ReservationPersistence
 {
+    public sealed record BookingSelection(string Service, string[] Bays);
+
+    public Task<List<BookingSelection>> ReadCompletedSelectionsAsync(DateTime from, DateTime until, CancellationToken ct) =>
+        Reservations.Find(r => r.Status == "Completed" && r.StartUtc >= from && r.StartUtc < until)
+            .Project(r => new BookingSelection(r.ServiceEntryId ?? r.Service, r.ResourceIds)).ToListAsync(ct);
+
     public async Task<(Dictionary<string, string> Profiles, HashSet<string> Returning)> ReadReportProfilesAsync(
         string[] bookingIds, DateTime periodStart, CancellationToken ct)
     {

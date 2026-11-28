@@ -14,6 +14,7 @@ if (builder.Environment.IsEnvironment("Testing"))
 builder.Services.AddHoleInHubBusiness(builder.Configuration);
 
 // Add services to the container.
+builder.Services.AddScoped<HoleInHub.Business.Services.IntegrationAccess>();
 builder.Services.AddControllersWithViews(options => { options.Filters.Add<HoleInHubReservationManagementSubsystem.Filters.ServiceUnavailableFilter>(); options.Filters.Add<HoleInHubReservationManagementSubsystem.Filters.CustomerLanguageFilter>(); });
 builder.Services.AddLocalization();
 builder.Services.Configure<RequestLocalizationOptions>(options =>
@@ -27,8 +28,28 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 });
 builder.Services.AddHealthChecks();
 builder.Services.AddCustomerAccounts(builder.Configuration, builder.Environment);
+if (builder.Environment.IsEnvironment("Testing") && builder.Configuration.GetValue<bool>("BrowserTests:ShortSessions"))
+{
+    builder.Services.PostConfigureAll<Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationOptions>(options =>
+    {
+        var signingIn = options.Events.OnSigningIn;
+        options.Events.OnSigningIn = async context =>
+        {
+            await signingIn(context);
+            if (context.Principal?.IsInRole("Admin") == true
+                ? context.Scheme.Name == StaffPinAccess.Scheme
+                : context.Scheme.Name == Microsoft.AspNetCore.Identity.IdentityConstants.ApplicationScheme)
+            {
+                context.Properties.ExpiresUtc = DateTimeOffset.UtcNow.AddSeconds(15);
+                context.Properties.AllowRefresh = false;
+            }
+        };
+    });
+}
 builder.Services.AddScoped<GuestReservationSession>();
 builder.Services.AddSingleton<HoleInHub.Web.Live.WorkspaceUpdates>();
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<HoleInHub.Web.Accounts.CustomerShareCode>();
 builder.Services.AddHostedService<HoleInHub.Web.Live.WorkspaceChangeWorker>();
 
 var app = builder.Build();

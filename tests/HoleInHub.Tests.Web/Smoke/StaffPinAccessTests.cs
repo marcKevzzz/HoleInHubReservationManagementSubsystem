@@ -79,6 +79,22 @@ public sealed partial class StaffPinAccessTests
                 services.AddSingleton<IStartupFilter>(new DesktopTlsFixture(certificate));
             }));
 
+    [Theory]
+    [InlineData("admin")]
+    [InlineData("customer")]
+    public async Task ExpiredSessionShowsNoticeAtAccountSignIn(string role)
+    {
+        using var certificate = DesktopCertificate(DateTimeOffset.UtcNow);
+        await using var factory = Factory(certificate, "test_expiry_" + Guid.NewGuid().ToString("N"));
+        using var client = Client(factory, false);
+        Assert.DoesNotContain("Session expired", await client.GetStringAsync("/account/sign-in"));
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/account/sign-in");
+        request.Headers.Add("Cookie", "HihSessionNotice=" + role);
+        using var response = await client.SendAsync(request);
+        Assert.Contains("Session expired", await response.Content.ReadAsStringAsync());
+        Assert.Contains(response.Headers.GetValues("Set-Cookie"), cookie => cookie.StartsWith("HihSessionNotice=;"));
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/account/session-status")).StatusCode);
+    }
     private static HttpClient Client(WebApplicationFactory<Program> factory, bool desktop)
     {
         var client = factory.CreateClient(new WebApplicationFactoryClientOptions
@@ -179,13 +195,18 @@ public sealed partial class StaffPinAccessTests
                 Assert.Equal(HttpStatusCode.Redirect, signedIn.StatusCode);
                 Assert.Equal(new[] { "/staff", "/staff/dashboard" }[i], signedIn.Headers.Location?.OriginalString);
                 var cookieName = isolatedDemo ? "__Host-HihRoleDemoPin=" : "__Host-HihStaffPin=";
-                Assert.Contains(signedIn.Headers.GetValues("Set-Cookie"), value => value.StartsWith(cookieName, StringComparison.Ordinal));
+                var header = Assert.Single(signedIn.Headers.GetValues("Set-Cookie"), value => value.StartsWith(cookieName, StringComparison.Ordinal));
+                var options = factory.Services.GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>().Get(StaffPinAccess.Scheme);
+                var properties = options.TicketDataFormat.Unprotect(header[cookieName.Length..].Split(';')[0])!.Properties;
+                Assert.Equal(DateTimeOffset.MaxValue.ToUnixTimeSeconds(), properties.ExpiresUtc!.Value.ToUnixTimeSeconds());
+                Assert.False(properties.IsPersistent);
             }
             using var beforeAdmin = await SubmitAsync(browser, "/", "/account/sign-out", []);
             using var admin = await SubmitAsync(browser, "/account/sign-in",
                 new() { ["Email"] = employees[2].Email, ["Password"] = "StaffTestPassword123!" });
             Assert.Equal(HttpStatusCode.Redirect, admin.StatusCode);
             Assert.Equal("/staff/dashboard", admin.Headers.Location?.OriginalString);
+            Assert.Contains(admin.Headers.GetValues("Set-Cookie"), value => value.StartsWith("HihSessionNotice=admin"));
             var rolePath = $"/admin/users/{employees[0].Id}/role";
             Assert.DoesNotContain(rolePath, await browser.GetStringAsync("/staff/people"));
             Assert.Equal(HttpStatusCode.NotFound, (await browser.GetAsync(rolePath)).StatusCode);

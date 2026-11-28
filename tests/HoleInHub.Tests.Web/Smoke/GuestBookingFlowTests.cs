@@ -298,8 +298,12 @@ public sealed class GuestBookingFlowTests
                 if (bookingService == "KpgaGroup")
                 {
                     form.Remove("ResourceIds");
+                    form["learnerCount"] = "1";
+                    form["ReviewedLearnerCount"] = "1";
+                    form["Learners[0].FirstName"] = "Guest";
                     var denied = await guest.PostAsync("/Reservations/Create", new FormUrlEncodedContent(form));
-                    Assert.Contains("Choose a published lesson package", await denied.Content.ReadAsStringAsync());
+                    Assert.Equal(HttpStatusCode.OK, denied.StatusCode);
+                    Assert.Contains("Choose a published class before adding learners.", await denied.Content.ReadAsStringAsync());
                     Assert.Equal(0, await context.Database.GetCollection<ReservationRecord>("reservations").CountDocumentsAsync(FilterDefinition<ReservationRecord>.Empty));
                     return;
                 }

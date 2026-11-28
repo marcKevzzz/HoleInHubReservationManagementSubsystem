@@ -1,4 +1,20 @@
 (() => {
+    const footer = document.querySelector('.venue-footer');
+    if (footer) {
+        const compact = matchMedia('(max-width:700px)');
+        const sync = () => footer.querySelectorAll('details').forEach(group => { group.open = !compact.matches; });
+        sync();
+        compact.addEventListener('change', sync);
+        if (window.gsap && window.ScrollTrigger) {
+            gsap.registerPlugin(ScrollTrigger);
+            gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
+                gsap.from(footer.querySelector('.footer-signature'), {
+                    scale: .96, transformOrigin: 'center bottom', ease: 'none',
+                    scrollTrigger: { trigger: footer, start: 'top bottom', end: 'bottom bottom', scrub: true }
+                });
+            });
+        }
+    }
     const wrapper = document.querySelector('.smooth-wrapper');
     const content = wrapper?.querySelector('.smooth-content');
     if (!content || !window.gsap || !window.ScrollTrigger || !window.ScrollSmoother) return;

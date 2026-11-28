@@ -41,6 +41,34 @@ public class HomeController(IServiceCatalog catalog, HoleInHub.Business.Settings
 
     public IActionResult Privacy() => Redirect("/policies#privacy");
 
+    [HttpGet, ResponseCache(Duration = 300, Location = ResponseCacheLocation.Any)]
+    public async Task<IActionResult> ChatPopular([FromServices] HoleInHub.Business.Reservations.ReservationService reservations, CancellationToken ct)
+    {
+        try
+        {
+            var (services, bays) = await reservations.PopularChoicesAsync(catalog, ct);
+            return Json(new { services, bays });
+        }
+        catch (Exception error) when (ServiceAvailability.Translate(error) is not null)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable);
+        }
+    }
+
+    [HttpGet, ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> ChatServices(CancellationToken ct)
+    {
+        try
+        {
+            var items = await catalog.GetActiveAsync(ct);
+            return Json(items.Select(item => new { item.Title, item.Summary, item.RateText, item.Details, item.ActionUrl }));
+        }
+        catch (Exception error) when (ServiceAvailability.Translate(error) is not null)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable);
+        }
+    }
+
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {
