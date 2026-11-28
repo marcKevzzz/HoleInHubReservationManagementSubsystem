@@ -20,6 +20,7 @@
 @import "./customer-language.css";
 @import "./staff-profile.css";
 @import "./policies.css";
+@import "./venue-chat.css";
 @source "../Views";
 @source "../wwwroot/js";
 @theme { --color-account-placeholder:color-mix(in srgb, #60645d 88%, #fff); --color-error-line:color-mix(in srgb, #9b3027 65%, #fff); --color-control-line:#83877f; --color-error:#9b3027; --color-auth-shade:rgb(16 17 15 / 78%); --color-ink:#10110f; --color-paper:#fff; --color-green:#354f3b; --color-muted:#60645d; --color-line:#d5d7d1; --font-display:Oswald,"Arial Narrow",sans-serif; --font-body:Inter,Arial,sans-serif; }
@@ -904,7 +905,12 @@ video[role=button]{cursor:pointer}video[role=button]:focus-visible{outline:2px s
 /* Keep chrome stable while the menu opens over a scrolled page. */
 .site-header.header.scrolled.menu-open{background:var(--paper)!important}
 
-html.mvc-arriving::before{content:"";position:fixed;inset:0;background:white;z-index:1000;pointer-events:none;transform:translateY(var(--arrival-y,0%))}
+html.mvc-arriving::before{content:"";position:fixed;inset:0;background:var(--paper);z-index:1100;transform:translateY(var(--arrival-y,0%))}
+html.mvc-arriving::after,.page-departure::after{content:"";position:absolute;inset:0;pointer-events:none;background:url('/media/brand/wordmark-hq.webp') center/min(9rem,36vw) auto no-repeat;opacity:var(--wipe-logo,1)}
+html.mvc-arriving::after{position:fixed;z-index:1101;pointer-events:none}
+html.mvc-arriving { --wipe-logo:1; }
+html:is(.mvc-arriving,.mvc-leaving) { overflow:hidden; overscroll-behavior:none; touch-action:none; scrollbar-gutter:stable; }
+html.mvc-arriving.mvc-intro { --wipe-logo:0; }
 
 /* Account screens retain visible defaults without JavaScript. */
 .auth-shell{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);min-height:100svh}
@@ -1702,3 +1708,27 @@ button.flow-back{border:0;background:transparent;cursor:pointer}
 .issued-key-value {display:block;white-space:normal;overflow-wrap:anywhere;padding:12px;border:1px solid var(--color-line);user-select:all}
 .api-key-dialog .issued-key-actions {grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);margin:20px 0}
 .staff-shell #issued-key {width:min(540px,calc(100vw - 32px))}
+.site-footer.venue-footer { display:block; border:0; padding:clamp(2rem,6vw,6rem) var(--gutter) 0; background:var(--color-green); color:var(--color-paper); overflow:hidden; text-align:left; }
+.venue-footer-grid { display:grid; grid-template-columns:2.5fr repeat(3, minmax(0, 1fr)); gap:2rem; align-items:start; }
+.venue-footer .footer-phrase { margin:0; font:500 clamp(1.8rem,3.4vw,3.8rem)/1.1 var(--font-display); }
+.venue-footer details { border:0; margin:0; padding:0; }
+.venue-footer summary { display:flex; justify-content:space-between; align-items:center; padding:0; min-height:2rem; font:500 1.12rem/1.25 var(--font-display); text-transform:uppercase; letter-spacing:.04em; }
+.venue-footer summary::-webkit-details-marker { display:none; }
+.venue-footer nav { display:grid; justify-items:start; gap:.25rem; margin-top:.65rem; }
+.venue-footer nav .prototype-link { min-height:28px; padding:.2rem 0; font:400 .88rem/1.45 var(--font-body); color:inherit; }
+.venue-footer .prototype-link::after { bottom:2px; }
+.footer-meta { display:flex; align-items:center; flex-wrap:wrap; gap:.4rem; margin:.5rem 0 0; }
+.venue-footer .footer-signature { position:relative; overflow:hidden; aspect-ratio:1200 / 273; }
+.footer-signature img { display:block; width:100%; height:auto; position:absolute; top:-5.86%; }
+.venue-footer :focus-visible { outline:2px solid currentColor; outline-offset:3px; }
+@media(max-width:700px) {
+    .venue-footer-grid { grid-template-columns:1fr; gap:0; }
+    .venue-footer .footer-phrase { margin-bottom:2rem; }
+    .venue-footer summary { padding:1rem 0; cursor:pointer; }
+    .venue-footer summary::after { content:"+"; }
+    .venue-footer details[open] summary::after { content:"−"; }
+    .venue-footer nav { margin:0 0 .75rem; }
+    .footer-meta { margin-right:3.5rem; }
+}
+
+.footer-signature::after { content:''; position:absolute; top:-5.86%; width:100%; aspect-ratio:3; left:0; background:white; mask:url('/media/brand/wordmark-hq.webp') center/contain no-repeat; clip-path:polygon(35% 46%, 59.2% 46%, 59.2% 50%, 70% 50%, 70% 46%, 100% 46%, 100% 78%, 35% 78%); pointer-events:none; }

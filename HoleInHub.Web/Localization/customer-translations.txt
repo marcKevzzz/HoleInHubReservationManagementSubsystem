@@ -943,3 +943,5 @@ All included bays are available together.|포함된 모든 베이를 함께 이�
 
 You must be of legal age (18 or older) to make a reservation.|예약하려면 만 18세 이상이어야 합니다.
 Enter a valid age between 18 and 120.|18세에서 120세 사이의 올바른 나이를 입력해 주세요.
+Explore the venue|시설 둘러보기
+Connect|소통하기

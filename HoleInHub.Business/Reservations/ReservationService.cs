@@ -15,6 +15,19 @@ public sealed partial class ReservationService(ReservationPersistence persistenc
         if (settings is not null) { runtimePolicy = await settings.PolicyAsync(ct); }
     }
     public async Task<IReadOnlyList<ResourceDto>> GetCatalogAsync(CancellationToken ct) => (await persistence.CatalogAsync(ct)).Select(MapResource).ToArray();
+    public async Task<(string[] Services, string[] Bays)> PopularChoicesAsync(HoleInHub.Business.Services.IServiceCatalog catalog, CancellationToken ct)
+    {
+        var now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime;
+        var bookings = await persistence.ReadCompletedSelectionsAsync(now.AddDays(-30), now, ct);
+        var services = (await catalog.GetActiveAsync(ct)).ToDictionary(s => s.Id, s => s.Title);
+        var bays = (await GetCatalogAsync(ct)).ToDictionary(b => b.Id, b => b.Name);
+        static string[] Leaders(IEnumerable<string> selections, Dictionary<string, string> names)
+        {
+            var ranked = selections.Where(names.ContainsKey).GroupBy(id => id).OrderByDescending(g => g.Count()).ToArray();
+            return ranked.TakeWhile(g => g.Count() == ranked[0].Count()).Select(g => names[g.Key]).Order().ToArray();
+        }
+        return (Leaders(bookings.Select(b => b.Service), services), Leaders(bookings.SelectMany(b => b.Bays), bays));
+    }
     public async Task<ResourceDto[]> GetRentalBaysAsync(string? entryId, CancellationToken ct)
     {
         var bays = (await GetCatalogAsync(ct)).Where(bay => SeasonalRental.Includes(entryId, bay.Service)).ToArray();

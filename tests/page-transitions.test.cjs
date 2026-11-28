@@ -22,10 +22,17 @@ function setup(reduced = false, storageFails = false, skipPageTransition = false
     return { click, navigations, stored, cover, windowEvents };
 }
 test('ordinary internal links navigate with an arrival marker', () => {
-    for (const route of ['/Home/About', '/account/sign-up', '/Reservations/Create']) {
+    for (const route of ['/account/sign-up', '/account/sign-in']) {
         const ui = setup();
         assert.equal(ui.click('https://example.test' + route).defaultPrevented, true);
         assert.equal(ui.navigations[0], 'https://example.test' + route);
+        assert.equal(ui.stored[0].path, route);
+    }
+});
+test('customer browsing and booking links transition to the destination', () => {
+    for (const route of ['/', '/Home/Index', '/Home/About', '/Home/Gallery', '/Home/Services', '/Home/Contacts', '/Reservations/Create?service=VIP', '/about', '/gallery', '/services', '/contacts', '/appointment']) {
+        const ui = setup(false, false, false, route === '/' ? '/Home/About' : '/');
+        ui.click('https://example.test' + route);
         assert.equal(ui.stored[0].path, route);
     }
 });
