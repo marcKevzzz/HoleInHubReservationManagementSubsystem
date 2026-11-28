@@ -28,6 +28,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<HoleInHub.Data.Reservations.ReservationPersistence>();
         services.AddScoped<HoleInHub.Data.Reservations.EmailVerificationPersistence>();
         services.AddScoped<HoleInHub.Data.Reservations.OutboxPersistence>();
+        services.AddScoped<HoleInHub.Data.Website.WebsiteContentPersistence>();
 
         return services;
     }
@@ -66,6 +67,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_029_ClassCapacity>();
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_030_JuniorGolfProgram>();
         services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_031_CoachServiceAssignments>();
+        services.AddSingleton<IMongoMigration, Migrations.Definitions.Migration_032_WebsiteContent>();
         services.AddSingleton<MongoMigrationRunner>();
 
         return services;

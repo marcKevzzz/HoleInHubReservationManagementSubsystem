@@ -1185,7 +1185,9 @@ html.customer-merge-open {overflow:hidden;scrollbar-gutter:stable}
 .activity-categories a {padding:9px 12px;color:var(--color-muted);font-size:.85rem;text-decoration:none;border-bottom:2px solid transparent}
 .activity-categories a:hover,.activity-categories a[data-activity-pending] {background:var(--color-staff-surface)}
 .activity-categories a[aria-current=page] {border-bottom-color:var(--color-green);color:var(--color-green);font-weight:600}
-.activity-row {display:grid;grid-template-columns:96px minmax(0,1fr) minmax(115px,180px) 44px;align-items:center;gap:16px;padding:5px 16px;border-bottom:1px solid var(--color-line);font-size:.85rem}
+.activity-row,.content-table {--activity-row-padding-block:5px;--activity-row-padding-inline:16px;font-size:.85rem}
+@media(max-width:760px) {.activity-row,.content-table {--activity-row-padding-inline:8px}}
+.activity-row {display:grid;grid-template-columns:96px minmax(0,1fr) minmax(115px,180px) 44px;align-items:center;gap:16px;padding:var(--activity-row-padding-block) var(--activity-row-padding-inline);border-bottom:1px solid var(--color-line)}
 .activity-row strong {font-weight:500}.activity-row small {display:block;font-size:.78rem;color:var(--color-muted);margin-top:3px}
 .activity-row :is(div,span) {min-width:0;overflow-wrap:anywhere}
 .activity-row [data-activity-event] {display:grid;place-content:center;min-width:44px;min-height:44px;color:var(--color-green)}

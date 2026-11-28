@@ -11,7 +11,8 @@
     const closeButton = dialog.querySelector('.gallery-story-close');
     const filters = gallery.querySelector('.gallery-filters');
     const sections = gallery.querySelectorAll('[data-gallery-category]');
-    const cards = gallery.querySelectorAll('[data-gallery-story]');
+    const cards = [...gallery.querySelectorAll('[data-gallery-story]')]
+        .sort((first, second) => Number(first.dataset.contentOrder) - Number(second.dataset.contentOrder));
     const categoryGrids = [...gallery.querySelectorAll('[data-gallery-category] .gallery-masonry')]
         .map(grid => ({ grid, cards: [...grid.children] }));
     const allGrid = document.createElement('div');
@@ -24,9 +25,8 @@
         sections.forEach(section => {
             section.hidden = showAll || section.dataset.galleryCategory !== category;
         });
-        categoryGrids.forEach(({ grid, cards }) => {
-            (showAll ? allGrid : grid).append(...cards);
-        });
+        if (showAll) allGrid.append(...cards);
+        else categoryGrids.forEach(({ grid, cards }) => grid.append(...cards));
     }
 
     showCategory('All');
@@ -109,23 +109,27 @@
         const title = card.querySelector('strong').textContent;
         const clip = card.dataset.video;
         const source = card.querySelector('.gallery-frame');
-        const origin = bounds(source);
+        const hasImage = card.dataset.noImage !== "true";
+        const origin = source ? bounds(source) : null;
         dialog.querySelector('h2').textContent = title;
         copy.querySelector('.gallery-category').textContent = card.dataset.category;
         copy.querySelector('.gallery-story-summary').textContent = card.dataset.summary;
-        image.src = card.href;
+        if (hasImage) image.src = card.href;
+        else image.removeAttribute("src");
         image.alt = title;
-        image.hidden = Boolean(clip);
+        image.hidden = !hasImage || Boolean(clip);
+        media.hidden = !hasImage && !clip;
         video.hidden = !clip;
         if (clip) {
             video.src = '/media/facebook/' + clip;
-            video.poster = card.href;
+            if (hasImage) video.poster = card.href;
+            else video.removeAttribute("poster");
             video.setAttribute('aria-label', title);
         }
         dialog.showModal();
         panel.scrollTop = 0;
         window.ScrollSmoother?.get()?.paused(true, true);
-        if (window.gsap && !preference.matches) {
+        if (origin && window.gsap && !preference.matches) {
             morph.src = card.href;
             morph.hidden = false;
             timeline = gsap.timeline({

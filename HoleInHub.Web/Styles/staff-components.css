@@ -202,7 +202,8 @@ html:has(.staff-side-panel[open]) {overflow:hidden;scrollbar-gutter:stable}
 .staff-skeleton-copy>.staff-skeleton-fill:first-child {width:70%;height:13px}
 .staff-skeleton-copy>.staff-skeleton-fill+span {width:48%;height:10px}
 .staff-skeleton-activity .staff-skeleton-row {grid-template-columns:84px minmax(0,1fr) 140px 20px}
-.staff-skeleton-activity .staff-skeleton-row>.staff-skeleton-fill:first-child {width:55px;height:10px}
+.staff-skeleton-activity .staff-skeleton-row>.staff-skeleton-fill:first-child,
+.content-skeleton-position {width:55px;height:10px}
 .staff-skeleton-pill {width:62px;height:22px;border-radius:999px}
 .staff-skeleton-directory .staff-skeleton-row {grid-template-columns:minmax(0,1.2fr) minmax(0,1.3fr) minmax(0,1fr) 20px}
 .staff-skeleton-directory[data-skeleton-directory=team] .staff-skeleton-row {grid-template-columns:minmax(0,1.2fr) minmax(0,1.6fr) minmax(0,1fr)}

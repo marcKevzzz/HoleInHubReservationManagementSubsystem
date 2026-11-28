@@ -14,6 +14,9 @@ public sealed class SettingsController(OperationalSettings settings) : Controlle
 {
     [HttpGet("/staff/settings")]
     public async Task<IActionResult> Index(CancellationToken ct) => View(SettingsForm.From(await settings.GetAsync(ct)));
+    [Authorize(Roles = StaffRoles.Admin), HttpGet("/staff/gallery-content")]
+    public IActionResult GalleryContent() => View();
+
     [HttpGet("/staff/settings/health")]
     public async Task<IActionResult> Health([FromServices] HoleInHub.Business.Services.IHealthService health, CancellationToken ct)
     {

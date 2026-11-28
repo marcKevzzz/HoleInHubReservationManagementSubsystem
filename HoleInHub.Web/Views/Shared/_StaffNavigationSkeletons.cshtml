@@ -3,7 +3,7 @@
 @{
     var layouts = new List<string> { "dashboard", "activity", "schedule", "queue", "cancellations", "customers", "delivery", "notifications", "profile", "coaches", "coach-editor" };
     if (User.ManagesVenue()) { layouts.AddRange(["team", "reports", "settings"]); }
-    if (User.IsInRole(StaffRoles.Admin)) { layouts.AddRange(["resources", "services"]); }
+    if (User.IsInRole(StaffRoles.Admin)) { layouts.AddRange(["resources", "services", "gallery-content"]); }
 }
 @foreach (var layout in layouts)
 {
@@ -146,6 +146,14 @@
                     {
                         <div class="staff-skeleton-row"><div class="staff-skeleton-copy"><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill"></span></div><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill staff-skeleton-pill"></span><span class="staff-skeleton-fill staff-skeleton-action"></span></div>
                     }
+                </div>
+            }
+            else if (layout == "gallery-content")
+            {
+                <div class="staff-skeleton-tabs"><span class="staff-skeleton-fill"></span><span class="staff-skeleton-fill"></span></div>
+                <div class="content-section">
+                    <div class="staff-skeleton-tools"><span class="staff-skeleton-fill staff-skeleton-search"></span><span class="staff-skeleton-fill staff-skeleton-action"></span></div>
+                    <partial name="_GalleryContentTable" model='("Gallery", 6)' />
                 </div>
             }
             else if (layout == "services")
