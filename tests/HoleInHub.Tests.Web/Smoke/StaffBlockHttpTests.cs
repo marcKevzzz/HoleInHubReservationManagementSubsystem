@@ -762,14 +762,13 @@ public sealed partial class StaffBlockHttpTests
             Assert.DoesNotContain("Cancelled", page2); Assert.Contains("Page 2", page2);
             var trend = await client.GetStringAsync("/staff/dashboard?mode=trends&from=2026-11-10&to=2026-11-10");
             Assert.Contains("\"Booked\":22", trend); Assert.Contains("\"Other\":1", trend);
-            Assert.Equal(5, Regex.Matches(trend, "data-dashboard-activity-row").Count);
+            Assert.Contains("Booking outcomes", trend);
             client.DefaultRequestHeaders.Add("X-Dashboard", "true");
             var fragment = await client.GetStringAsync("/staff/dashboard?date=2026-11-09");
             Assert.DoesNotContain("<!DOCTYPE", fragment);
             Assert.Contains("data-dashboard", fragment);
-            Assert.Contains("No activity in this period", fragment);
+            Assert.Contains("No bookings with recorded attendance", fragment);
             Assert.DoesNotContain("data-dashboard-activity-row", fragment);
-            Assert.Contains("range=custom&amp;from=2026-11-09&amp;to=2026-11-09", fragment);
         }
         finally { await context.Client.DropDatabaseAsync(database); }
     }

@@ -28,6 +28,7 @@
     });
     preview.querySelector('[data-photo-open]').addEventListener('click', () => {
         const figure = document.createElement('figure');
+        if (photo.naturalHeight) viewer.style.setProperty('--photo-ratio', photo.naturalWidth / photo.naturalHeight);
         figure.append(photo.cloneNode());
         imageViewer.show([figure]);
     });

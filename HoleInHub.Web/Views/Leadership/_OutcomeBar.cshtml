@@ -1,0 +1,16 @@
+@using HoleInHub.Business.Reservations
+@model (string Label, OutcomeRate Rate, string Basis)
+<div class="outcome-bar">
+    <div class="outcome-bar-heading">
+        <span>@Model.Label</span><strong>@Model.Rate.Display</strong>
+        @if (Model.Rate.Eligible > 0)
+        {
+            <small title="@Model.Basis">@Model.Rate.Count / @Model.Rate.Eligible<span class="sr-only"> @Model.Basis</span></small>
+        }
+        else { <small>No data</small> }
+    </div>
+    @if (Model.Rate.Eligible > 0)
+    {
+        <progress aria-hidden="true" value="@Model.Rate.Count" max="@Model.Rate.Eligible"></progress>
+    }
+</div>

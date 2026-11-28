@@ -3,6 +3,7 @@
     const html = document.documentElement;
     if (html.dataset?.skipPageTransition === 'true') return;
     const accountRoute = /^\/(?:my-reservations|transactions|my-profile|notifications|reservations(?:\/index)?|guest\/reservations)\/?$/i;
+    const swipe = { duration: .56, ease: 'power2.inOut' };
     let leaving = false, cover, tween, pausedScroller;
     function pauseScrolling() {
         const smoother = window.ScrollSmoother?.get();
@@ -10,6 +11,12 @@
             smoother.paused(true);
             pausedScroller = smoother;
         }
+    }
+    function mountCover() {
+        cover = document.createElement('div');
+        cover.className = 'page-departure';
+        cover.setAttribute('aria-hidden', 'true');
+        document.body.append(cover);
     }
     function reset() {
         leaving = false;
@@ -19,24 +26,27 @@
         html.classList.remove('mvc-arriving', 'mvc-intro', 'mvc-leaving');
         pausedScroller?.paused(false);
         pausedScroller = null;
-        html.style.removeProperty('--arrival-y');
+
     }
     if (html.classList.contains('mvc-arriving')) {
         if (reduced.matches || !window.gsap) reset();
         else {
+            mountCover();
             html.setAttribute('data-wipe-ready', '');
             const reveal = () => {
                 if (!html.classList.contains('mvc-arriving')) return;
                 pauseScrolling();
                 tween = gsap.timeline({ onComplete: reset });
                 if (html.classList.contains('mvc-intro')) {
-                    tween.fromTo(html, { '--wipe-logo': 0 }, { '--wipe-logo': 1, duration: .22, ease: 'sine.inOut' });
+                    tween.fromTo(html, { '--wipe-logo': 0 }, { '--wipe-logo': 1, duration: .22, ease: 'sine.inOut' })
+                        .to(html, { '--wipe-logo': 0, duration: .22, ease: 'sine.inOut' }, '+=.24');
                 }
-                tween.to(html, { '--wipe-logo': 0, duration: .18, ease: 'sine.inOut' })
-                    .fromTo(html, { '--arrival-y': '0%' }, { '--arrival-y': '-100%', duration: .42, ease: 'power2.inOut' });
+                tween.to(cover, { yPercent: -100, ...swipe });
             };
-            if (document.readyState !== 'loading') reveal();
-            else document.addEventListener('DOMContentLoaded', reveal, { once: true });
+            // Give the destination a fully covered paint before starting the reveal.
+            const afterPaint = () => requestAnimationFrame(() => requestAnimationFrame(reveal));
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', afterPaint, { once: true });
+            else afterPaint();
         }
     }
     document.addEventListener('click', event => {
@@ -57,13 +67,11 @@
             try { sessionStorage.setItem('holeinhub-page-arrival', JSON.stringify({ path: destination.pathname + destination.search, at: Date.now() })); } catch { /* Navigation also works without storage. */ }
             location.assign(destination.href);
         };
-        cover = document.createElement('div');
-        cover.className = 'page-departure';
-        cover.setAttribute('aria-hidden', 'true');
-        document.body.append(cover);
+        mountCover();
         tween = gsap.timeline({ onComplete: navigate })
-            .fromTo(cover, { yPercent: 100 }, { yPercent: 0, duration: .3, ease: 'power3.inOut' })
-            .fromTo(cover, { '--wipe-logo': 0 }, { '--wipe-logo': 1, duration: .2 }, .1);
+            .fromTo(cover, { yPercent: 100 }, { yPercent: 0, ...swipe })
+            .fromTo(html, { '--wipe-logo': 0 }, { '--wipe-logo': 1, duration: .22, ease: 'sine.inOut' })
+            .to(html, { '--wipe-logo': 0, duration: .22, ease: 'sine.inOut' }, '+=.24');
     });
     document.addEventListener('keydown', event => {
         if (event.key === 'Escape' && leaving) reset();

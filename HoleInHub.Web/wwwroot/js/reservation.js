@@ -837,7 +837,25 @@ if (typeof document !== 'undefined') (() => {
     calendar(); slots(); if (!completed) completed = 1;
   }
   show(completed, false); refresh();
-  if (authDialog) { let guestMode = false; try { guestMode = sessionStorage.getItem('holeinhub-guest-mode') === 'true'; } catch { } if (!guestMode) { authDialog.showModal(); window.ScrollSmoother?.get()?.paused(true, true); window.HoleInHubMotion?.enter(authDialog); } }
+  if (authDialog) {
+    let guestMode = false;
+    try { guestMode = sessionStorage.getItem('holeinhub-guest-mode') === 'true'; } catch { }
+    if (!guestMode) {
+      const root = document.documentElement;
+      const showPrompt = () => {
+        authDialog.showModal();
+        window.ScrollSmoother?.get()?.paused(true, true);
+      };
+      if (root.classList.contains('mvc-arriving')) {
+        const arrival = new MutationObserver(() => {
+          if (root.classList.contains('mvc-arriving')) return;
+          arrival.disconnect();
+          if (!root.classList.contains('mvc-leaving')) showPrompt();
+        });
+        arrival.observe(root, { attributes: true, attributeFilter: ['class'] });
+      } else showPrompt();
+    }
+  }
   document.querySelectorAll('.info-tip').forEach(tip => {
     const button = tip.querySelector('.info-tip-btn'), bubble = tip.querySelector('.info-tip-bubble');
     if (!button || !bubble) return;

@@ -607,7 +607,7 @@ Start a lifelong game|평생 즐길 골프 시작하기
 Step onto the turf and into your next round in Quezon City.|케손시티에서 다음 라운드를 시작하세요.
 Step onto the turf and into your next round. Five regular bays and two VIP bays make room for your game.|일반 베이 5개와 VIP 베이 2개에서 다음 라운드를 시작하세요.
 Take a little time between swings. Private spaces and the lounge make room for the moments beyond the game.|스윙 사이 잠시 쉬어 가세요. 프라이빗 공간과 라운지에서 골프 이외의 시간도 즐기실 수 있습니다.
-A shared experience. From the first swing to the last conversation.|첫 스윙부터 마지막 대화까지 함께하세요.
+SHARE A ROUND.|함께 라운드를 즐겨요.
 Simulator bays, family rounds, and time together at Hole In Hub.|Hole In Hub에서 시뮬레이터 골프와 가족 라운드, 함께하는 시간을 즐기세요.
 From first swings to friendly challenges, discover the programs and experiences at Hole In Hub.|첫 스윙부터 친선 경기까지 Hole In Hub의 프로그램과 체험을 둘러보세요.
 Discover the programs shown in the venue's supplied posters. Confirm current dates, rates, availability, and terms with the venue.|안내 포스터에서 프로그램을 확인하세요. 최신 일정, 요금, 이용 가능 여부 및 조건은 매장에 문의하세요.
@@ -945,3 +945,9 @@ You must be of legal age (18 or older) to make a reservation.|예약하려면 �
 Enter a valid age between 18 and 120.|18세에서 120세 사이의 올바른 나이를 입력해 주세요.
 Explore the venue|시설 둘러보기
 Connect|소통하기
+Sign-in temporarily unavailable|현재 로그인할 수 없습니다
+Dashboard temporarily unavailable|현재 대시보드를 이용할 수 없습니다
+We couldn’t reach the account service to complete sign-in. Please try again in a moment.|계정 서비스에 연결할 수 없어 로그인을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.
+We couldn’t load the reservation data for your dashboard. Please try again in a moment.|대시보드에 표시할 예약 정보를 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.
+Return to sign-in|로그인으로 돌아가기
+If this continues, share this reference with support.|문제가 계속되면 이 참조 번호를 고객 지원팀에 알려 주세요.

@@ -1,5 +1,21 @@
 @model HoleInHubReservationManagementSubsystem.ViewModels.ServiceUnavailableViewModel
-@{ViewData["Title"]=T("Service temporarily unavailable");}
-<div class="page-content booking-confirmation"><h1>@T("PLEASE TRY AGAIN SHORTLY")</h1><p>@T(Model.Message)</p>
-@if(Model.BookingSaved){<p>@T("Your booking details are saved briefly so you can review and retry. If your request was already received, retrying will return its original receipt.")</p>}
-<p>@F("Reference for support: {0}", Model.CorrelationId)</p><a class="button" href="@Model.RetryUrl">@T("Try again")</a><p><a href="/">@T("Back to home")</a></p></div>
+@{
+    var route = ViewContext.RouteData.Values;
+    var signIn = (route["controller"] as string, route["action"] as string) is ("Account", "SignIn") or ("StaffAccess", "Index");
+    var dashboard = (route["controller"] as string, route["action"] as string) is ("Leadership", "Dashboard");
+    var heading = signIn ? "Sign-in temporarily unavailable" : dashboard ? "Dashboard temporarily unavailable" : "Service temporarily unavailable";
+    ViewData["Title"] = T(heading);
+}
+<section class="service-outage" aria-labelledby="outage-title">
+    <h1 id="outage-title">@T(heading)</h1>
+    <p>@T(signIn ? "We couldn’t reach the account service to complete sign-in. Please try again in a moment." : dashboard ? "We couldn’t load the reservation data for your dashboard. Please try again in a moment." : Model.Message)</p>
+    @if (Model.BookingSaved)
+    {
+        <p>@T("Your booking details are saved briefly so you can review and retry. If your request was already received, retrying will return its original receipt.")</p>
+    }
+    <div class="outage-actions">
+        <a class="button" href="@Model.RetryUrl">@T(signIn ? "Return to sign-in" : "Try again")</a>
+        <a href="/">@T("Back to home")</a>
+    </div>
+    <p class="outage-reference">@T("If this continues, share this reference with support.")<br /><code>@Model.CorrelationId</code></p>
+</section>

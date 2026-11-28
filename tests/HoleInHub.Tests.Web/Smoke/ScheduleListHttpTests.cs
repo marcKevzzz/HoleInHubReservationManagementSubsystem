@@ -33,8 +33,8 @@ public sealed partial class StaffBlockHttpTests
         {
             var emptyTimeline = await client.GetStringAsync("/staff?date=2026-11-10");
             Assert.Contains("There are no bays", emptyTimeline);
-            Assert.Contains(">Timeline</a>", emptyTimeline);
-            Assert.Contains(">List</a>", emptyTimeline);
+            Assert.Contains("aria-label=\"Timeline\" title=\"Timeline\"", emptyTimeline);
+            Assert.Contains("aria-label=\"List\" title=\"List\"", emptyTimeline);
             Assert.Contains("No reservations in this date range", await client.GetStringAsync(range));
             Assert.Contains("Choose a valid start date", await client.GetStringAsync("/staff/reservations/list?from=nope&to=2026-11-11"));
             Assert.Contains("Choose a start date on or before", await client.GetStringAsync("/staff/reservations/list?from=2026-11-12&to=2026-11-11"));

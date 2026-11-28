@@ -352,5 +352,5 @@ fieldset.service-rule-grid {border:0;border-bottom:1px solid var(--color-line);m
 .coach-profile-layout :is(.coach-photo-preview,.coach-photo-tile) {min-height:clamp(300px,32vw,460px)}
 .coach-profile-layout .coach-photo-preview {background:var(--color-staff-surface)}
 .coach-profile-layout .coach-photo-preview img {object-fit:contain}
-.coach-image-viewer [data-viewer-content] img {width:min(78vw,760px);height:min(80dvh,760px);max-width:100%;object-fit:contain}
+.coach-image-viewer [data-viewer-content] img {width:min(78vw,760px,calc(80dvh * var(--photo-ratio,1)));height:auto;max-width:100%}
 @media(max-width:760px) {.coach-profile-layout :is(.coach-photo-preview,.coach-photo-tile) {min-height:300px}}

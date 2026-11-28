@@ -108,3 +108,30 @@ test('changing the period shows the loading state and restores the previous rang
     await expect(page.locator('#report-to')).toHaveValue(end);
     await expect(report.locator('.reports-skeleton')).toBeHidden();
 });
+
+test('booking outcomes stay aligned and switch weekly series', async ({ page }, info) => {
+    const trend = page.locator('[data-outcome-trend]');
+    await expect(trend.getByRole('heading', { level: 2 })).toHaveText('Weekly outcome rates');
+    await trend.getByRole('tab', { name: 'Cancellations' }).click();
+    await page.keyboard.press('Home');
+    await expect(trend.getByRole('tabpanel', { name: 'No-shows' })).toBeVisible();
+    await page.keyboard.press('End');
+    await expect(trend.locator('[data-series="Cancellations"]')).toBeVisible();
+    await expect(trend.getByText('Weekly figures')).toHaveCount(0);
+    await trend.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: '../.local/outcomes-report-' + info.project.name + '.png' });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.goto('/staff/dashboard');
+    const cards = page.locator('[data-dashboard-content] .outcome-summary > div');
+    await expect(cards).toHaveCount(2);
+    for (const card of await cards.all()) {
+        const empty = await card.getAttribute('data-state') === 'empty';
+        await expect(card.locator('.outcome-footer')).toHaveCount(empty ? 0 : 1);
+    }
+    const first = await cards.first().boundingBox();
+    const second = await cards.last().boundingBox();
+    if (info.project.name === 'mobile') expect(second.y).toBeGreaterThan(first.y);
+    else expect(second.y).toBe(first.y);
+    await cards.first().scrollIntoViewIfNeeded();
+    await page.screenshot({ path: '../.local/outcomes-dashboard-' + info.project.name + '.png' });
+});

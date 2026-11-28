@@ -5,7 +5,11 @@ namespace HoleInHub.Business.Reservations;
 
 public sealed record ReservationReport(IReadOnlyList<DashboardBooking> Rows, IReadOnlyDictionary<string, string> Services,
     IReadOnlyDictionary<string, int> Volume, IReadOnlyDictionary<string, int> ServiceCounts, IReadOnlyDictionary<string, double> BayHours,
-    int NewCustomers, int ReturningCustomers, int UnmatchedReservations);
+    int NewCustomers, int ReturningCustomers, int UnmatchedReservations)
+{
+    public BookingOutcomes Outcomes { get; init; } = new(default, default, default, default, default);
+    public IReadOnlyList<OutcomeWeek> Weeks { get; init; } = [];
+}
 
 public sealed partial class ReservationService
 {
@@ -45,7 +49,20 @@ public sealed partial class ReservationService
         var rows = source.Where(row => string.IsNullOrEmpty(service) || row.Service == service)
             .OrderBy(row => row.StartUtc).ThenBy(row => row.Id, StringComparer.Ordinal).ToArray();
         var (profiles, returning) = await persistence.ReadReportProfilesAsync(rows.Select(row => row.Id).ToArray(), start, ct);
-        return CalculateReport(from, to, rows, services, profiles, returning);
+        var outcomes = await persistence.ReadOutcomeRowsAsync(start, DashboardMetrics.Utc(to.AddDays(1)), service, ct);
+        ValidateReportSize(outcomes.Count);
+        var weeks = new List<OutcomeWeek>();
+        for (var day = from; day <= to;)
+        {
+            var last = day.AddDays(Math.Min(to.DayNumber - day.DayNumber, (7 - (int)day.DayOfWeek) % 7));
+            weeks.Add(new(day, last, BookingOutcomes.ForPeriod(outcomes, day, last)));
+            day = last.AddDays(1);
+        }
+        return CalculateReport(from, to, rows, services, profiles, returning) with
+        {
+            Outcomes = BookingOutcomes.ForPeriod(outcomes, from, to),
+            Weeks = weeks
+        };
     }
 
     public static ReservationReport CalculateReport(DateOnly from, DateOnly to, IReadOnlyList<DashboardRow> rows,
